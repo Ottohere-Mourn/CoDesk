@@ -1,0 +1,91 @@
+{
+  "task_id": "CSV-001",
+  "task_version": "0.1.0",
+  "reset_policy": "fresh temporary shared.csv file per episode",
+  "independent": {
+    "gui": {
+      "success": true,
+      "final": {
+        "csv": "id,status\nA,done\n",
+        "rows": [
+          {
+            "id": "A",
+            "status": "done"
+          }
+        ],
+        "revision": 2
+      }
+    },
+    "cli": {
+      "success": true,
+      "final": {
+        "csv": "id,status\nA,open\nB,queued\n",
+        "rows": [
+          {
+            "id": "A",
+            "status": "open"
+          },
+          {
+            "id": "B",
+            "status": "queued"
+          }
+        ],
+        "revision": 2
+      }
+    }
+  },
+  "joint": {
+    "checks": {
+      "gui_goal": true,
+      "cli_goal": true,
+      "no_lost_update": true,
+      "valid_schema": true,
+      "stale_read_detected": true,
+      "refresh_preserved_cli_row": true,
+      "cli_observation_revision": 1,
+      "gui_observed_revision": 1
+    },
+    "success": true,
+    "final": {
+      "csv": "id,status\nA,done\nB,queued\n",
+      "rows": [
+        {
+          "id": "A",
+          "status": "done"
+        },
+        {
+          "id": "B",
+          "status": "queued"
+        }
+      ],
+      "revision": 3
+    }
+  },
+  "naive_control": {
+    "checks": {
+      "gui_goal": true,
+      "cli_goal": false,
+      "no_lost_update": false
+    },
+    "success": false,
+    "final": {
+      "csv": "id,status\nA,done\n",
+      "rows": [
+        {
+          "id": "A",
+          "status": "done"
+        }
+      ],
+      "revision": 3
+    }
+  },
+  "metrics": {
+    "actions_by_actor": {
+      "cli": 1,
+      "gui": 1
+    },
+    "total_actions": 2,
+    "stale_observations": 1,
+    "recovery_reads": 1
+  }
+}

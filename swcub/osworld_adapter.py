@@ -1,0 +1,109 @@
+"""Thin adapter for OSWorld DesktopEnv without a hard dependency on its package.
+
+Construct a pinned OSWorld DesktopEnv in the caller, then wrap it here. The CLI
+executor is injected by the harness so it can run in the same guest/workspace.
+"""
+
+from __future__ import annotations
+
+import shlex
+from typing import Any, Callable
+
+from .core import Episode
+
+
+def _digestable(value: Any) -> Any:
+    """Reduce common OSWorld observations to stable metadata before hashing."""
+    if isinstance(value, bytes):
+        from hashlib import sha256
+        return {"bytes_sha256": sha256(value).hexdigest(), "length": len(value)}
+    if isinstance(value, dict):
+        return {str(k): _digestable(v) for k, v in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_digestable(v) for v in value]
+    if hasattr(value, "tobytes") and hasattr(value, "shape"):
+        from hashlib import sha256
+        data = value.tobytes()
+        return {"array_sha256": sha256(data).hexdigest(), "shape": list(value.shape),
+                "dtype": str(getattr(value, "dtype", "unknown"))}
+    if value is None or isinstance(value, (str, int, float, bool)):
+        return value
+    return {"type": type(value).__name__, "repr": repr(value)[:300]}
+
+
+class OSWorldSharedEpisode(Episode):
+    """One OSWorld desktop plus injected CLI access to its same guest workspace."""
+
+    def __init__(self, desktop_env: Any,
+                 cli_executor: Callable[[str], Any] | None = None):
+        self.desktop_env = desktop_env
+        self.environment_id = f"osworld-{id(desktop_env):x}"
+        self.cli_executor = cli_executor
+        self.observation: Any = None
+        self.revision = 0
+        self.actor_steps: dict[str, int] = {}
+        super().__init__({})
+
+    def snapshot(self) -> Any:
+        return {"revision": self.revision,
+                "observation": _digestable(self.observation),
+                "actor_steps": dict(self.actor_steps)}
+
+    def observe(self, actor_id: str, interface: str = "gui") -> Any:
+        if interface != "gui":
+            raise ValueError(f"OSWorld observation does not support interface {interface!r}")
+        if self.observation is None:
+            raise RuntimeError("reset the OSWorld episode before observing")
+        self.log.record(actor_id, "observation", "osworld.observe", self.snapshot(), self.snapshot(),
+                        details={"environment_id": self.environment_id,
+                                 "observation": _digestable(self.observation)})
+        return self.observation
+
+    def act(self, actor_id: str, interface: str, action: Any) -> Any:
+        if interface == "gui":
+            return self.gui_action(actor_id, action)
+        if interface == "cli":
+            command = shlex.join(list(map(str, action))) if isinstance(action, (list, tuple)) else str(action)
+            return self.cli_action(actor_id, command)
+        raise ValueError(f"unsupported OSWorld interface: {interface}")
+
+    def close(self) -> None:
+        self.desktop_env.close()
+
+    def reset(self, task_config: dict[str, Any], seed: int | None = None) -> Any:
+        before = self.snapshot()
+        self.observation = self.desktop_env.reset(task_config=task_config, seed=seed)
+        self.revision = 0
+        self.actor_steps.clear()
+        self.log.record("orchestrator", "reset", "osworld.reset", before, self.snapshot(),
+                        details={"task_config_id": task_config.get("id"), "seed": seed})
+        return self.observation
+
+    def gui_action(self, actor: str, action: Any, pause: float = 0) -> Any:
+        before = self.snapshot()
+        observed_revision = self.revision
+        self.observation, reward, done, info = self.desktop_env.step(action, pause=pause)
+        self.revision += 1
+        self.actor_steps[actor] = self.actor_steps.get(actor, 0) + 1
+        self.log.record(actor, "gui", "osworld.step", before, self.snapshot(),
+                        observed_revision, details={"action": _digestable(action),
+                                                    "reward": reward, "done": done,
+                                                    "info": _digestable(info)})
+        return self.observation
+
+    def cli_action(self, actor: str, command: str) -> Any:
+        if self.cli_executor is None:
+            raise RuntimeError("provide cli_executor bound to the same OSWorld guest workspace")
+        before = self.snapshot()
+        observed_revision = self.revision
+        result = self.cli_executor(command)
+        self.revision += 1
+        self.actor_steps[actor] = self.actor_steps.get(actor, 0) + 1
+        self.log.record(actor, "cli", "shared_guest.command", before, self.snapshot(),
+                        observed_revision, details={"command": command,
+                                                    "result": _digestable(result)})
+        return result
+
+    def evaluate_osworld_task(self) -> float:
+        """Delegate to OSWorld's configured executable evaluator."""
+        return float(self.desktop_env.evaluate())

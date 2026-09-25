@@ -1,0 +1,71 @@
+#!/usr/bin/env python3
+"""Run verified single-actor, joint, conflict, and reset smokes on Docker/Xvfb."""
+from __future__ import annotations
+import csv
+import json
+from pathlib import Path
+import sys
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+from swcub.actors import ScriptedCLIActor, ScriptedGUIActor
+from swcub.core import EventLog
+from swcub.environment import ActorContext, DockerX11Workspace
+from swcub.evaluator import RequiredRowsEvaluator
+from swcub.orchestrator import DualActorOrchestrator
+
+
+def run_case(env, name, actors, schedule, expected, stale=False):
+    out = ROOT / "outputs" / "real-smoke" / name
+    out.mkdir(parents=True, exist_ok=True)
+    env.log = EventLog()
+    env.reset(stale_gui_write=stale)
+    result = DualActorOrchestrator(env).run(actors, schedule, RequiredRowsEvaluator(expected), out)
+    passed = bool(result["evaluation"]["success"])
+    (out / "case_result.json").write_text(json.dumps({"pass": passed, "report": result}, indent=2) + "\n")
+    return passed, result
+
+
+def main():
+    env = DockerX11Workspace(ROOT, command_timeout=30)
+    summary = {}
+    try:
+        env.build()
+        gui_expected = [{"id": "G1", "actor": "gui", "value": "GUI_VALUE"}]
+        cli_expected = [{"id": "C1", "actor": "cli", "value": "CLI_VALUE"}]
+        summary["gui_single_actor"] = run_case(env, "gui-single", [ScriptedGUIActor()],
+            ["gui_actor"], gui_expected)[0]
+        summary["cli_single_actor"] = run_case(env, "cli-single", [ScriptedCLIActor()],
+            ["cli_actor"], cli_expected)[0]
+        summary["joint_gui_cli"] = run_case(env, "joint", [ScriptedGUIActor(), ScriptedCLIActor()],
+            ["cli_actor", "gui_actor"], None)[0]
+        conflict_ok, conflict = run_case(env, "conflict", [ScriptedGUIActor(), ScriptedCLIActor()],
+            ["cli_actor", "gui_actor"], None, stale=True)
+        summary["stale_write_rejected"] = not conflict_ok and bool(conflict["evaluation"]["missing"])
+
+        env.log = EventLog()
+        old_id = env.reset(stale_gui_write=False)
+        ScriptedGUIActor().run(ActorContext("gui_actor", env, "gui"))
+        dirty = "GUI_VALUE" in env.csv_path.read_text(encoding="utf-8")
+        new_id = env.reset(stale_gui_write=False)
+        clean = env.csv_path.read_text(encoding="utf-8") == "id,actor,value\n"
+        gui_live = bool(env.window_id)
+        reset_dir = ROOT / "outputs" / "real-smoke" / "reset"
+        reset_dir.mkdir(parents=True, exist_ok=True)
+        env.log.write(reset_dir / "events.jsonl")
+        (reset_dir / "report.json").write_text(json.dumps({
+            "previous_environment_id": old_id, "new_environment_id": new_id,
+            "had_shared_state_before_reset": dirty, "workspace_clean_after_reset": clean,
+            "gui_live_after_reset": gui_live,
+        }, indent=2) + "\n")
+        summary["reset_clears_workspace_and_restarts_gui"] = old_id != new_id and dirty and clean and gui_live
+    finally:
+        env.close()
+    out = ROOT / "outputs" / "real-smoke"
+    (out / "summary.json").write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
+    print(json.dumps(summary, indent=2))
+    return 0 if all(summary.values()) else 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
