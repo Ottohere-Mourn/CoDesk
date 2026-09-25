@@ -17,7 +17,7 @@ python scripts/smoke_real_workspace.py
 python -m pytest -q
 ```
 
-The smoke runner builds automatically, then executes fresh episodes for each scenario. It writes reports and JSONL logs under `outputs/real-smoke/{gui-single,cli-single,joint,conflict,reset}/`. GUI episodes also retain a real XWD desktop screenshot. Each action log includes actor ID, action/interface, environment ID, before/after workspace digests and operation result. GUI and CLI actions share the same container and `/workspace/shared.csv` bind mount within each episode.
+The smoke runner builds automatically, then executes fresh episodes for each scenario. It writes reports and JSONL logs under `outputs/real-smoke/`, including the GUI/CLI CSV case, stale-write control, real GUI+Human Replay focus recovery/failure, and reset. GUI episodes also retain real XWD desktop screenshots. Each action log includes actor ID, action/interface, environment ID, before/after workspace digests and operation result. GUI and CLI actions share the same container and `/workspace/shared.csv` bind mount within each episode.
 
 `python -m swcub.cli run-all --out outputs/simulated-smoke` remains available for fast simulator protocol checks. Those results are not real-environment evidence.
 

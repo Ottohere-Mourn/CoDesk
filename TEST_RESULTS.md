@@ -1,6 +1,6 @@
 # TEST_RESULTS
 
-Final verification date: 2026-09-26. Tests use the real pinned Docker image, Xvfb display, Tk app, xdotool GUI actions, container CLI actions, and a shared mounted file. No mocked environment results are included.
+Final verification date: 2026-09-26. Tests use real Docker Ubuntu containers, Xvfb, Tk windows, xdotool desktop actions, guest CLI processes, and mounted files. No mocked environment results are included.
 
 ## Automated suite
 
@@ -10,26 +10,29 @@ Command:
 pytest -q --junitxml=outputs/test-results/junit.xml
 ```
 
-Result: **6 passed, 0 failed, 0 skipped in 13.99s**. Machine-readable report: [`outputs/test-results/junit.xml`](outputs/test-results/junit.xml).
+Result: **9 passed, 0 failed, 0 skipped in 27.57s**. Machine-readable report: [`outputs/test-results/junit.xml`](outputs/test-results/junit.xml).
 
 | Test | Result | Evidence checked |
 |---|---|---|
-| GUI single actor | PASS | Real Tk window visible; XWD screenshot captured; GUI row graded from CSV. |
-| CLI single actor | PASS | Python CLI process in guest writes row; row graded from CSV. |
-| Joint GUI+CLI | PASS | Both actor contexts report the same environment ID; exact two-row final CSV; actor-attributed GUI/CLI/evaluator events. |
-| Stale-write conflict | PASS | Intentional GUI stale snapshot overwrites CLI row; evaluator rejects the lost update and reports missing C1. |
-| Role/evaluator isolation | PASS | GUI context cannot call CLI, CLI context cannot observe GUI, and neither context exposes an evaluator. |
-| Environment reset | PASS | Dirty CSV is replaced by a fresh container/workspace, new GUI becomes visible, old state is absent. |
+| GUI single actor | PASS | Real Tk window visible, real XWD captured, GUI row graded from CSV. |
+| CLI single actor | PASS | Guest Python CLI writes row; row graded from CSV. |
+| Joint GUI+CLI | PASS | Same environment ID, both exact rows survive, actor-attributed event trace. |
+| Stale CSV write conflict | PASS | GUI stale snapshot loses CLI row; evaluator rejects final state and identifies missing C1. |
+| Role/evaluator isolation | PASS | GUI context cannot call CLI; CLI cannot observe GUI; neither exposes evaluator. |
+| Environment reset | PASS | Dirty state removed by a fresh container/workspace, new GUI window visible, prior container gone. |
+| GUI+Human Replay focus recovery | PASS | One real display, three interleaved actor turns, both final window states exact. |
+| Stale focus contention | PASS | GUI text goes to Chat after replay steals focus; evaluator rejects both incorrect window state and cross-window contamination. |
+| Focus goals independently solvable | PASS | GUI-only and Human Replay-only episodes each satisfy their private goal. |
 
 ## End-to-end smoke
 
-`python scripts/smoke_real_workspace.py` result: all 5 checks true. Machine-readable summary: [`outputs/real-smoke/summary.json`](outputs/real-smoke/summary.json). Joint state and conflict reports/logs are saved under `outputs/real-smoke/joint/` and `outputs/real-smoke/conflict/`.
+`python scripts/smoke_real_workspace.py` result: **7/7 checks true**. Machine-readable summary: [`outputs/real-smoke/summary.json`](outputs/real-smoke/summary.json). Scenario reports/logs are in the adjacent per-scenario directories; real XWD screenshots are retained.
 
-Final artifact audit confirmed all five scenario event logs are non-empty, screenshot artifact type is XWD at 1024x768x24, V0 containers are stopped, and runner temporary workspace directories were removed.
+Final artifact audit confirmed non-empty event logs, valid XWD screenshot files (`1024x768x24`), no running V0 containers, and no leftover runner temporary workspace directories.
 
 ## Resolved attempts and unverified areas
 
-- An initial `pytest -q` invocation failed collection because the console entrypoint omitted the project root. Added pytest `pythonpath` configuration and reran the same command; the final six-test run passes. `python -m pytest -q` also passed all six tests before the final clean run.
-- An early smoke failed when a window-title query omitted the isolated `DISPLAY`; fixed and reran all cases successfully.
-- **UNVERIFIED:** actual OSWorld VM/provider execution, model actors, real focus-contention case, concurrency under truly simultaneous input, alternative app backends, and statistical benchmark validity.
+- Initial `pytest -q` collection missed the repository import path. Added pytest path configuration; `pytest -q` and `python -m pytest -q` subsequently passed.
+- Early smoke issues (missing isolated `DISPLAY` on one xdotool query and Tk child Entry focus after top-level focus) were fixed and the full smoke rerun.
+- **UNVERIFIED:** actual OSWorld VM/provider execution, model actors, alternative real applications/backends, truly simultaneous key events, and statistical benchmark validity.
 - **NOT RUN:** training, batch data generation, large downloads, GPU workloads.

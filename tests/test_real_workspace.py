@@ -6,10 +6,10 @@ import subprocess
 
 import pytest
 
-from swcub.actors import ScriptedCLIActor, ScriptedGUIActor
+from swcub.actors import (HumanReplayActor, ScriptedCLIActor, ScriptedFocusGUIActor, ScriptedGUIActor)
 from swcub.core import EventLog
 from swcub.environment import ActorContext, DockerX11Workspace
-from swcub.evaluator import RequiredRowsEvaluator
+from swcub.evaluator import FocusStateEvaluator, RequiredRowsEvaluator
 from swcub.orchestrator import DualActorOrchestrator
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -98,5 +98,48 @@ def test_reset_recreates_clean_real_desktop_and_workspace(adapter):
     assert adapter.csv_path.read_text(encoding="utf-8") == "id,actor,value\n"
     assert adapter.window_id
     proc = subprocess.run(["docker", "inspect", new_environment], capture_output=True, text=True)
+    old_proc = subprocess.run(["docker", "inspect", old_environment], capture_output=True, text=True)
     assert proc.returncode == 0
+    assert old_proc.returncode != 0
     assert any(event.kind == "reset" for event in adapter.log.events)
+
+
+def test_real_focus_gui_and_human_replay_recover(adapter, tmp_path):
+    adapter.log = EventLog()
+    adapter.reset(task="focus")
+    actors = [ScriptedFocusGUIActor(recover=True), HumanReplayActor()]
+    result = DualActorOrchestrator(adapter).run(
+        actors, ["gui_actor", "human_replay", "gui_actor"], FocusStateEvaluator(), tmp_path)
+    assert result["evaluation"]["success"] is True
+    assert result["evaluation"]["final_state"] == {"Document": "Approved", "Chat": "Review note"}
+    assert result["actors"]["gui_actor"]["turns"] == 2
+    assert result["actors"]["human_replay"]["turns"] == 1
+    assert len({actor["environment_id"] for actor in result["actors"].values()}) == 1
+
+
+def test_real_focus_stale_keyboard_input_is_detected(adapter, tmp_path):
+    adapter.log = EventLog()
+    adapter.reset(task="focus")
+    actors = [ScriptedFocusGUIActor(recover=False), HumanReplayActor()]
+    result = DualActorOrchestrator(adapter).run(
+        actors, ["gui_actor", "human_replay", "gui_actor"], FocusStateEvaluator(), tmp_path)
+    assert result["evaluation"]["success"] is False
+    assert result["evaluation"]["final_state"] == {"Document": "", "Chat": "Review noteApproved"}
+    assert {event.actor for event in adapter.log.events} >= {"gui_actor", "human_replay", "evaluator"}
+
+
+def test_real_focus_goals_are_independently_solvable(adapter, tmp_path):
+    adapter.log = EventLog()
+    adapter.reset(task="focus")
+    gui = ScriptedFocusGUIActor(recover=True)
+    gui_expected = {"Document": "Approved", "Chat": ""}
+    gui_result = DualActorOrchestrator(adapter).run(
+        [gui], ["gui_actor", "gui_actor"], FocusStateEvaluator(gui_expected), tmp_path / "gui")
+    assert gui_result["evaluation"]["success"] is True
+
+    adapter.log = EventLog()
+    adapter.reset(task="focus")
+    human_expected = {"Document": "", "Chat": "Review note"}
+    human_result = DualActorOrchestrator(adapter).run(
+        [HumanReplayActor()], ["human_replay"], FocusStateEvaluator(human_expected), tmp_path / "human")
+    assert human_result["evaluation"]["success"] is True

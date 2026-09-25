@@ -23,31 +23,48 @@ class DualActorOrchestrator:
         if set(schedule) - set(by_id):
             raise ValueError(f"schedule references unknown actors: {set(schedule) - set(by_id)}")
         environment_id = self.environment.environment_id
-        actor_results: dict[str, object] = {}
+        actor_results: dict[str, object] = {
+            actor_id: {"success": True, "completed": False, "turns": 0,
+                       "environment_id": environment_id}
+            for actor_id in dict.fromkeys(schedule)
+        }
+        completed: set[str] = set()
         for actor_id in schedule:
+            if actor_id in completed:
+                raise ValueError(f"schedule runs completed actor again: {actor_id}")
             actor = by_id[actor_id]
             context = ActorContext(actor_id, self.environment, actor.role)
             before = self.environment.snapshot()
+            result = actor_results[actor_id]
             try:
-                actor.run(context)
-                actor_results[actor_id] = {"success": True, "environment_id": context.environment_id}
-                outcome = "completed"
-            except Exception as exc:
-                actor_results[actor_id] = {"success": False, "error": f"{type(exc).__name__}: {exc}",
-                                           "environment_id": context.environment_id}
-                outcome = "failed"
-                self.event_log.record(actor_id, "actor", "run", before, self.environment.snapshot(),
-                                      outcome=outcome,
+                step = getattr(actor, "run_step", None)
+                is_done = bool(step(context)) if callable(step) else (actor.run(context) is None)
+                result["turns"] += 1
+                result["completed"] = is_done
+                if is_done:
+                    completed.add(actor_id)
+                self.event_log.record(actor_id, "actor", "turn", before, self.environment.snapshot(),
                                       details={"environment_id": environment_id,
-                                               "error": actor_results[actor_id]["error"]})
+                                               "turn": result["turns"],
+                                               "completed": is_done})
+            except Exception as exc:
+                result["success"] = False
+                result["error"] = f"{type(exc).__name__}: {exc}"
+                self.event_log.record(actor_id, "actor", "turn", before, self.environment.snapshot(),
+                                      outcome="failed",
+                                      details={"environment_id": environment_id,
+                                               "error": result["error"]})
                 break
-            self.event_log.record(actor_id, "actor", "run", before, self.environment.snapshot(),
-                                  details={"environment_id": environment_id, "outcome": outcome})
+        for actor_id, result in actor_results.items():
+            if not result["completed"] and result["success"]:
+                result["success"] = False
+                result["error"] = "actor did not receive enough scheduled turns"
         grading = evaluator.evaluate(self.environment)
         self.event_log.record("evaluator", "evaluation", "required_rows", self.environment.snapshot(),
                               self.environment.snapshot(), outcome="pass" if grading["success"] else "fail",
-                              details={"missing_count": len(grading["missing"]),
-                                       "extra_rows": max(0, int(grading["actual_rows"]) - int(grading["expected_rows"]))})
+                              details={"missing_count": len(grading.get("missing", [])),
+                                       "extra_count": len(grading.get("duplicates", [])) +
+                                                     len(grading.get("extra", {}))})
         report = {"environment_id": environment_id, "schedule": list(schedule),
                   "actors": actor_results, "evaluation": grading}
         out.mkdir(parents=True, exist_ok=True)

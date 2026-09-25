@@ -2,7 +2,7 @@
 
 ## V0 task ground truth
 
-The verified task expects exactly two rows in the authoritative shared CSV:
+CSV-001 expects exactly two rows in the authoritative shared CSV:
 
 ```csv
 id,actor,value
@@ -11,6 +11,10 @@ C1,cli,CLI_VALUE
 ```
 
 Single-actor smoke cases use single-row evaluators. The joint evaluator checks both actor outputs, exact row count, and absence of duplicate required rows. The stale-write control launches the Tk app in a deterministic mode that writes from its startup snapshot; after the CLI appends C1, a GUI submit overwrites that stale snapshot. The exact evaluator must reject the final file because C1 is missing. This is a controlled conflict, not random noise.
+
+## Real X11 focus task
+
+`FocusStateEvaluator` checks the state file produced by the two real Tk windows: exact `Document=Approved` and `Chat=Review note`. The scripted Human Replay actor focuses Chat, types and submits its note between two GUI actor turns. The recovery policy explicitly focuses the Document window and its input field before typing. The stale-focus control skips reacquisition; its input is routed to Chat and the evaluator catches the corrupted final value. The GUI and human objectives are also run independently.
 
 ## Isolation
 
@@ -30,4 +34,4 @@ No outcome is decided by an LLM judge. The event stream provides process evidenc
 
 ## Limits
 
-V0 has one task family and one scripted schedule. The Tk application is a controlled test application, not LibreOffice or a production application. The stale-write case tests a specific lost-update mechanism; it does not establish prevalence or model robustness. Results must not be treated as benchmark-level statistics. OSWorld execution is unverified.
+V0 has two controlled task cases with one principal scripted schedule each. The Tk applications are controlled test applications, not LibreOffice or production applications. The stale-write case tests a specific lost-update mechanism; it does not establish prevalence or model robustness. Results must not be treated as benchmark-level statistics. OSWorld execution is unverified.

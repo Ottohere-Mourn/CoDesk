@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import hashlib
+import json
 from pathlib import Path
 import subprocess
 import tempfile
@@ -43,7 +44,10 @@ class DockerX11Workspace:
         self.environment_id = ""
         self.workspace: Path | None = None
         self.csv_path: Path | None = None
+        self.state_path: Path | None = None
         self.window_id: str | None = None
+        self.window_ids: dict[str, str] = {}
+        self.task = "csv"
         self.stale_gui_write = False
         self.episode = 0
 
@@ -64,7 +68,9 @@ class DockerX11Workspace:
         self._run(["docker", "build", "--tag", self.IMAGE,
                    "--file", self.project_root / "Dockerfile", self.project_root], timeout=900)
 
-    def reset(self, *, stale_gui_write: bool = False) -> str:
+    def reset(self, *, stale_gui_write: bool = False, task: str = "csv") -> str:
+        if task not in {"csv", "focus"}:
+            raise ValueError(f"unknown task environment: {task}")
         previous_id = self.environment_id
         if self.container_name:
             self.close_container()
@@ -73,26 +79,37 @@ class DockerX11Workspace:
         self.environment_id = f"swcub-episode-{self.episode}-{uuid.uuid4().hex[:8]}"
         self.container_name = self.environment_id
         self.stale_gui_write = stale_gui_write
+        self.task = task
         self.workspace = Path(tempfile.mkdtemp(prefix=f"{self.environment_id}-"))
         self.csv_path = self.workspace / "shared.csv"
         self.csv_path.write_text("id,actor,value\n", encoding="utf-8")
+        self.state_path = self.workspace / "focus_state.json"
+        if task == "focus":
+            self.state_path.write_text(json.dumps({"Document": "", "Chat": ""}), encoding="utf-8")
         self.window_id = None
+        self.window_ids = {}
         self._run(["docker", "run", "--detach", "--rm", "--name", self.container_name,
                    "--volume", f"{self.workspace}:/workspace", "--workdir", "/workspace",
                    self.IMAGE, "sleep", "infinity"])
         self._run(["docker", "exec", "--detach", self.container_name,
                    "Xvfb", ":99", "-screen", "0", "1024x768x24", "-ac", "-nolisten", "tcp"])
         self._wait_for_x()
-        app_args = ["docker", "exec", "--detach", "--env", "DISPLAY=:99", self.container_name,
-                    "python3", "/opt/swcub/gui_workspace.py", "--csv", "/workspace/shared.csv"]
-        if stale_gui_write:
-            app_args.append("--stale-write")
+        if task == "csv":
+            app_args = ["docker", "exec", "--detach", "--env", "DISPLAY=:99", self.container_name,
+                        "python3", "/opt/swcub/gui_workspace.py", "--csv", "/workspace/shared.csv"]
+            if stale_gui_write:
+                app_args.append("--stale-write")
+        else:
+            app_args = ["docker", "exec", "--detach", "--env", "DISPLAY=:99", self.container_name,
+                        "python3", "/opt/swcub/focus_workspace.py", "--state", "/workspace/focus_state.json"]
         self._run(app_args)
         self._wait_for_gui()
+        if task == "focus":
+            self.gui_focus("environment", "Document")
         snap = self.snapshot()
         self.log.record("environment", "reset", "docker_x11.reset", {"environment_id": previous_id}, snap,
                         details={"environment_id": self.environment_id, "episode": self.episode,
-                                 "stale_gui_write": stale_gui_write})
+                                 "stale_gui_write": stale_gui_write, "task": task})
         return self.environment_id
 
     def _wait_for_x(self) -> None:
@@ -109,15 +126,21 @@ class DockerX11Workspace:
 
     def _wait_for_gui(self) -> None:
         deadline = time.monotonic() + 20
+        titles = ["Shared Workspace"] if self.task == "csv" else ["Document", "Chat"]
         last = ""
         while time.monotonic() < deadline:
-            proc = self._run(["docker", "exec", "--env", "DISPLAY=:99", self.container_name,
-                              "xdotool", "search", "--onlyvisible", "--name", "Shared Workspace"],
-                             check=False, timeout=3)
-            if proc.returncode == 0 and proc.stdout.strip():
-                self.window_id = proc.stdout.strip().splitlines()[-1]
+            found: dict[str, str] = {}
+            for title in titles:
+                proc = self._run(["docker", "exec", "--env", "DISPLAY=:99", self.container_name,
+                                  "xdotool", "search", "--onlyvisible", "--name", f"^{title}$"],
+                                 check=False, timeout=3)
+                if proc.returncode == 0 and proc.stdout.strip():
+                    found[title] = proc.stdout.strip().splitlines()[-1]
+            if len(found) == len(titles):
+                self.window_ids = found
+                self.window_id = found.get("Shared Workspace", found.get("Document"))
                 return
-            last = proc.stderr or proc.stdout or "waiting for the Tk window"
+            last = f"visible windows {found}; expected {titles}"
             time.sleep(0.2)
         self._container_logs()
         raise EnvironmentError(f"Tk GUI failed to become visible: {last}")
@@ -135,11 +158,15 @@ class DockerX11Workspace:
 
     def snapshot(self) -> dict[str, Any]:
         raw = self._csv_bytes()
+        state_raw = self.state_path.read_bytes() if self.state_path and self.state_path.exists() else b""
         return {"environment_id": self.environment_id,
                 "container": self.container_name,
                 "csv_sha256": hashlib.sha256(raw).hexdigest(),
                 "csv_bytes": len(raw),
-                "window_id": self.window_id}
+                "application_state_sha256": hashlib.sha256(state_raw).hexdigest(),
+                "window_id": self.window_id,
+                "windows": dict(self.window_ids),
+                "task": self.task}
 
     def observe(self, actor_id: str, interface: str = "gui") -> dict[str, Any]:
         if interface != "gui":
@@ -147,8 +174,16 @@ class DockerX11Workspace:
         return self.observe_gui(actor_id)
 
     def act(self, actor_id: str, interface: str, action: Any) -> Any:
-        if interface == "gui" and isinstance(action, dict) and action.get("op") == "submit":
-            return self.gui_submit(actor_id, str(action["value"]))
+        if interface == "gui" and isinstance(action, dict):
+            op = action.get("op")
+            if op == "submit":
+                return self.gui_submit(actor_id, str(action["value"]))
+            if op == "focus":
+                return self.gui_focus(actor_id, str(action["window"]))
+            if op == "type":
+                return self.gui_type_text(actor_id, str(action["value"]))
+            if op == "key":
+                return self.gui_press_key(actor_id, str(action["key"]))
         if interface == "cli" and isinstance(action, (list, tuple)):
             return self.cli_command(actor_id, action)
         raise ValueError(f"unsupported {interface} action: {action!r}")
@@ -171,25 +206,38 @@ class DockerX11Workspace:
                         details={"environment_id": self.environment_id, **visual})
         return visual
 
+    def _xdotool(self, actor_id: str, action: str, *argv: str) -> None:
+        before = self.snapshot()
+        self._run(["docker", "exec", "--env", "DISPLAY=:99", self.container_name,
+                   "xdotool", *argv])
+        self.log.record(actor_id, "gui", action, before, self.snapshot(),
+                        details={"environment_id": self.environment_id, "argv": list(argv)})
+
+    def gui_focus(self, actor_id: str, window: str) -> None:
+        window_id = self.window_ids.get(window)
+        if window_id is None and window == "Shared Workspace":
+            window_id = self.window_id
+        if window_id is None:
+            raise EnvironmentError(f"window {window!r} not visible; have {self.window_ids}")
+        self._xdotool(actor_id, "xdotool.windowfocus", "windowfocus", "--sync", window_id)
+        if self.task == "focus":
+            # X11 top-level focus and Tk child-widget focus are distinct without a WM.
+            self._xdotool(actor_id, "xdotool.click_entry", "mousemove", "--window", window_id, "120", "63")
+            self._xdotool(actor_id, "xdotool.click", "click", "1")
+
+    def gui_type_text(self, actor_id: str, value: str) -> None:
+        self._xdotool(actor_id, "xdotool.type", "type", "--clearmodifiers", "--delay", "2", value)
+
+    def gui_press_key(self, actor_id: str, key: str) -> None:
+        self._xdotool(actor_id, "xdotool.key", "key", key)
+        time.sleep(0.2)
+
     def gui_submit(self, actor_id: str, value: str) -> None:
         if not self.window_id:
             raise EnvironmentError("GUI window has not started")
-        before = self.snapshot()
-        self._run(["docker", "exec", "--env", "DISPLAY=:99", self.container_name,
-                   "xdotool", "windowfocus", "--sync", self.window_id])
-        self.log.record(actor_id, "gui", "xdotool.windowfocus", before, self.snapshot(),
-                        details={"environment_id": self.environment_id, "window_id": self.window_id})
-        before = self.snapshot()
-        self._run(["docker", "exec", "--env", "DISPLAY=:99", self.container_name,
-                   "xdotool", "type", "--clearmodifiers", "--delay", "2", value])
-        self.log.record(actor_id, "gui", "xdotool.type", before, self.snapshot(),
-                        details={"environment_id": self.environment_id, "text": value})
-        before = self.snapshot()
-        self._run(["docker", "exec", "--env", "DISPLAY=:99", self.container_name,
-                   "xdotool", "key", "Return"])
-        time.sleep(0.2)
-        self.log.record(actor_id, "gui", "xdotool.key_return", before, self.snapshot(),
-                        details={"environment_id": self.environment_id})
+        self.gui_focus(actor_id, "Shared Workspace" if self.task == "csv" else "Document")
+        self.gui_type_text(actor_id, value)
+        self.gui_press_key(actor_id, "Return")
 
     def cli_command(self, actor_id: str, command: Sequence[str]) -> str:
         if not command or command[0] != "python3":
@@ -209,6 +257,8 @@ class DockerX11Workspace:
             (out / path.name).write_bytes(path.read_bytes())
         if self.csv_path:
             (out / "shared.csv").write_bytes(self.csv_path.read_bytes())
+        if self.state_path and self.state_path.exists():
+            (out / "focus_state.json").write_bytes(self.state_path.read_bytes())
 
     def close_container(self) -> None:
         if self.container_name:
@@ -220,6 +270,7 @@ class DockerX11Workspace:
         self.close_container()
         self._cleanup_workspace()
         self.csv_path = None
+        self.state_path = None
 
     def _cleanup_workspace(self) -> None:
         if self.workspace and self.workspace.exists():
@@ -239,15 +290,29 @@ class ActorContext:
         self._environment = environment
         self._role = role
 
+    def _require_gui(self) -> None:
+        if self._role not in {"gui", "human_replay"}:
+            raise PermissionError("this actor has no GUI capability")
+
     def observe(self) -> dict[str, Any]:
-        if self._role != "gui":
-            raise PermissionError("this actor has no GUI observation capability")
+        self._require_gui()
         return self._environment.observe(self.actor_id, "gui")
 
     def submit_gui(self, value: str) -> None:
-        if self._role != "gui":
-            raise PermissionError("this actor has no GUI input capability")
+        self._require_gui()
         self._environment.act(self.actor_id, "gui", {"op": "submit", "value": value})
+
+    def focus_window(self, title: str) -> None:
+        self._require_gui()
+        self._environment.act(self.actor_id, "gui", {"op": "focus", "window": title})
+
+    def type_text(self, value: str) -> None:
+        self._require_gui()
+        self._environment.act(self.actor_id, "gui", {"op": "type", "value": value})
+
+    def press_key(self, key: str) -> None:
+        self._require_gui()
+        self._environment.act(self.actor_id, "gui", {"op": "key", "key": key})
 
     def run_cli(self, command: Sequence[str]) -> str:
         if self._role != "cli":

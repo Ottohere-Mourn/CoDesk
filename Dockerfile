@@ -11,6 +11,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates=20260601~22.04.1 \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 COPY env/gui_workspace.py /opt/swcub/gui_workspace.py
+COPY env/focus_workspace.py /opt/swcub/focus_workspace.py
 COPY env/cli_append.py /opt/swcub/cli_append.py
 WORKDIR /workspace
 CMD ["sleep", "infinity"]

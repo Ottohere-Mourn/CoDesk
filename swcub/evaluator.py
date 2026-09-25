@@ -38,3 +38,21 @@ class OSWorldTaskEvaluator:
     def evaluate(self, environment: Any) -> dict[str, object]:
         score = float(environment.evaluate_osworld_task())
         return {"success": score >= 1.0, "osworld_score": score}
+
+
+class FocusStateEvaluator:
+    """Check the authoritative GUI application state for the two-window focus task."""
+    def __init__(self, expected: dict[str, str] | None = None):
+        self._expected = expected or {"Document": "Approved", "Chat": "Review note"}
+
+    def evaluate(self, environment: Any) -> dict[str, object]:
+        state_path = environment.state_path
+        if state_path is None:
+            raise RuntimeError("focus environment has no authoritative state file")
+        import json
+        actual = json.loads(state_path.read_text(encoding="utf-8"))
+        missing = [{"window": window, "expected": value, "actual": actual.get(window, "")}
+                   for window, value in self._expected.items() if actual.get(window, "") != value]
+        extra = {window: value for window, value in actual.items() if window not in self._expected}
+        return {"success": not missing and not extra, "expected": self._expected,
+                "final_state": actual, "missing": missing, "duplicates": [], "extra": extra}

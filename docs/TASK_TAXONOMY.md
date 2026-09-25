@@ -11,9 +11,17 @@
 - **Interaction:** normal mode appends to the latest file state; deterministic stale-write control captures the GUI's startup state, lets CLI append, then makes GUI save the stale snapshot and overwrite the CLI row.
 - **Reset:** targeted container replacement plus fresh shared directory and application restart.
 
-## Simulated focus case: FOCUS-001
+## Real focus case: FOCUS-001
 
-`swcub.tasks.focus` models GUI+human replay focus competition and has deterministic scripted checks. It does not yet manipulate a real X11 desktop, so it is excluded from real-environment validation claims.
+- **Actors:** scripted GUI actor and replayed human actor.
+- **Shared resource:** active window and keyboard focus in one X11 desktop.
+- **Applications:** two visible Tk windows (`Document`, `Chat`) inside the same Xvfb desktop.
+- **Independent goals:** GUI saves `Approved` to Document; human replay saves `Review note` to Chat.
+- **Joint goal:** both saved window values remain exact.
+- **Interaction:** human moves focus to Chat between GUI actor turns. Naive GUI types using its stale focus assumption and contaminates Chat; recovery focuses the Document window and input field before typing.
+- **Reset:** one fresh container/display/workspace per episode.
+
+The earlier `swcub.tasks.focus` is a small state simulator used as a protocol control; real focus claims come only from the Docker-backed case and output reports.
 
 ## Expansion axes
 
