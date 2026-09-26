@@ -54,9 +54,14 @@ class OSWorldSharedEpisode(Episode):
         super().__init__({})
 
     def snapshot(self) -> Any:
+        provider = getattr(self.desktop_env, "provider", None)
+        guest_container = getattr(provider, "container", None)
+        container_id = getattr(guest_container, "id", None)
         return {"revision": self.revision,
                 "observation": _digestable(self.observation),
-                "actor_steps": dict(self.actor_steps)}
+                "actor_steps": dict(self.actor_steps),
+                "environment_id": self.environment_id,
+                "guest_container_id": container_id}
 
     def observe(self, actor_id: str, interface: str = "gui") -> Any:
         if interface != "gui":
@@ -110,7 +115,8 @@ class OSWorldSharedEpisode(Episode):
         self.revision = 0
         self.actor_steps.clear()
         self.log.record("orchestrator", "reset", "osworld.reset", before, self.snapshot(),
-                        details={"task_config_id": task_config.get("id"), "seed": seed})
+                        details={"task_config_id": task_config.get("id"), "seed": seed,
+                                 "guest_container_id": self.snapshot().get("guest_container_id")})
         return self.observation
 
     def gui_action(self, actor: str, action: Any, pause: float = 2,
