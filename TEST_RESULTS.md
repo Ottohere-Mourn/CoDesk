@@ -54,3 +54,7 @@ These results establish deterministic scripted replay on this local Docker/Xvfb 
 - Early smoke issues (missing isolated `DISPLAY` on one xdotool query and Tk child Entry focus after top-level focus) were fixed and the full smoke rerun.
 - **UNVERIFIED:** actual OSWorld VM/provider execution, model actors, alternative real applications/backends, truly simultaneous key events, and statistical benchmark validity.
 - **NOT RUN:** training, batch data generation, large downloads, GPU workloads.
+
+## Clean checkout replay
+
+A detached temporary worktree of commit `a53ebb0` passed `python -m pytest -q --junitxml=outputs/test-results/junit.xml` (**28 passed in 27.08s**) and `python scripts/smoke_real_workspace.py --skip-build` (**7/7 checks true**). The smoke used the existing locally built pinned image. The temporary worktree was removed after verification.
