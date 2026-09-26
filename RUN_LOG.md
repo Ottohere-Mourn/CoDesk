@@ -31,3 +31,11 @@ The real CSV and two-window focus cases are controlled infrastructure probes, no
 - After generalizing the evaluator event action name to `evaluate`, reran the 20 episode replay study and all final checks. `python scripts/smoke_real_workspace.py`: 7/7 true. `python -m pytest -q --junitxml=outputs/test-results/junit.xml`: 9 passed, 0 failed, 0 skipped in 26.97 s.
 - Detailed replay rows and per-trial reports/event traces: `outputs/repeatability/study.json`, `outputs/repeatability/REPORT.md`, and the policy subdirectories. The script is bounded to 1–20 episodes per policy and deletes/recreates only its own `outputs/repeatability/` directory.
 - These repeats validate deterministic scripted outcomes only. They do not test model/human behavior, truly simultaneous events, external OSWorld execution, or statistical benchmark validity.
+
+## Event log schema and artifact validation
+
+- Added event schema V1 to every JSONL record with contiguous sequence, UTC timestamp, elapsed time, actor/interface/action, optional observed revision, before/after digests, outcome and details.
+- Added strict `read_event_log` validation and `python -m swcub.cli validate-events PATH`; unsupported versions, field changes, malformed timestamps/digests and sequence errors fail with a line-specific diagnostic. Evaluator documentation now treats schema changes as explicit versioned changes.
+- Added seven contract tests and made the real joint GUI+CLI integration assertion parse its emitted trace through the validator. Full suite: `python -m pytest -q --junitxml=outputs/test-results/junit.xml` passed 16/16 in 27.22s.
+- Reran all Docker smokes (7/7), all 20 repeatability episodes, and regenerated only `outputs/smoke/` using the separate deterministic simulator command to refresh its old-format logs. This directory remains simulator evidence, not real-environment evidence. After adding strict non-standard JSON constant rejection, reran the 16-test suite and the Docker smokes again.
+- Parsed all 29 archived event logs (359 total events) successfully as schema V1. Representative CLI checks on joint CSV, focus, conflict, and simulator logs each reported valid version 1.

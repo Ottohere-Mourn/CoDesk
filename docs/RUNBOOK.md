@@ -21,6 +21,14 @@ The smoke runner builds automatically, then executes fresh episodes for each sce
 
 `python -m swcub.cli run-all --out outputs/simulated-smoke` remains available for fast simulator protocol checks. Those results are not real-environment evidence.
 
+Validate any JSONL trace against the versioned event contract with:
+
+```bash
+python -m swcub.cli validate-events outputs/real-smoke/joint/events.jsonl
+```
+
+The command reports the validated event count and schema versions; it exits nonzero for malformed, out-of-order, or unsupported-version traces.
+
 ## Actor/evaluator separation
 
 The orchestrator creates role-limited `ActorContext` objects; GUI actors cannot call its CLI method and CLI actors cannot observe/control the GUI. The exact expected rows live only in the `RequiredRowsEvaluator` held by the orchestrator. The evaluator receives the adapter after all actors finish and reads the authoritative CSV privately. It does not use an LLM judge.

@@ -7,7 +7,7 @@ import subprocess
 import pytest
 
 from swcub.actors import (HumanReplayActor, ScriptedCLIActor, ScriptedFocusGUIActor, ScriptedGUIActor)
-from swcub.core import EventLog
+from swcub.core import EventLog, read_event_log
 from swcub.environment import ActorContext, DockerX11Workspace
 from swcub.evaluator import FocusStateEvaluator, RequiredRowsEvaluator
 from swcub.orchestrator import DualActorOrchestrator
@@ -56,7 +56,7 @@ def test_real_joint_actors_share_one_environment(adapter, tmp_path):
         {"id": "C1", "actor": "cli", "value": "CLI_VALUE"},
         {"id": "G1", "actor": "gui", "value": "GUI_VALUE"},
     ]
-    events = [__import__("json").loads(line) for line in (tmp_path / "events.jsonl").read_text().splitlines()]
+    events = read_event_log(tmp_path / "events.jsonl")
     assert {event["actor"] for event in events} >= {"gui_actor", "cli_actor", "evaluator"}
     assert len({event["details"].get("environment_id") for event in events
                 if event["actor"] in {"gui_actor", "cli_actor"}}) == 1

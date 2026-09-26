@@ -10,7 +10,7 @@ Command:
 pytest -q --junitxml=outputs/test-results/junit.xml
 ```
 
-Result: **9 passed, 0 failed, 0 skipped in 26.97s**. Machine-readable report: [`outputs/test-results/junit.xml`](outputs/test-results/junit.xml).
+Result: **16 passed, 0 failed, 0 skipped in 27.22s**. Machine-readable report: [`outputs/test-results/junit.xml`](outputs/test-results/junit.xml).
 
 | Test | Result | Evidence checked |
 |---|---|---|
@@ -23,6 +23,8 @@ Result: **9 passed, 0 failed, 0 skipped in 26.97s**. Machine-readable report: [`
 | GUI+Human Replay focus recovery | PASS | One real display, three interleaved actor turns, both final window states exact. |
 | Stale focus contention | PASS | GUI text goes to Chat after replay steals focus; evaluator rejects both incorrect window state and cross-window contamination. |
 | Focus goals independently solvable | PASS | GUI-only and Human Replay-only episodes each satisfy their private goal. |
+| Event schema round trip | PASS | V1 version field and contiguous sequence survive JSONL serialization and parsing. |
+| Event schema rejection cases | PASS | Unsupported version, missing/extra fields, invalid digest, sequence, malformed JSON, and non-standard constants are rejected. |
 
 ## End-to-end smoke
 
@@ -30,11 +32,13 @@ Result: **9 passed, 0 failed, 0 skipped in 26.97s**. Machine-readable report: [`
 
 Final artifact audit confirmed non-empty event logs, valid XWD screenshot files (`1024x768x24`), no running V0 containers, and no leftover runner temporary workspace directories.
 
+`read_event_log` validated all **29 archived event logs / 359 events** across real Docker runs, repeated runs, and the separately labeled simulator outputs. CLI checks for joint CSV, focus, conflict, and simulator logs reported schema version 1.
+
 ## Repeated deterministic replay
 
 Command: `python scripts/repeatability_study.py 5`.
 
-Result: **20 fresh-container episodes, all expected outcomes observed, and one final-state hash per policy across five repetitions**. CSV GUI→CLI and CLI→GUI each passed 5/5; focus recovery passed 5/5; stale-focus control failed evaluation as intended in 5/5. Median actor/evaluation/report time was 0.999s, 0.991s, 2.052s, and 1.625s respectively (reset/build excluded). See [`outputs/repeatability/REPORT.md`](outputs/repeatability/REPORT.md) and [`study.json`](outputs/repeatability/study.json).
+Result: **20 fresh-container episodes, all expected outcomes observed, and one final-state hash per policy across five repetitions**. CSV GUI→CLI and CLI→GUI each passed 5/5; focus recovery passed 5/5; stale-focus control failed evaluation as intended in 5/5. Median actor/evaluation/report time was 0.972s, 0.985s, 2.086s, and 1.633s respectively (reset/build excluded). See [`outputs/repeatability/REPORT.md`](outputs/repeatability/REPORT.md) and [`study.json`](outputs/repeatability/study.json).
 
 These results establish deterministic scripted replay on this local Docker/Xvfb setup. They do not establish cross-host reproducibility, model/human performance, or benchmark validity.
 

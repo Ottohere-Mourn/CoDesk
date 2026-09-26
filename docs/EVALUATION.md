@@ -32,6 +32,10 @@ This is process/API isolation, not a hostile-code security sandbox: a future unt
 
 No outcome is decided by an LLM judge. The event stream provides process evidence; final state is authoritative for task correctness.
 
+## Event log contract
+
+Each JSONL event includes `schema_version: 1`, a contiguous one-based `seq`, timezone-qualified ISO-8601 UTC timestamp, non-negative elapsed milliseconds, actor/interface/action, optional observed revision, before/after SHA-256 digests, outcome, and a JSON object of action details. `read_event_log` checks the version, exact V1 field set, field types, digest syntax, and sequence. Unknown versions or shape changes fail closed; introduce a new explicit schema version when changing the contract. Validate a run artifact with `python -m swcub.cli validate-events outputs/real-smoke/joint/events.jsonl`.
+
 ## Limits
 
 V0 has two controlled task cases with one principal scripted schedule each. The Tk applications are controlled test applications, not LibreOffice or production applications. The stale-write case tests a specific lost-update mechanism; it does not establish prevalence or model robustness. Results must not be treated as benchmark-level statistics. OSWorld execution is unverified.
