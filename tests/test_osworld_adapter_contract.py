@@ -8,7 +8,9 @@ import pytest
 
 from swcub.environment import ActorContext
 from swcub.actors import ScriptedGuestFocusGUIActor, ScriptedGuestHumanReplayActor
-from swcub.evaluator import GuestCsvEvaluator, GuestFocusEvaluator, OSWorldTaskEvaluator
+from swcub.evaluator import (GuestCsvEvaluator, GuestFocusEvaluator,
+                             GuestLibreOfficeEvaluator, GuestWebStateEvaluator,
+                             OSWorldTaskEvaluator)
 from swcub.osworld_adapter import OSWorldSharedEpisode
 
 
@@ -20,6 +22,7 @@ class DesktopEnvStub:
         self.actions: list[object] = []
         self.eval_logger = None
         self.closed = False
+        self.is_environment_used = False
 
     def reset(self, task_config=None, seed=None, options=None):
         return {"screenshot": b"stub-screen", "instruction": task_config["instruction"]}
@@ -35,6 +38,9 @@ class DesktopEnvStub:
 
     def close(self):
         self.closed = True
+
+    def _get_obs(self):
+        return {"screenshot": b"refreshed-screen"}
 
 
 class NoArgumentEvaluatorStub(DesktopEnvStub):
@@ -56,6 +62,7 @@ def test_osworld_adapter_matches_reset_step_eval_and_cli_injection():
     assert desktop.actions == ["pyautogui.press('x')"]
     assert desktop.pauses == [2]
     assert len(commands) == 1
+    assert desktop.is_environment_used is True
     assert shlex.split(commands[0]) == ["python3", "-c", "print('ok')"]
     assert result == "ok"
     assert OSWorldTaskEvaluator().evaluate(episode) == {"success": True, "osworld_score": 1.0}
@@ -68,6 +75,14 @@ def test_osworld_adapter_matches_reset_step_eval_and_cli_injection():
 def test_osworld_adapter_supports_no_argument_evaluator_wrappers():
     episode = OSWorldSharedEpisode(NoArgumentEvaluatorStub())
     assert OSWorldTaskEvaluator().evaluate(episode) == {"success": False, "osworld_score": 0.5}
+
+
+def test_osworld_adapter_refreshes_observation_after_cli_setup():
+    episode = OSWorldSharedEpisode(DesktopEnvStub())
+    episode.reset({"id": "task", "instruction": "open app"})
+    result = episode.refresh_observation()
+    assert result["screenshot"] == b"refreshed-screen"
+    assert episode.log.events[-1].action == "osworld.refresh_observation"
 
 
 def test_actor_context_gui_operations_translate_and_focus_is_injectable():
@@ -143,6 +158,40 @@ def test_guest_focus_actor_interfaces_dispatch_real_desktop_operations():
     guest_actions = [event.details.get("source_action") for event in episode.log.events]
     assert {"op": "click", "x": 1320, "y": 220} in guest_actions
     assert {"op": "type", "value": "Review note"} in guest_actions
+
+
+def test_guest_libreoffice_evaluator_checks_saved_document_and_sheet():
+    text_ns = "urn:oasis:names:tc:opendocument:xmlns:text:1.0"
+    table_ns = "urn:oasis:names:tc:opendocument:xmlns:table:1.0"
+    writer = f'<doc xmlns:t="{text_ns}"><t:p>Approved by GUI actor</t:p></doc>'
+    calc = (f'<doc xmlns:t="{text_ns}" xmlns:table="{table_ns}">'
+            '<table:table-row><table:table-cell><t:p>Record</t:p></table:table-cell>'
+            '<table:table-cell><t:p>Status</t:p></table:table-cell></table:table-row>'
+            '<table:table-row><table:table-cell><t:p>Quarterly</t:p></table:table-cell>'
+            '<table:table-cell><t:p>Approved</t:p></table:table-cell></table:table-row></doc>')
+    state = {"/tmp/swcub_office/document.fodt": writer,
+             "/tmp/swcub_office/table.fods": calc}
+    evaluator = GuestLibreOfficeEvaluator(lambda path: state[path],
+        "Approved by GUI actor", [["Record", "Status"], ["Quarterly", "Approved"]])
+    assert evaluator.evaluate(None)["success"] is True
+
+    state["/tmp/swcub_office/table.fods"] = calc.replace("Approved", "GUI actor text")
+    result = evaluator.evaluate(None)
+    assert result["success"] is False
+    assert result["missing"]["calc_sheet"]["actual"][1][1] == "GUI actor text"
+
+
+def test_guest_web_state_evaluator_checks_gui_and_cli_fields():
+    state = '{"gui_status":"Approved","cli_note":"Reviewed by CLI"}'
+    evaluator = GuestWebStateEvaluator(lambda: state,
+        {"gui_status": "Approved", "cli_note": "Reviewed by CLI"})
+    assert evaluator.evaluate(None)["success"] is True
+
+    stale = '{"gui_status":"Approved","cli_note":"Draft"}'
+    result = GuestWebStateEvaluator(lambda: stale,
+        {"gui_status": "Approved", "cli_note": "Reviewed by CLI"}).evaluate(None)
+    assert result["success"] is False
+    assert result["missing"]["cli_note"]["actual"] == "Draft"
 
 
 def test_guest_csv_evaluator_checks_exact_rows_without_actor_access():

@@ -78,6 +78,69 @@ class GuestFocusEvaluator:
                 "no_cross_window_contamination": not missing}
 
 
+class GuestLibreOfficeEvaluator:
+    """Parse saved Flat ODF document/sheet state through a private Guest reader."""
+    TEXT_NS = "urn:oasis:names:tc:opendocument:xmlns:text:1.0"
+    TABLE_NS = "urn:oasis:names:tc:opendocument:xmlns:table:1.0"
+
+    def __init__(self, read_file: Callable[[str], str],
+                 expected_writer_text: str, expected_calc: list[list[str]]):
+        self._read_file = read_file
+        self._expected_writer_text = expected_writer_text
+        self._expected_calc = expected_calc
+
+    def evaluate(self, environment: Any) -> dict[str, object]:
+        import xml.etree.ElementTree as ET
+        writer_xml = self._read_file("/tmp/swcub_office/document.fodt")
+        calc_xml = self._read_file("/tmp/swcub_office/table.fods")
+        writer_root = ET.fromstring(writer_xml)
+        calc_root = ET.fromstring(calc_xml)
+        writer_text = "\n".join(
+            "".join(paragraph.itertext())
+            for paragraph in writer_root.iter(f"{{{self.TEXT_NS}}}p")
+        )
+        calc_rows: list[list[str]] = []
+        for row in calc_root.iter(f"{{{self.TABLE_NS}}}table-row"):
+            cells: list[str] = []
+            for cell in row.findall(f"{{{self.TABLE_NS}}}table-cell"):
+                value = "\n".join(
+                    "".join(paragraph.itertext())
+                    for paragraph in cell.findall(f"{{{self.TEXT_NS}}}p")
+                )
+                repeat = int(cell.get(f"{{{self.TABLE_NS}}}number-columns-repeated", "1"))
+                cells.extend([value] * min(repeat, 64))
+            if cells:
+                calc_rows.append(cells)
+        missing: dict[str, object] = {}
+        if writer_text != self._expected_writer_text:
+            missing["writer_document"] = {"expected": self._expected_writer_text,
+                                           "actual": writer_text}
+        if calc_rows != self._expected_calc:
+            missing["calc_sheet"] = {"expected": self._expected_calc,
+                                     "actual": calc_rows}
+        return {"success": not missing, "expected": {
+                    "writer_text": self._expected_writer_text,
+                    "calc_cells": self._expected_calc},
+                "final_state": {"writer_text": writer_text, "calc_cells": calc_rows},
+                "missing": missing,
+                "no_cross_application_contamination": not missing}
+
+
+class GuestWebStateEvaluator:
+    """Compare exact local web-app backend state through a private Guest reader."""
+    def __init__(self, read_state: Callable[[], str], expected: dict[str, Any]):
+        self._read_state = read_state
+        self._expected = dict(expected)
+
+    def evaluate(self, environment: Any) -> dict[str, object]:
+        import json
+        actual = json.loads(self._read_state())
+        missing = {key: {"expected": value, "actual": actual.get(key)}
+                   for key, value in self._expected.items() if actual.get(key) != value}
+        return {"success": not missing, "expected": self._expected,
+                "final_state": actual, "missing": missing}
+
+
 class FocusStateEvaluator:
     """Check the authoritative GUI application state for the two-window focus task."""
     def __init__(self, expected: dict[str, str] | None = None):

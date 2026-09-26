@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "task_id": "OFFICE-GUI-GUI-001",
+  "instance_id": "office-v0-sequential-seed0",
+  "seed": 0,
+  "environment": {
+    "adapter": "OSWorldSharedEpisode",
+    "release": "osworld-v2.1",
+    "guest_application": "LibreOffice 7.3.7.2",
+    "shared_resources": ["one desktop focus", "Writer document", "Calc spreadsheet"]
+  },
+  "initial_state": {
+    "writer_document": {"path": "/tmp/swcub_office/document.fodt", "text": "Quarterly status report"},
+    "calc_sheet": {"path": "/tmp/swcub_office/table.fods", "cells": [["Record", "Status"], ["Quarterly", "Draft"]]}
+  },
+  "actors": {"writer_actor": "gui", "calc_actor": "gui"},
+  "actor_goals": {
+    "writer_actor": {"writer_text": "Approved by GUI actor"},
+    "calc_actor": {"calc_cells": [["Record", "Status"], ["Quarterly", "Approved"]]}
+  },
+  "schedule": [
+    {"actor_id": "writer_actor", "trigger": "episode_started"},
+    {"actor_id": "writer_actor", "trigger": {"after_actor_turn": {"actor_id": "writer_actor", "count": 1}}},
+    {"actor_id": "calc_actor", "trigger": {"after_actor_turn": {"actor_id": "writer_actor", "count": 2}}}
+  ],
+  "evaluator": {"type": "GuestLibreOfficeEvaluator"},
+  "expected_state": {
+    "writer_text": "Approved by GUI actor",
+    "calc_cells": [["Record", "Status"], ["Quarterly", "Approved"]]
+  }
+}

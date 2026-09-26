@@ -79,6 +79,19 @@ class OSWorldSharedEpisode(Episode):
             self.screenshot_history.append((f"{len(self.screenshot_history) + 1:02d}-{actor_id}", screenshot))
         return self.observation
 
+    def refresh_observation(self, source: str = "orchestrator") -> Any:
+        """Fetch a current Guest screenshot after non-GUI setup operations."""
+        getter = getattr(self.desktop_env, "_get_obs", None)
+        if not callable(getter):
+            raise RuntimeError("DesktopEnv does not expose its observation refresh hook")
+        before = self.snapshot()
+        self.observation = getter()
+        self.log.record(source, "observation", "osworld.refresh_observation",
+                        before, self.snapshot(), observed_revision=self.revision,
+                        details={"environment_id": self.environment_id,
+                                 "guest_container_id": self.snapshot().get("guest_container_id")})
+        return self.observation
+
     def act(self, actor_id: str, interface: str, action: Any,
             observed_revision: int | None = None) -> Any:
         if interface == "gui":
@@ -161,6 +174,11 @@ class OSWorldSharedEpisode(Episode):
             raise RuntimeError("provide cli_executor bound to the same OSWorld guest workspace")
         before = self.snapshot()
         observed_revision = self.revision if observed_revision is None else observed_revision
+        # DesktopEnv marks itself used after GUI steps. A CLI command can mutate
+        # the same Guest filesystem without a GUI step, so mark it explicitly to
+        # ensure the next reset reverts the VM snapshot too.
+        if hasattr(self.desktop_env, "is_environment_used"):
+            self.desktop_env.is_environment_used = True
         result = self.cli_executor(command)
         self.revision += 1
         self.actor_steps[actor] = self.actor_steps.get(actor, 0) + 1

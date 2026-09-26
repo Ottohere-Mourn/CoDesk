@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "task_id": "BROWSER-GUI-CLI-001",
+  "instance_id": "browser-v0-gui-cli-refresh-seed0",
+  "seed": 0,
+  "environment": {
+    "adapter": "OSWorldSharedEpisode",
+    "release": "osworld-v2.1",
+    "guest_application": "Google Chrome 130.0.6723.58",
+    "shared_resources": ["one desktop focus", "one cached browser page", "one local JSON backend"]
+  },
+  "initial_state": {
+    "gui_status": "Draft", "cli_note": "Draft", "human_goal": "", "agent_goal": "", "revision": 0
+  },
+  "actors": {"gui_actor": "gui", "cli_actor": "cli"},
+  "actor_goals": {
+    "gui_actor": {"gui_status": "Approved"},
+    "cli_actor": {"cli_note": "Reviewed by CLI"}
+  },
+  "schedule": [
+    {"actor_id": "gui_actor", "trigger": "episode_started"},
+    {"actor_id": "cli_actor", "trigger": {"after_actor_turn": {"actor_id": "gui_actor", "count": 1}}},
+    {"actor_id": "gui_actor", "trigger": {"after_actor_turn": {"actor_id": "cli_actor", "count": 1}}}
+  ],
+  "evaluator": {"type": "GuestWebStateEvaluator"},
+  "expected_state": {"gui_status": "Approved", "cli_note": "Reviewed by CLI"}
+}

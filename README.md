@@ -1,6 +1,6 @@
 # Shared-Workspace Computer-Use Benchmark V0
 
-A reproducible, scripted two-actor framework for operating one real GUI desktop and shared application state. The verified path uses one Ubuntu 22.04 Docker container per episode, one Xvfb display, real Tk desktop applications, `xdotool` GUI input, and guest CLI commands. In CSV-001 both actors share the mounted `shared.csv`; in FOCUS-001 they share the same active desktop and keyboard focus. No model calls, mocks, training, or data generation are used.
+A reproducible, scripted two-actor framework for operating one real GUI desktop and shared application state. Verified paths include the Docker/Xvfb cases and a pinned OSWorld V2.1 QEMU Guest with LibreOffice and a Guest-local browser app. Real episodes use actual desktop input and Guest-side state; interface-only contract tests use explicit stubs and are labeled separately. No model calls, training, or data generation are used.
 
 ## Quick start
 
@@ -34,7 +34,7 @@ docker build --tag swcub-v0:local --file Dockerfile .
 - `swcub.evaluator`: exact CSV state predicates and an OSWorld evaluator bridge.
 - `swcub.osworld_adapter.OSWorldSharedEpisode`: compatible adapter seam for a caller-provided OSWorld `DesktopEnv` and an injected CLI executor bound to the same guest.
 
-V0 has two real end-to-end cases: GUI+CLI shared CSV read/write, and GUI+Human Replay focus competition across two Tk windows. Both run in one actual Xvfb display inside a single Docker container. `swcub.tasks.focus` remains a simulator/protocol control; real focus validation is in the Docker-backed focus actors and app.
+The Docker/Xvfb path has GUI+CLI shared CSV and GUI+Human Replay window focus cases. The OSWorld V2.1 Guest path adds GUI+GUI Writer/Calc, GUI+CLI browser state updates, and GUI+Human Replay independent browser form goals. See the real-application section below and `TEST_RESULTS.md` for per-run outcomes and boundaries.
 
 The machine-readable task specs, including independent goals, joint goals, pass/fail interactions, and exact final states, live in [`tasks/v0_manifest.json`](tasks/v0_manifest.json). Validate the catalog with `python scripts/validate_task_manifest.py`.
 
@@ -54,3 +54,29 @@ The project now has an additional real OSWorld Guest adapter path. Follow [ENV_S
 To run the deliberate lost-update control, pass `--scenario stale-overwrite` to the same launcher. A successful control result means the evaluator caught the missing CLI row and reset still cleared the Guest; see [ENV_SETUP.md](ENV_SETUP.md) for the command and evidence files.
 
 The benchmark's novelty remains a hypothesis. V0 demonstrates controlled shared-file and focus interactions only; it supports no model-performance or paper-level conclusion.
+
+## Real application episodes
+
+The pinned OSWorld V2.1 Guest also runs LibreOffice Writer/Calc and a Guest-local Chrome workspace. All actor actions share one Guest desktop; each episode writes an actor-attributed JSONL log, screenshots, hidden-state evaluator output, and reset check under `outputs/osworld-v2.1/`.
+
+```bash
+scripts/run_osworld_v2_1_office.sh writer-solo
+scripts/run_osworld_v2_1_office.sh calc-solo
+scripts/run_osworld_v2_1_office.sh sequential
+scripts/run_osworld_v2_1_office.sh focus-aware
+scripts/run_osworld_v2_1_office.sh naive-interleaving
+
+scripts/run_osworld_v2_1_browser.sh gui-cli-gui-solo
+scripts/run_osworld_v2_1_browser.sh gui-cli-cli-solo
+scripts/run_osworld_v2_1_browser.sh gui-cli-refresh
+scripts/run_osworld_v2_1_browser.sh gui-cli-stale
+scripts/run_osworld_v2_1_browser.sh human-solo
+scripts/run_osworld_v2_1_browser.sh agent-solo
+scripts/run_osworld_v2_1_browser.sh human-agent-focus-aware
+scripts/run_osworld_v2_1_browser.sh human-agent-naive
+
+python scripts/validate_task_instances.py
+python scripts/summarize_osworld_runs.py outputs/osworld-v2.1 --successful-only --output outputs/osworld-v2.1/summary.json
+```
+
+The `naive-interleaving`, `gui-cli-stale`, and `human-agent-naive` commands return success only when their expected interference is detected. A report's `evaluation.success` remains false for those negative controls by design; `scenario_success` records successful reproduction of the failure condition. These are scripted real-Guest experiments, not model or human performance measurements.

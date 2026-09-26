@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "task_id": "BROWSER-GUI-HUMAN-001",
+  "instance_id": "browser-v0-human-agent-focus-aware-seed0",
+  "seed": 0,
+  "environment": {
+    "adapter": "OSWorldSharedEpisode",
+    "release": "osworld-v2.1",
+    "guest_application": "Google Chrome 130.0.6723.58",
+    "shared_resources": ["one desktop focus", "one local review form", "one local JSON backend"]
+  },
+  "initial_state": {
+    "gui_status": "Draft", "cli_note": "Draft", "human_goal": "", "agent_goal": "", "revision": 0
+  },
+  "actors": {"gui_actor": "gui", "human_replay": "human_replay"},
+  "actor_goals": {
+    "gui_actor": {"agent_goal": "Approved by GUI actor"},
+    "human_replay": {"human_goal": "Reviewed by human"}
+  },
+  "schedule": [
+    {"actor_id": "gui_actor", "trigger": "episode_started"},
+    {"actor_id": "human_replay", "trigger": {"after_actor_turn": {"actor_id": "gui_actor", "count": 1}}},
+    {"actor_id": "gui_actor", "trigger": {"after_actor_turn": {"actor_id": "human_replay", "count": 1}}}
+  ],
+  "evaluator": {"type": "GuestWebStateEvaluator"},
+  "expected_state": {"human_goal": "Reviewed by human", "agent_goal": "Approved by GUI actor"}
+}

@@ -91,3 +91,39 @@ These results establish deterministic scripted replay on this local Docker/Xvfb 
 ## Clean checkout replay
 
 A detached temporary worktree of commit `a53ebb0` passed `python -m pytest -q --junitxml=outputs/test-results/junit.xml` (**28 passed in 27.08s**) and `python scripts/smoke_real_workspace.py --skip-build` (**7/7 checks true**). The smoke used the existing locally built pinned image. The temporary worktree was removed after verification.
+
+## OSWorld V2.1 real application episodes (2026-09-27)
+
+All rows below are real OSWorld V2.1 Guest runs using the pinned local QEMU runtime and shared desktop/file state. Each completed run has `events.jsonl`, screenshots, a hidden-state evaluator result, and a reset check under the linked output path. Scripted actor/interface tests are reported separately at the end.
+
+| Task / condition | Result | Evidence |
+|---|---|---|
+| Writer solo and Calc solo | **PASS, real Guest** | [`writer-solo/report.json`](outputs/osworld-v2.1/office/writer-solo/report.json), [`calc-solo-attempt-05/report.json`](outputs/osworld-v2.1/office/calc-solo-attempt-05/report.json). ODF evaluator checks exact Writer text and Calc cells; earlier failed Calc coordinates remain in `calc-solo-attempt-01..04`. |
+| GUI+GUI sequential | **PASS, real Guest** | [`sequential-attempt-02/report.json`](outputs/osworld-v2.1/office/sequential-attempt-02/report.json): both actor goals pass with no cross-application corruption. The first sequential run is retained as a startup/focus failure. |
+| GUI+GUI focus-aware | **PASS, real Guest** | [`focus-aware/report.json`](outputs/osworld-v2.1/office/focus-aware/report.json): Calc takes focus; Writer reselects its window and both saved documents satisfy exact goals. |
+| GUI+GUI naive interleaving | **PASS as an expected negative control, real Guest** | [`naive-interleaving-attempt-02/report.json`](outputs/osworld-v2.1/office/naive-interleaving-attempt-02/report.json): Writer text lands in Calc B2, Writer remains draft, both goals fail, and the failure is correctly classified. The first invalid negative-control attempt is retained separately. |
+| Browser GUI solo and CLI solo | **PASS, real Guest** | [`gui-cli-gui-solo-attempt-02/report.json`](outputs/osworld-v2.1/browser/gui-cli-gui-solo-attempt-02/report.json), [`gui-cli-cli-solo-attempt-03/report.json`](outputs/osworld-v2.1/browser/gui-cli-cli-solo-attempt-03/report.json). |
+| Browser GUI+CLI refresh | **PASS, real Guest** | [`gui-cli-refresh/report.json`](outputs/osworld-v2.1/browser/gui-cli-refresh/report.json): GUI writes `Approved` and preserves the CLI's `Reviewed by CLI` update. |
+| Browser GUI+CLI stale save | **PASS as an expected negative control, real Guest** | [`gui-cli-stale/report.json`](outputs/osworld-v2.1/browser/gui-cli-stale/report.json): GUI target succeeds while saving a cached page drops the intervening CLI update; evaluator identifies the exact missing field. |
+| Human Replay solo and GUI Agent solo | **PASS, real Guest** | [`human-solo-attempt-02/report.json`](outputs/osworld-v2.1/browser/human-solo-attempt-02/report.json), [`agent-solo/report.json`](outputs/osworld-v2.1/browser/agent-solo/report.json). The first Human solo report is retained; attempt 02 fixes its non-participant actor summary. |
+| Browser GUI+Human focus-aware | **PASS, real Guest** | [`human-agent-focus-aware-attempt-02/report.json`](outputs/osworld-v2.1/browser/human-agent-focus-aware-attempt-02/report.json): independent Human Replay review and GUI Agent approval both persist. |
+| Browser GUI+Human naive | **PASS as an expected negative control, real Guest** | [`human-agent-naive/report.json`](outputs/osworld-v2.1/browser/human-agent-naive/report.json): Human review persists while the GUI actor's input is lost when it does not reacquire the field. |
+| Guest reset after GUI and CLI mutations | **PASS, real Guest** | Completed reports above record a new Guest container ID and task state absent after reset. A CLI-only reset bug was found and fixed by marking `DesktopEnv.is_environment_used`; pre-fix failures are retained in earlier CLI solo artifacts. |
+| Task instance definitions and triggered schedules | **PASS** | `python scripts/validate_task_instances.py` validates the three JSON instances; the office and browser runners resolve their actor-turn triggers from those records. |
+| Event logs and summary | **PASS** | [`summary.json`](outputs/osworld-v2.1/summary.json) includes complete/reset-success episodes only. Its counts mix solo, recovery, and intentional negative-control conditions and are descriptive, not performance estimates. |
+
+Final automated command: `python -m pytest -q --junitxml=outputs/test-results/osworld-v2.1-real-apps-junit.xml` — **40 passed, 0 failed, 0 skipped in 27.45s**. `validate_task_manifest.py`, `validate_task_instances.py`, Python compilation, shell syntax checks, and `git diff --check` passed. Unit and interface contract tests that use stubs remain explicitly separate from the real-Guest rows above.
+
+**Not tested:** model actors, model/human performance, official OSWorld scored tasks, statistical comparisons, and truly simultaneous OS-level input. The new Human Replay target is a deterministic replayed browser form action, not a live user study.
+
+## Bounded repeat runs (2026-09-27)
+
+Repeated each positive two-actor schedule once on a fresh Guest. All six paired participant goals and all three post-run resets passed. Existing first runs are linked above; repeat reports are:
+
+| Pair / schedule | Repeats | Second Guest evidence |
+|---|---:|---|
+| GUI+GUI Writer/Calc focus-aware | 2 successful runs total | [`focus-aware-repeat-02/report.json`](outputs/osworld-v2.1/office/focus-aware-repeat-02/report.json) |
+| GUI+CLI browser refresh/merge | 2 successful runs total | [`gui-cli-refresh-repeat-02/report.json`](outputs/osworld-v2.1/browser/gui-cli-refresh-repeat-02/report.json) |
+| GUI+Human Replay browser focus-aware | 2 successful runs total | [`human-agent-focus-aware-repeat-02/report.json`](outputs/osworld-v2.1/browser/human-agent-focus-aware-repeat-02/report.json) |
+
+These repeats establish that the three scripted positive schedules replayed successfully twice on this host. Negative controls still have one successful reproduction each; this is a smoke-level sample, not a comparison or reliability estimate. The `outputs/osworld-v2.1/summary.json` report is regenerated from all complete episodes with successful reset and explicitly labels its mixed-condition counts descriptive.
