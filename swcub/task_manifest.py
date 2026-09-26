@@ -119,6 +119,14 @@ def validate_task_manifest(manifest: Any) -> dict[str, int]:
                 errors.append(f"{case_prefix}.schedule references unknown or no actors")
             elif set(case["schedule"]) != known_actor_ids:
                 errors.append(f"{case_prefix}.schedule must include every actor")
+            semantics = case.get("turn_semantics")
+            if (not isinstance(semantics, list) or not isinstance(case.get("schedule"), list)
+                    or len(semantics) != len(case["schedule"])
+                    or any(not isinstance(turn, str) or not turn for turn in semantics)):
+                errors.append(f"{case_prefix}.turn_semantics must describe each scheduled actor turn")
+            elif any(not turn.startswith(f"{actor_id}:")
+                     for actor_id, turn in zip(case["schedule"], semantics)):
+                errors.append(f"{case_prefix}.turn_semantics actor order must match schedule")
             if not any(key in case for key in ("final_rows", "final_state")):
                 errors.append(f"{case_prefix} needs an explicit final state")
             interaction_count += 1

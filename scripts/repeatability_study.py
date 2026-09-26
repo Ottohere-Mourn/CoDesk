@@ -20,8 +20,8 @@ from swcub.orchestrator import DualActorOrchestrator
 
 
 POLICIES = {
-    "csv_gui_then_cli": ("csv", ["gui_actor", "cli_actor"], False, "csv"),
-    "csv_cli_then_gui": ("csv", ["cli_actor", "gui_actor"], False, "csv"),
+    "csv_gui_then_cli": ("csv", ["gui_actor", "cli_actor", "gui_actor"], False, "csv"),
+    "csv_cli_then_gui": ("csv", ["cli_actor", "gui_actor", "gui_actor"], False, "csv"),
     "focus_recovery": ("focus", ["gui_actor", "human_replay", "gui_actor"], True, "focus"),
     "focus_stale_failure": ("focus", ["gui_actor", "human_replay", "gui_actor"], False, "focus"),
 }

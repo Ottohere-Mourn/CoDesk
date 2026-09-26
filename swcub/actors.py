@@ -18,12 +18,24 @@ class ScriptedGUIActor:
     def __init__(self, value: str = "GUI_VALUE"):
         self.value = value
         self.observation: dict[str, object] | None = None
+        self.turn = 0
+
+    def run_step(self, context: ActorContext) -> bool:
+        if self.turn == 0:
+            self.observation = context.observe()
+            if self.observation["window_title"] != "Shared Workspace":
+                raise RuntimeError(f"unexpected GUI window: {self.observation}")
+            self.turn += 1
+            return False
+        if self.turn != 1:
+            raise RuntimeError("GUI actor received an unexpected extra turn")
+        context.submit_gui(self.value)
+        self.turn += 1
+        return True
 
     def run(self, context: ActorContext) -> None:
-        self.observation = context.observe()
-        if self.observation["window_title"] != "Shared Workspace":
-            raise RuntimeError(f"unexpected GUI window: {self.observation}")
-        context.submit_gui(self.value)
+        while not self.run_step(context):
+            pass
 
 
 class ScriptedCLIActor:

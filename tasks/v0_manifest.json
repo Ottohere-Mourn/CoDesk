@@ -4,7 +4,7 @@
   "tasks": [
     {
       "task_id": "CSV-001",
-      "title": "GUI and CLI append to one shared CSV",
+      "title": "GUI observes a shared CSV around a CLI append",
       "environment": {
         "adapter": "DockerX11Workspace",
         "task_mode": "csv",
@@ -16,7 +16,7 @@
       "independent_solutions": {
         "gui": {
           "actor_class": "ScriptedGUIActor",
-          "schedule": ["gui_actor"],
+          "schedule": ["gui_actor", "gui_actor"],
           "required_row": {"id": "G1", "actor": "gui", "value": "GUI_VALUE"}
         },
         "cli": {
@@ -35,20 +35,24 @@
       },
       "interactions": [
         {
-          "case_id": "normal_shared_append",
+          "case_id": "gui_observes_then_cli_appends_then_gui_commits",
           "deterministic": true,
-          "schedule": ["gui_actor", "cli_actor"],
+          "schedule": ["gui_actor", "cli_actor", "gui_actor"],
+          "turn_semantics": ["gui_actor:observe", "cli_actor:append_C1", "gui_actor:submit_G1"],
+          "observation_retained_between_turns": true,
           "stale_gui_write": false,
           "expected_evaluator_success": true,
           "final_rows": [
-            {"id": "G1", "actor": "gui", "value": "GUI_VALUE"},
-            {"id": "C1", "actor": "cli", "value": "CLI_VALUE"}
+            {"id": "C1", "actor": "cli", "value": "CLI_VALUE"},
+            {"id": "G1", "actor": "gui", "value": "GUI_VALUE"}
           ]
         },
         {
-          "case_id": "stale_gui_write_conflict",
+          "case_id": "stale_observation_loses_cli_update",
           "deterministic": true,
-          "schedule": ["cli_actor", "gui_actor"],
+          "schedule": ["gui_actor", "cli_actor", "gui_actor"],
+          "turn_semantics": ["gui_actor:observe", "cli_actor:append_C1", "gui_actor:submit_G1"],
+          "observation_retained_between_turns": true,
           "stale_gui_write": true,
           "expected_evaluator_success": false,
           "final_rows": [
@@ -98,6 +102,8 @@
           "case_id": "focus_reacquisition_recovers",
           "deterministic": true,
           "schedule": ["gui_actor", "human_replay", "gui_actor"],
+          "turn_semantics": ["gui_actor:observe_Document", "human_replay:focus_Chat_type_submit",
+                             "gui_actor:reacquire_Document_type_submit"],
           "gui_recovers_focus": true,
           "expected_evaluator_success": true,
           "final_state": {"Document": "Approved", "Chat": "Review note"}
@@ -106,6 +112,8 @@
           "case_id": "stale_focus_misdirects_input",
           "deterministic": true,
           "schedule": ["gui_actor", "human_replay", "gui_actor"],
+          "turn_semantics": ["gui_actor:observe_Document", "human_replay:focus_Chat_type_submit",
+                             "gui_actor:type_submit_without_reacquiring_focus"],
           "gui_recovers_focus": false,
           "expected_evaluator_success": false,
           "final_state": {"Document": "", "Chat": "Review noteApproved"}

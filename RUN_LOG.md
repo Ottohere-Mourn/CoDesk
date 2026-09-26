@@ -38,7 +38,7 @@ The real CSV and two-window focus cases are controlled infrastructure probes, no
 - Added strict `read_event_log` validation and `python -m swcub.cli validate-events PATH`; unsupported versions, field changes, malformed timestamps/digests and sequence errors fail with a line-specific diagnostic. Evaluator documentation now treats schema changes as explicit versioned changes.
 - Added seven contract tests and made the real joint GUI+CLI integration assertion parse its emitted trace through the validator. Full suite: `python -m pytest -q --junitxml=outputs/test-results/junit.xml` passed 16/16 in 27.22s.
 - Reran all Docker smokes (7/7), all 20 repeatability episodes, and regenerated only `outputs/smoke/` using the separate deterministic simulator command to refresh its old-format logs. This directory remains simulator evidence, not real-environment evidence. After adding strict non-standard JSON constant rejection, reran the 16-test suite and the Docker smokes again.
-- Parsed all 32 archived event logs (396 total events) successfully as schema V1 after adding clean-build episode logs. Representative CLI checks on joint CSV, focus, conflict, and simulator logs each reported valid version 1.
+- Parsed all 32 archived event logs (409 total events) successfully as schema V1 after adding clean-build and stale-observation schedule traces. Representative CLI checks on joint CSV, focus, conflict, and simulator logs each reported valid version 1.
 
 ## Cold image rebuild
 
@@ -66,3 +66,9 @@ The real CSV and two-window focus cases are controlled infrastructure probes, no
 - The Docker adapter previously returned only screenshot metadata to actors despite capturing a real XWD artifact. It now returns the actual XWD bytes, format, 1024×768 dimensions, byte count and SHA-256 to `ActorContext.observe()`; event JSONL retains only metadata/hash, and the artifact remains separately stored.
 - Updated the real GUI-only test to assert the actor received the same bytes as the retained screenshot artifact and that its event includes the matching hash without embedding image bytes.
 - Latest full suite: 27 passed, 0 failed, 0 skipped in 27.37 s. This enables visual-capable actors to consume desktop observations; it does not mean a model actor has been connected.
+
+## CSV stale-observation schedule
+
+- Converted `ScriptedGUIActor` into two scheduled steps so it observes the real XWD screen and retains that observation, yields to the CLI append, then submits on a later turn. Both success and stale-write conflict cases now use GUI observe → CLI append → GUI submit; the repeatability permutation also checks CLI append → GUI observe → GUI submit.
+- The normal Tk mode rereads the shared CSV on submit, preserving CLI and GUI rows after the intervening update. The negative control uses the reset-time snapshot and loses C1; the evaluator rejects it. The real joint integration test checks the observation event precedes the CLI write, which precedes the GUI type action.
+- Reran smoke: 7/7. Reran 20 fresh-container episodes: both CSV orders passed 5/5 with the same final-state hash; focus recovery passed 5/5; stale-focus failure was detected 5/5. Latest medians: 1.013 s, 1.008 s, 2.039 s, and 1.598 s respectively (reset/build excluded). After adding schedule-description consistency checks to the manifest validator, the latest full suite passed 28/28 in 27.51 s.

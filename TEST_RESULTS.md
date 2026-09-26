@@ -10,7 +10,7 @@ Command:
 pytest -q --junitxml=outputs/test-results/junit.xml
 ```
 
-Result: **27 passed, 0 failed, 0 skipped in 27.37s**. Machine-readable report: [`outputs/test-results/junit.xml`](outputs/test-results/junit.xml).
+Result: **28 passed, 0 failed, 0 skipped in 27.51s**. Machine-readable report: [`outputs/test-results/junit.xml`](outputs/test-results/junit.xml).
 
 | Test | Result | Evidence checked |
 |---|---|---|
@@ -26,7 +26,7 @@ Result: **27 passed, 0 failed, 0 skipped in 27.37s**. Machine-readable report: [
 | Event schema round trip | PASS | V1 version field and contiguous sequence survive JSONL serialization and parsing. |
 | Event schema rejection cases | PASS | Unsupported version, missing/extra fields, invalid digest, sequence, malformed JSON, and non-standard constants are rejected. |
 | OSWorld adapter contract stubs | PASS | Reset/step, text/key/submit translation, focus translator, evaluator logger, CLI injection and close are covered; tests use an explicit stub and are not real OSWorld results. |
-| Task manifest structure and references | PASS | Both tasks have unique roles, independent goals, joint goal, deterministic pass/fail interactions, full actor schedules, explicit final states, and existing actor/test/smoke references. |
+| Task manifest structure and references | PASS | Both tasks have unique roles, independent goals, joint goal, deterministic pass/fail interactions, turn descriptions aligned to schedules, explicit final states, and existing actor/test/smoke references. |
 
 ## End-to-end smoke
 
@@ -34,7 +34,7 @@ Result: **27 passed, 0 failed, 0 skipped in 27.37s**. Machine-readable report: [
 
 Final artifact audit confirmed non-empty event logs, valid XWD screenshot files (`1024x768x24`), no running V0 containers, and no leftover runner temporary workspace directories.
 
-`read_event_log` validated all **32 archived event logs / 396 events** across real Docker runs, repeated runs, clean-build runs, and the separately labeled simulator outputs. CLI checks for joint CSV, focus, conflict, and simulator logs reported schema version 1.
+`read_event_log` validated all **32 archived event logs / 409 events** across real Docker runs, repeated runs, clean-build runs, and the separately labeled simulator outputs. CLI checks for joint CSV, focus, conflict, and simulator logs reported schema version 1.
 
 ## Cold rebuild verification
 
@@ -44,7 +44,7 @@ Built a no-cache image from the pinned Ubuntu digest and ran `python scripts/smo
 
 Command: `python scripts/repeatability_study.py 5`.
 
-Result: **20 fresh-container episodes, all expected outcomes observed, and one final-state hash per policy across five repetitions**. CSV GUI→CLI and CLI→GUI each passed 5/5; focus recovery passed 5/5; stale-focus control failed evaluation as intended in 5/5. Median actor/evaluation/report time was 0.972s, 0.985s, 2.086s, and 1.633s respectively (reset/build excluded). See [`outputs/repeatability/REPORT.md`](outputs/repeatability/REPORT.md) and [`study.json`](outputs/repeatability/study.json).
+Result: **20 fresh-container episodes, all expected outcomes observed, and one final-state hash per policy across five repetitions**. Both CSV actor orders passed 5/5 and produced the same final-state hash; focus recovery passed 5/5; stale-focus control failed evaluation as intended in 5/5. CSV schedules now include GUI observe → CLI append → GUI submit. Median actor/evaluation/report time was 1.013s, 1.008s, 2.039s, and 1.598s respectively (reset/build excluded). See [`outputs/repeatability/REPORT.md`](outputs/repeatability/REPORT.md) and [`study.json`](outputs/repeatability/study.json).
 
 These results establish deterministic scripted replay on this local Docker/Xvfb setup. They do not establish cross-host reproducibility, model/human performance, or benchmark validity.
 

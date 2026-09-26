@@ -33,10 +33,11 @@ def run_episode(adapter, tmp_path, actors, schedule, expected, stale=False):
 
 def test_real_gui_single_actor(adapter, tmp_path):
     actor = ScriptedGUIActor()
-    result = run_episode(adapter, tmp_path, [actor], ["gui_actor"],
+    result = run_episode(adapter, tmp_path, [actor], ["gui_actor", "gui_actor"],
                          [{"id": "G1", "actor": "gui", "value": "GUI_VALUE"}])
     assert result["evaluation"]["success"] is True
     assert result["actors"]["gui_actor"]["environment_id"] == result["environment_id"]
+    assert result["actors"]["gui_actor"]["turns"] == 2
     observed = actor.observation
     assert isinstance(observed["screenshot"], bytes)
     assert observed["screenshot_format"] == "xwd"
@@ -59,8 +60,9 @@ def test_real_cli_single_actor(adapter, tmp_path):
 
 
 def test_real_joint_actors_share_one_environment(adapter, tmp_path):
-    result = run_episode(adapter, tmp_path, [ScriptedGUIActor(), ScriptedCLIActor()],
-                         ["cli_actor", "gui_actor"], None)
+    gui_actor = ScriptedGUIActor()
+    result = run_episode(adapter, tmp_path, [gui_actor, ScriptedCLIActor()],
+                         ["gui_actor", "cli_actor", "gui_actor"], None)
     assert result["evaluation"]["success"] is True
     assert {actor["environment_id"] for actor in result["actors"].values()} == {result["environment_id"]}
     with (tmp_path / "shared.csv").open(newline="", encoding="utf-8") as stream:
@@ -69,7 +71,16 @@ def test_real_joint_actors_share_one_environment(adapter, tmp_path):
         {"id": "C1", "actor": "cli", "value": "CLI_VALUE"},
         {"id": "G1", "actor": "gui", "value": "GUI_VALUE"},
     ]
+    assert result["actors"]["gui_actor"]["turns"] == 2
     events = read_event_log(tmp_path / "events.jsonl")
+    observe_index = next(i for i, event in enumerate(events)
+                         if event["actor"] == "gui_actor" and event["action"] == "x11.screenshot")
+    cli_index = next(i for i, event in enumerate(events)
+                     if event["actor"] == "cli_actor" and event["kind"] == "cli")
+    gui_write_index = next(i for i, event in enumerate(events)
+                           if event["actor"] == "gui_actor" and event["action"] == "xdotool.type")
+    assert observe_index < cli_index < gui_write_index
+    assert gui_actor.observation is not None
     assert {event["actor"] for event in events} >= {"gui_actor", "cli_actor", "evaluator"}
     assert len({event["details"].get("environment_id") for event in events
                 if event["actor"] in {"gui_actor", "cli_actor"}}) == 1
@@ -77,7 +88,7 @@ def test_real_joint_actors_share_one_environment(adapter, tmp_path):
 
 def test_real_stale_write_conflict_fails_evaluator(adapter, tmp_path):
     result = run_episode(adapter, tmp_path, [ScriptedGUIActor(), ScriptedCLIActor()],
-                         ["cli_actor", "gui_actor"], None, stale=True)
+                         ["gui_actor", "cli_actor", "gui_actor"], None, stale=True)
     assert result["evaluation"]["success"] is False
     assert result["evaluation"]["missing"] == [
         {"id": "C1", "actor": "cli", "value": "CLI_VALUE"}

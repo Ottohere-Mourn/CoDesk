@@ -2,7 +2,9 @@
 
 ## V0 task ground truth
 
-CSV-001 expects exactly two rows in the authoritative shared CSV:
+CSV-001 uses three turns: the GUI actor observes the current table, the CLI actor appends its row, and the GUI actor submits without observing again. The normal application rereads the shared file on submit and preserves both writes. In the conflict control, the Tk app uses its reset-time snapshot; the same observation/action schedule loses the intervening CLI row. This makes the stale observation interval explicit while keeping the normal joint task solvable.
+
+The task expects exactly two rows in the authoritative shared CSV:
 
 ```csv
 id,actor,value
@@ -10,7 +12,7 @@ G1,gui,GUI_VALUE
 C1,cli,CLI_VALUE
 ```
 
-Single-actor smoke cases use single-row evaluators. The joint evaluator checks both actor outputs, exact row count, and absence of duplicate required rows. The stale-write control launches the Tk app in a deterministic mode that writes from its startup snapshot; after the CLI appends C1, a GUI submit overwrites that stale snapshot. The exact evaluator must reject the final file because C1 is missing. This is a controlled conflict, not random noise.
+Single-actor smoke cases use single-row evaluators. The joint evaluator checks both actor outputs, exact row count, and absence of duplicate required rows. The stale-write control must fail because C1 is missing. This is a controlled conflict, not random noise.
 
 ## Real X11 focus task
 
@@ -18,7 +20,7 @@ Single-actor smoke cases use single-row evaluators. The joint evaluator checks b
 
 ## Isolation
 
-Expected rows stay in `RequiredRowsEvaluator`, owned by `DualActorOrchestrator`. Actor contexts expose role-specific operations and do not contain an evaluator reference or expected-state API. The evaluator is called only after all scheduled actors stop, and reads the host-mounted authoritative workspace file outside the actor tool interface. The GUI actor observes the actual X11 screen via XWD metadata and sees the app title; the scripted policy does not use the evaluator's state.
+Expected rows stay in `RequiredRowsEvaluator`, owned by `DualActorOrchestrator`. Actor contexts expose role-specific operations and do not contain an evaluator reference or expected-state API. The evaluator is called only after all scheduled actors stop, and reads the host-mounted authoritative workspace file outside the actor tool interface. The GUI actor receives the actual X11 screenshot bytes and sees the app title; the scripted policy does not use the evaluator's state.
 
 This is process/API isolation, not a hostile-code security sandbox: a future untrusted model/runtime must be sandboxed separately and must not be given host paths or evaluator code.
 
@@ -38,4 +40,4 @@ Each JSONL event includes `schema_version: 1`, a contiguous one-based `seq`, tim
 
 ## Limits
 
-V0 has two controlled task cases with one principal scripted schedule each. The Tk applications are controlled test applications, not LibreOffice or production applications. The stale-write case tests a specific lost-update mechanism; it does not establish prevalence or model robustness. Results must not be treated as benchmark-level statistics. OSWorld execution is unverified.
+V0 has two controlled task cases with fixed scripted schedules and a CSV actor-order permutation. The Tk applications are controlled test applications, not LibreOffice or production applications. The stale-write case tests a specific lost-update mechanism; it does not establish prevalence or model robustness. Results must not be treated as benchmark-level statistics. OSWorld execution is unverified.

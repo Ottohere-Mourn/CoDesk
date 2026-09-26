@@ -57,3 +57,11 @@ def test_manifest_rejects_missing_test_reference():
 
     with pytest.raises(TaskManifestError, match="test function does not exist"):
         validate_task_manifest_references(manifest, ROOT)
+
+
+def test_manifest_turn_descriptions_follow_schedule_actor_order():
+    manifest = copy.deepcopy(load_manifest())
+    manifest["tasks"][0]["interactions"][0]["turn_semantics"][0] = "cli_actor:append_C1"
+
+    with pytest.raises(TaskManifestError, match="actor order must match schedule"):
+        validate_task_manifest(manifest)

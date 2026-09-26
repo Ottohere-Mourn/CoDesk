@@ -54,13 +54,13 @@ def main():
         gui_expected = [{"id": "G1", "actor": "gui", "value": "GUI_VALUE"}]
         cli_expected = [{"id": "C1", "actor": "cli", "value": "CLI_VALUE"}]
         summary["gui_single_actor"] = run_case(env, "gui-single", [ScriptedGUIActor()],
-            ["gui_actor"], gui_expected)[0]
+            ["gui_actor", "gui_actor"], gui_expected)[0]
         summary["cli_single_actor"] = run_case(env, "cli-single", [ScriptedCLIActor()],
             ["cli_actor"], cli_expected)[0]
         summary["joint_gui_cli"] = run_case(env, "joint", [ScriptedGUIActor(), ScriptedCLIActor()],
-            ["cli_actor", "gui_actor"], None)[0]
+            ["gui_actor", "cli_actor", "gui_actor"], None)[0]
         conflict_ok, conflict = run_case(env, "conflict", [ScriptedGUIActor(), ScriptedCLIActor()],
-            ["cli_actor", "gui_actor"], None, stale=True)
+            ["gui_actor", "cli_actor", "gui_actor"], None, stale=True)
         summary["stale_write_rejected"] = not conflict_ok and bool(conflict["evaluation"]["missing"])
 
         focus_out = ROOT / "outputs" / "real-smoke" / "focus-recovered"
