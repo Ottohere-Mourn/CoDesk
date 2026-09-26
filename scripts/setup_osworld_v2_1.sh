@@ -41,32 +41,23 @@ PY
 mkdir -p "$CACHE_DIR"
 zip_path="$CACHE_DIR/$ARTIFACT_NAME"
 qcow_path="$CACHE_DIR/osworld-v2-ubuntu-x86.qcow2"
-if [[ ! -f "$qcow_path" ]]; then
-  export HF_ENDPOINT="${HF_ENDPOINT:-https://hf-mirror.com}"
+export HF_ENDPOINT="${HF_ENDPOINT:-https://hf-mirror.com}"
+if [[ ! -f "$zip_path" ]]; then
   artifact_url="$HF_ENDPOINT/datasets/xlangai/v2-image/resolve/$ARTIFACT_COMMIT/$ARTIFACT_NAME"
-  if [[ -f "$zip_path" ]]; then
-    current_size="$(stat -c %s "$zip_path")"
-  else
-    current_size=0
-  fi
-  if (( current_size > ARTIFACT_SIZE )); then
-    echo "Existing OSWorld image archive is larger than the pinned size" >&2
-    exit 4
-  fi
-  if (( current_size != ARTIFACT_SIZE )); then
-    curl --fail --location --retry 5 --retry-delay 5 --retry-all-errors \
-      --connect-timeout 20 --max-filesize "$ARTIFACT_SIZE" --continue-at - \
-      --output "$zip_path" "$artifact_url"
-  fi
-  actual_size="$(stat -c %s "$zip_path")"
-  if [[ "$actual_size" != "$ARTIFACT_SIZE" ]]; then
-    echo "OSWorld archive size mismatch: expected $ARTIFACT_SIZE, got $actual_size" >&2
-    exit 5
-  fi
-  echo "$ARTIFACT_SHA256  $zip_path" | sha256sum --check --status || {
-    echo "OSWorld archive SHA256 mismatch" >&2
-    exit 6
-  }
+  curl --fail --location --retry 5 --retry-delay 5 --retry-all-errors \
+    --connect-timeout 20 --max-filesize "$ARTIFACT_SIZE" --continue-at - \
+    --output "$zip_path" "$artifact_url"
+fi
+actual_size="$(stat -c %s "$zip_path")"
+if [[ "$actual_size" != "$ARTIFACT_SIZE" ]]; then
+  echo "OSWorld archive size mismatch: expected $ARTIFACT_SIZE, got $actual_size" >&2
+  exit 5
+fi
+echo "$ARTIFACT_SHA256  $zip_path" | sha256sum --check --status || {
+  echo "OSWorld archive SHA256 mismatch" >&2
+  exit 6
+}
+if [[ ! -s "$qcow_path" ]]; then
   unzip -o "$zip_path" -d "$CACHE_DIR"
 fi
 

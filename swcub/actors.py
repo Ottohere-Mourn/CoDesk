@@ -94,3 +94,52 @@ class HumanReplayActor:
 
     def run(self, context: ActorContext) -> None:
         self.run_step(context)
+
+
+class ScriptedGuestGUIActor:
+    """Use the OSWorld Guest desktop terminal to append one deterministic CSV row."""
+    actor_id = "gui_actor"
+    role = "gui"
+
+    def __init__(self, command: str):
+        self.command = command
+        self.turn = 0
+
+    def run_step(self, context: ActorContext) -> bool:
+        if self.turn == 0:
+            observation = context.observe()
+            screenshot = observation.get("screenshot")
+            if not isinstance(screenshot, bytes) or not screenshot:
+                raise RuntimeError("OSWorld Guest returned no screenshot")
+            self.turn += 1
+            return False
+        if self.turn != 1:
+            raise RuntimeError("Guest GUI actor received an unexpected extra turn")
+        # The stock Guest has a GNOME desktop where Ctrl+Alt+T is not bound.
+        # Open Activities and use its application search to launch Terminal.
+        context.click(45, 15)
+        context.observe()
+        context.type_text("terminal")
+        context.observe()
+        context.press_key("Return")
+        context.observe()
+        context.type_text(self.command)
+        context.press_key("Return")
+        self.turn += 1
+        return True
+
+    def run(self, context: ActorContext) -> None:
+        while not self.run_step(context):
+            pass
+
+
+class ScriptedGuestCLIActor:
+    """Issue one CLI command against the OSWorld Guest's shared filesystem."""
+    actor_id = "cli_actor"
+    role = "cli"
+
+    def __init__(self, command: list[str]):
+        self.command = command
+
+    def run(self, context: ActorContext) -> None:
+        context.run_cli(self.command)

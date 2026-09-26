@@ -47,4 +47,10 @@ The machine-readable task specs, including independent goals, joint goals, pass/
 - [Data production plan](docs/DATA_PRODUCTION.md)
 - [RUN_LOG](RUN_LOG.md), [TEST_RESULTS](TEST_RESULTS.md), [NEXT_STEPS](NEXT_STEPS.md)
 
+## OSWorld V2.1 real Guest path
+
+The project now has an additional real OSWorld Guest adapter path. Follow [ENV_SETUP.md](ENV_SETUP.md) to reproduce the pinned V2.1 setup, local QEMU/KVM runtime fallback, official quickstart, and the GUI+CLI shared CSV episode. The successful episode uses one OSWorld Guest for both actors and checks the final Guest file through a hidden programmatic evaluator; artifacts are in `outputs/osworld-v2.1/shared-csv/`. This does not replace the existing Docker/Xvfb case evidence: the OSWorld Guest focus/Human Replay path and official task scoring remain unverified.
+
+To run the deliberate lost-update control, pass `--scenario stale-overwrite` to the same launcher. A successful control result means the evaluator caught the missing CLI row and reset still cleared the Guest; see [ENV_SETUP.md](ENV_SETUP.md) for the command and evidence files.
+
 The benchmark's novelty remains a hypothesis. V0 demonstrates controlled shared-file and focus interactions only; it supports no model-performance or paper-level conclusion.

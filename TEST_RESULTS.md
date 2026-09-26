@@ -1,5 +1,26 @@
 # TEST_RESULTS
 
+## OSWorld V2.1 Guest verification update (2026-09-26)
+
+The pinned V2.1 Guest was booted from the official QCOW and exercised through the Docker provider using the documented local QEMU runtime fallback.
+
+| Check | Result | Evidence |
+|---|---|---|
+| Official OSWorld quickstart reset and GUI action | **PASS, real Guest** | `outputs/osworld-v2.1/quickstart/run.log`: environment reset, PyAutoGUI right-click succeeded, environment closed. |
+| Shared GUI+CLI CSV episode | **PASS, real Guest** | `outputs/osworld-v2.1/shared-csv/report.json`: both actors completed in one environment; exact two rows present, no missing/duplicates. |
+| Screenshot-driven GUI operation | **PASS, real Guest** | Saved observations show GNOME Activities search and a real Terminal window with the GUI actor's append command. |
+| Hidden evaluator separation | **PASS, code path** | Expected rows and host reader callback are not provided in ActorContext; evaluator reads exact Guest file after the actor schedule. |
+| Guest reset | **PASS, real Guest** | Report records a new container ID and confirms task file absent after reset. |
+| Independent success replay | **PASS, real Guest** | `outputs/osworld-v2.1/shared-csv-repeat-02/report.json`: different Guest/container, same exact final CSV SHA-256, stale GUI actions logged and joint evaluation passes. |
+| Stale whole-file overwrite conflict control | **PASS as a negative control, real Guest** | `outputs/osworld-v2.1/stale-overwrite/report.json`: evaluator rejects final state with missing CLI row; conflict detection and clean reset both pass. The task outcome itself is intentionally unsuccessful. |
+| GUI focus competition / GUI+Human Replay on OSWorld Guest | **UNVERIFIED** | Not yet ported to a reliable real Guest protocol. Existing separate Docker/Xvfb focus case remains passing. |
+| Official scored OSWorld task | **UNVERIFIED** | Gated task/assets were unavailable; shared CSV is a project probe, not an official task. |
+| Official pinned runtime image | **NOT USED** | Pull was unavailable; used a local QEMU runtime built from pinned Ubuntu base. |
+
+Early failed Guest attempts are retained in `outputs/osworld-v2.1/shared-csv-attempt-01` to `-04` and are not counted as successful runs. The successful repeat uses its own complete artifact directory; the shared CSV suite launcher now exports the selected output path to the Python runner.
+
+After the final runner, artifact-path, and documentation updates, `python -m pytest -q --junitxml=outputs/test-results/osworld-v2.1-junit.xml` passed **30 passed, 0 failed, 0 skipped in 26.84s**. This includes the new Guest adapter contract tests; those seven contract tests are stub-only. The task manifest validator, shell syntax checks, Python compilation checks, event-log review, and `git diff --check` also passed.
+
 Final verification date: 2026-09-26. The real-environment tests use Docker Ubuntu containers, Xvfb, Tk windows, xdotool desktop actions, guest CLI processes, and mounted files. Separate unit tests validate event/task formats and OSWorld adapter wiring with an explicitly labeled stub; those unit checks are not reported as environment outcomes.
 
 ## Automated suite

@@ -49,6 +49,7 @@ class OSWorldSharedEpisode(Episode):
         self.cli_executor = cli_executor
         self.window_focus_translator = window_focus_translator
         self.observation: Any = None
+        self.screenshot_history: list[tuple[str, bytes]] = []
         self.revision = 0
         self.actor_steps: dict[str, int] = {}
         super().__init__({})
@@ -71,7 +72,11 @@ class OSWorldSharedEpisode(Episode):
         self.log.record(actor_id, "observation", "osworld.observe", self.snapshot(), self.snapshot(),
                         observed_revision=self.revision,
                         details={"environment_id": self.environment_id,
+                                 "guest_container_id": self.snapshot().get("guest_container_id"),
                                  "observation": _digestable(self.observation)})
+        screenshot = self.observation.get("screenshot") if isinstance(self.observation, dict) else None
+        if isinstance(screenshot, bytes):
+            self.screenshot_history.append((f"{len(self.screenshot_history) + 1:02d}-{actor_id}", screenshot))
         return self.observation
 
     def act(self, actor_id: str, interface: str, action: Any,
@@ -93,12 +98,20 @@ class OSWorldSharedEpisode(Episode):
         if operation == "type" and isinstance(action.get("value"), str):
             return f"pyautogui.write({json.dumps(action['value'], ensure_ascii=False)})"
         if operation == "key" and isinstance(action.get("key"), str):
+            raw_key = action["key"].lower()
+            if "+" in raw_key:
+                keys = [part.strip() for part in raw_key.split("+")]
+                keys = [{"ctrl": "ctrl", "control": "ctrl", "return": "enter"}.get(key, key)
+                        for key in keys]
+                return "pyautogui.hotkey(" + ", ".join(json.dumps(key) for key in keys) + ")"
             key = {"return": "enter", "esc": "escape", "backspace": "backspace"}.get(
-                action["key"].lower(), action["key"].lower())
+                raw_key, raw_key)
             return f"pyautogui.press({json.dumps(key)})"
         if operation == "submit" and isinstance(action.get("value"), str):
             value = json.dumps(action["value"], ensure_ascii=False)
             return f"pyautogui.write({value}); pyautogui.press('enter')"
+        if operation == "click" and type(action.get("x")) is int and type(action.get("y")) is int:
+            return f"pyautogui.click({action['x']}, {action['y']})"
         if operation == "focus":
             if self.window_focus_translator is not None:
                 return self.window_focus_translator(action)
@@ -115,7 +128,8 @@ class OSWorldSharedEpisode(Episode):
         self.revision = 0
         self.actor_steps.clear()
         self.log.record("orchestrator", "reset", "osworld.reset", before, self.snapshot(),
-                        details={"task_config_id": task_config.get("id"), "seed": seed,
+                        details={"task_config_id": task_config.get("id") if isinstance(task_config, dict) else None,
+                                 "seed": seed,
                                  "guest_container_id": self.snapshot().get("guest_container_id")})
         return self.observation
 
@@ -131,6 +145,12 @@ class OSWorldSharedEpisode(Episode):
                         observed_revision, details={"action": _digestable(action),
                                                     "source_action": _digestable(
                                                         action if source_action is None else source_action),
+                                                    "environment_id": self.environment_id,
+                                                    "guest_container_id": self.snapshot().get("guest_container_id"),
+                                                    "revision_before_action": before["revision"],
+                                                    "revision_after_action": self.revision,
+                                                    "stale_observation": (observed_revision is not None
+                                                                           and observed_revision < before["revision"]),
                                                     "reward": reward, "done": done,
                                                     "info": _digestable(info)})
         return self.observation
@@ -146,6 +166,12 @@ class OSWorldSharedEpisode(Episode):
         self.actor_steps[actor] = self.actor_steps.get(actor, 0) + 1
         self.log.record(actor, "cli", "shared_guest.command", before, self.snapshot(),
                         observed_revision, details={"command": command,
+                                                    "environment_id": self.environment_id,
+                                                    "guest_container_id": self.snapshot().get("guest_container_id"),
+                                                    "revision_before_action": before["revision"],
+                                                    "revision_after_action": self.revision,
+                                                    "stale_observation": (observed_revision is not None
+                                                                           and observed_revision < before["revision"]),
                                                     "result": _digestable(result)})
         return result
 
@@ -165,3 +191,14 @@ class OSWorldSharedEpisode(Episode):
             signature.bind()
             return float(evaluate())
         return float(evaluate(eval_logger))
+
+    def copy_artifacts(self, out: Any) -> None:
+        """Save the latest real Guest screenshot with the episode artifacts."""
+        from pathlib import Path
+        out = Path(out)
+        out.mkdir(parents=True, exist_ok=True)
+        screenshot = self.observation.get("screenshot") if isinstance(self.observation, dict) else None
+        if isinstance(screenshot, bytes):
+            (out / "guest-screen.png").write_bytes(screenshot)
+        for name, image_bytes in self.screenshot_history:
+            (out / f"observation-{name}.png").write_bytes(image_bytes)

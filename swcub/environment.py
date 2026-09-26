@@ -362,6 +362,10 @@ class ActorContext:
         self._require_gui()
         self._act("gui", {"op": "type", "value": value})
 
+    def click(self, x: int, y: int) -> None:
+        self._require_gui()
+        self._act("gui", {"op": "click", "x": x, "y": y})
+
     def press_key(self, key: str) -> None:
         self._require_gui()
         self._act("gui", {"op": "key", "key": key})

@@ -2,7 +2,7 @@
 from __future__ import annotations
 import csv
 from pathlib import Path
-from typing import Iterable, Protocol, Any
+from typing import Iterable, Protocol, Any, Callable
 
 
 class Evaluator(Protocol):
@@ -38,6 +38,28 @@ class OSWorldTaskEvaluator:
     def evaluate(self, environment: Any) -> dict[str, object]:
         score = float(environment.evaluate_osworld_task())
         return {"success": score >= 1.0, "osworld_score": score}
+
+
+class GuestCsvEvaluator:
+    """Evaluate exact Guest CSV state through a host-held reader callback."""
+    def __init__(self, read_csv: Callable[[], str], expected: Iterable[dict[str, str]]):
+        self._read_csv = read_csv
+        self._expected = tuple(expected)
+
+    def evaluate(self, environment: Any) -> dict[str, object]:
+        import hashlib
+        import io
+        raw = self._read_csv()
+        rows = list(csv.DictReader(io.StringIO(raw)))
+        expected = list(self._expected)
+        present = [row for row in expected if row in rows]
+        missing = [row for row in expected if row not in rows]
+        duplicates = [row for row in expected if rows.count(row) > 1]
+        success = not missing and not duplicates and len(rows) == len(expected)
+        return {"success": success, "expected_rows": len(expected),
+                "actual_rows": len(rows), "present": present, "missing": missing,
+                "duplicates": duplicates, "final_rows": rows,
+                "guest_csv_sha256": hashlib.sha256(raw.encode("utf-8")).hexdigest()}
 
 
 class FocusStateEvaluator:

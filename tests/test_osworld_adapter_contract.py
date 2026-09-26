@@ -7,7 +7,7 @@ import shlex
 import pytest
 
 from swcub.environment import ActorContext
-from swcub.evaluator import OSWorldTaskEvaluator
+from swcub.evaluator import GuestCsvEvaluator, OSWorldTaskEvaluator
 from swcub.osworld_adapter import OSWorldSharedEpisode
 
 
@@ -97,6 +97,29 @@ def test_window_focus_needs_an_application_specific_translator():
     episode = OSWorldSharedEpisode(DesktopEnvStub())
     with pytest.raises(NotImplementedError, match="window focus is application-specific"):
         episode.act("gui_actor", "gui", {"op": "focus", "window": "Document"})
+
+
+def test_osworld_hotkey_translation_and_screenshot_artifact_copy(tmp_path):
+    desktop = DesktopEnvStub()
+    episode = OSWorldSharedEpisode(desktop)
+    episode.reset({"id": "stub-task", "instruction": "open terminal"})
+    assert episode._translate_gui_operation({"op": "key", "key": "ctrl+alt+t"}) == (
+        "pyautogui.hotkey(\"ctrl\", \"alt\", \"t\")")
+    assert episode._translate_gui_operation({"op": "click", "x": 45, "y": 15}) == (
+        "pyautogui.click(45, 15)")
+    episode.copy_artifacts(tmp_path)
+    assert (tmp_path / "guest-screen.png").read_bytes() == b"stub-screen"
+
+
+def test_guest_csv_evaluator_checks_exact_rows_without_actor_access():
+    result = GuestCsvEvaluator(
+        lambda: "actor,value\ngui,GUI_VALUE\ncli,CLI_VALUE\n",
+        [{"actor": "gui", "value": "GUI_VALUE"},
+         {"actor": "cli", "value": "CLI_VALUE"}],
+    ).evaluate(None)
+    assert result["success"] is True
+    assert result["actual_rows"] == 2
+    assert result["missing"] == []
 
 
 def test_osworld_cli_action_requires_same_guest_executor():

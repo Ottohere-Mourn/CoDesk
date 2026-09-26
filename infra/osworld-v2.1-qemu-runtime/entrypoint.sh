@@ -2,7 +2,7 @@
 set -euo pipefail
 
 base_image="${OSWORLD_VM_IMAGE:-/System.qcow2}"
-overlay="${OSWORLD_VM_OVERLAY:-/tmp/osworld-v2.1-overlay.qcow2}"
+overlay="${OSWORLD_VM_OVERLAY:-${SWCUB_VM_OVERLAY:-/tmp/osworld-v2.1-overlay.qcow2}}"
 if [[ ! -r "$base_image" ]]; then
   echo "OSWorld base image is not readable: $base_image" >&2
   exit 2
