@@ -10,7 +10,7 @@ Command:
 pytest -q --junitxml=outputs/test-results/junit.xml
 ```
 
-Result: **25 passed, 0 failed, 0 skipped in 33.65s**. Machine-readable report: [`outputs/test-results/junit.xml`](outputs/test-results/junit.xml).
+Result: **27 passed, 0 failed, 0 skipped in 27.29s**. Machine-readable report: [`outputs/test-results/junit.xml`](outputs/test-results/junit.xml).
 
 | Test | Result | Evidence checked |
 |---|---|---|
@@ -26,7 +26,7 @@ Result: **25 passed, 0 failed, 0 skipped in 33.65s**. Machine-readable report: [
 | Event schema round trip | PASS | V1 version field and contiguous sequence survive JSONL serialization and parsing. |
 | Event schema rejection cases | PASS | Unsupported version, missing/extra fields, invalid digest, sequence, malformed JSON, and non-standard constants are rejected. |
 | OSWorld adapter contract stubs | PASS | Reset/step, text/key/submit translation, focus translator, evaluator logger, CLI injection and close are covered; tests use an explicit stub and are not real OSWorld results. |
-| Task manifest structure | PASS | Both tasks have unique roles, independent goals, joint goal, deterministic pass/fail interactions, full actor schedules, and explicit final states. |
+| Task manifest structure and references | PASS | Both tasks have unique roles, independent goals, joint goal, deterministic pass/fail interactions, full actor schedules, explicit final states, and existing actor/test/smoke references. |
 
 ## End-to-end smoke
 

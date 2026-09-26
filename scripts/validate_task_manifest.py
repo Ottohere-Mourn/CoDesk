@@ -9,7 +9,8 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from swcub.task_manifest import TaskManifestError, validate_task_manifest
+from swcub.task_manifest import (TaskManifestError, validate_task_manifest,
+                                 validate_task_manifest_references)
 
 
 def main() -> int:
@@ -19,6 +20,7 @@ def main() -> int:
     try:
         manifest = json.loads(args.path.read_text(encoding="utf-8"))
         summary = validate_task_manifest(manifest)
+        summary.update(validate_task_manifest_references(manifest, ROOT))
     except (OSError, json.JSONDecodeError, TaskManifestError) as exc:
         print(f"invalid task manifest: {exc}", file=sys.stderr)
         return 2

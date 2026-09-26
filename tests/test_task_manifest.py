@@ -6,7 +6,8 @@ from pathlib import Path
 
 import pytest
 
-from swcub.task_manifest import TaskManifestError, validate_task_manifest
+from swcub.task_manifest import (TaskManifestError, validate_task_manifest,
+                                 validate_task_manifest_references)
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -18,6 +19,11 @@ def load_manifest():
 
 def test_v0_manifest_lists_both_real_scenarios_and_controls():
     assert validate_task_manifest(load_manifest()) == {"tasks": 2, "interactions": 4}
+
+
+def test_v0_manifest_evidence_references_exist_in_repository():
+    assert validate_task_manifest_references(load_manifest(), ROOT) == {
+        "actor_classes": 4, "test_functions": 7, "smoke_scripts": 1}
 
 
 def test_manifest_rejects_missing_independent_actor_goal():
@@ -43,3 +49,11 @@ def test_manifest_reports_invalid_actor_id_values_without_crashing():
 
     with pytest.raises(TaskManifestError, match="actor_ids values"):
         validate_task_manifest(manifest)
+
+
+def test_manifest_rejects_missing_test_reference():
+    manifest = copy.deepcopy(load_manifest())
+    manifest["tasks"][0]["evidence"]["tests"][0] = "test_missing_from_repository"
+
+    with pytest.raises(TaskManifestError, match="test function does not exist"):
+        validate_task_manifest_references(manifest, ROOT)

@@ -1,5 +1,7 @@
 """Structural validation for the small, versioned benchmark task catalog."""
 from __future__ import annotations
+import re
+from pathlib import Path
 from typing import Any
 
 
@@ -131,6 +133,45 @@ def validate_task_manifest(manifest: Any) -> dict[str, int]:
     if errors:
         raise TaskManifestError("; ".join(errors))
     return {"tasks": len(tasks), "interactions": interaction_count}
+
+
+def validate_task_manifest_references(manifest: dict[str, Any], repo_root: Path) -> dict[str, int]:
+    """Check manifest evidence names and actor classes against repository source files."""
+    root = repo_root.resolve()
+    actor_file = root / "swcub" / "actors.py"
+    if not actor_file.is_file():
+        raise TaskManifestError("cannot find swcub/actors.py for actor reference checks")
+    actor_classes = set(re.findall(r"^class\s+(\w+)\b", actor_file.read_text(encoding="utf-8"), re.M))
+    test_names: set[str] = set()
+    for test_file in (root / "tests").glob("test_*.py"):
+        test_names.update(re.findall(r"^\s*def\s+(test_\w+)\s*\(",
+                                     test_file.read_text(encoding="utf-8"), re.M))
+
+    errors: list[str] = []
+    referenced_tests: set[str] = set()
+    referenced_actors: set[str] = set()
+    referenced_scripts: set[str] = set()
+    for task in manifest["tasks"]:
+        task_id = task["task_id"]
+        for role, solution in task["independent_solutions"].items():
+            class_name = solution["actor_class"].split("(", 1)[0]
+            referenced_actors.add(class_name)
+            if class_name not in actor_classes:
+                errors.append(f"{task_id}: actor class does not exist: {class_name}")
+        evidence = task["evidence"]
+        for name in evidence["tests"]:
+            referenced_tests.add(name)
+            if name not in test_names:
+                errors.append(f"{task_id}: test function does not exist: {name}")
+        script = evidence["smoke_script"]
+        referenced_scripts.add(script)
+        target = (root / script).resolve()
+        if not target.is_relative_to(root) or not target.is_file():
+            errors.append(f"{task_id}: smoke script does not exist inside repository: {script}")
+    if errors:
+        raise TaskManifestError("; ".join(errors))
+    return {"actor_classes": len(referenced_actors), "test_functions": len(referenced_tests),
+            "smoke_scripts": len(referenced_scripts)}
 
 
 def _valid_schedule(schedule: Any, actor_ids: set[Any]) -> bool:

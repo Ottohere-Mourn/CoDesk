@@ -59,4 +59,4 @@ The real CSV and two-window focus cases are controlled infrastructure probes, no
 
 - Added `tasks/v0_manifest.json` with CSV-001 and FOCUS-001 environment starts, actor-role/ID mappings, independent goals, joint final-state predicates, deterministic success/failure schedules, and test/smoke evidence names.
 - Added structural validation in `swcub.task_manifest` and `scripts/validate_task_manifest.py`. The validator rejects missing independent goals, invalid actor mappings, incomplete joint schedules, absent final states, and tasks without both passing and failing interactions.
-- Four manifest tests and the CLI validator passed. Latest full suite: 25 passed, 0 failed, 0 skipped in 33.65 s, including the real Docker tests; simulator and stub-only results remain separately identified.
+- Six manifest tests and the CLI validator passed. The validator also checks that every referenced actor class, test function, and smoke script exists in the repository. Latest full suite: 27 passed, 0 failed, 0 skipped in 27.29 s, including the real Docker tests; simulator and stub-only results remain separately identified.
