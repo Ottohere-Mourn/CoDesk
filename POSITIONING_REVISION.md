@@ -1,69 +1,102 @@
-# Positioning revision after novelty audit
+# Positioning revision: Multi-Actor Computer Use
 
-**Status:** replaces the provisional novelty language in `docs/POSITIONING.md` for research-planning purposes. It does not change benchmark code or assert a priority claim.
+**Audit snapshot:** 2026-09-26. This revision supersedes the previous broad reading that CLI/shared-state work occupied the main GUI novelty claim. It preserves those works as cross-domain mechanism neighbors and reclassifies the GUI/Desktop evidence. See [NOVELTY_AUDIT.md](NOVELTY_AUDIT.md) and [OVERLAP_MATRIX.md](OVERLAP_MATRIX.md).
 
-## Decision
+## Updated conclusion
 
-Keep the project only as a **narrow shared-GUI interaction benchmark hypothesis**, centered on independent actors contending for one live desktop’s global input/focus state. Withdraw broader claims about first multi-agent shared-workspace evaluation, shared-file interference, stale reads/writes, human-in-the-loop desktop work, or GUI+CLI workflows. Those areas have direct prior work: CoAgent, AgentRoom, CooperBench, STALE, ParaGUIBench, DeskCraft, SWE-Touch, and WeaveBench cover substantial portions (details in [NOVELTY_AUDIT.md](NOVELTY_AUDIT.md) and [OVERLAP_MATRIX.md](OVERLAP_MATRIX.md)).
+The **GUI/Desktop/Computer-Use mainline is not shown to be occupied by a direct collision in the literature and artifacts audited**. Multiple important partial overlaps must be acknowledged:
 
-The audited papers support a **candidate intersection**, not a verified first: distinct goal-bearing actors + one actual display/window focus/pointer/keyboard route + separately solvable objectives + programmatic joint-state and collateral-effect evaluation + explicit recovery measurement. The reviewed GUI work has multiple workers on separate desktops (ParaGUIBench), one GUI actor with a conversational simulator (DeskCraft), or one actor switching between GUI and CLI (WeaveBench). The live shared-state and composition benchmarks are CLI/code focused (CoAgent, AgentRoom, CooperBench, STALE). No reviewed work combines all of those properties. Expand search before publication claims.
+- ParaGUIBench runs multiple GUI workers and measures top-level success/efficiency. It has actual concurrent shared-document editing failures, but each worker has a separate desktop/focus and the planner decomposes one user instruction (paper pp. 4–6; Appendix A, Table XI, PDF p. 14 / printed p. 13).
+- MACU runs parallel GUI CUA subagents across OSWorld and related computer-use tasks, but gives each subagent an isolated VM and decomposes one task into a DAG (paper pp. 1–4, Appendix p. 14; repository `utils/vm_utils.py`, `osworld/desktop_env/providers/`).
+- PC-Agent and UFO/UFO² use hierarchical GUI-agent roles to solve one desktop task; their agents are not separately goal-directed actors competing for the same session.
+- UFO³/NebulaBench coordinates heterogeneous devices and evaluates task/fault recovery, not competition inside one shared desktop session.
+- DeskCraft evaluates a GUI agent responding to a UserSimulator; GUIDE evaluates model inference over human GUI recordings. Neither measures two simultaneously active, independently tasked desktop controllers.
+- WeaveBench and CUA-Universe test one actor switching between GUI and CLI; CUA-Universe exposes shared application state and stale-view resynchronization. OSWorld-Human supplies human reference trajectories for efficiency, not a live co-actor.
+- MMBench-GUI L4 calls multi-app workflow execution “Task Collaboration,” but its protocol is one agent coordinating applications.
 
-## Proposed paper question
+CoAgent, AgentRoom, CooperBench, STALE, SWE-Touch, and CodeCRDT establish important shared-state/concurrency mechanisms in CLI, code, or patch-composition settings. They are **cross-domain mechanism neighbors**, not GUI Agent Benchmarks, and should shape our controls and evaluator rather than narrow away the GUI mainline.
 
-> When independent principals act on one live graphical desktop, which shared-input and shared-state interleavings prevent otherwise solvable tasks from both completing, and which coordination or recovery policies restore the joint task invariants at what cost?
+## Research question
 
-This is narrower than “multi-agent computer use” and tests an interaction mechanism that separate VMs, common folders, conversational interruptions, and within-agent tool switching do not isolate.
+> How do independently goal-directed actors using different computer-use channels affect one another when they share a live graphical workspace, and which interaction, state-awareness, or recovery policies preserve both actors’ goals and global application invariants?
 
-## Contributions that remain plausible
+The unit of evaluation is a joint live execution with actor-attributed observations and actions. The benchmark should distinguish one desktop session from separate desktops that happen to share files, and distinct actors from one agent decomposing its own request.
 
-1. **A precise runtime topology and protocol.** Two separately goal-directed actors issue attributed actions against one live desktop instance, not separate VMs. The event log records actor identity, observation version, foreground window/focus, action target, timestamps/causal order, and resulting application/workspace state.
-2. **Causal interference measurement.** For each principal and the joint task, compare isolated runs, serialized joint runs, and controlled concurrent interleavings. Record whether another actor’s action caused a goal regression or made an observation stale. Report actor success, joint invariant success, collateral regressions, recovery success, and action/time overhead.
-3. **A GUI-specific contention axis.** Test focus/foreground-window competition and input routing as an explicit, observable shared resource, alongside file/application state. Include separate-desktop and single-actor perturbation controls so the mechanism is distinguishable from ParaGUIBench and OSWorld-Noisy.
-4. **An executable task/evaluator protocol.** Each task contains two independent goals, per-actor acceptance predicates, compatible joint-state predicates, reset state, deterministic interaction schedule(s), and hidden state-derived checks. Evaluators inspect final application state and event provenance without using an LLM judge as the success oracle.
+## Three task branches to preserve
 
-These are candidate contributions only. A small number of deterministic examples can validate harness feasibility but cannot substantiate broad empirical conclusions. Do not count model breadth, task count, GPU use, or an orchestrator alone as the principal research contribution.
+### 1. GUI + GUI
 
-## What to do with current V0 cases
+Two independently tasked GUI agents operate through the same desktop session and application state. Measure:
 
-### Keep and strengthen: GUI + Human Replay focus competition
+- foreground-window/focus and keyboard/pointer routing, including actions delivered to an unintended window;
+- shared clipboard, modal dialogs, window switching and application-level state visibility;
+- each actor’s goal completion, joint invariants, collateral regressions and recovery;
+- the contrast with ParaGUIBench-style separate desktops plus shared directory, and with a serialized same-session schedule.
 
-Use a single real desktop/display and one global input path. Human Replay must represent a second actor with an explicit, independently satisfiable intention and logged actions. It must change focus or window state through the same mechanism a person uses, not merely inject a scripted interruption message. The agent and replayed person should each have an individual success predicate; a joint predicate should expose when one actor accidentally acts in the other’s window or overwrites the other’s work. Add a no-contention/serialized control and at least one deterministic harmful interleaving plus a recoverable interleaving.
+Do not define the branch as another parallel planner/worker speedup benchmark. Actors must have separate task instructions and independently checkable goal predicates.
 
-This is the strongest route to a distinct benchmark contribution relative to ParaGUIBench and DeskCraft. It remains unproven until one true end-to-end task demonstrates shared OS focus/input and the evaluator establishes independent success, causal interference, and recovery.
+### 2. GUI + CLI
 
-### De-emphasize or redesign: GUI + CLI CSV stale read/write
+A GUI actor and CLI actor act on the same live application/workspace through different control paths. Measure when CLI writes are visible (or stale) in the GUI, whether GUI actions based on stale visible state cause a conflict, and how each actor detects/reconciles it.
 
-A generic shared CSV stale-read example substantially overlaps CoAgent’s live Kubernetes read/write anomalies, AgentRoom’s shared mutable filesystem, and CooperBench/STALE’s independent-vs-composed correctness logic. Keep it as a harness smoke or a contrast condition unless the app makes the GUI’s visible/cache state a necessary second consistency surface. If retained as a research task, require evidence such as: CLI changes backend data; GUI still displays an old state; a GUI actor acts on that stale observation; the joint application invariant fails; refreshing/reconciling repairs it. Compare with CLI-only and GUI-only controls. A plain CSV overwrite is insufficient.
+WeaveBench and CUA-Universe are important partial overlaps for a single actor using both modalities; CUA-Universe additionally tests shared GUI/CLI project state and stale GUI-view resynchronization (paper arXiv:2609.05374, §§3–4, pp. 3–6). CoAgent/AgentRoom/CooperBench/STALE inform same-state and composition tests. Keep the CSV example as an auxiliary smoke or controlled state-visibility task. Promote it only if the graphical application’s visible/cache state is essential to the failure and recovery predicate; a filesystem overwrite alone is not the central contribution.
 
-## Task inclusion gates
+### 3. GUI + Human
 
-Do not add a benchmark task unless it passes all gates:
+A human (live participant or faithful replay) and GUI Agent each have an independent intention and act on the same session. Replay must preserve the human’s actual action sequence, target windows, timing relation, and task goal. Evaluate the human’s outcome as well as the agent’s and the joint application state.
 
-- **Independent solvability:** each actor can complete its own goal alone from the same reset state, confirmed by scripted reference actors and, later, tested model/human actors.
-- **Joint satisfiability:** a valid serial or coordinated schedule reaches a state satisfying both actor goals and all global invariants.
-- **Interaction relevance:** at least one reproducible interleaving changes what an actor observes or where its input lands, causing a measurable collateral failure. Pure time jitter/noise does not qualify.
-- **Recoverability:** the task defines how recovery success is distinguished from accidental final-state success and logs the cost/action history.
-- **Evaluator isolation:** hidden state predicates are unavailable to actors and inspect final state independently of their narrative reports.
-- **Causal control:** isolated, serialized, and concurrent conditions use the same task state and checks; interference is computed only among runs in which both independent goals succeed in isolation (following the methodological lesson from STALE).
-- **Reproducibility:** reset, schedule, actor event source, application version, and expected final predicates are pinned. Non-deterministic external services are disabled or replaced by bounded recorded fixtures.
+DeskCraft occupies the GUI+Human instruction-change and conversational interaction space; GUIDE provides human action/intent traces, and OSWorld-Human provides reference UI trajectories for efficiency comparisons. Differentiate by actual co-control/actions and independently scored goals, not by calling a user message or a reference trace a second actor.
 
-## Scope recommendation
+## Defensible candidate contribution
 
-**Continue conditionally** with one production-quality focus contention case and one secondary GUI/backend state-visibility case. Keep the existing CSV behavior only if the GUI state is truly observable and materially affects the correct action. Do not expand to a large taxonomy before the first case survives a direct comparison against ParaGUIBench, DeskCraft, OSWorld-Noisy, and CoAgent.
+The candidate contribution is a **Multi-Actor Computer-Use benchmark and protocol** that combines:
 
-**Adjust or stop** if the shared focus case can be represented as one actor plus an exogenous interruption, if Human Replay lacks an independent goal, or if the measured failure is only a filesystem conflict. In those outcomes, the defensible product is a small OSWorld interaction extension/protocol study, not a new broad shared-workspace benchmark novelty claim.
+1. distinct, independently verifiable actor goals;
+2. actor types spanning GUI agents, CLI agents, and humans/replays in the three branches above;
+3. one shared live desktop/application session in the relevant conditions, with topology metadata that separates it from a shared folder or VM pool;
+4. deterministic or recorded interleavings that induce GUI-specific interaction effects rather than random timing noise;
+5. per-actor success, joint success, cross-actor regressions, recovery outcome and coordination cost;
+6. hidden, executable state checks plus source-attributed event logs.
 
-Before a paper claim, expand the search to multi-user remote desktop/VDI benchmarks, collaborative GUI agents, concurrent UI automation, and online workflow systems; locate or contact authors only through approved channels; inspect releases at a pinned revision; and compare exact task/evaluator implementations. State the audited date and write “we found no prior work combining…” rather than “first-ever” unless that broader audit supports more.
+The contribution is the controlled interaction space and joint evaluation design. Model count, task count, orchestration architecture, and reuse of OSWorld by themselves are not sufficient novelty claims.
 
-## Suggested replacement positioning paragraph
+## Task acceptance gates
 
-> Existing work studies parallel GUI workers that exchange files across isolated desktops (ParaGUIBench), user-interactive desktop tasks with one acting GUI agent (DeskCraft), hybrid GUI/CLI workflows within one actor (WeaveBench), and concurrent agents sharing mutable software or application state (AgentRoom, CoAgent, CooperBench, STALE). We investigate a narrower setting: independently goal-directed principals issuing actions through the same live desktop input/focus state, and measure per-principal completion, joint invariants, cross-actor regressions, and recovery with executable state checks. Our novelty claim is limited to this combination and remains subject to a broader artifact-level comparison.
+Keep a task only when it satisfies all the following:
 
-## Evidence checklist before submission
+- **Separate solvability:** each actor passes its own goal from the same reset state when run alone.
+- **Joint satisfiability:** a valid serialized/coordinated schedule can satisfy both goals and all shared-state invariants.
+- **Real actor interaction:** every actor has its own instruction/intention and source-attributed observations/actions. It is not a planner-created subtask or a disturbance pretending to be an actor.
+- **Reproducible effect:** a controlled interleaving can change focus, routing, clipboard, app state, or freshness and cause an observable failure or recovery opportunity.
+- **Hidden evaluator:** actors cannot read success predicates; evaluator checks underlying app/workspace state and actor outcomes programmatically.
+- **Causal comparison:** evaluate solo A, solo B, serialized A+B, concurrent A+B, and recovery/coordination variants with the same reset and checks. Compute interaction failure only when relevant solo baselines pass.
+- **Topology check:** document whether the GUI processes share one display/session, whether OS actions share one pointer/keyboard, whether app windows/state are shared, whether files are mounted/copied/merged, and whether CLI accesses the same backend.
 
-- Confirm the focus target is literally shared: record one desktop/display instance and global input/focus identifiers.
-- Publish the two actors’ prompts/instructions, action traces, task reset fixtures, and evaluator source.
-- Show individual-only, serialized-both, concurrent-both, and recovery outcomes with matched reset state.
-- Show at least one interleaving in which both solo baselines pass but the uncoordinated joint run violates a hidden invariant; quantify incidence only after sufficient repeated runs.
-- Report whether the actor was a model, deterministic script, or real human replay. Keep actor/source labels in every event.
-- Conduct a final citation and repository audit after checking the full paper version current at submission time.
+## V0 scope decision
+
+Retain all three branches. Prioritize one compelling GUI+Human focus competition case and one GUI+CLI visible/backend-state case, then add GUI+GUI if the environment can deterministically schedule independent agents over the same desktop. Include shared-file writes as an auxiliary baseline because ParaGUIBench already studies and reports this failure mode.
+
+Do not force every interaction into a focus-conflict narrative. A task can reveal clipboard conflicts, modal ownership errors, stale screen observations, app-level navigation loss, or divergent GUI/backend state. Organize the taxonomy around these observable mechanisms, and let the task evidence determine which deserve emphasis.
+
+## Continue / adjust conditions
+
+**Continue the benchmark contribution** if at least one end-to-end scenario proves independent solvability, joint solvability, same-session shared GUI resources, causal interference and executable recovery assessment. A second modality branch should show that the design extends beyond a single focus anecdote.
+
+**Adjust the claim** if only one narrow app/session supports same-GUI interaction. Present it as a protocol/pilot benchmark for shared-session computer use and avoid generalizing to all GUI work.
+
+**Reposition the CSV branch** as shared-state consistency evaluation if it has no GUI-specific visible state. It can remain useful as a comparison condition without defining the benchmark’s center.
+
+**Pause a novelty claim** if new citation/artifact review finds a direct same-session multi-actor benchmark or if tasks cannot provide separate goals and joint programmatic checks. Compare the exact topology and evaluation before deciding how much overlap that establishes.
+
+## Suggested paper positioning
+
+> Existing GUI benchmarks and systems cover parallel GUI workers exchanging artifacts across isolated desktops (ParaGUIBench), parallel computer-use subagents on isolated VMs (MACU), hierarchical GUI roles completing one user instruction (PC-Agent and UFO), multi-app workflows by one agent (MMBench-GUI L4), and GUI agents reacting to user messages or human traces (DeskCraft and GUIDE). We study independently goal-directed principals that share a live desktop/application session across GUI+GUI, GUI+CLI, and GUI+Human conditions. We measure each principal’s goal, joint application invariants, cross-actor interference and recovery with programmatic state checks. This claim is limited to the shared-session, multi-actor setting and remains subject to ongoing artifact-level review.
+
+## Final evidence checks before publication
+
+- Re-run the literature search near submission, including ParaGUIBench citations/references and recent GUI agent systems.
+- Record the exact display/session/window/action routing for each benchmark condition.
+- Publish actor tasks, reset state, scripted schedule/replay, event schema, evaluator predicates and task-level results.
+- Show Solo A, Solo B, Serial A+B and Concurrent A+B; report per-principal as well as joint pass rates.
+- Report Human Replay provenance and whether the actor used the GUI, CLI, or message channel.
+- Cite each baseline by exact topology and evaluator. Avoid treating “multi-agent,” “collaboration,” or “shared state” as equivalent labels.

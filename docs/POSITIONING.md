@@ -1,31 +1,11 @@
 # POSITIONING
 
-Status: research hypothesis and prototype plan (2026-09-26). The claim of a clear innovation gap is **not yet established**.
+Status: research hypothesis revised after the GUI/Desktop novelty audit (2026-09-26).
 
-## Proposed problem
+Shared-Workspace Benchmark V0 studies **Multi-Actor Computer Use**: separate, independently goal-directed principals acting through GUI, CLI or Human Replay while sharing a live desktop/application workspace. The planned branches are GUI+GUI, GUI+CLI and GUI+Human. Shared-file conflicts are a useful auxiliary task family; the central evaluation is each actor’s outcome, joint application state, cross-actor interaction and recovery.
 
-Measure how independently acting GUI agents, CLI agents, and replayed humans complete tasks while sharing one desktop and/or stateful application backend. The unit of evaluation is a joint execution, including its interaction history, not merely a set of parallel single-agent scores.
+The current audit found **no direct collision** among the reviewed GUI/Desktop/Computer-Use benchmarks for independently tasked actors concurrently sharing one desktop session and being evaluated on both goals and interference. Important partial GUI overlaps include ParaGUIBench (concurrent GUI workers, shared files and documented same-document edit failures, but isolated desktops and planner-decomposed tasks), MACU (parallel CUA workers in isolated VMs), PC-Agent/UFO (hierarchical agent roles), MMBench-GUI L4 (one agent coordinating applications), and DeskCraft/GUIDE (user messages or recorded human activity). See [POSITIONING_REVISION.md](../POSITIONING_REVISION.md), [NOVELTY_AUDIT.md](../NOVELTY_AUDIT.md), and [OVERLAP_MATRIX.md](../OVERLAP_MATRIX.md).
 
-Candidate capabilities to measure:
+CoAgent, AgentRoom, CooperBench, STALE, SWE-Touch and CodeCRDT are cross-domain concurrency/shared-state neighbors. Their independent/joint correctness checks and recovery controls are useful methodological precedents; they are not GUI Agent Benchmarks and do not occupy the GUI mainline.
 
-1. joint task completion and per-actor task completion;
-2. interference: collateral loss or regression caused by another actor;
-3. state awareness and consistency across observations and writes;
-4. coordination efficiency: latency, actions, retries, and recovery overhead.
-
-## Working hypotheses (falsifiable)
-
-- H1: shared mutable state creates failures beyond the additive failure rate of isolated tasks.
-- H2: GUI focus contention and stale-read/write conflicts produce distinguishable error signatures.
-- H3: explicit coordination (freshness checks, focus reacquisition, announcements/claims) reduces interference, with measurable overhead.
-- H4: human replay and CLI actors expose interaction patterns not represented by multi-agent benchmarks on isolated desktops.
-
-## Novelty boundary / risks
-
-The novelty should be framed narrowly as **cross-actor interaction under shared desktop and application state**, not as the first parallel GUI benchmark, the first hybrid GUI/CLI benchmark, or the first shared-workspace benchmark. See [RELATED_WORK](RELATED_WORK.md). ParaGUIBench's described shared filesystem across separate desktop instances is the closest GUI coordination neighbor; AgentRoom and SWE-Touch are close shared-workspace analogues. We need a systematic search and direct artifact inspection before making priority claims.
-
-Key threats: trivial toy tasks; one benchmark item standing in for an entire interaction class; scripted timing overfitting; hidden task leakage through evaluators; unequal actor capability; app-level locks/transaction semantics masking conflicts; measurement confounding by VM latency; and an evaluator that rewards a particular trajectory rather than the required final state.
-
-## Intended contribution if validated
-
-An OSWorld-compatible task/harness extension with controlled actor schedules, shared-state instrumentation, resettable scenarios, and deterministic state-based evaluators; a task suite crossing actor types, resource contention, and coordination policy; and empirical analysis separating task solvability from interaction robustness. All are contingent on scale, task-quality review, and comparisons against neighboring work.
+This is a bounded evidence claim, not a priority claim. Before publication, refresh citation and artifact searches and verify the precise desktop/session topology. Each task must have two independently solvable goals, a jointly satisfiable state, a reproducible interaction effect, and hidden executable state predicates for per-actor and joint evaluation.

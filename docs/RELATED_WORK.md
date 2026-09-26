@@ -1,16 +1,42 @@
 # RELATED_WORK
 
-Audit snapshot: 2026-09-26. Boundaries below summarize public abstracts/project descriptions found in this audit; verify released artifacts and full methods before citing exact claims. The names ParaGUIBench, WeaveBench, OSWorld-Noisy, SWE-Touch, and AgentRoom denote distinct lines of work; AgentRoom is also an overloaded product name, so citations should identify the paper.
+Audit snapshot: 2026-09-26. The scope is Multi-Actor Computer Use: separate goal-bearing principals sharing a live desktop/application session. Detailed per-work evidence, page numbers, tasks and artifact paths are in [NOVELTY_AUDIT.md](../NOVELTY_AUDIT.md); the three-level classification is in [OVERLAP_MATRIX.md](../OVERLAP_MATRIX.md).
 
-| Work | Evaluated setting | Overlap | Boundary relative to SW-CUB |
-|---|---|---|---|
-| [ParaGUIBench (arXiv:2607.22689)](https://arxiv.org/abs/2607.22689) | 233 tasks, parallel GUI workers operating on **separate desktop instances**, with shared filesystem infrastructure; task decomposition and efficiency metrics are central. | Multiple GUI actors, shared artifacts, coordination/efficiency. | Shared filesystem does not by itself establish a shared live desktop, simultaneous focus contention, or stale observations against a concurrently mutated application backend. Inspect paper/task code to determine whether shared files are actually contested. Closest GUI-parallel benchmark. |
-| [WeaveBench (arXiv:2606.09426)](https://arxiv.org/abs/2606.09426) | 114 long-horizon tasks; a single agent trajectory interleaves GUI with CLI/code on a real Ubuntu desktop; trajectory-aware judge examines deliverables/traces. | Hybrid GUI+CLI operations and cross-interface state. | Interface heterogeneity is within one agent/runtime trajectory, not multiple independent actors concurrently acting on one shared workspace. Its use of an agentic judge is not required by our objective; prefer executable state checks. |
-| [OSWorld-Noisy, introduced in ENVS (arXiv:2606.22948)](https://arxiv.org/abs/2606.22948) | Recoverable desktop interruptions/perturbations layered over OSWorld tasks; agents refocus, dismiss, wait, or recover. | Dynamic GUI state, refocusing, controlled interruptions. | Perturbations test one agent coping with environmental interruption; based on available description, not another independent actor with its own objective and writes. The exact perturbation set and release status need artifact audit. |
-| [SWE-Touch (arXiv:2608.02499)](https://arxiv.org/abs/2608.02499) | Coding agent on SWE-bench-family tasks while validated task-conflicting user code edits are injected near inspected regions, with contextual user messages. | Shared workspace, human-originated changes, stale workspace awareness, verification. | Human edits are controlled counter-edits in a repository repair workflow; not general GUI focus contention, multi-actor task completion, or an independently pursuing CLI/GUI actor. Very close conceptually for state changes by another actor. |
-| [AgentRoom (arXiv:2608.23740)](https://arxiv.org/abs/2608.23740) | Concurrent coding agents use CRDT-backed shared filesystem plus file claims, status, and broadcasts; four backend coding tasks and coding CLI models. | Multiple independent agents, shared mutable workspace and explicit coordination. | Focused on coding agents/protocol efficacy and a small task set, rather than desktop GUI state and human replay. It directly weakens any broad shared-workspace novelty claim. Paper reports LLM-judge quality; our core outcomes can be deterministic state predicates. |
-| [OSWorld (arXiv:2404.07972)](https://arxiv.org/abs/2404.07972), [official code](https://github.com/xlang-ai/OSWorld) | Resettable real computer environments and task-specific execution-based evaluation across applications/OS I/O. | Desktop harness, environment setup/reset, executable task graders. | Foundation to reuse for environment/evaluator abstractions; benchmark's common protocol is one agent solving one task, not independent co-actors. |
+## Direct collision
 
-## Audit conclusion
+None located in the reviewed GUI/Desktop/Computer-Use papers and public artifacts. The direct-collision test requires distinct actors with separate goals, one live desktop session/resource route, and per-actor plus joint interaction evaluation. This is bounded to the audit’s search and is not a universal “first” claim.
 
-The strongest defensible position is an intersection: **concurrent independent actors + same live desktop/application state + measurable interaction effects**. It is not proven that no prior benchmark has that exact combination. Before a paper novelty statement, search recent literature and repositories for shared-screen multi-agent UI, human-in-the-loop UI interruptions, multi-user desktop automation, concurrent transaction benchmarks, and OSWorld forks. Record date, query, inclusion decision, and artifact evidence in a versioned audit.
+## Partial GUI / Computer-Use overlap
+
+| Work | Evidence-based scope | Difference from this project |
+|---|---|---|
+| [ParaGUIBench](https://arxiv.org/abs/2607.22689) | Parallel GUI workers, shared mounted directory, aggregate success/efficiency; Appendix A reports same-document editing bottleneck (P=1.47, SR=10%). | Separate Docker desktops and focus; one planner-decomposed instruction rather than independent actor goals. |
+| [Multi-Agent Computer Use (MACU)](https://arxiv.org/abs/2606.01533) | Parallel screenshot-driven CUA subagents evaluated on OSWorld and web tasks. | Each actor has isolated VM; manager decomposes one user instruction into a task DAG. |
+| [PC-Agent](https://arxiv.org/abs/2502.14282), [UFO/UFO²](https://arxiv.org/abs/2402.07939) | Hierarchical GUI agent roles solve complex PC workflows; UFO roles operate against a desktop. | Delegated roles in one workflow; no evaluated competition between independent goals. |
+| [UFO³ / NebulaBench](https://arxiv.org/abs/2511.11332) | Asynchronous cross-device workflows with task success and fault recovery. | Distributed device endpoints, not two actors sharing one desktop session. |
+| [MMBench-GUI](https://arxiv.org/abs/2507.19478) | L4 “Task Collaboration” covers one actor coordinating across several applications. | “Collaboration” is inter-app workflow, not multiple active actors. |
+| [DeskCraft](https://arxiv.org/abs/2606.03103) | One GUI agent receives clarification, interruption and requirement-change messages from a user simulator. | Simulator does not control GUI or pursue a separately evaluated desktop goal. |
+| [GUIDE](https://arxiv.org/abs/2603.25864) | Offline model evaluation over human GUI recordings and intent/help labels. | No concurrent co-control or interaction-caused task outcomes. |
+| [OSWorld-Noisy / ENVS](https://arxiv.org/abs/2606.22948) | Single GUI agent task under controlled environment disturbances and recovery. | Noise is not a second principal with its own task. |
+| [WeaveBench](https://arxiv.org/abs/2606.09426) | One actor interleaves GUI and CLI and can encounter stale cross-channel views. | No second independent actor. |
+| [CUA-Universe](https://arxiv.org/abs/2609.05374) | One actor uses GUI+CLI over shared application state; adapters resynchronize stale GUI views after CLI edits; 160 held-out tasks. | Same-actor hybrid interface, not independent GUI and CLI principals. |
+| [OSWorld-Human](https://arxiv.org/abs/2506.16042) | Human reference trajectories provide action/efficiency baselines for desktop tasks. | Reference traces are not a human concurrently acting with a GUI agent. |
+
+## Cross-domain mechanism neighbors
+
+| Work | Methodological relevance | Domain boundary |
+|---|---|---|
+| [CoAgent](https://arxiv.org/abs/2606.15376) | Independent CLI goals on one live Kubernetes state; serializability and repair. | CLI/AIOps, no GUI benchmark. |
+| [AgentRoom](https://arxiv.org/abs/2608.23740) | Concurrent coding sessions edit one shared CRDT filesystem. | Coding CLI/shared files, not desktop GUI; common project objective. |
+| [CooperBench](https://arxiv.org/abs/2601.13295) | Separate feature goals individually tested and jointly composed. | Isolated coding workspaces/patch merge, no live desktop. |
+| [STALE](https://arxiv.org/abs/2609.25396) | Solo-valid task pairs, composition-induced failure delta, communication recovery. | Offline software patch composition. |
+| [SWE-Touch](https://arxiv.org/abs/2608.02499) | Injected user counter-edits test one coding agent’s workspace freshness. | Code workspace; no second GUI/CLI actor goal. |
+| [CodeCRDT](https://arxiv.org/abs/2510.18893) | Concurrent edits and semantic conflict in collaborative code documents. | Collaborative editor/code study, not a Computer-Use benchmark. |
+
+## Relevance to V0 branches
+
+- **GUI+GUI:** distinguish independent actors sharing one screen/input route from ParaGUIBench’s isolated desktops, MACU’s isolated VMs and hierarchical agent frameworks.
+- **GUI+CLI:** distinguish two principals sharing GUI-visible and backend state from WeaveBench and CUA-Universe’s single actor using two tool channels. Use CoAgent/AgentRoom/CooperBench/STALE as mechanism controls, not as GUI work already done.
+- **GUI+Human:** distinguish a human’s own GUI actions and independently graded intention from DeskCraft’s message simulator, GUIDE’s offline observation of human traces, and OSWorld-Human’s efficiency reference trajectories.
+
+No model-count or task-count comparison establishes this contribution. The critical evidence is runtime topology, separate solvability, joint satisfiability, interaction-attributed failures, recovery and executable evaluator coverage.
