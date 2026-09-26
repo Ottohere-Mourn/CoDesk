@@ -36,7 +36,7 @@ No outcome is decided by an LLM judge. The event stream provides process evidenc
 
 ## Event log contract
 
-Each JSONL event includes `schema_version: 1`, a contiguous one-based `seq`, timezone-qualified ISO-8601 UTC timestamp, non-negative elapsed milliseconds, actor/interface/action, optional observed revision, before/after SHA-256 digests, outcome, and a JSON object of action details. `read_event_log` checks the version, exact V1 field set, field types, digest syntax, and sequence. Unknown versions or shape changes fail closed; introduce a new explicit schema version when changing the contract. Validate a run artifact with `python -m swcub.cli validate-events outputs/real-smoke/joint/events.jsonl`.
+Each JSONL event includes `schema_version: 1`, a contiguous one-based `seq`, timezone-qualified ISO-8601 UTC timestamp, non-negative elapsed milliseconds, actor/interface/action, optional observed revision, before/after SHA-256 digests, outcome, and a JSON object of action details. For Docker CSV/focus tasks, the observed revision is captured at GUI observation and carried across that actor's scheduled turns; action details record current workspace revisions before and after each commit. This lets the evaluator identify an action based on an earlier observation. `read_event_log` checks the version, exact V1 field set, field types, digest syntax, and sequence. Unknown versions or shape changes fail closed; introduce a new explicit schema version when changing the contract. Validate a run artifact with `python -m swcub.cli validate-events outputs/real-smoke/joint/events.jsonl`.
 
 ## Limits
 

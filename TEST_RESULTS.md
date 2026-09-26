@@ -10,13 +10,13 @@ Command:
 pytest -q --junitxml=outputs/test-results/junit.xml
 ```
 
-Result: **28 passed, 0 failed, 0 skipped in 27.51s**. Machine-readable report: [`outputs/test-results/junit.xml`](outputs/test-results/junit.xml).
+Result: **28 passed, 0 failed, 0 skipped in 27.19s**. Machine-readable report: [`outputs/test-results/junit.xml`](outputs/test-results/junit.xml).
 
 | Test | Result | Evidence checked |
 |---|---|---|
 | GUI single actor | PASS | Actor receives actual 1024×768 XWD bytes; retained artifact matches its observed screenshot hash; row graded from CSV. |
 | CLI single actor | PASS | Guest Python CLI writes row; row graded from CSV. |
-| Joint GUI+CLI | PASS | Same environment ID, both exact rows survive, actor-attributed event trace. |
+| Joint GUI+CLI | PASS | Same environment ID, both exact rows survive, actor-attributed trace; GUI keeps observation revision 0 across its scheduled turns while CLI advances workspace 0→1 and GUI commit advances it 1→2. |
 | Stale CSV write conflict | PASS | GUI stale snapshot loses CLI row; evaluator rejects final state and identifies missing C1. |
 | Role/evaluator isolation | PASS | GUI context cannot call CLI; CLI cannot observe GUI; neither exposes evaluator. |
 | Environment reset | PASS | Dirty state removed by a fresh container/workspace, new GUI window visible, prior container gone. |
@@ -44,7 +44,7 @@ Built a no-cache image from the pinned Ubuntu digest and ran `python scripts/smo
 
 Command: `python scripts/repeatability_study.py 5`.
 
-Result: **20 fresh-container episodes, all expected outcomes observed, and one final-state hash per policy across five repetitions**. Both CSV actor orders passed 5/5 and produced the same final-state hash; focus recovery passed 5/5; stale-focus control failed evaluation as intended in 5/5. CSV schedules now include GUI observe → CLI append → GUI submit. Median actor/evaluation/report time was 1.013s, 1.008s, 2.039s, and 1.598s respectively (reset/build excluded). See [`outputs/repeatability/REPORT.md`](outputs/repeatability/REPORT.md) and [`study.json`](outputs/repeatability/study.json).
+Result: **20 fresh-container episodes, all expected outcomes observed, and one final-state hash per policy across five repetitions**. Both CSV actor orders passed 5/5 and produced the same final-state hash; focus recovery passed 5/5; stale-focus control failed evaluation as intended in 5/5. CSV schedules now include GUI observe → CLI append → GUI submit. Median actor/evaluation/report time was 0.999s, 0.992s, 2.038s, and 1.610s respectively (reset/build excluded). See [`outputs/repeatability/REPORT.md`](outputs/repeatability/REPORT.md) and [`study.json`](outputs/repeatability/study.json).
 
 These results establish deterministic scripted replay on this local Docker/Xvfb setup. They do not establish cross-host reproducibility, model/human performance, or benchmark validity.
 

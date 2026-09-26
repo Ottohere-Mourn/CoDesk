@@ -72,3 +72,12 @@ The real CSV and two-window focus cases are controlled infrastructure probes, no
 - Converted `ScriptedGUIActor` into two scheduled steps so it observes the real XWD screen and retains that observation, yields to the CLI append, then submits on a later turn. Both success and stale-write conflict cases now use GUI observe → CLI append → GUI submit; the repeatability permutation also checks CLI append → GUI observe → GUI submit.
 - The normal Tk mode rereads the shared CSV on submit, preserving CLI and GUI rows after the intervening update. The negative control uses the reset-time snapshot and loses C1; the evaluator rejects it. The real joint integration test checks the observation event precedes the CLI write, which precedes the GUI type action.
 - Reran smoke: 7/7. Reran 20 fresh-container episodes: both CSV orders passed 5/5 with the same final-state hash; focus recovery passed 5/5; stale-focus failure was detected 5/5. Latest medians: 1.013 s, 1.008 s, 2.039 s, and 1.598 s respectively (reset/build excluded). After adding schedule-description consistency checks to the manifest validator, the latest full suite passed 28/28 in 27.51 s.
+
+
+## Observation revision tracking
+
+- The orchestrator now keeps one actor context across its scheduled turns. An observation records the workspace revision, and later actions by that actor retain the revision they actually observed. Docker revision advances on committed shared CSV/application-state changes; event details include current revision before/after actions.
+- The joint GUI+CLI integration trace proves GUI observation at revision 0, intervening CLI write 0→1, GUI typing from the stale observation at revision 0, and GUI Return commit 1→2. This is an explicit stale-observation trace while the normal shared-file reread policy preserves both required rows.
+- OSWorld adapter calls also carry the actor's observed revision into GUI/CLI event records. Adapter wiring remains stub-tested; real OSWorld VM execution remains unverified.
+- Revalidated from the updated tree: `python -m pytest -q --junitxml=outputs/test-results/junit.xml` passed 28/28 in 27.19 s; `python scripts/smoke_real_workspace.py` passed 7/7; `python scripts/repeatability_study.py 5` passed all 20 expected outcomes with one final-state hash per policy. Median times (reset/build excluded): CSV GUI→CLI 0.999 s, CSV CLI→GUI 0.992 s, focus recovery 2.038 s, stale-focus control 1.610 s.
+- All 32 archived JSONL logs (409 events) parse under schema V1. Manifest validation and `git diff --check` passed.

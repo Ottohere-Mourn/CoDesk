@@ -79,7 +79,20 @@ def test_real_joint_actors_share_one_environment(adapter, tmp_path):
                      if event["actor"] == "cli_actor" and event["kind"] == "cli")
     gui_write_index = next(i for i, event in enumerate(events)
                            if event["actor"] == "gui_actor" and event["action"] == "xdotool.type")
-    assert observe_index < cli_index < gui_write_index
+    gui_commit_index = next(i for i, event in enumerate(events)
+                            if event["actor"] == "gui_actor" and event["action"] == "xdotool.key")
+    assert observe_index < cli_index < gui_write_index < gui_commit_index
+    assert events[observe_index]["observed_revision"] == 0
+    assert events[cli_index]["observed_revision"] == 0
+    assert events[gui_write_index]["observed_revision"] == 0
+    assert events[gui_commit_index]["observed_revision"] == 0
+    assert events[cli_index]["details"]["revision_before_action"] == 0
+    assert events[cli_index]["details"]["revision_after_action"] == 1
+    assert events[gui_write_index]["details"]["revision_before_action"] == 1
+    assert events[gui_write_index]["details"]["revision_after_action"] == 1
+    assert events[gui_commit_index]["details"]["revision_before_action"] == 1
+    assert events[gui_commit_index]["details"]["revision_after_action"] == 2
+    assert events[gui_write_index]["before_digest"] == events[cli_index]["after_digest"]
     assert gui_actor.observation is not None
     assert {event["actor"] for event in events} >= {"gui_actor", "cli_actor", "evaluator"}
     assert len({event["details"].get("environment_id") for event in events

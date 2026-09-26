@@ -25,7 +25,8 @@ class EnvironmentAdapter(Protocol):
 
     def reset(self, **kwargs: Any) -> Any: ...
     def observe(self, actor_id: str, interface: str) -> Any: ...
-    def act(self, actor_id: str, interface: str, action: Any) -> Any: ...
+    def act(self, actor_id: str, interface: str, action: Any,
+            observed_revision: int | None = None) -> Any: ...
     def snapshot(self) -> dict[str, Any]: ...
     def close(self) -> None: ...
 
@@ -51,6 +52,7 @@ class DockerX11Workspace:
         self.task = "csv"
         self.stale_gui_write = False
         self.episode = 0
+        self.revision = 0
 
     def _run(self, argv: Sequence[str], *, timeout: float | None = None,
              check: bool = True, capture: bool = True) -> subprocess.CompletedProcess[str]:
@@ -81,6 +83,7 @@ class DockerX11Workspace:
         self.container_name = self.environment_id
         self.stale_gui_write = stale_gui_write
         self.task = task
+        self.revision = 0
         self.workspace = Path(tempfile.mkdtemp(prefix=f"{self.environment_id}-"))
         self.csv_path = self.workspace / "shared.csv"
         self.csv_path.write_text("id,actor,value\n", encoding="utf-8")
@@ -161,6 +164,7 @@ class DockerX11Workspace:
         raw = self._csv_bytes()
         state_raw = self.state_path.read_bytes() if self.state_path and self.state_path.exists() else b""
         return {"environment_id": self.environment_id,
+                "revision": self.revision,
                 "container": self.container_name,
                 "csv_sha256": hashlib.sha256(raw).hexdigest(),
                 "csv_bytes": len(raw),
@@ -174,19 +178,22 @@ class DockerX11Workspace:
             raise ValueError(f"unsupported observation interface: {interface}")
         return self.observe_gui(actor_id)
 
-    def act(self, actor_id: str, interface: str, action: Any) -> Any:
+    def act(self, actor_id: str, interface: str, action: Any,
+            observed_revision: int | None = None) -> Any:
+        if observed_revision is None:
+            observed_revision = self.revision
         if interface == "gui" and isinstance(action, dict):
             op = action.get("op")
             if op == "submit":
-                return self.gui_submit(actor_id, str(action["value"]))
+                return self.gui_submit(actor_id, str(action["value"]), observed_revision)
             if op == "focus":
-                return self.gui_focus(actor_id, str(action["window"]))
+                return self.gui_focus(actor_id, str(action["window"]), observed_revision)
             if op == "type":
-                return self.gui_type_text(actor_id, str(action["value"]))
+                return self.gui_type_text(actor_id, str(action["value"]), observed_revision)
             if op == "key":
-                return self.gui_press_key(actor_id, str(action["key"]))
+                return self.gui_press_key(actor_id, str(action["key"]), observed_revision)
         if interface == "cli" and isinstance(action, (list, tuple)):
-            return self.cli_command(actor_id, action)
+            return self.cli_command(actor_id, action, observed_revision)
         raise ValueError(f"unsupported {interface} action: {action!r}")
 
     def observe_gui(self, actor_id: str) -> dict[str, Any]:
@@ -210,49 +217,79 @@ class DockerX11Workspace:
                   "screenshot_bytes": len(screenshot_bytes)}
         logged_visual = {key: value for key, value in visual.items() if key != "screenshot"}
         self.log.record(actor_id, "observation", "x11.screenshot", before, self.snapshot(),
+                        observed_revision=self.revision,
                         details={"environment_id": self.environment_id, **logged_visual})
         return visual
 
-    def _xdotool(self, actor_id: str, action: str, *argv: str) -> None:
+    def _xdotool(self, actor_id: str, action: str, *argv: str,
+                 observed_revision: int | None = None, mutates_state: bool = False) -> None:
         before = self.snapshot()
         self._run(["docker", "exec", "--env", "DISPLAY=:99", self.container_name,
                    "xdotool", *argv])
+        if mutates_state:
+            time.sleep(0.2)
+            after_action = self.snapshot()
+            if (after_action["csv_sha256"] != before["csv_sha256"]
+                    or after_action["application_state_sha256"]
+                    != before["application_state_sha256"]):
+                self.revision += 1
         self.log.record(actor_id, "gui", action, before, self.snapshot(),
-                        details={"environment_id": self.environment_id, "argv": list(argv)})
+                        observed_revision=observed_revision,
+                        details={"environment_id": self.environment_id, "argv": list(argv),
+                                 "revision_before_action": before["revision"],
+                                 "revision_after_action": self.revision})
 
-    def gui_focus(self, actor_id: str, window: str) -> None:
+    def gui_focus(self, actor_id: str, window: str,
+                  observed_revision: int | None = None) -> None:
         window_id = self.window_ids.get(window)
         if window_id is None and window == "Shared Workspace":
             window_id = self.window_id
         if window_id is None:
             raise EnvironmentError(f"window {window!r} not visible; have {self.window_ids}")
-        self._xdotool(actor_id, "xdotool.windowfocus", "windowfocus", "--sync", window_id)
+        self._xdotool(actor_id, "xdotool.windowfocus", "windowfocus", "--sync", window_id,
+                      observed_revision=observed_revision)
         if self.task == "focus":
             # X11 top-level focus and Tk child-widget focus are distinct without a WM.
-            self._xdotool(actor_id, "xdotool.click_entry", "mousemove", "--window", window_id, "120", "63")
-            self._xdotool(actor_id, "xdotool.click", "click", "1")
+            self._xdotool(actor_id, "xdotool.click_entry", "mousemove", "--window", window_id,
+                          "120", "63", observed_revision=observed_revision)
+            self._xdotool(actor_id, "xdotool.click", "click", "1",
+                          observed_revision=observed_revision)
 
-    def gui_type_text(self, actor_id: str, value: str) -> None:
-        self._xdotool(actor_id, "xdotool.type", "type", "--clearmodifiers", "--delay", "2", value)
+    def gui_type_text(self, actor_id: str, value: str,
+                      observed_revision: int | None = None) -> None:
+        self._xdotool(actor_id, "xdotool.type", "type", "--clearmodifiers", "--delay", "2", value,
+                      observed_revision=observed_revision)
 
-    def gui_press_key(self, actor_id: str, key: str) -> None:
-        self._xdotool(actor_id, "xdotool.key", "key", key)
-        time.sleep(0.2)
+    def gui_press_key(self, actor_id: str, key: str,
+                      observed_revision: int | None = None) -> None:
+        self._xdotool(actor_id, "xdotool.key", "key", key,
+                      observed_revision=observed_revision,
+                      mutates_state=key.lower() in {"return", "enter"})
 
-    def gui_submit(self, actor_id: str, value: str) -> None:
+    def gui_submit(self, actor_id: str, value: str,
+                   observed_revision: int | None = None) -> None:
         if not self.window_id:
             raise EnvironmentError("GUI window has not started")
-        self.gui_focus(actor_id, "Shared Workspace" if self.task == "csv" else "Document")
-        self.gui_type_text(actor_id, value)
-        self.gui_press_key(actor_id, "Return")
+        self.gui_focus(actor_id, "Shared Workspace" if self.task == "csv" else "Document",
+                       observed_revision)
+        self.gui_type_text(actor_id, value, observed_revision)
+        self.gui_press_key(actor_id, "Return", observed_revision)
 
-    def cli_command(self, actor_id: str, command: Sequence[str]) -> str:
+    def cli_command(self, actor_id: str, command: Sequence[str],
+                    observed_revision: int | None = None) -> str:
         if not command or command[0] != "python3":
             raise ValueError("scripted CLI adapter only permits pinned Python workspace commands")
         before = self.snapshot()
         result = self._run(["docker", "exec", self.container_name, *command])
+        after = self.snapshot()
+        if (after["csv_sha256"] != before["csv_sha256"]
+                or after["application_state_sha256"] != before["application_state_sha256"]):
+            self.revision += 1
         self.log.record(actor_id, "cli", "docker.exec", before, self.snapshot(),
+                        observed_revision=observed_revision,
                         details={"environment_id": self.environment_id,
+                                 "revision_before_action": before["revision"],
+                                 "revision_after_action": self.revision,
                                  "argv": list(command), "stdout": result.stdout.strip()})
         return result.stdout.strip()
 
@@ -296,6 +333,7 @@ class ActorContext:
         self.environment_id = environment.environment_id
         self._environment = environment
         self._role = role
+        self._observed_revision: int | None = None
 
     def _require_gui(self) -> None:
         if self._role not in {"gui", "human_replay"}:
@@ -303,25 +341,32 @@ class ActorContext:
 
     def observe(self) -> dict[str, Any]:
         self._require_gui()
-        return self._environment.observe(self.actor_id, "gui")
+        observation = self._environment.observe(self.actor_id, "gui")
+        revision = getattr(self._environment, "revision", None)
+        self._observed_revision = revision if type(revision) is int else None
+        return observation
+
+    def _act(self, interface: str, action: Any) -> Any:
+        return self._environment.act(self.actor_id, interface, action,
+                                     observed_revision=self._observed_revision)
 
     def submit_gui(self, value: str) -> None:
         self._require_gui()
-        self._environment.act(self.actor_id, "gui", {"op": "submit", "value": value})
+        self._act("gui", {"op": "submit", "value": value})
 
     def focus_window(self, title: str) -> None:
         self._require_gui()
-        self._environment.act(self.actor_id, "gui", {"op": "focus", "window": title})
+        self._act("gui", {"op": "focus", "window": title})
 
     def type_text(self, value: str) -> None:
         self._require_gui()
-        self._environment.act(self.actor_id, "gui", {"op": "type", "value": value})
+        self._act("gui", {"op": "type", "value": value})
 
     def press_key(self, key: str) -> None:
         self._require_gui()
-        self._environment.act(self.actor_id, "gui", {"op": "key", "key": key})
+        self._act("gui", {"op": "key", "key": key})
 
     def run_cli(self, command: Sequence[str]) -> str:
         if self._role != "cli":
             raise PermissionError("this actor has no CLI capability")
-        return self._environment.act(self.actor_id, "cli", command)
+        return self._act("cli", command)

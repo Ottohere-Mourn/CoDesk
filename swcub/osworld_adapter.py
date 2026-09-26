@@ -64,17 +64,20 @@ class OSWorldSharedEpisode(Episode):
         if self.observation is None:
             raise RuntimeError("reset the OSWorld episode before observing")
         self.log.record(actor_id, "observation", "osworld.observe", self.snapshot(), self.snapshot(),
+                        observed_revision=self.revision,
                         details={"environment_id": self.environment_id,
                                  "observation": _digestable(self.observation)})
         return self.observation
 
-    def act(self, actor_id: str, interface: str, action: Any) -> Any:
+    def act(self, actor_id: str, interface: str, action: Any,
+            observed_revision: int | None = None) -> Any:
         if interface == "gui":
             osworld_action = self._translate_gui_operation(action)
-            return self.gui_action(actor_id, osworld_action, source_action=action)
+            return self.gui_action(actor_id, osworld_action, source_action=action,
+                                   observed_revision=observed_revision)
         if interface == "cli":
             command = shlex.join(list(map(str, action))) if isinstance(action, (list, tuple)) else str(action)
-            return self.cli_action(actor_id, command)
+            return self.cli_action(actor_id, command, observed_revision)
         raise ValueError(f"unsupported OSWorld interface: {interface}")
 
     def _translate_gui_operation(self, action: Any) -> Any:
@@ -111,9 +114,10 @@ class OSWorldSharedEpisode(Episode):
         return self.observation
 
     def gui_action(self, actor: str, action: Any, pause: float = 2,
-                   source_action: Any | None = None) -> Any:
+                   source_action: Any | None = None,
+                   observed_revision: int | None = None) -> Any:
         before = self.snapshot()
-        observed_revision = self.revision
+        observed_revision = self.revision if observed_revision is None else observed_revision
         self.observation, reward, done, info = self.desktop_env.step(action, pause=pause)
         self.revision += 1
         self.actor_steps[actor] = self.actor_steps.get(actor, 0) + 1
@@ -125,11 +129,12 @@ class OSWorldSharedEpisode(Episode):
                                                     "info": _digestable(info)})
         return self.observation
 
-    def cli_action(self, actor: str, command: str) -> Any:
+    def cli_action(self, actor: str, command: str,
+                   observed_revision: int | None = None) -> Any:
         if self.cli_executor is None:
             raise RuntimeError("provide cli_executor bound to the same OSWorld guest workspace")
         before = self.snapshot()
-        observed_revision = self.revision
+        observed_revision = self.revision if observed_revision is None else observed_revision
         result = self.cli_executor(command)
         self.revision += 1
         self.actor_steps[actor] = self.actor_steps.get(actor, 0) + 1

@@ -23,6 +23,8 @@ class DualActorOrchestrator:
         if set(schedule) - set(by_id):
             raise ValueError(f"schedule references unknown actors: {set(schedule) - set(by_id)}")
         environment_id = self.environment.environment_id
+        contexts = {actor_id: ActorContext(actor_id, self.environment, by_id[actor_id].role)
+                    for actor_id in dict.fromkeys(schedule)}
         actor_results: dict[str, object] = {
             actor_id: {"success": True, "completed": False, "turns": 0,
                        "environment_id": environment_id}
@@ -33,7 +35,7 @@ class DualActorOrchestrator:
             if actor_id in completed:
                 raise ValueError(f"schedule runs completed actor again: {actor_id}")
             actor = by_id[actor_id]
-            context = ActorContext(actor_id, self.environment, actor.role)
+            context = contexts[actor_id]
             before = self.environment.snapshot()
             result = actor_results[actor_id]
             try:
