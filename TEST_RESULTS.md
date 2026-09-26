@@ -10,11 +10,11 @@ Command:
 pytest -q --junitxml=outputs/test-results/junit.xml
 ```
 
-Result: **27 passed, 0 failed, 0 skipped in 27.29s**. Machine-readable report: [`outputs/test-results/junit.xml`](outputs/test-results/junit.xml).
+Result: **27 passed, 0 failed, 0 skipped in 27.37s**. Machine-readable report: [`outputs/test-results/junit.xml`](outputs/test-results/junit.xml).
 
 | Test | Result | Evidence checked |
 |---|---|---|
-| GUI single actor | PASS | Real Tk window visible, real XWD captured, GUI row graded from CSV. |
+| GUI single actor | PASS | Actor receives actual 1024×768 XWD bytes; retained artifact matches its observed screenshot hash; row graded from CSV. |
 | CLI single actor | PASS | Guest Python CLI writes row; row graded from CSV. |
 | Joint GUI+CLI | PASS | Same environment ID, both exact rows survive, actor-attributed event trace. |
 | Stale CSV write conflict | PASS | GUI stale snapshot loses CLI row; evaluator rejects final state and identifies missing C1. |

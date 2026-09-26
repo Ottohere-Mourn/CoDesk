@@ -200,11 +200,17 @@ class DockerX11Workspace:
                    "xwd", "-silent", "-root", "-out", screenshot_guest])
         screenshot = self.workspace / f"{actor_id}-screen.xwd"
         self._run(["docker", "cp", f"{self.container_name}:{screenshot_guest}", screenshot])
+        screenshot_bytes = screenshot.read_bytes()
         visual = {"window_title": title,
-                  "screenshot_sha256": hashlib.sha256(screenshot.read_bytes()).hexdigest(),
-                  "screenshot_bytes": screenshot.stat().st_size}
+                  "screenshot_format": "xwd",
+                  "screenshot_width": 1024,
+                  "screenshot_height": 768,
+                  "screenshot": screenshot_bytes,
+                  "screenshot_sha256": hashlib.sha256(screenshot_bytes).hexdigest(),
+                  "screenshot_bytes": len(screenshot_bytes)}
+        logged_visual = {key: value for key, value in visual.items() if key != "screenshot"}
         self.log.record(actor_id, "observation", "x11.screenshot", before, self.snapshot(),
-                        details={"environment_id": self.environment_id, **visual})
+                        details={"environment_id": self.environment_id, **logged_visual})
         return visual
 
     def _xdotool(self, actor_id: str, action: str, *argv: str) -> None:

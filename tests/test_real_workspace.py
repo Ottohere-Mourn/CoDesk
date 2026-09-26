@@ -1,6 +1,7 @@
 """All tests use a real Docker Ubuntu container, Xvfb, Tk, xdotool, and shared disk file."""
 from __future__ import annotations
 import csv
+import hashlib
 from pathlib import Path
 import subprocess
 
@@ -31,11 +32,23 @@ def run_episode(adapter, tmp_path, actors, schedule, expected, stale=False):
 
 
 def test_real_gui_single_actor(adapter, tmp_path):
-    result = run_episode(adapter, tmp_path, [ScriptedGUIActor()], ["gui_actor"],
+    actor = ScriptedGUIActor()
+    result = run_episode(adapter, tmp_path, [actor], ["gui_actor"],
                          [{"id": "G1", "actor": "gui", "value": "GUI_VALUE"}])
     assert result["evaluation"]["success"] is True
     assert result["actors"]["gui_actor"]["environment_id"] == result["environment_id"]
-    assert (tmp_path / "gui_actor-screen.xwd").stat().st_size > 1000
+    observed = actor.observation
+    assert isinstance(observed["screenshot"], bytes)
+    assert observed["screenshot_format"] == "xwd"
+    assert (observed["screenshot_width"], observed["screenshot_height"]) == (1024, 768)
+    screenshot_path = tmp_path / "gui_actor-screen.xwd"
+    assert observed["screenshot_bytes"] == screenshot_path.stat().st_size > 1000
+    assert hashlib.sha256(observed["screenshot"]).hexdigest() == observed["screenshot_sha256"]
+    assert observed["screenshot"] == screenshot_path.read_bytes()
+    event = read_event_log(tmp_path / "events.jsonl")[1]
+    assert event["action"] == "x11.screenshot"
+    assert event["details"]["screenshot_sha256"] == observed["screenshot_sha256"]
+    assert "screenshot" not in event["details"]
 
 
 def test_real_cli_single_actor(adapter, tmp_path):

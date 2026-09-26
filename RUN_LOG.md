@@ -60,3 +60,9 @@ The real CSV and two-window focus cases are controlled infrastructure probes, no
 - Added `tasks/v0_manifest.json` with CSV-001 and FOCUS-001 environment starts, actor-role/ID mappings, independent goals, joint final-state predicates, deterministic success/failure schedules, and test/smoke evidence names.
 - Added structural validation in `swcub.task_manifest` and `scripts/validate_task_manifest.py`. The validator rejects missing independent goals, invalid actor mappings, incomplete joint schedules, absent final states, and tasks without both passing and failing interactions.
 - Six manifest tests and the CLI validator passed. The validator also checks that every referenced actor class, test function, and smoke script exists in the repository. Latest full suite: 27 passed, 0 failed, 0 skipped in 27.29 s, including the real Docker tests; simulator and stub-only results remain separately identified.
+
+## GUI actor visual observations
+
+- The Docker adapter previously returned only screenshot metadata to actors despite capturing a real XWD artifact. It now returns the actual XWD bytes, format, 1024×768 dimensions, byte count and SHA-256 to `ActorContext.observe()`; event JSONL retains only metadata/hash, and the artifact remains separately stored.
+- Updated the real GUI-only test to assert the actor received the same bytes as the retained screenshot artifact and that its event includes the matching hash without embedding image bytes.
+- Latest full suite: 27 passed, 0 failed, 0 skipped in 27.37 s. This enables visual-capable actors to consume desktop observations; it does not mean a model actor has been connected.

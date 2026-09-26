@@ -39,7 +39,7 @@ The orchestrator creates role-limited `ActorContext` objects; GUI actors cannot 
 
 ## Reset and cleanup
 
-Every reset force-removes only the V0 container identified by that adapter, deletes only its own temporary workspace directory, creates a clean workspace/container, restarts Xvfb and the Tk app, and records old/new environment IDs. `close()` applies the same targeted cleanup. It does not prune Docker images, stop unrelated containers, or remove other files. Keep `outputs/real-smoke/` as run evidence.
+Every reset force-removes only the V0 container identified by that adapter, deletes only its own temporary workspace directory, creates a clean workspace/container, restarts Xvfb and the Tk app, and records old/new environment IDs. GUI ActorContext observations include the captured XWD screenshot bytes, format, 1024×768 dimensions, byte count, and hash; JSONL keeps the hash and byte count while the screenshot itself is retained as a separate artifact. `close()` applies the same targeted cleanup. It does not prune Docker images, stop unrelated containers, or remove other files. Keep `outputs/real-smoke/` as run evidence.
 
 ## OSWorld path
 

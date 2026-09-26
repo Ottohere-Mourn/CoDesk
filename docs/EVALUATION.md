@@ -26,7 +26,7 @@ This is process/API isolation, not a hostile-code security sandbox: a future unt
 
 - Per-actor completion/error and environment ID.
 - Each GUI/CLI operation with actor ID, argv or typed value, environment ID, before/after CSV SHA-256, and output.
-- GUI screenshot hash and retained XWD screenshot.
+- GUI screenshot bytes (XWD, 1024×768) returned to the actor, plus screenshot hash and separately retained XWD artifact.
 - Final CSV rows, missing/duplicate rows, and exact pass/fail.
 - Reset event with old/new environment IDs and a post-reset clean-state check.
 

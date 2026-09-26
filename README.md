@@ -29,7 +29,7 @@ docker build --tag swcub-v0:local --file Dockerfile .
 
 - `swcub.environment.EnvironmentAdapter`: shared reset/observe/act/snapshot/close contract.
 - `swcub.environment.DockerX11Workspace`: real Docker/Xvfb/Tk implementation; one `environment_id` maps to one container and one mounted workspace.
-- `swcub.actors.Actor`: actor protocol. Role-scoped `ActorContext` allows GUI tools to GUI actors and CLI tools to CLI actors; neither receives the evaluator or hidden expected rows.
+- `swcub.actors.Actor`: actor protocol. Role-scoped `ActorContext` allows GUI tools to GUI actors and CLI tools to CLI actors; GUI observations include the captured XWD screenshot bytes. Actors do not receive the evaluator or hidden expected rows.
 - `swcub.orchestrator.DualActorOrchestrator`: executes a pinned actor schedule in one environment, records actor-attributed actions, and calls the evaluator after actors stop.
 - `swcub.evaluator`: exact CSV state predicates and an OSWorld evaluator bridge.
 - `swcub.osworld_adapter.OSWorldSharedEpisode`: compatible adapter seam for a caller-provided OSWorld `DesktopEnv` and an injected CLI executor bound to the same guest.
