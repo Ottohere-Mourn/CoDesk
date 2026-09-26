@@ -22,3 +22,12 @@ Date: 2026-09-26 (Asia/Shanghai). Working directory: `/home/mjh/Projects/Shared-
 ## Research boundary
 
 The real CSV and two-window focus cases are controlled infrastructure probes, not benchmark-scale task coverage. The OSWorld adapter follows the discovered `DesktopEnv` call shape but was not exercised because the package/task assets are absent. No model was connected and no paper claim or statistical hypothesis was tested.
+
+## Continued replay validation
+
+- Added `scripts/repeatability_study.py` and an orchestrator option to skip copying XWD/application artifacts while retaining reports and event logs. This keeps repeated execution bounded without changing the default artifact behavior used by the main smokes and tests.
+- Ran 20 fresh-container episodes: five each for GUI→CLI CSV, CLI→GUI CSV, GUI+Human focus recovery, and stale-focus failure. All four policies produced one unique final-state SHA-256 across their five trials. Expected outcome was 5/5 for each policy (20/20 total).
+- Median actor/evaluation/report time (container reset and image build excluded): GUI→CLI 0.999 s; CLI→GUI 0.991 s; focus recovery 2.052 s; stale-focus failure 1.625 s. These are local scripted replay timings, not benchmark performance claims.
+- After generalizing the evaluator event action name to `evaluate`, reran the 20 episode replay study and all final checks. `python scripts/smoke_real_workspace.py`: 7/7 true. `python -m pytest -q --junitxml=outputs/test-results/junit.xml`: 9 passed, 0 failed, 0 skipped in 26.97 s.
+- Detailed replay rows and per-trial reports/event traces: `outputs/repeatability/study.json`, `outputs/repeatability/REPORT.md`, and the policy subdirectories. The script is bounded to 1–20 episodes per policy and deletes/recreates only its own `outputs/repeatability/` directory.
+- These repeats validate deterministic scripted outcomes only. They do not test model/human behavior, truly simultaneous events, external OSWorld execution, or statistical benchmark validity.

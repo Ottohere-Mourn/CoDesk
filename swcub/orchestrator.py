@@ -16,7 +16,7 @@ class DualActorOrchestrator:
         self.event_log = event_log or environment.log
 
     def run(self, actors: Sequence[Actor], schedule: Sequence[str],
-            evaluator: Evaluator, out: Path) -> dict[str, object]:
+            evaluator: Evaluator, out: Path, *, copy_artifacts: bool = True) -> dict[str, object]:
         by_id = {actor.actor_id: actor for actor in actors}
         if len(by_id) != len(actors):
             raise ValueError("actor_id values must be unique")
@@ -60,7 +60,7 @@ class DualActorOrchestrator:
                 result["success"] = False
                 result["error"] = "actor did not receive enough scheduled turns"
         grading = evaluator.evaluate(self.environment)
-        self.event_log.record("evaluator", "evaluation", "required_rows", self.environment.snapshot(),
+        self.event_log.record("evaluator", "evaluation", "evaluate", self.environment.snapshot(),
                               self.environment.snapshot(), outcome="pass" if grading["success"] else "fail",
                               details={"missing_count": len(grading.get("missing", [])),
                                        "extra_count": len(grading.get("duplicates", [])) +
@@ -70,5 +70,6 @@ class DualActorOrchestrator:
         out.mkdir(parents=True, exist_ok=True)
         (out / "report.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
         self.event_log.write(out / "events.jsonl")
-        self.environment.copy_artifacts(out)
+        if copy_artifacts:
+            self.environment.copy_artifacts(out)
         return report

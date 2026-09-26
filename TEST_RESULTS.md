@@ -10,7 +10,7 @@ Command:
 pytest -q --junitxml=outputs/test-results/junit.xml
 ```
 
-Result: **9 passed, 0 failed, 0 skipped in 27.57s**. Machine-readable report: [`outputs/test-results/junit.xml`](outputs/test-results/junit.xml).
+Result: **9 passed, 0 failed, 0 skipped in 26.97s**. Machine-readable report: [`outputs/test-results/junit.xml`](outputs/test-results/junit.xml).
 
 | Test | Result | Evidence checked |
 |---|---|---|
@@ -29,6 +29,14 @@ Result: **9 passed, 0 failed, 0 skipped in 27.57s**. Machine-readable report: [`
 `python scripts/smoke_real_workspace.py` result: **7/7 checks true**. Machine-readable summary: [`outputs/real-smoke/summary.json`](outputs/real-smoke/summary.json). Scenario reports/logs are in the adjacent per-scenario directories; real XWD screenshots are retained.
 
 Final artifact audit confirmed non-empty event logs, valid XWD screenshot files (`1024x768x24`), no running V0 containers, and no leftover runner temporary workspace directories.
+
+## Repeated deterministic replay
+
+Command: `python scripts/repeatability_study.py 5`.
+
+Result: **20 fresh-container episodes, all expected outcomes observed, and one final-state hash per policy across five repetitions**. CSV GUI→CLI and CLI→GUI each passed 5/5; focus recovery passed 5/5; stale-focus control failed evaluation as intended in 5/5. Median actor/evaluation/report time was 0.999s, 0.991s, 2.052s, and 1.625s respectively (reset/build excluded). See [`outputs/repeatability/REPORT.md`](outputs/repeatability/REPORT.md) and [`study.json`](outputs/repeatability/study.json).
+
+These results establish deterministic scripted replay on this local Docker/Xvfb setup. They do not establish cross-host reproducibility, model/human performance, or benchmark validity.
 
 ## Resolved attempts and unverified areas
 
