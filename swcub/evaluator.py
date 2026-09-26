@@ -62,6 +62,22 @@ class GuestCsvEvaluator:
                 "guest_csv_sha256": hashlib.sha256(raw.encode("utf-8")).hexdigest()}
 
 
+class GuestFocusEvaluator:
+    """Check both terminal input streams using host-held Guest CLI reads."""
+    def __init__(self, read_file: Callable[[str], str], expected: dict[str, str]):
+        self._read_file = read_file
+        self._expected = dict(expected)
+
+    def evaluate(self, environment: Any) -> dict[str, object]:
+        paths = {"Document": "/tmp/swcub_document.txt", "Chat": "/tmp/swcub_chat.txt"}
+        actual = {window: self._read_file(path) for window, path in paths.items()}
+        missing = {window: {"expected": value, "actual": actual[window]}
+                   for window, value in self._expected.items() if actual.get(window) != value}
+        return {"success": not missing, "expected": self._expected,
+                "final_state": actual, "missing": missing,
+                "no_cross_window_contamination": not missing}
+
+
 class FocusStateEvaluator:
     """Check the authoritative GUI application state for the two-window focus task."""
     def __init__(self, expected: dict[str, str] | None = None):

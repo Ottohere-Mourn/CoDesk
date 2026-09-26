@@ -143,3 +143,48 @@ class ScriptedGuestCLIActor:
 
     def run(self, context: ActorContext) -> None:
         context.run_cli(self.command)
+
+
+class ScriptedGuestFocusGUIActor:
+    """Type into a real Guest terminal, optionally reacquiring its window."""
+    actor_id = "gui_actor"
+    role = "gui"
+
+    def __init__(self, recover: bool, window_center: tuple[int, int] = (420, 220)):
+        self.recover = recover
+        self.window_center = window_center
+        self.turn = 0
+
+    def run_step(self, context: ActorContext) -> bool:
+        if self.turn == 0:
+            observation = context.observe()
+            if not isinstance(observation.get("screenshot"), bytes):
+                raise RuntimeError("OSWorld Guest returned no focus-task screenshot")
+            self.turn += 1
+            return False
+        if self.turn != 1:
+            raise RuntimeError("Guest focus actor received an unexpected extra turn")
+        if self.recover:
+            context.click(*self.window_center)
+        context.type_text("Approved")
+        context.press_key("Return")
+        self.turn += 1
+        return True
+
+    def run(self, context: ActorContext) -> None:
+        while not self.run_step(context):
+            pass
+
+
+class ScriptedGuestHumanReplayActor:
+    """Replay a human click and text entry in the second Guest terminal."""
+    actor_id = "human_replay"
+    role = "human_replay"
+
+    def __init__(self, window_center: tuple[int, int] = (1320, 220)):
+        self.window_center = window_center
+
+    def run(self, context: ActorContext) -> None:
+        context.click(*self.window_center)
+        context.type_text("Review note")
+        context.press_key("Return")

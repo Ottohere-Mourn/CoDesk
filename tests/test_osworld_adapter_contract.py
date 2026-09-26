@@ -7,7 +7,8 @@ import shlex
 import pytest
 
 from swcub.environment import ActorContext
-from swcub.evaluator import GuestCsvEvaluator, OSWorldTaskEvaluator
+from swcub.actors import ScriptedGuestFocusGUIActor, ScriptedGuestHumanReplayActor
+from swcub.evaluator import GuestCsvEvaluator, GuestFocusEvaluator, OSWorldTaskEvaluator
 from swcub.osworld_adapter import OSWorldSharedEpisode
 
 
@@ -109,6 +110,39 @@ def test_osworld_hotkey_translation_and_screenshot_artifact_copy(tmp_path):
         "pyautogui.click(45, 15)")
     episode.copy_artifacts(tmp_path)
     assert (tmp_path / "guest-screen.png").read_bytes() == b"stub-screen"
+
+
+def test_guest_focus_evaluator_detects_misdirected_text():
+    state = {"/tmp/swcub_document.txt": "Approved\n",
+             "/tmp/swcub_chat.txt": "Review note\n"}
+    evaluator = GuestFocusEvaluator(lambda path: state[path], {
+        "Document": "Approved\n", "Chat": "Review note\n"})
+    assert evaluator.evaluate(None)["success"] is True
+
+    state["/tmp/swcub_document.txt"] = ""
+    state["/tmp/swcub_chat.txt"] = "Review note\nApproved\n"
+    result = evaluator.evaluate(None)
+    assert result["success"] is False
+    assert result["missing"]["Document"]["actual"] == ""
+    assert result["missing"]["Chat"]["actual"] == "Review note\nApproved\n"
+
+
+def test_guest_focus_actor_interfaces_dispatch_real_desktop_operations():
+    desktop = DesktopEnvStub()
+    episode = OSWorldSharedEpisode(desktop)
+    episode.reset({"id": "focus-probe", "instruction": "use two windows"})
+    gui_context = ActorContext("gui_actor", episode, "gui")
+    gui = ScriptedGuestFocusGUIActor(recover=True)
+    assert gui.run_step(gui_context) is False
+    assert gui.run_step(gui_context) is True
+    guest_actions = [event.details.get("source_action") for event in episode.log.events]
+    assert {"op": "click", "x": 420, "y": 220} in guest_actions
+
+    human_context = ActorContext("human_replay", episode, "human_replay")
+    ScriptedGuestHumanReplayActor().run(human_context)
+    guest_actions = [event.details.get("source_action") for event in episode.log.events]
+    assert {"op": "click", "x": 1320, "y": 220} in guest_actions
+    assert {"op": "type", "value": "Review note"} in guest_actions
 
 
 def test_guest_csv_evaluator_checks_exact_rows_without_actor_access():

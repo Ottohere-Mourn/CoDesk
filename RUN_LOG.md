@@ -13,6 +13,17 @@
 - **Current full test suite:** after the OSWorld adapter, actors and evaluator additions, `python -m pytest -q` passed **30/30 in 27.64s**. The suite includes real Docker/Xvfb cases and separately labeled OSWorld adapter contract stubs. Stub tests do not count as Guest validation.
 - **Not verified:** OSWorld's gated task/assets download and official task scoring; successful run on the upstream official Docker runtime; OSWorld Guest multi-window GUI focus contention or GUI+Human Replay; model actors; true simultaneous keyboard injection.
 
+## OSWorld Guest focus contention follow-up (2026-09-27)
+
+- Added four repeatable Guest scenarios to the same runner: `focus-gui-solo`, `focus-human-solo`, `focus-recovery`, and `focus-stale`. Setup launches two visible GNOME Terminal windows, `Document` and `Chat`, with each terminal accepting input into a different file. GUI and Human Replay use real Guest mouse clicks and keyboard input; the evaluator reads exact contents through a host-held Guest CLI callback.
+- **GUI solo PASS:** `outputs/osworld-v2.1/focus-gui-solo/report.json` has `Document="Approved\n"`, empty Chat. Reset produced a new Guest container and removed both files.
+- **Human Replay solo PASS:** `outputs/osworld-v2.1/focus-human-solo/report.json` has empty Document, `Chat="Review note\n"`. Reset produced a new Guest container and removed both files.
+- **GUI+Human Replay recovery PASS:** `outputs/osworld-v2.1/focus-recovery-attempt-01/report.json` has both exact independent goals and no cross-window contamination. Screenshots show both real windows and the final text. Reset passed.
+- **Stale-focus control PASS as negative control:** `outputs/osworld-v2.1/focus-stale-attempt-01/report.json` shows Document empty and Chat containing both `Review note` and the misdirected `Approved`. The task evaluator correctly returns failure; the control records `stale_focus_misdirected`, and reset passes.
+- Four focus event logs validate as event schema V1 (13, 11, 17 and 16 records respectively). The outcomes are serial interleavings, not simultaneous keyboard races.
+- Added adapter-level tests for exact hidden focus evaluation and actor click/type dispatch. Final full suite: `python -m pytest -q --junitxml=outputs/test-results/osworld-v2.1-junit-final.xml` passed **32/32 in 28.40s**. An initial assertion inspected the event's display label rather than its source action; the test was corrected to validate `details.source_action` and rerun successfully.
+- **Still not verified:** official OSWorld task/asset scoring, upstream official runtime image, model actors, GUI+GUI coordination, simultaneous input races, or another host.
+
 Date: 2026-09-26 (Asia/Shanghai). Working directory: `/home/mjh/Projects/Shared-Workspace-Benchmark-V0`, standalone Git repository on branch `v0`. The original `Multi-GUI-Agent-Bench` directory was copied as the starting point and left untouched during V0 implementation.
 
 ## Environment and access audit

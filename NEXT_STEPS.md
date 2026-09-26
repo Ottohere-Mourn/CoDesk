@@ -2,13 +2,13 @@
 
 ## V0 status
 
-The V0 engineering target is met for two controlled real Docker/Xvfb desktop cases: GUI+CLI shared CSV and GUI+Human Replay focus competition. A pinned OSWorld V2.1 Guest is now also running: GUI+CLI success, exact stale-overwrite conflict detection, repeated deterministic output, and clean Guest reset have passed. OSWorld multi-window GUI focus/Human Replay and official task scoring are still pending. The implementation is small by design. There is no evidence yet about LLM behavior, general coordination ability, task coverage, or benchmark validity.
+The V0 engineering target is met for controlled Docker/Xvfb and pinned OSWorld V2.1 Guest cases: GUI+CLI shared CSV success and stale-overwrite detection; GUI+Human Replay independent window goals, focus recovery, and stale-focus misdirection; and clean Guest reset. The OSWorld Guest results use deterministic scripted actors and a local runtime fallback. Official task scoring, model behavior, GUI+GUI coordination, and broader task coverage remain untested.
 
 ## Next bounded tasks
 
-1. Stabilize a real Guest multi-window focus protocol, then port the two-window GUI+Human Replay case to OSWorld and verify both independent goals, focus theft, recovery, and reset through Guest state.
-2. Resolve access to the gated V2.1 task/assets and rebind one official task evaluator without exposing state to actors; the custom shared CSV case itself is not an official scored benchmark task.
-3. The native V0 Tk/Xvfb focus and CSV cases already provide deterministic control conditions. Add a real application (for example, LibreOffice Calc) only after a deterministic hidden-state evaluator and reset are available in the Guest.
+1. Resolve access to the gated V2.1 task/assets and rebind one official task evaluator without exposing state to actors; the custom CSV and terminal-focus cases are not official scored benchmark tasks.
+2. Add one realistic multi-application task (for example, LibreOffice Calc) while preserving exact hidden-state checks and reset. GUI+GUI scheduling and simultaneous input races need separate scenarios and instrumentation.
+3. Rerun the scripted Guest cases on the upstream official Docker runtime when registry access is available, then verify the setup on a second host before making reproducibility claims.
 4. Event-log schema/version validation is implemented for schema V1, exposed through `python -m swcub.cli validate-events`, and covered by tests. The initial two task specifications now live in `tasks/v0_manifest.json` with a structural validator. A bounded five-episode-per-policy replay check covers both CSV actor orders, focus recovery, and stale-focus failure; it checks scripted determinism and rough runtime only.
 5. For model integration, keep one Guest per episode and pass only role-scoped tool clients. Do not expose evaluator code, host paths, or expected outputs to model processes.
 

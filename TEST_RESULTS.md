@@ -21,6 +21,18 @@ Early failed Guest attempts are retained in `outputs/osworld-v2.1/shared-csv-att
 
 After the final runner, artifact-path, and documentation updates, `python -m pytest -q --junitxml=outputs/test-results/osworld-v2.1-junit.xml` passed **30 passed, 0 failed, 0 skipped in 26.84s**. This includes the new Guest adapter contract tests; those seven contract tests are stub-only. The task manifest validator, shell syntax checks, Python compilation checks, event-log review, and `git diff --check` also passed.
 
+## Real Guest GUI+Human Replay focus update (2026-09-27)
+
+| Check | Result | Evidence |
+|---|---|---|
+| GUI actor independent Document goal | **PASS, real Guest** | `outputs/osworld-v2.1/focus-gui-solo/report.json`: exact `Approved` file, Chat remains empty. |
+| Human Replay independent Chat goal | **PASS, real Guest** | `outputs/osworld-v2.1/focus-human-solo/report.json`: exact `Review note` file, Document remains empty. |
+| Joint focus recovery | **PASS, real Guest** | `outputs/osworld-v2.1/focus-recovery-attempt-01/report.json`: both files exact; saved Guest screen shows both GNOME Terminal windows. |
+| Stale-focus contamination control | **PASS as a negative control, real Guest** | `outputs/osworld-v2.1/focus-stale-attempt-01/report.json`: evaluator rejects final state because `Approved` is in Chat and Document is empty. |
+| Focus scenario reset | **PASS, real Guest** | All four reports show a different new Guest container and absence of both task files. |
+
+All four focus scenario event logs validate as schema V1. Full final test command `python -m pytest -q --junitxml=outputs/test-results/osworld-v2.1-junit-final.xml` passed **32 passed, 0 failed, 0 skipped in 28.40s**. Tests cover the Guest focus evaluator's exact-state logic and actor-to-GUI-operation dispatch; actual Guest claims above come from the separate real runs and screenshots, not from test doubles.
+
 Final verification date: 2026-09-26. The real-environment tests use Docker Ubuntu containers, Xvfb, Tk windows, xdotool desktop actions, guest CLI processes, and mounted files. Separate unit tests validate event/task formats and OSWorld adapter wiring with an explicitly labeled stub; those unit checks are not reported as environment outcomes.
 
 ## Automated suite

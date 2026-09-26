@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import os
 import argparse
+import shlex
 from pathlib import Path
 import sys
 import time
@@ -17,10 +18,11 @@ sys.path.insert(0, str(ROOT))
 
 from desktop_env.desktop_env import DesktopEnv
 
-from swcub.actors import ScriptedGuestCLIActor, ScriptedGuestGUIActor
+from swcub.actors import (ScriptedGuestCLIActor, ScriptedGuestFocusGUIActor,
+                          ScriptedGuestGUIActor, ScriptedGuestHumanReplayActor)
 from swcub.core import EventLog
 from swcub.environment import ActorContext
-from swcub.evaluator import GuestCsvEvaluator
+from swcub.evaluator import GuestCsvEvaluator, GuestFocusEvaluator
 from swcub.orchestrator import DualActorOrchestrator
 from swcub.osworld_adapter import OSWorldSharedEpisode
 
@@ -34,7 +36,10 @@ EXPECTED = [
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--scenario", choices=("shared-csv", "stale-overwrite"), default="shared-csv")
+    parser.add_argument("--scenario", choices=("shared-csv", "stale-overwrite",
+                                                  "focus-recovery", "focus-stale",
+                                                  "focus-gui-solo", "focus-human-solo"),
+                        default="shared-csv")
     scenario = parser.parse_args().scenario
     out = Path(os.environ.get("SWCUB_OSWORLD_RUN_DIR", ROOT / "outputs/osworld-v2.1/shared-csv"))
     out.mkdir(parents=True, exist_ok=True)
@@ -106,26 +111,60 @@ def main() -> int:
         episode.reset(task_config=None)
         if not wait_for_desktop(episode):
             raise TimeoutError("Guest desktop did not produce a visible screenshot within 300 seconds")
-        seed = "from pathlib import Path; Path('/tmp/swcub_shared.csv').write_text('actor,value\\n', encoding='utf-8')"
-        episode.cli_action("environment", f"python3 -c {__import__('shlex').quote(seed)}")
-
-        evaluator = GuestCsvEvaluator(lambda: command(["cat", CSV_PATH]), EXPECTED)
-        if scenario == "shared-csv":
-            gui_command = 'python3 -c "open(\'/tmp/swcub_shared.csv\',\'a\').write(\'gui,GUI_VALUE\\\\n\')"'
-        else:
-            # Deliberately commit the GUI actor's stale whole-file snapshot after
-            # the CLI actor has appended its independent row.
-            gui_command = (
-                'python3 -c "open(\'/tmp/swcub_shared.csv\',\'w\').write('
-                '\'actor,value\\\\ngui,GUI_VALUE\\\\n\')"'
+        if scenario.startswith("focus-"):
+            setup_shell = (
+                "gnome-terminal --title=Document --geometry=70x18+100+80 -- bash -lc "
+                + shlex.quote("cat > /tmp/swcub_document.txt")
+                + " >/tmp/swcub-document-launch.log 2>&1 & "
+                + "gnome-terminal --title=Chat --geometry=70x18+1000+80 -- bash -lc "
+                + shlex.quote("cat > /tmp/swcub_chat.txt")
+                + " >/tmp/swcub-chat-launch.log 2>&1 & sleep 5"
             )
-        cli_code = "from pathlib import Path; Path('/tmp/swcub_shared.csv').open('a', encoding='utf-8').write('cli,CLI_VALUE\\n')"
-        actors = [
-            ScriptedGuestGUIActor(gui_command),
-            ScriptedGuestCLIActor(["python3", "-c", cli_code]),
-        ]
+            episode.cli_action("environment", "bash -lc " + shlex.quote(setup_shell))
+            deadline = time.monotonic() + 30
+            while time.monotonic() < deadline:
+                ready = command(["bash", "-lc",
+                                 "test -f /tmp/swcub_document.txt && test -f /tmp/swcub_chat.txt && echo ready"])
+                if ready.strip() == "ready":
+                    break
+                time.sleep(1)
+            else:
+                raise TimeoutError("Guest focus task terminal windows did not start within 30 seconds")
+            if scenario == "focus-gui-solo":
+                expected_focus = {"Document": "Approved\n", "Chat": ""}
+                actors = [ScriptedGuestFocusGUIActor(recover=True)]
+                schedule = ["gui_actor", "gui_actor"]
+            elif scenario == "focus-human-solo":
+                expected_focus = {"Document": "", "Chat": "Review note\n"}
+                actors = [ScriptedGuestHumanReplayActor()]
+                schedule = ["human_replay"]
+            else:
+                expected_focus = {"Document": "Approved\n", "Chat": "Review note\n"}
+                actors = [
+                    ScriptedGuestFocusGUIActor(recover=scenario == "focus-recovery"),
+                    ScriptedGuestHumanReplayActor(),
+                ]
+                schedule = ["gui_actor", "human_replay", "gui_actor"]
+            evaluator = GuestFocusEvaluator(
+                lambda path: command(["cat", path]), expected_focus)
+        else:
+            seed = "from pathlib import Path; Path('/tmp/swcub_shared.csv').write_text('actor,value\\n', encoding='utf-8')"
+            episode.cli_action("environment", f"python3 -c {shlex.quote(seed)}")
+            evaluator = GuestCsvEvaluator(lambda: command(["cat", CSV_PATH]), EXPECTED)
+            if scenario == "shared-csv":
+                gui_command = 'python3 -c "open(\'/tmp/swcub_shared.csv\',\'a\').write(\'gui,GUI_VALUE\\\\n\')"'
+            else:
+                # Deliberately commit a stale whole-file snapshot after the CLI append.
+                gui_command = (
+                    'python3 -c "open(\'/tmp/swcub_shared.csv\',\'w\').write('
+                    '\'actor,value\\\\ngui,GUI_VALUE\\\\n\')"'
+                )
+            cli_code = "from pathlib import Path; Path('/tmp/swcub_shared.csv').open('a', encoding='utf-8').write('cli,CLI_VALUE\\n')"
+            actors = [ScriptedGuestGUIActor(gui_command),
+                      ScriptedGuestCLIActor(["python3", "-c", cli_code])]
+            schedule = ["gui_actor", "cli_actor", "gui_actor"]
         orchestrator = DualActorOrchestrator(episode)
-        report = orchestrator.run(actors, ["gui_actor", "cli_actor", "gui_actor"], evaluator,
+        report = orchestrator.run(actors, schedule, evaluator,
                                   out, copy_artifacts=False)
         shared_guest_container_id = episode.snapshot().get("guest_container_id")
         report["shared_guest_container_id"] = shared_guest_container_id
@@ -145,7 +184,10 @@ def main() -> int:
         episode.reset(task_config=None)
         reset_display_ready = wait_for_desktop(episode)
         after_reset = episode.snapshot()
-        reset_output = command(["bash", "-lc", f"test ! -e {CSV_PATH} && echo reset-clean"]) if reset_display_ready else ""
+        reset_paths = ([CSV_PATH] if scenario in {"shared-csv", "stale-overwrite"} else
+                       ["/tmp/swcub_document.txt", "/tmp/swcub_chat.txt"])
+        reset_test = " && ".join(f"test ! -e {path}" for path in reset_paths)
+        reset_output = command(["bash", "-lc", reset_test + " && echo reset-clean"]) if reset_display_ready else ""
         reset_ok = reset_display_ready and reset_output.strip() == "reset-clean"
         episode.log.record("evaluator", "reset_check", "guest.reset_clean", before_reset,
                            after_reset, outcome="pass" if reset_ok else "fail",
@@ -161,10 +203,21 @@ def main() -> int:
         if scenario == "shared-csv":
             scenario_success = eval_success
             outcome = "joint_success" if eval_success else "joint_failure"
-        else:
+        elif scenario == "stale-overwrite":
             missing_cli = {"actor": "cli", "value": "CLI_VALUE"} in report["evaluation"].get("missing", [])
             scenario_success = (not eval_success) and missing_cli
             outcome = "stale_overwrite_detected" if scenario_success else "stale_overwrite_not_detected"
+        elif scenario == "focus-recovery":
+            scenario_success = eval_success
+            outcome = "focus_recovery_success" if eval_success else "focus_recovery_failed"
+        elif scenario in {"focus-gui-solo", "focus-human-solo"}:
+            scenario_success = eval_success
+            outcome = "independent_goal_success" if eval_success else "independent_goal_failed"
+        else:
+            final = report["evaluation"].get("final_state", {})
+            scenario_success = (not eval_success and final.get("Document") == ""
+                                and final.get("Chat") == "Review note\nApproved\n")
+            outcome = "stale_focus_misdirected" if scenario_success else "stale_focus_not_reproduced"
         report["scenario"] = scenario
         report["scenario_outcome"] = outcome
         report["scenario_success"] = scenario_success

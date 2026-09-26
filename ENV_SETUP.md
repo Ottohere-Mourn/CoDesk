@@ -34,6 +34,8 @@ Run the real two-actor CSV episode with:
 scripts/run_osworld_v2_1_shared_csv.sh
 ```
 
+The default invocation starts a real Guest, waits up to five minutes for a nonblank desktop screenshot, seeds a shared Guest CSV through its CLI endpoint, then runs GUI and CLI scripted actors through the same `DesktopEnv`/Guest. The GUI actor clicks GNOME Activities, searches for Terminal, and types a Python append command into the visible terminal. The CLI actor appends its own row through the Guest command endpoint. The evaluator reads the final file on the host through a private callback that is not present in actor contexts. The runner then resets and checks that a fresh Guest has a different container ID and no task file.
+
 To preserve a separate run directory:
 
 ```bash
@@ -48,7 +50,20 @@ OSWORLD_V2_RUN_DIR="$PWD/outputs/osworld-v2.1/stale-overwrite" \
   scripts/run_osworld_v2_1_shared_csv.sh --scenario stale-overwrite
 ```
 
-This starts a real Guest, waits up to five minutes for a nonblank desktop screenshot, seeds a shared Guest CSV through its CLI endpoint, then runs GUI and CLI scripted actors through the same `DesktopEnv`/Guest. The GUI actor clicks GNOME Activities, searches for Terminal, and types a Python append command into the visible terminal. The CLI actor appends its own row through the Guest command endpoint. The evaluator reads the final file on the host through a private callback that is not present in actor contexts. The runner then resets and checks that a fresh Guest has a different container ID and no task file.
+The two-window GUI+Human Replay focus case has independent actor runs, a recovering joint run, and a stale-focus control. Each command starts its own fresh Guest and saves screenshots, actor-attributed events, hidden-state evaluation and reset evidence:
+
+```bash
+OSWORLD_V2_RUN_DIR="$PWD/outputs/osworld-v2.1/focus-gui-solo" \
+  scripts/run_osworld_v2_1_shared_csv.sh --scenario focus-gui-solo
+OSWORLD_V2_RUN_DIR="$PWD/outputs/osworld-v2.1/focus-human-solo" \
+  scripts/run_osworld_v2_1_shared_csv.sh --scenario focus-human-solo
+OSWORLD_V2_RUN_DIR="$PWD/outputs/osworld-v2.1/focus-recovery" \
+  scripts/run_osworld_v2_1_shared_csv.sh --scenario focus-recovery
+OSWORLD_V2_RUN_DIR="$PWD/outputs/osworld-v2.1/focus-stale" \
+  scripts/run_osworld_v2_1_shared_csv.sh --scenario focus-stale
+```
+
+The focus setup opens two real GNOME Terminal windows at fixed positions, each running `cat` into its own Guest file. GUI and Human Replay actors use actual PyAutoGUI clicks and keyboard input. The evaluator checks exact contents through a host-held Guest CLI reader. In `focus-stale`, the GUI actor deliberately does not click back to Document; the evaluator finds `Approved` in Chat and rejects both independent final-state predicates.
 
 ## Verified execution
 
@@ -56,10 +71,11 @@ This starts a real Guest, waits up to five minutes for a nonblank desktop screen
 - Real shared CSV report: [`outputs/osworld-v2.1/shared-csv/report.json`](outputs/osworld-v2.1/shared-csv/report.json). Both actors completed in environment `osworld-7313b75158b0`; the report records the same Guest container ID for the shared task. Exact expected rows passed with no missing/duplicate rows.
 - Independent repeat report: [`outputs/osworld-v2.1/shared-csv-repeat-02/report.json`](outputs/osworld-v2.1/shared-csv-repeat-02/report.json) records the same final CSV SHA-256 from a separate Guest/container.
 - Real stale-overwrite negative control: [`outputs/osworld-v2.1/stale-overwrite/report.json`](outputs/osworld-v2.1/stale-overwrite/report.json) shows CLI row missing after the GUI actor commits its stale snapshot. The evaluator correctly rejects joint completion; the control succeeds by detecting the conflict and the subsequent reset passes.
+- Real GUI+Human Replay focus: [`focus-gui-solo`](outputs/osworld-v2.1/focus-gui-solo/report.json), [`focus-human-solo`](outputs/osworld-v2.1/focus-human-solo/report.json), [`focus-recovery-attempt-01`](outputs/osworld-v2.1/focus-recovery-attempt-01/report.json), and [`focus-stale-attempt-01`](outputs/osworld-v2.1/focus-stale-attempt-01/report.json) preserve both individual goals, joint recovery and a negative control. The focus evaluator reads exact file state; screenshots show both real windows and the misdirected text in the stale control.
 - Actual Guest screenshots and intermediate GUI observations are under [`outputs/osworld-v2.1/shared-csv/`](outputs/osworld-v2.1/shared-csv/); the actor-attributed JSONL trace is `events.jsonl`.
 - Reset check passed: the fresh Guest had a different container ID and `/tmp/swcub_shared.csv` was absent.
 - Earlier failed GUI attempts and the upstream readiness timeout are retained in `shared-csv-attempt-01` through `shared-csv-attempt-04`; they are not counted as passes.
 
 ## Boundaries
 
-The OSWorld V2.1 gated task set/assets and an official scored task were not exercised. The shared CSV and stale-overwrite cases are deterministic project probes on the actual OSWorld Guest, not official OSWorld task scores. The upstream official Docker runtime pull is still unavailable; these runs used the documented local runtime fallback. Actual multi-window focus contention, GUI+Human Replay on this Guest, and model actors remain unverified. Existing Docker/Xvfb focus tests are separate local-environment evidence.
+The OSWorld V2.1 gated task set/assets and an official scored task were not exercised. The shared CSV, stale-overwrite and two-window focus cases are deterministic project probes on the actual OSWorld Guest, not official OSWorld task scores. The upstream official Docker runtime pull is still unavailable; these runs used the documented local runtime fallback. Model actors, GUI+GUI coordination, and truly simultaneous key events remain unverified. Existing Docker/Xvfb tests are additional separate local-environment evidence.
