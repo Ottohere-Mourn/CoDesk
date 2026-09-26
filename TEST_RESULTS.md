@@ -32,7 +32,11 @@ Result: **16 passed, 0 failed, 0 skipped in 27.22s**. Machine-readable report: [
 
 Final artifact audit confirmed non-empty event logs, valid XWD screenshot files (`1024x768x24`), no running V0 containers, and no leftover runner temporary workspace directories.
 
-`read_event_log` validated all **29 archived event logs / 359 events** across real Docker runs, repeated runs, and the separately labeled simulator outputs. CLI checks for joint CSV, focus, conflict, and simulator logs reported schema version 1.
+`read_event_log` validated all **32 archived event logs / 396 events** across real Docker runs, repeated runs, clean-build runs, and the separately labeled simulator outputs. CLI checks for joint CSV, focus, conflict, and simulator logs reported schema version 1.
+
+## Cold rebuild verification
+
+Built a no-cache image from the pinned Ubuntu digest and ran `python scripts/smoke_real_workspace.py --image swcub-v0:clean-check --skip-build`: **7/7 smoke checks passed**. The cold-built image ID exactly matched the existing `swcub-v0:local` image ID. All seven directly pinned package versions matched `env/requirements.lock`. The automated suite also passed **16/16** on this code state. Build and episode evidence is in [`outputs/clean-build-validation/manifest.json`](outputs/clean-build-validation/manifest.json).
 
 ## Repeated deterministic replay
 

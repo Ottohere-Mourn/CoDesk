@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Run verified single-actor, joint, conflict, and reset smokes on Docker/Xvfb."""
 from __future__ import annotations
+import argparse
 import csv
 import json
 import subprocess
@@ -34,10 +35,22 @@ def run_case(env, name, actors, schedule, expected, stale=False):
 
 
 def main():
-    env = DockerX11Workspace(ROOT, command_timeout=30)
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--image", default=DockerX11Workspace.IMAGE,
+                        help="Docker image to use for each episode")
+    parser.add_argument("--skip-build", action="store_true",
+                        help="use an already-built image without rebuilding the default tag")
+    args = parser.parse_args()
+    env = DockerX11Workspace(ROOT, command_timeout=30, image=args.image)
     summary = {}
     try:
-        env.build()
+        if args.skip_build:
+            present = subprocess.run(["docker", "image", "inspect", args.image],
+                                     capture_output=True, text=True)
+            if present.returncode:
+                raise RuntimeError(f"requested Docker image is not available: {args.image}")
+        else:
+            env.build()
         gui_expected = [{"id": "G1", "actor": "gui", "value": "GUI_VALUE"}]
         cli_expected = [{"id": "C1", "actor": "cli", "value": "CLI_VALUE"}]
         summary["gui_single_actor"] = run_case(env, "gui-single", [ScriptedGUIActor()],

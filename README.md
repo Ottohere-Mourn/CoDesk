@@ -14,6 +14,8 @@ python scripts/repeatability_study.py 5
 
 The smoke script builds `swcub-v0:local` if needed and runs GUI-only, CLI-only, GUI+CLI, an intentional stale-write conflict, and an environment-reset case. Full reports, event logs, CSV/GUI-state outputs, and XWD screenshots are written to `outputs/real-smoke/`. The runner also checks focus recovery and the stale-focus failure control.
 
+To run the same checks against an already-built image tag without rebuilding it, use `python scripts/smoke_real_workspace.py --image swcub-v0:clean-check --skip-build`.
+
 The bounded repeatability script starts fresh real containers for each trial (default: five per policy) and checks both CSV actor orders, focus recovery, and stale-focus failure. It writes per-trial reports/event logs plus state hashes and timings under `outputs/repeatability/`. This characterizes deterministic scripted replay only. Use `python scripts/repeatability_study.py 1` for a shorter check; the accepted range is 1–20.
 
 To build the image separately:

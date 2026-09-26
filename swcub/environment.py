@@ -36,8 +36,9 @@ class DockerX11Workspace:
     IMAGE = "swcub-v0:local"
 
     def __init__(self, project_root: Path, log: EventLog | None = None,
-                 command_timeout: float = 20.0):
+                 command_timeout: float = 20.0, image: str | None = None):
         self.project_root = project_root.resolve()
+        self.image = image or self.IMAGE
         self.log = log or EventLog()
         self.command_timeout = command_timeout
         self.container_name = ""
@@ -65,7 +66,7 @@ class DockerX11Workspace:
         return proc
 
     def build(self) -> None:
-        self._run(["docker", "build", "--tag", self.IMAGE,
+        self._run(["docker", "build", "--tag", self.image,
                    "--file", self.project_root / "Dockerfile", self.project_root], timeout=900)
 
     def reset(self, *, stale_gui_write: bool = False, task: str = "csv") -> str:
@@ -90,7 +91,7 @@ class DockerX11Workspace:
         self.window_ids = {}
         self._run(["docker", "run", "--detach", "--rm", "--name", self.container_name,
                    "--volume", f"{self.workspace}:/workspace", "--workdir", "/workspace",
-                   self.IMAGE, "sleep", "infinity"])
+                   self.image, "sleep", "infinity"])
         self._run(["docker", "exec", "--detach", self.container_name,
                    "Xvfb", ":99", "-screen", "0", "1024x768x24", "-ac", "-nolisten", "tcp"])
         self._wait_for_x()
