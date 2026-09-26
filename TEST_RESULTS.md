@@ -10,7 +10,7 @@ Command:
 pytest -q --junitxml=outputs/test-results/junit.xml
 ```
 
-Result: **16 passed, 0 failed, 0 skipped in 27.22s**. Machine-readable report: [`outputs/test-results/junit.xml`](outputs/test-results/junit.xml).
+Result: **19 passed, 0 failed, 0 skipped in 27.17s**. Machine-readable report: [`outputs/test-results/junit.xml`](outputs/test-results/junit.xml).
 
 | Test | Result | Evidence checked |
 |---|---|---|
@@ -25,6 +25,7 @@ Result: **16 passed, 0 failed, 0 skipped in 27.22s**. Machine-readable report: [
 | Focus goals independently solvable | PASS | GUI-only and Human Replay-only episodes each satisfy their private goal. |
 | Event schema round trip | PASS | V1 version field and contiguous sequence survive JSONL serialization and parsing. |
 | Event schema rejection cases | PASS | Unsupported version, missing/extra fields, invalid digest, sequence, malformed JSON, and non-standard constants are rejected. |
+| OSWorld adapter contract stubs | PASS | Reset/step/evaluator logger/CLI injection and close are wired; tests use an explicit stub and are not real OSWorld results. |
 
 ## End-to-end smoke
 
@@ -36,7 +37,7 @@ Final artifact audit confirmed non-empty event logs, valid XWD screenshot files 
 
 ## Cold rebuild verification
 
-Built a no-cache image from the pinned Ubuntu digest and ran `python scripts/smoke_real_workspace.py --image swcub-v0:clean-check --skip-build`: **7/7 smoke checks passed**. The cold-built image ID exactly matched the existing `swcub-v0:local` image ID. All seven directly pinned package versions matched `env/requirements.lock`. The automated suite also passed **16/16** on this code state. Build and episode evidence is in [`outputs/clean-build-validation/manifest.json`](outputs/clean-build-validation/manifest.json).
+Built a no-cache image from the pinned Ubuntu digest and ran `python scripts/smoke_real_workspace.py --image swcub-v0:clean-check --skip-build`: **7/7 smoke checks passed**. The cold-built image ID exactly matched the existing `swcub-v0:local` image ID. All seven directly pinned package versions matched `env/requirements.lock`. Build and episode evidence is in [`outputs/clean-build-validation/manifest.json`](outputs/clean-build-validation/manifest.json).
 
 ## Repeated deterministic replay
 

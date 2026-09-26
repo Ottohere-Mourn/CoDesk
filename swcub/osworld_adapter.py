@@ -6,6 +6,8 @@ executor is injected by the harness so it can run in the same guest/workspace.
 
 from __future__ import annotations
 
+import inspect
+import logging
 import shlex
 from typing import Any, Callable
 
@@ -79,7 +81,7 @@ class OSWorldSharedEpisode(Episode):
                         details={"task_config_id": task_config.get("id"), "seed": seed})
         return self.observation
 
-    def gui_action(self, actor: str, action: Any, pause: float = 0) -> Any:
+    def gui_action(self, actor: str, action: Any, pause: float = 2) -> Any:
         before = self.snapshot()
         observed_revision = self.revision
         self.observation, reward, done, info = self.desktop_env.step(action, pause=pause)
@@ -105,5 +107,18 @@ class OSWorldSharedEpisode(Episode):
         return result
 
     def evaluate_osworld_task(self) -> float:
-        """Delegate to OSWorld's configured executable evaluator."""
-        return float(self.desktop_env.evaluate())
+        """Delegate to OSWorld's evaluator, including its required eval logger."""
+        evaluate = self.desktop_env.evaluate
+        eval_logger = logging.getLogger("swcub.osworld.evaluator")
+        try:
+            signature = inspect.signature(evaluate)
+        except (TypeError, ValueError):
+            # DesktopEnv's Python implementation accepts the logger. Preserve that
+            # official call shape if a wrapped callable does not expose a signature.
+            return float(evaluate(eval_logger))
+        try:
+            signature.bind(eval_logger)
+        except TypeError:
+            signature.bind()
+            return float(evaluate())
+        return float(evaluate(eval_logger))

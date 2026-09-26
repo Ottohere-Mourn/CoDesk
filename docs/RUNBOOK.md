@@ -41,7 +41,7 @@ Every reset force-removes only the V0 container identified by that adapter, dele
 
 ## OSWorld path
 
-The host does not have `desktop_env` installed, and the available X11 display belongs to another user; neither is modified. `OSWorldSharedEpisode` conforms to the shared observe/act/reset contract and wraps `DesktopEnv.reset`, `step`, `evaluate`. Supply one `DesktopEnv` per episode and an injected CLI executor connected to that same guest. This bridge is implemented but not run against OSWorld; V0's verified runtime is the pinned Docker/Xvfb app. For OSWorld setup details consult its [official repository](https://github.com/xlang-ai/OSWorld) and pin a release before model evaluation.
+The host does not have `desktop_env` installed, and the available X11 display belongs to another user; neither is modified. `OSWorldSharedEpisode` wraps `DesktopEnv.reset(task_config, seed=...)`, `step(action, pause=...)`, `evaluate(eval_logger)`, and `close()`. It accepts an injected CLI executor connected to that same guest. The current upstream API shape was checked against the [official OSWorld source](https://github.com/xlang-ai/OSWorld/blob/main/desktop_env/desktop_env_pointer.py); three stub-only adapter contract tests check this wiring, but they are not OSWorld VM evidence. Actual provider/task execution remains unverified. V0's verified runtime is the pinned Docker/Xvfb app. Pin an OSWorld release before model evaluation.
 
 ## Failure handling
 

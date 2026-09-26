@@ -47,3 +47,9 @@ The real CSV and two-window focus cases are controlled infrastructure probes, no
 - Ran the full real smoke suite with `python scripts/smoke_real_workspace.py --image swcub-v0:clean-check --skip-build`: 7/7 checks passed. Separately ran fresh-image CSV joint success, focus recovery success, and stale-write rejection; all three logs validated as schema V1.
 - The 16-test suite passed again in 27.24 s. Build details, container IDs, package versions and checks are saved in `outputs/clean-build-validation/manifest.json`.
 - Removed only the temporary `swcub-v0:clean-check` tag after verification; the pre-existing `swcub-v0:local` tag remains available.
+
+## OSWorld adapter API audit
+
+- Checked the adapter against the official OSWorld `DesktopEnv` source. Its `reset(task_config, seed, options)` result shape, four-value `step(action, pause)` result, `close()`, and `evaluate(eval_logger)` call were reviewed against upstream. The adapter previously omitted the required evaluator logger; it now passes one and supports zero-argument evaluator wrappers by inspecting the callable signature. GUI action pause now matches OSWorld's two-second default.
+- Added three explicitly stub-only adapter tests for reset/step, evaluator logger forwarding, CLI callback injection, no-argument wrappers and close. These are interface checks and are not OSWorld VM/provider evidence.
+- Latest full suite: 19 passed, 0 failed, 0 skipped in 27.17 s. Actual `desktop_env` installation, VM startup, guest CLI reachability and task evaluation remain unverified; the provider setup requires OSWorld-specific VM assets not present on this host.
