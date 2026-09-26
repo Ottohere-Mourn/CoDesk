@@ -7,6 +7,7 @@ executor is injected by the harness so it can run in the same guest/workspace.
 from __future__ import annotations
 
 import inspect
+import json
 import logging
 import shlex
 from typing import Any, Callable
@@ -34,13 +35,19 @@ def _digestable(value: Any) -> Any:
 
 
 class OSWorldSharedEpisode(Episode):
-    """One OSWorld desktop plus injected CLI access to its same guest workspace."""
+    """One OSWorld desktop plus injected CLI access to its same guest workspace.
+
+    ActorContext text/key/submit operations become PyAutoGUI command strings.
+    Window focus is application-specific and requires a ``window_focus_translator``.
+    """
 
     def __init__(self, desktop_env: Any,
-                 cli_executor: Callable[[str], Any] | None = None):
+                 cli_executor: Callable[[str], Any] | None = None,
+                 window_focus_translator: Callable[[dict[str, Any]], Any] | None = None):
         self.desktop_env = desktop_env
         self.environment_id = f"osworld-{id(desktop_env):x}"
         self.cli_executor = cli_executor
+        self.window_focus_translator = window_focus_translator
         self.observation: Any = None
         self.revision = 0
         self.actor_steps: dict[str, int] = {}
@@ -63,11 +70,33 @@ class OSWorldSharedEpisode(Episode):
 
     def act(self, actor_id: str, interface: str, action: Any) -> Any:
         if interface == "gui":
-            return self.gui_action(actor_id, action)
+            osworld_action = self._translate_gui_operation(action)
+            return self.gui_action(actor_id, osworld_action, source_action=action)
         if interface == "cli":
             command = shlex.join(list(map(str, action))) if isinstance(action, (list, tuple)) else str(action)
             return self.cli_action(actor_id, command)
         raise ValueError(f"unsupported OSWorld interface: {interface}")
+
+    def _translate_gui_operation(self, action: Any) -> Any:
+        """Translate ActorContext operations while preserving native OSWorld actions."""
+        if not isinstance(action, dict) or "op" not in action:
+            return action
+        operation = action["op"]
+        if operation == "type" and isinstance(action.get("value"), str):
+            return f"pyautogui.write({json.dumps(action['value'], ensure_ascii=False)})"
+        if operation == "key" and isinstance(action.get("key"), str):
+            key = {"return": "enter", "esc": "escape", "backspace": "backspace"}.get(
+                action["key"].lower(), action["key"].lower())
+            return f"pyautogui.press({json.dumps(key)})"
+        if operation == "submit" and isinstance(action.get("value"), str):
+            value = json.dumps(action["value"], ensure_ascii=False)
+            return f"pyautogui.write({value}); pyautogui.press('enter')"
+        if operation == "focus":
+            if self.window_focus_translator is not None:
+                return self.window_focus_translator(action)
+            raise NotImplementedError(
+                "window focus is application-specific; provide window_focus_translator")
+        raise ValueError(f"unsupported GUI operation for OSWorld: {action!r}")
 
     def close(self) -> None:
         self.desktop_env.close()
@@ -81,7 +110,8 @@ class OSWorldSharedEpisode(Episode):
                         details={"task_config_id": task_config.get("id"), "seed": seed})
         return self.observation
 
-    def gui_action(self, actor: str, action: Any, pause: float = 2) -> Any:
+    def gui_action(self, actor: str, action: Any, pause: float = 2,
+                   source_action: Any | None = None) -> Any:
         before = self.snapshot()
         observed_revision = self.revision
         self.observation, reward, done, info = self.desktop_env.step(action, pause=pause)
@@ -89,6 +119,8 @@ class OSWorldSharedEpisode(Episode):
         self.actor_steps[actor] = self.actor_steps.get(actor, 0) + 1
         self.log.record(actor, "gui", "osworld.step", before, self.snapshot(),
                         observed_revision, details={"action": _digestable(action),
+                                                    "source_action": _digestable(
+                                                        action if source_action is None else source_action),
                                                     "reward": reward, "done": done,
                                                     "info": _digestable(info)})
         return self.observation

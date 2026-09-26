@@ -41,7 +41,7 @@ Every reset force-removes only the V0 container identified by that adapter, dele
 
 ## OSWorld path
 
-The host does not have `desktop_env` installed, and the available X11 display belongs to another user; neither is modified. `OSWorldSharedEpisode` wraps `DesktopEnv.reset(task_config, seed=...)`, `step(action, pause=...)`, `evaluate(eval_logger)`, and `close()`. It accepts an injected CLI executor connected to that same guest. The current upstream API shape was checked against the [official OSWorld source](https://github.com/xlang-ai/OSWorld/blob/main/desktop_env/desktop_env_pointer.py); three stub-only adapter contract tests check this wiring, but they are not OSWorld VM evidence. Actual provider/task execution remains unverified. V0's verified runtime is the pinned Docker/Xvfb app. Pin an OSWorld release before model evaluation.
+The host does not have `desktop_env` installed, and the available X11 display belongs to another user; neither is modified. `OSWorldSharedEpisode` wraps `DesktopEnv.reset(task_config, seed=...)`, `step(action, pause=...)`, `evaluate(eval_logger)`, and `close()`. It accepts an injected CLI executor connected to that same guest. ActorContext text, key, and submit operations are translated to PyAutoGUI command strings. Window focus is application-specific and needs an injected `window_focus_translator`. The current upstream API shape was checked against the [official OSWorld source](https://github.com/xlang-ai/OSWorld/blob/main/desktop_env/desktop_env_pointer.py); stub-only adapter contract tests check the wiring, but they are not OSWorld VM evidence. Actual provider/task execution remains unverified. V0's verified runtime is the pinned Docker/Xvfb app. Pin an OSWorld release before model evaluation.
 
 ## Failure handling
 

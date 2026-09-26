@@ -10,7 +10,7 @@ Command:
 pytest -q --junitxml=outputs/test-results/junit.xml
 ```
 
-Result: **19 passed, 0 failed, 0 skipped in 27.17s**. Machine-readable report: [`outputs/test-results/junit.xml`](outputs/test-results/junit.xml).
+Result: **21 passed, 0 failed, 0 skipped in 27.56s**. Machine-readable report: [`outputs/test-results/junit.xml`](outputs/test-results/junit.xml).
 
 | Test | Result | Evidence checked |
 |---|---|---|
@@ -25,7 +25,7 @@ Result: **19 passed, 0 failed, 0 skipped in 27.17s**. Machine-readable report: [
 | Focus goals independently solvable | PASS | GUI-only and Human Replay-only episodes each satisfy their private goal. |
 | Event schema round trip | PASS | V1 version field and contiguous sequence survive JSONL serialization and parsing. |
 | Event schema rejection cases | PASS | Unsupported version, missing/extra fields, invalid digest, sequence, malformed JSON, and non-standard constants are rejected. |
-| OSWorld adapter contract stubs | PASS | Reset/step/evaluator logger/CLI injection and close are wired; tests use an explicit stub and are not real OSWorld results. |
+| OSWorld adapter contract stubs | PASS | Reset/step, text/key/submit translation, focus translator, evaluator logger, CLI injection and close are covered; tests use an explicit stub and are not real OSWorld results. |
 
 ## End-to-end smoke
 

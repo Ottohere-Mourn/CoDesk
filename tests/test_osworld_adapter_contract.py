@@ -1,10 +1,12 @@
 """Interface contract checks with a stub; these are not OSWorld VM results."""
 from __future__ import annotations
+import ast
 import logging
 import shlex
 
 import pytest
 
+from swcub.environment import ActorContext
 from swcub.evaluator import OSWorldTaskEvaluator
 from swcub.osworld_adapter import OSWorldSharedEpisode
 
@@ -65,6 +67,36 @@ def test_osworld_adapter_matches_reset_step_eval_and_cli_injection():
 def test_osworld_adapter_supports_no_argument_evaluator_wrappers():
     episode = OSWorldSharedEpisode(NoArgumentEvaluatorStub())
     assert OSWorldTaskEvaluator().evaluate(episode) == {"success": False, "osworld_score": 0.5}
+
+
+def test_actor_context_gui_operations_translate_and_focus_is_injectable():
+    desktop = DesktopEnvStub()
+    episode = OSWorldSharedEpisode(
+        desktop, window_focus_translator=lambda operation: "pyautogui.getActiveWindow()")
+    episode.reset({"id": "stub-task", "instruction": "edit the active field"})
+    gui = ActorContext("gui_actor", episode, "gui")
+
+    gui.type_text("A 'quoted' value")
+    gui.press_key("Return")
+    gui.submit_gui("Approved")
+    gui.focus_window("Document")
+
+    assert desktop.actions == [
+        'pyautogui.write("A \'quoted\' value")',
+        'pyautogui.press("enter")',
+        'pyautogui.write("Approved"); pyautogui.press(\'enter\')',
+        "pyautogui.getActiveWindow()",
+    ]
+    for command in desktop.actions:
+        ast.parse(command)
+    action_event = episode.log.events[1]
+    assert action_event.details["source_action"] == {"op": "type", "value": "A 'quoted' value"}
+
+
+def test_window_focus_needs_an_application_specific_translator():
+    episode = OSWorldSharedEpisode(DesktopEnvStub())
+    with pytest.raises(NotImplementedError, match="window focus is application-specific"):
+        episode.act("gui_actor", "gui", {"op": "focus", "window": "Document"})
 
 
 def test_osworld_cli_action_requires_same_guest_executor():
