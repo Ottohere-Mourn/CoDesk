@@ -1,6 +1,6 @@
 # Data production plan
 
-1. **Scenario authoring:** describe app initial state, actor roles/instructions, action graph, intended race, independent solutions, joint solution, evaluator predicates and deterministic schedule as versioned YAML/JSON.
+1. **Scenario authoring:** V0's [`tasks/v0_manifest.json`](../tasks/v0_manifest.json) is the first versioned task catalog. New tasks should describe app initial state, actor roles/instructions, action graph, intended race, independent solutions, joint solution, evaluator predicates and deterministic schedule in that manifest schema or a deliberately versioned successor.
 2. **Scripted verification:** implement baseline and recovery actors; replay from reset at least twice; assert byte-stable final state and equivalent event sequence. Use negative-state fixtures to ensure the grader rejects lost updates and misdirected text.
 3. **Human replay capture:** capture consented, task-focused action traces (window/action/timing/state transitions) with secrets removed; parameterize timing windows but pin replay schedule per release. Include multiple valid human traces where real variation matters.
 4. **Task review:** independent reviewers check clarity, solvability, realism, interaction necessity, licensing, shortcut resistance, and evaluator validity. Remove tasks solvable by a single actor if claimed interaction capability is not tested.

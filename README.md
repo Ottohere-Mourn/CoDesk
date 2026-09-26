@@ -10,6 +10,7 @@ Requirements: Docker Engine with permission to run containers, Python 3.10+, and
 python scripts/smoke_real_workspace.py
 python -m pytest -q
 python scripts/repeatability_study.py 5
+python scripts/validate_task_manifest.py
 ```
 
 The smoke script builds `swcub-v0:local` if needed and runs GUI-only, CLI-only, GUI+CLI, an intentional stale-write conflict, and an environment-reset case. Full reports, event logs, CSV/GUI-state outputs, and XWD screenshots are written to `outputs/real-smoke/`. The runner also checks focus recovery and the stale-focus failure control.
@@ -34,6 +35,8 @@ docker build --tag swcub-v0:local --file Dockerfile .
 - `swcub.osworld_adapter.OSWorldSharedEpisode`: compatible adapter seam for a caller-provided OSWorld `DesktopEnv` and an injected CLI executor bound to the same guest.
 
 V0 has two real end-to-end cases: GUI+CLI shared CSV read/write, and GUI+Human Replay focus competition across two Tk windows. Both run in one actual Xvfb display inside a single Docker container. `swcub.tasks.focus` remains a simulator/protocol control; real focus validation is in the Docker-backed focus actors and app.
+
+The machine-readable task specs, including independent goals, joint goals, pass/fail interactions, and exact final states, live in [`tasks/v0_manifest.json`](tasks/v0_manifest.json). Validate the catalog with `python scripts/validate_task_manifest.py`.
 
 ## Research notes
 

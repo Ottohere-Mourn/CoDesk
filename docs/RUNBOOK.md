@@ -21,6 +21,8 @@ The smoke runner builds automatically, then executes fresh episodes for each sce
 
 `python -m swcub.cli run-all --out outputs/simulated-smoke` remains available for fast simulator protocol checks. Those results are not real-environment evidence.
 
+The V0 task catalog is [`tasks/v0_manifest.json`](../tasks/v0_manifest.json). Check that each task has independent actor goals, a joint goal, deterministic passing and failing interactions, valid schedules, and final-state predicates with `python scripts/validate_task_manifest.py`.
+
 For a cold image rebuild check, build with `docker build --no-cache --pull=false --tag swcub-v0:clean-check --file Dockerfile .`, then run `python scripts/smoke_real_workspace.py --image swcub-v0:clean-check --skip-build`. The smoke runner's `--image` option is also available for other prebuilt tags.
 
 Validate any JSONL trace against the versioned event contract with:

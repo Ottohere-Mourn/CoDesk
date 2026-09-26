@@ -1,6 +1,6 @@
 # TEST_RESULTS
 
-Final verification date: 2026-09-26. Tests use real Docker Ubuntu containers, Xvfb, Tk windows, xdotool desktop actions, guest CLI processes, and mounted files. No mocked environment results are included.
+Final verification date: 2026-09-26. The real-environment tests use Docker Ubuntu containers, Xvfb, Tk windows, xdotool desktop actions, guest CLI processes, and mounted files. Separate unit tests validate event/task formats and OSWorld adapter wiring with an explicitly labeled stub; those unit checks are not reported as environment outcomes.
 
 ## Automated suite
 
@@ -10,7 +10,7 @@ Command:
 pytest -q --junitxml=outputs/test-results/junit.xml
 ```
 
-Result: **21 passed, 0 failed, 0 skipped in 27.56s**. Machine-readable report: [`outputs/test-results/junit.xml`](outputs/test-results/junit.xml).
+Result: **25 passed, 0 failed, 0 skipped in 33.65s**. Machine-readable report: [`outputs/test-results/junit.xml`](outputs/test-results/junit.xml).
 
 | Test | Result | Evidence checked |
 |---|---|---|
@@ -26,6 +26,7 @@ Result: **21 passed, 0 failed, 0 skipped in 27.56s**. Machine-readable report: [
 | Event schema round trip | PASS | V1 version field and contiguous sequence survive JSONL serialization and parsing. |
 | Event schema rejection cases | PASS | Unsupported version, missing/extra fields, invalid digest, sequence, malformed JSON, and non-standard constants are rejected. |
 | OSWorld adapter contract stubs | PASS | Reset/step, text/key/submit translation, focus translator, evaluator logger, CLI injection and close are covered; tests use an explicit stub and are not real OSWorld results. |
+| Task manifest structure | PASS | Both tasks have unique roles, independent goals, joint goal, deterministic pass/fail interactions, full actor schedules, and explicit final states. |
 
 ## End-to-end smoke
 

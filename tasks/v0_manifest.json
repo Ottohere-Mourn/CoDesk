@@ -1,0 +1,124 @@
+{
+  "manifest_schema_version": 1,
+  "benchmark_version": "0.1.0",
+  "tasks": [
+    {
+      "task_id": "CSV-001",
+      "title": "GUI and CLI append to one shared CSV",
+      "environment": {
+        "adapter": "DockerX11Workspace",
+        "task_mode": "csv",
+        "application": "Tk Shared Workspace",
+        "initial_state": "shared.csv contains only the id,actor,value header"
+      },
+      "actor_roles": ["gui", "cli"],
+      "actor_ids": {"gui": "gui_actor", "cli": "cli_actor"},
+      "independent_solutions": {
+        "gui": {
+          "actor_class": "ScriptedGUIActor",
+          "schedule": ["gui_actor"],
+          "required_row": {"id": "G1", "actor": "gui", "value": "GUI_VALUE"}
+        },
+        "cli": {
+          "actor_class": "ScriptedCLIActor",
+          "schedule": ["cli_actor"],
+          "required_row": {"id": "C1", "actor": "cli", "value": "CLI_VALUE"}
+        }
+      },
+      "joint_goal": {
+        "evaluator": "RequiredRowsEvaluator",
+        "required_rows": [
+          {"id": "G1", "actor": "gui", "value": "GUI_VALUE"},
+          {"id": "C1", "actor": "cli", "value": "CLI_VALUE"}
+        ],
+        "row_order_matters": false
+      },
+      "interactions": [
+        {
+          "case_id": "normal_shared_append",
+          "deterministic": true,
+          "schedule": ["gui_actor", "cli_actor"],
+          "stale_gui_write": false,
+          "expected_evaluator_success": true,
+          "final_rows": [
+            {"id": "G1", "actor": "gui", "value": "GUI_VALUE"},
+            {"id": "C1", "actor": "cli", "value": "CLI_VALUE"}
+          ]
+        },
+        {
+          "case_id": "stale_gui_write_conflict",
+          "deterministic": true,
+          "schedule": ["cli_actor", "gui_actor"],
+          "stale_gui_write": true,
+          "expected_evaluator_success": false,
+          "final_rows": [
+            {"id": "G1", "actor": "gui", "value": "GUI_VALUE"}
+          ]
+        }
+      ],
+      "evidence": {
+        "tests": [
+          "test_real_gui_single_actor",
+          "test_real_cli_single_actor",
+          "test_real_joint_actors_share_one_environment",
+          "test_real_stale_write_conflict_fails_evaluator"
+        ],
+        "smoke_script": "scripts/smoke_real_workspace.py"
+      }
+    },
+    {
+      "task_id": "FOCUS-001",
+      "title": "GUI and human replay compete for desktop focus",
+      "environment": {
+        "adapter": "DockerX11Workspace",
+        "task_mode": "focus",
+        "application": "Tk Document and Chat windows",
+        "initial_state": {"Document": "", "Chat": ""}
+      },
+      "actor_roles": ["gui", "human_replay"],
+      "actor_ids": {"gui": "gui_actor", "human_replay": "human_replay"},
+      "independent_solutions": {
+        "gui": {
+          "actor_class": "ScriptedFocusGUIActor(recover=True)",
+          "schedule": ["gui_actor", "gui_actor"],
+          "final_state": {"Document": "Approved", "Chat": ""}
+        },
+        "human_replay": {
+          "actor_class": "HumanReplayActor",
+          "schedule": ["human_replay"],
+          "final_state": {"Document": "", "Chat": "Review note"}
+        }
+      },
+      "joint_goal": {
+        "evaluator": "FocusStateEvaluator",
+        "final_state": {"Document": "Approved", "Chat": "Review note"}
+      },
+      "interactions": [
+        {
+          "case_id": "focus_reacquisition_recovers",
+          "deterministic": true,
+          "schedule": ["gui_actor", "human_replay", "gui_actor"],
+          "gui_recovers_focus": true,
+          "expected_evaluator_success": true,
+          "final_state": {"Document": "Approved", "Chat": "Review note"}
+        },
+        {
+          "case_id": "stale_focus_misdirects_input",
+          "deterministic": true,
+          "schedule": ["gui_actor", "human_replay", "gui_actor"],
+          "gui_recovers_focus": false,
+          "expected_evaluator_success": false,
+          "final_state": {"Document": "", "Chat": "Review noteApproved"}
+        }
+      ],
+      "evidence": {
+        "tests": [
+          "test_real_focus_gui_and_human_replay_recover",
+          "test_real_focus_stale_keyboard_input_is_detected",
+          "test_real_focus_goals_are_independently_solvable"
+        ],
+        "smoke_script": "scripts/smoke_real_workspace.py"
+      }
+    }
+  ]
+}

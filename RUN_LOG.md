@@ -54,3 +54,9 @@ The real CSV and two-window focus cases are controlled infrastructure probes, no
 - `ActorContext` emits generic `type` / `key` / `submit` operation records; the OSWorld adapter now translates those to PyAutoGUI command strings and records both source and dispatched actions. Window focus requires an injected application-specific translator because there is no generic window locator in the adapter.
 - Added five explicitly stub-only adapter tests for reset/step, text/key/submit translation, focus translator injection, evaluator logger forwarding, CLI callback injection, no-argument wrappers and close. These are interface checks and are not OSWorld VM/provider evidence.
 - Latest full suite: 21 passed, 0 failed, 0 skipped in 27.56 s. Actual `desktop_env` installation, VM startup, guest CLI reachability and task evaluation remain unverified; the provider setup requires OSWorld-specific VM assets not present on this host.
+
+## Machine-readable task catalog
+
+- Added `tasks/v0_manifest.json` with CSV-001 and FOCUS-001 environment starts, actor-role/ID mappings, independent goals, joint final-state predicates, deterministic success/failure schedules, and test/smoke evidence names.
+- Added structural validation in `swcub.task_manifest` and `scripts/validate_task_manifest.py`. The validator rejects missing independent goals, invalid actor mappings, incomplete joint schedules, absent final states, and tasks without both passing and failing interactions.
+- Four manifest tests and the CLI validator passed. Latest full suite: 25 passed, 0 failed, 0 skipped in 33.65 s, including the real Docker tests; simulator and stub-only results remain separately identified.
