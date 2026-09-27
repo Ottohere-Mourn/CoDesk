@@ -6,16 +6,16 @@ V0 now has real OSWorld V2.1 Guest episodes for GUI+GUI using Writer and Calc, G
 
 ## Next bounded tasks
 
-1. Repeat each negative-control OSWorld condition from a clean Guest start. The positive focus-aware schedules now have two successful runs each; negative-control replication remains one run per task. Report condition-level counts and retain failed runs; do not interpret the mixed-condition aggregate as performance.
-2. Add a Writer/Calc schedule that tests recovery after a focus steal while checking both saved files. Confirm independent solo solvability before comparing schedules.
-3. Replace the deterministic Human Replay form action with a recorded user trajectory or live input source when human behavior becomes an evaluation target.
-4. When access becomes available, run one official OSWorld task through its upstream evaluator and retry the pinned upstream runtime image. Continue labeling local-runtime evidence separately.
-5. If model integration becomes useful, run a small smoke with one Guest per episode and role-scoped clients. Keep evaluator code, host paths, and expected outputs outside actor processes.
+1. All three current local VLM solo smokes failed at the model action/grounding stage, while the evaluator and reset behaved correctly. Pause model-conditioned shared comparisons until a local model demonstrates a successful solo task.
+2. If model work resumes, address GUI coordinate grounding or choose a simpler real application target, then rerun solo first. Only after solo success run the corresponding sequential, naive shared, and focus-aware episodes; attribute model errors separately from shared-focus interference.
+3. Keep scripted GUI+Human Replay evidence separate. Existing real Guest form goals have independent solo and focus-aware cases; a model+Human episode is meaningful only after that model passes its solo task.
+4. The three scripted negative controls have now each been repeated on fresh Guests with evaluator detection and reset verified. Future repeats should be bounded and reported as descriptive counts only.
+5. When access becomes available, run one official OSWorld task through its upstream evaluator and retry the pinned upstream runtime image. Continue labeling local-runtime evidence separately.
 
 ## Known engineering limitations
 
 - Docker apt package versions are directly pinned and the base image is digest-pinned; transitive Ubuntu archive availability still depends on upstream retention.
-- The model-facing process boundary is not implemented. Current scripted actors are trusted Python classes; role-scoped tools are API separation, not a security boundary against malicious code.
+- Local VLM inference runs in a loopback-only host process that receives screenshots and task prompts. This is an engineering boundary against evaluator data exposure, not a hardened sandbox for arbitrary model code.
 - Current interaction is deterministic serial interleaving inside one real environment. OS-level simultaneous keystrokes and timing races are not evaluated.
 - The real-application study has a small number of hand-run episodes and retained debugging attempts. Its aggregate mixes solo, positive, and negative-control conditions and is descriptive only.
 - The existing repeatability run has four fixed Docker/Xvfb schedules and 20 total episodes. Its timing excludes image build/reset and is not a capacity or latency benchmark.

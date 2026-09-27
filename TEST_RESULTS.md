@@ -127,3 +127,22 @@ Repeated each positive two-actor schedule once on a fresh Guest. All six paired 
 | GUI+Human Replay browser focus-aware | 2 successful runs total | [`human-agent-focus-aware-repeat-02/report.json`](outputs/osworld-v2.1/browser/human-agent-focus-aware-repeat-02/report.json) |
 
 These repeats establish that the three scripted positive schedules replayed successfully twice on this host. Negative controls still have one successful reproduction each; this is a smoke-level sample, not a comparison or reliability estimate. The `outputs/osworld-v2.1/summary.json` report is regenerated from all complete episodes with successful reset and explicitly labels its mixed-condition counts descriptive.
+
+## Local VLM smoke (2026-09-27)
+
+| Check | Result | Evidence |
+|---|---|---|
+| Repeat focus-interference negative control | **PASS, scripted real Guest** | `outputs/osworld-v2.1/office/naive-interleaving-repeat-02/report.json`; expected cross-application input detected, reset passed. |
+| Repeat GUI+CLI stale-state negative control | **PASS, scripted real Guest** | `outputs/osworld-v2.1/browser/gui-cli-stale-repeat-02/report.json`; missing CLI update detected, reset passed. |
+| Repeat GUI+Human focus-loss negative control | **PASS, scripted real Guest** | `outputs/osworld-v2.1/browser/human-agent-naive-repeat-02/report.json`; lost GUI goal detected, reset passed. |
+| Negative-control event schemas | **PASS** | V1 logs validate: 25, 19, 19 events. |
+| Qwen2.5-VL-3B Writer solo | **FAIL as a model task; evaluator/reset PASS** | Five real inference records. Model failed to select all text before typing; final artifact unchanged. `model_failure_class=model_or_action_execution_failure`. |
+| Qwen2.5-VL-3B Calc solo | **FAIL as a model task; evaluator/reset PASS** | Eight real inference records. Model wrote `Approved` into A2 instead of B2; exact evaluator detected cell contamination. |
+| Qwen3-VL-4B Calc solo | **FAIL as a model task; evaluator/reset PASS** | Four valid model actions (click/type/save/done). The click landed in A2 instead of B2; the exact evaluator detected the wrong cell and task corruption. Reset passed. |
+| Full repository tests | **PASS** | `python -m pytest -q`: **51 passed, 0 failed**. |
+| Local VLM action parser tests | **PASS** | `tests/test_local_vlm.py`: 11 passed. |
+| Compile and shell checks | **PASS** | `python -m compileall -q swcub scripts/run_osworld_v2_1_office.py scripts/local_qwen_worker.py`; `bash -n scripts/run_osworld_v2_1_office.sh`. |
+
+These model episodes are live local inference on the real OSWorld Guest; they are not scripted actor results. All three failed solo due to model task execution/grounding. They provide no performance estimate and do not justify shared-condition comparisons.
+
+Final post-edit validation: `python -m pytest -q` — **51 passed**; task manifest and all three task instances validated; compileall, shell syntax, and `git diff --check` passed. All six repeated negative-control/model `events.jsonl` files validated (25, 19, 19, 20, 29, and 27 events).
