@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import base64
+import io
 import json
 import os
 from pathlib import Path
@@ -209,14 +210,61 @@ def main() -> int:
         start = ("python3 /tmp/swcub_web/server.py >/tmp/swcub_web/server.log 2>&1 & "
                  "for n in $(seq 1 30); do curl -fsS http://127.0.0.1:8765/health >/dev/null && exit 0; sleep 1; done; exit 1")
         episode.cli_action("task_setup", "bash -lc " + shlex.quote(start))
+        activate_task_page = "python3 -c " + shlex.quote(
+            "import json,urllib.request; "
+            "targets=json.load(urllib.request.urlopen('http://127.0.0.1:9223/json/list',timeout=2)); "
+            "page=next((x for x in targets if x.get('type')=='page' and "
+            "x.get('url')=='http://127.0.0.1:8765/'),None); "
+            "assert page is not None, 'task page target unavailable'; "
+            "urllib.request.urlopen('http://127.0.0.1:9223/json/activate/'+page['id'],timeout=2).read()"
+        )
         launch = ("google-chrome --no-sandbox --disable-dev-shm-usage --no-first-run "
                   "--remote-debugging-port=9223 --user-data-dir=/tmp/swcub_web/chrome "
                   "--kiosk http://127.0.0.1:8765/ >/tmp/swcub_web/chrome.log 2>&1 & "
                   "for n in $(seq 1 60); do "
-                  "curl -fsS http://127.0.0.1:9223/json/list 2>/dev/null | grep -q 'Shared Workspace' && exit 0; "
+                  + activate_task_page + " && sleep 2 && exit 0; "
                   "sleep 1; done; exit 1")
         episode.cli_action("task_setup", "bash -lc " + shlex.quote(launch))
-        episode.refresh_observation()
+        # DevTools can report the local page before the window manager has
+        # painted or foregrounded it. In comparison runs this races with the
+        # Writer window, leaving the model on a blank desktop or a new tab.
+        # Activate the exact task tab above, then wait for both its public
+        # window title and a non-flat screenshot before handing control over.
+        browser_deadline = time.monotonic() + 60
+        browser_attempts = 0
+        browser_ready = False
+        while time.monotonic() < browser_deadline:
+            browser_attempts += 1
+            observation = episode.refresh_observation()
+            title = episode._active_window_title()
+            screenshot = observation.get("screenshot") if isinstance(observation, dict) else None
+            colors = 0
+            if isinstance(screenshot, bytes) and screenshot:
+                try:
+                    with Image.open(io.BytesIO(screenshot)) as image:
+                        colors = len(set(image.convert("RGB").resize((64, 64)).getdata()))
+                except (OSError, ValueError):
+                    colors = 0
+            if title and "Shared Workspace" in title and colors > 16:
+                browser_ready = True
+                episode.log.record("environment", "healthcheck", "browser.task_ui_ready",
+                                   {"ready": False}, {"ready": True}, outcome="ready",
+                                   details={"attempts": browser_attempts,
+                                            "active_window_title": title,
+                                            "sampled_colors": colors})
+                break
+            try:
+                command(["bash", "-lc", activate_task_page])
+            except Exception:
+                pass
+            time.sleep(2)
+        if not browser_ready:
+            episode.log.record("environment", "healthcheck", "browser.task_ui_ready",
+                               {"attempts": browser_attempts}, {"ready": False},
+                               outcome="timeout",
+                               details={"active_window_title": episode._active_window_title(),
+                                        "sampled_colors": colors})
+            raise TimeoutError("task Browser tab never became the visible active window")
 
         expected: dict[str, str]
         actors: list[object]
