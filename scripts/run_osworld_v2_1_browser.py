@@ -225,11 +225,20 @@ def main() -> int:
                   + activate_task_page + " && sleep 2 && exit 0; "
                   "sleep 1; done; exit 1")
         episode.cli_action("task_setup", "bash -lc " + shlex.quote(launch))
-        # DevTools can report the local page before the window manager has
-        # painted or foregrounded it. In comparison runs this races with the
-        # Writer window, leaving the model on a blank desktop or a new tab.
-        # Activate the exact task tab above, then wait for both its public
-        # window title and a non-flat screenshot before handing control over.
+        window_activation = (
+            "if command -v wmctrl >/dev/null 2>&1; then "
+            "wmctrl -a 'Shared Workspace - Google Chrome' || true; "
+            "elif command -v xdotool >/dev/null 2>&1; then "
+            "wid=$(xdotool search --onlyvisible --name 'Shared Workspace' 2>/dev/null | tail -1); "
+            "test -z \"$wid\" || xdotool windowactivate --sync \"$wid\" || true; "
+            "fi"
+        )
+        episode.cli_action("task_setup", "bash -lc " + shlex.quote(window_activation))
+        # DevTools can report the local page before the window manager paints
+        # any usable desktop. Activate the exact task tab above, then wait for
+        # a visible UI surface before handing control to an actor. The active
+        # window may legitimately be Writer, so task-specific focus remains
+        # part of the experiment and is not forced here.
         browser_deadline = time.monotonic() + 60
         browser_attempts = 0
         browser_ready = False
@@ -245,26 +254,22 @@ def main() -> int:
                         colors = len(set(image.convert("RGB").resize((64, 64)).getdata()))
                 except (OSError, ValueError):
                     colors = 0
-            if title and "Shared Workspace" in title and colors > 16:
+            if colors > 16:
                 browser_ready = True
-                episode.log.record("environment", "healthcheck", "browser.task_ui_ready",
+                episode.log.record("environment", "healthcheck", "guest.visible_ui_ready",
                                    {"ready": False}, {"ready": True}, outcome="ready",
                                    details={"attempts": browser_attempts,
                                             "active_window_title": title,
                                             "sampled_colors": colors})
                 break
-            try:
-                command(["bash", "-lc", activate_task_page])
-            except Exception:
-                pass
             time.sleep(2)
         if not browser_ready:
-            episode.log.record("environment", "healthcheck", "browser.task_ui_ready",
+            episode.log.record("environment", "healthcheck", "guest.visible_ui_ready",
                                {"attempts": browser_attempts}, {"ready": False},
                                outcome="timeout",
                                details={"active_window_title": episode._active_window_title(),
                                         "sampled_colors": colors})
-            raise TimeoutError("task Browser tab never became the visible active window")
+            raise TimeoutError("Guest desktop remained visually blank after task setup")
 
         expected: dict[str, str]
         actors: list[object]
@@ -547,6 +552,20 @@ def main() -> int:
         episode.log.write(out / "events.jsonl")
         print(json.dumps(report, indent=2))
         return 0 if report["success"] else 1
+    except Exception as exc:
+        # Keep screenshots, event history, and the precise setup failure even
+        # when an episode cannot reach actor scheduling or evaluator scoring.
+        try:
+            episode.copy_artifacts(out)
+            episode.log.write(out / "events.jsonl")
+            (out / "preflight-failure.json").write_text(
+                json.dumps({"scenario": scenario,
+                            "error_type": type(exc).__name__,
+                            "error": str(exc)}, indent=2) + "\n",
+                encoding="utf-8")
+        except Exception:
+            pass
+        raise
     finally:
         if model_worker is not None and model_worker.poll() is None:
             model_worker.terminate()
