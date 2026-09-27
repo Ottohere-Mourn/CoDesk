@@ -357,8 +357,13 @@ def main() -> int:
             active_window = command(["bash", "-lc", "xdotool getactivewindow getwindowname 2>/dev/null || true"]).strip()
             target = "Chrome" if actor.actor_id == "gui_actor" else "Writer"
             if scenario == "comparison-focus-aware":
-                app_class = "google-chrome" if actor.actor_id == "gui_actor" else "soffice"
-                focus_cmd = (f"window=$(xdotool search --onlyvisible --class {shlex.quote(app_class)} | tail -n 1); "
+                if actor.actor_id == "gui_actor":
+                    search_args = "--class google-chrome"
+                else:
+                    # LibreOffice exposes class names that vary between soffice,
+                    # soffice.bin, and desktop packaging; its visible title is stable.
+                    search_args = "--name 'LibreOffice Writer'"
+                focus_cmd = (f"window=$(xdotool search --onlyvisible {search_args} | tail -n 1); "
                              "test -n \"$window\" && xdotool windowactivate --sync \"$window\"; "
                              "xdotool getactivewindow getwindowname")
                 active_window = command(["bash", "-lc", focus_cmd]).strip()
@@ -375,6 +380,17 @@ def main() -> int:
                                                     before_actor_turn=focus_hook)
         if scenario.startswith("comparison-"):
             report["focus_metrics"] = summarize_focus_events(episode.log.events)
+            focus_turns = report["focus_metrics"]["focus_events"]
+            if scenario == "comparison-focus-aware":
+                scheduler_turns = [row for row in focus_turns
+                                   if row.get("policy") == "comparison-focus-aware"]
+                failed_turns = [row for row in scheduler_turns if not row.get("target_visible")]
+                report["focus_scheduler"] = {
+                    "turn_count": len(scheduler_turns),
+                    "failed_turn_count": len(failed_turns),
+                    "success": bool(scheduler_turns) and not failed_turns,
+                    "failed_turns": failed_turns,
+                }
         report["scenario"] = scenario
         report["task_id"] = instance_spec.task_id
         report["task_instance_id"] = (instance_spec.instance_id if scenario in {
@@ -434,7 +450,8 @@ def main() -> int:
                 report["individual_goals"]["gui_actor"] = {
                     "success": state.get("agent_goal") == ALL_EXPECTED["agent_goal"], "actual": state.get("agent_goal")}
         if scenario.startswith("comparison-"):
-            report["scenario_success"] = bool(report["evaluation"]["success"])
+            scheduler_ok = report.get("focus_scheduler", {}).get("success", True)
+            report["scenario_success"] = bool(report["evaluation"]["success"] and scheduler_ok)
         elif scenario in {"gui-cli-stale", "human-agent-naive"}:
             if scenario == "gui-cli-stale":
                 expected_negative = (state.get("gui_status") == "Approved"

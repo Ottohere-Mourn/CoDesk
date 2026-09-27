@@ -8,12 +8,14 @@ import pytest
 from scripts.cleanup_owned_resources import clean_one
 from swcub.resource_safety import (
     OWNER_LABEL, PROJECT_LABEL, PROJECT_NAME, RUN_LABEL, ResourceIdentity,
-    ResourceLedger, cleanup_docker_cli_container, verify_container_identity,
+    ResourceLedger, cleanup_docker_cli_container, remove_verified_image,
+    verify_container_identity,
     verify_owned_directory,
 )
 
 
 FULL_ID = "a" * 64
+FULL_IMAGE_ID = "sha256:" + "d" * 64
 
 
 def make_identity(tmp_path):
@@ -166,3 +168,46 @@ def test_directory_ownership_marker_must_match_all_fields(tmp_path):
     with pytest.raises(RuntimeError, match="marker mismatch"):
         verify_owned_directory(path, expected | {"owner_token": "c" * 64},
                                identity, "dir-0001")
+
+
+def test_image_cleanup_requires_ledger_full_id_and_all_labels(tmp_path):
+    identity = make_identity(tmp_path)
+    ledger = ResourceLedger(identity.ledger_path)
+    ledger.record("run_started", "run", identity.run_id, identity)
+    ledger.record_created_resource("image", FULL_IMAGE_ID, identity, tag="swcub-test")
+    inspect_calls = []
+    remove_calls = []
+
+    def inspect_fn(image_id):
+        inspect_calls.append(image_id)
+        return {"Id": FULL_IMAGE_ID,
+                "Config": {"Labels": {**identity.labels,
+                                       "org.opencontainers.image.ref.name": "ubuntu"}}}
+
+    def runner(args, **kwargs):
+        remove_calls.append(args)
+        return subprocess.CompletedProcess(args, 0, "", "")
+
+    remove_verified_image(FULL_IMAGE_ID, identity, reason="test",
+                          runner=runner, inspect_fn=inspect_fn)
+    assert inspect_calls == [FULL_IMAGE_ID, FULL_IMAGE_ID]
+    assert remove_calls == [["docker", "image", "rm", FULL_IMAGE_ID]]
+    rows = [json.loads(line) for line in identity.ledger_path.read_text().splitlines()]
+    assert [row["event"] for row in rows] == [
+        "run_started", "created", "destroy_requested", "destroyed"]
+    assert all(row["labels"] == identity.labels for row in rows)
+
+
+def test_image_cleanup_refuses_foreign_labels_before_removal(tmp_path):
+    identity = make_identity(tmp_path)
+    ledger = ResourceLedger(identity.ledger_path)
+    ledger.record("run_started", "run", identity.run_id, identity)
+    ledger.record_created_resource("image", FULL_IMAGE_ID, identity)
+    labels = identity.labels | {OWNER_LABEL: "e" * 64}
+    calls = []
+    with pytest.raises(RuntimeError, match="ownership label mismatch"):
+        remove_verified_image(FULL_IMAGE_ID, identity, reason="test",
+                              runner=lambda args, **kwargs: calls.append(args),
+                              inspect_fn=lambda _id: {"Id": FULL_IMAGE_ID,
+                                                      "Config": {"Labels": labels}})
+    assert calls == []

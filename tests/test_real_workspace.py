@@ -4,6 +4,7 @@ import csv
 import hashlib
 from pathlib import Path
 import subprocess
+import uuid
 
 import pytest
 
@@ -12,16 +13,24 @@ from swcub.core import EventLog, read_event_log
 from swcub.environment import ActorContext, DockerX11Workspace
 from swcub.evaluator import FocusStateEvaluator, RequiredRowsEvaluator
 from swcub.orchestrator import DualActorOrchestrator
+from swcub.resource_safety import remove_verified_image
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
 @pytest.fixture(scope="session")
 def adapter():
-    env = DockerX11Workspace(ROOT, command_timeout=30)
+    # Never overwrite or remove the historical swcub-v0:local image. Build a
+    # unique current-run image and remove it only by full ID, labels, and ledger.
+    env = DockerX11Workspace(ROOT, command_timeout=30,
+                             image=f"swcub-v0-test-{uuid.uuid4().hex}")
     env.build()
+    image_id = env.image_id
     yield env
     env.close()
+    if image_id:
+        remove_verified_image(image_id, env.resource_identity,
+                              reason="pytest.test_real_workspace.fixture_teardown")
 
 
 def run_episode(adapter, tmp_path, actors, schedule, expected, stale=False):

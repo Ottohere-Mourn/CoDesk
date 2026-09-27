@@ -48,6 +48,7 @@ class DockerX11Workspace:
         self.command_timeout = command_timeout
         self.resource_identity = ensure_resource_identity()
         self.resource_ledger = ResourceLedger(self.resource_identity.ledger_path)
+        self.image_id: str | None = None
         self.container_name = ""
         self.container_id = ""
         self.environment_id = ""
@@ -90,9 +91,11 @@ class DockerX11Workspace:
             raise EnvironmentError("image build did not return exactly one image")
         image = rows[0]
         labels = ((image.get("Config") or {}).get("Labels") or {})
-        if labels != self.resource_identity.labels:
+        if any(labels.get(key) != value
+               for key, value in self.resource_identity.labels.items()):
             raise EnvironmentError("built image ownership labels do not match this run")
-        self.resource_ledger.record_created_resource("image", image["Id"],
+        self.image_id = image["Id"]
+        self.resource_ledger.record_created_resource("image", self.image_id,
                                                      self.resource_identity, tag=self.image)
 
     def reset(self, *, stale_gui_write: bool = False, task: str = "csv") -> str:

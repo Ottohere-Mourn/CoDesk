@@ -17,6 +17,7 @@ PROJECT_LABEL = "org.swcub.project"
 RUN_LABEL = "org.swcub.run-id"
 OWNER_LABEL = "org.swcub.owner-token"
 FULL_CONTAINER_ID = re.compile(r"^[0-9a-f]{64}$")
+FULL_IMAGE_ID = re.compile(r"^sha256:[0-9a-f]{64}$")
 
 
 @dataclass(frozen=True)
@@ -235,6 +236,47 @@ def cleanup_docker_cli_container(container_id: str, identity: ResourceIdentity,
     verify_container_identity(container_id, attrs, identity)
     runner(["docker", "rm", container_id], check=True, capture_output=True, text=True)
     ledger.record("destroyed", "container", container_id, identity, reason=reason)
+
+
+def verify_image_identity(image_id: str, inspected: dict[str, Any],
+                          identity: ResourceIdentity) -> None:
+    if not FULL_IMAGE_ID.fullmatch(image_id):
+        raise RuntimeError("refusing image operation without the full immutable sha256 ID")
+    if inspected.get("Id") != image_id:
+        raise RuntimeError("Docker image inspect ID does not exactly match the requested ID")
+    labels = (inspected.get("Config") or {}).get("Labels") or {}
+    for key, value in identity.labels.items():
+        if labels.get(key) != value:
+            raise RuntimeError(f"refusing image operation: ownership label mismatch for {key}")
+
+
+def remove_verified_image(image_id: str, identity: ResourceIdentity, *,
+                          reason: str,
+                          runner: Callable[..., Any] = subprocess.run,
+                          inspect_fn: Callable[[str], dict[str, Any]] | None = None) -> None:
+    """Remove only a current-run image with matching full ID, labels, and ledger."""
+    if not FULL_IMAGE_ID.fullmatch(image_id):
+        raise RuntimeError("refusing image cleanup without a full immutable sha256 ID")
+    ledger = ResourceLedger(identity.ledger_path)
+    if not ledger.has_created_resource("image", image_id, identity):
+        raise RuntimeError("refusing image cleanup: absent from this run's creation ledger")
+    if inspect_fn is None:
+        def inspect_fn(target_id: str) -> dict[str, Any]:
+            proc = runner(["docker", "image", "inspect", target_id],
+                          check=True, capture_output=True, text=True)
+            rows = json.loads(proc.stdout)
+            if len(rows) != 1 or not isinstance(rows[0], dict):
+                raise RuntimeError("Docker image inspect did not return exactly one image")
+            return rows[0]
+    attrs = inspect_fn(image_id)
+    verify_image_identity(image_id, attrs, identity)
+    ledger.record("destroy_requested", "image", image_id, identity, reason=reason)
+    # Recheck the immutable ID and labels immediately before the rm operation.
+    attrs = inspect_fn(image_id)
+    verify_image_identity(image_id, attrs, identity)
+    runner(["docker", "image", "rm", image_id],
+           check=True, capture_output=True, text=True)
+    ledger.record("destroyed", "image", image_id, identity, reason=reason)
 
 
 def verify_owned_directory(path: str | Path, marker: dict[str, Any],
