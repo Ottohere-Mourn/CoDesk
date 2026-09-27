@@ -6,11 +6,13 @@ V0 now has real OSWorld V2.1 Guest episodes for GUI+GUI using Writer and Calc, G
 
 ## Next bounded tasks
 
-1. All three current local VLM solo smokes failed at the model action/grounding stage, while the evaluator and reset behaved correctly. Pause model-conditioned shared comparisons until a local model demonstrates a successful solo task.
-2. If model work resumes, address GUI coordinate grounding or choose a simpler real application target, then rerun solo first. Only after solo success run the corresponding sequential, naive shared, and focus-aware episodes; attribute model errors separately from shared-focus interference.
-3. Keep scripted GUI+Human Replay evidence separate. Existing real Guest form goals have independent solo and focus-aware cases; a model+Human episode is meaningful only after that model passes its solo task.
-4. The three scripted negative controls have now each been repeated on fresh Guests with evaluator detection and reset verified. Future repeats should be bounded and reported as descriptive counts only.
-5. When access becomes available, run one official OSWorld task through its upstream evaluator and retry the pinned upstream runtime image. Continue labeling local-runtime evidence separately.
+1. **Use OSWorld V2.1's first-party `Qwen3VLAgent` as the reusable local baseline.** One Writer solo episode passed exact evaluation and reset using the existing local Qwen3-VL-30B-A3B weights; a first attempt and one model+scripted sequential attempt failed for model-task reasons. Do not treat the solo pass as a reliability estimate.
+2. Before model interleaving comparisons, repeat the exact solo task a few times and verify the model reaches its DONE state. The mixed attempt looped on Ctrl+A/Ctrl+V and the scheduled scripted Calc actor never ran, so no paired or interference conclusion is available.
+3. If solo behavior is stable, expose resumable one-prediction turns through the OSWorld actor adapter, then run sequential, naive shared and focus-aware schedules using the same agent state. Keep model task errors distinct from shared-desktop effects.
+4. Add SeeAct only for browser tasks that need its Playwright/DOM interface. Consider CogAgent after checkpoint/license/runtime review, UFO only on a Windows Guest, and Anthropic/OpenAI API adapters only if hosted inference is explicitly allowed.
+5. Keep scripted GUI+Human Replay evidence separate. Existing real Guest form goals have independent solo and focus-aware cases; a model+Human episode is meaningful only after that model completes its solo target reliably.
+6. The three scripted negative controls have now each been repeated on fresh Guests with evaluator detection and reset verified. Future repeats should be bounded and reported as descriptive counts only.
+7. When access becomes available, run one official OSWorld task through its upstream evaluator and retry the pinned upstream runtime image. Continue labeling local-runtime evidence separately.
 
 ## Known engineering limitations
 

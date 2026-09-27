@@ -2,6 +2,8 @@
 
 Date: 2026-09-27. All model trials used the pinned OSWorld V2.1 Guest and actual LibreOffice UI. No paid API, remote inference service, model training, or weight download was used.
 
+> **Historical record:** the three JSON-action trials below used the project's first, bespoke GUI actor. That actor, parser, and guard-based action schema have been removed. They are retained as failure evidence only and are not the current integration. The current baseline reuses OSWorld V2.1 `Qwen3VLAgent`; see [`AGENT_FRAMEWORK_REVIEW.md`](AGENT_FRAMEWORK_REVIEW.md) and the new episode status in [`TEST_RESULTS.md`](TEST_RESULTS.md).
+
 ## Local resources and loop
 
 - GPUs: 8 × RTX 4090. Inference used free `cuda:0`; `cuda:1` was occupied by an unrelated process.
@@ -39,7 +41,7 @@ Per-episode raw evidence, including screenshots and full event logs:
 
 The Qwen2.5 runner initially used the coarse label `model_or_action_execution_failure` for the Writer and Calc guard aborts. Review of the raw traces shows their rejected actions were task-sequencing/target errors, so their final audit attribution is `model_task_failure`; the JSON report field was corrected while retaining the original value as `initial_failure_classification`. Qwen3 reports `model_task_failure` directly.
 
-## Commands
+## Retired runner commands (historical)
 
 ```bash
 scripts/run_osworld_v2_1_office.sh writer-model-solo
@@ -48,10 +50,10 @@ SWCUB_LOCAL_VLM_PATH=/mnt/raid1/mjh/models/Qwen3-VL-4B-Instruct \
   scripts/run_osworld_v2_1_office.sh calc-model-solo
 ```
 
-Set `OSWORLD_V2_RUN_DIR` for a distinct output directory. The command creates a fresh Guest; it does not use scripted actors for model actions.
+These commands belonged to the removed custom harness and no longer work in the current checkout. Use `scripts/run_osworld_v2_1_office.sh writer-osworld-agent-solo` or `calc-osworld-agent-solo` for the OSWorld-native baseline. Set `SWCUB_LOCAL_VLM_PATH` to select another existing local checkpoint.
 
 ## Current boundary
 
-No local model passed the solo target reliably in these three trials. Therefore no model sequential, naive-shared, focus-aware, or model+Human comparison was run: such outcomes could not distinguish model task errors from shared-desktop effects. Existing successful scripted GUI+GUI and GUI+Human episodes are separate evidence and are not model results. The sample is an engineering smoke test, not a benchmark score or statistical conclusion.
+The retired custom actor did not pass the solo target in these three trials. No model shared-workspace comparison was run with that actor. Existing successful scripted GUI+GUI and GUI+Human episodes are separate evidence and are not model results. The sample is an engineering smoke test, not a benchmark score or statistical conclusion.
 
 Final repository regression after the Qwen3 worker-selection and failure-label edits: `python -m pytest -q` — **51 passed, 0 failed in 30.80s**. Task manifest/instances, compileall, shell syntax, whitespace, and all six scripted/model event logs validated successfully.

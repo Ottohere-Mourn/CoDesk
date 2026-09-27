@@ -40,6 +40,7 @@ The machine-readable task specs, including independent goals, joint goals, pass/
 
 ## Research notes
 
+- [Agent framework review and integration decision](AGENT_FRAMEWORK_REVIEW.md)
 - [POSITIONING](docs/POSITIONING.md)
 - [RELATED_WORK](docs/RELATED_WORK.md)
 - [TASK_TAXONOMY](docs/TASK_TAXONOMY.md)
@@ -65,11 +66,9 @@ scripts/run_osworld_v2_1_office.sh calc-solo
 scripts/run_osworld_v2_1_office.sh sequential
 scripts/run_osworld_v2_1_office.sh focus-aware
 scripts/run_osworld_v2_1_office.sh naive-interleaving
-scripts/run_osworld_v2_1_office.sh writer-model-solo
-scripts/run_osworld_v2_1_office.sh calc-model-solo
-scripts/run_osworld_v2_1_office.sh model-sequential
-scripts/run_osworld_v2_1_office.sh model-naive-shared
-scripts/run_osworld_v2_1_office.sh model-focus-aware
+scripts/run_osworld_v2_1_office.sh writer-osworld-agent-solo
+scripts/run_osworld_v2_1_office.sh calc-osworld-agent-solo
+scripts/run_osworld_v2_1_office.sh writer-agent-calc-scripted-sequential
 
 scripts/run_osworld_v2_1_browser.sh gui-cli-gui-solo
 scripts/run_osworld_v2_1_browser.sh gui-cli-cli-solo
@@ -86,4 +85,4 @@ python scripts/summarize_osworld_runs.py outputs/osworld-v2.1 --successful-only 
 
 The `naive-interleaving`, `gui-cli-stale`, and `human-agent-naive` commands return success only when their expected interference is detected. A report's `evaluation.success` remains false for those negative controls by design; `scenario_success` records successful reproduction of the failure condition. These are scripted real-Guest experiments, not model or human performance measurements.
 
-The local-model office scenarios default to the existing Qwen2.5-VL-3B checkpoint at `/mnt/raid1/mjh/models/Qwen/Qwen2.5-VL-3B-Instruct`; the same offline worker supports the existing Qwen3-VL-4B checkpoint by setting `SWCUB_LOCAL_VLM_PATH=/mnt/raid1/mjh/models/Qwen3-VL-4B-Instruct`. The launcher starts an offline, loopback-only inference worker with `/opt/miniconda3/bin/python`. Set `SWCUB_LOCAL_VLM_DEVICE` or `SWCUB_MODEL_PYTHON` to select another local runtime/device. The worker does not call a remote API or download weights. Each model prompt, raw response, screenshot hash/resolution, action, and inference time is saved in `model_trace.jsonl` and the actor-attributed event log. Current validation results and limitations are in `MODEL_VALIDATION.md`.
+The model office scenarios use the pinned OSWorld V2.1 `Qwen3VLAgent` pipeline with local Qwen3-VL weights. The default is `/mnt/raid1/mjh/models/Qwen/Qwen3-VL-30B-A3B-Instruct`; set `SWCUB_LOCAL_VLM_PATH=/mnt/raid1/mjh/models/Qwen3-VL-4B-Instruct` to use the smaller local checkpoint. Inference is offline and loopback-only through `/opt/miniconda3/bin/python`; set `SWCUB_MODEL_PYTHON` or `SWCUB_LOCAL_VLM_DEVICE` to select another installed runtime/device. The benchmark does not replace OSWorld's prompt, visual history, action format, parser, coordinate conversion, or PyAutoGUI generation. Episode trace artifacts include screenshot hashes/resolution, model response, native action strings and inference time. The framework comparison and adapter boundary are in [AGENT_FRAMEWORK_REVIEW.md](AGENT_FRAMEWORK_REVIEW.md); execution status is in [TEST_RESULTS.md](TEST_RESULTS.md).

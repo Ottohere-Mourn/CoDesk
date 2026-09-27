@@ -9,7 +9,7 @@ GUEST_IMAGE="${SWCUB_OSWORLD_GUEST_IMAGE:-/mnt/raid1/mjh/Projects/_deps/osworld-
 OVERLAY_DIR="${SWCUB_OSWORLD_OVERLAY_HOST_DIR:-/mnt/raid1/mjh/Projects/_deps/osworld-v2.1/overlays}"
 
 if [[ $# -ne 1 ]]; then
-  echo "Usage: $0 {writer-solo|calc-solo|sequential|naive-interleaving|focus-aware|writer-model-solo|calc-model-solo|model-sequential|model-naive-shared|model-focus-aware}" >&2
+  echo "Usage: $0 {writer-solo|calc-solo|sequential|naive-interleaving|focus-aware|writer-osworld-agent-solo|calc-osworld-agent-solo|writer-agent-calc-scripted-sequential}" >&2
   exit 2
 fi
 mkdir -p "$OUT" "$OVERLAY_DIR"

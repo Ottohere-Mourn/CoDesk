@@ -12,13 +12,18 @@ import socket
 import subprocess
 import sys
 import time
+from urllib.request import Request, urlopen
 
 import requests
 from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
+OSWORLD_V2_DIR = Path(os.environ.get(
+    "OSWORLD_V2_DIR", ROOT.parent / "_deps/OSWorld-V2-osworld-v2.1")).resolve()
+sys.path.insert(0, str(OSWORLD_V2_DIR))
 from desktop_env.desktop_env import DesktopEnv
+from mm_agents.qwen3vl_agent import Qwen3VLAgent
 
 from swcub.actors import ScriptedCalcActor, ScriptedWriterActor
 from swcub.core import EventLog
@@ -26,7 +31,7 @@ from swcub.evaluator import GuestLibreOfficeEvaluator
 from swcub.instances import TaskInstanceSpec
 from swcub.orchestrator import DualActorOrchestrator
 from swcub.osworld_adapter import OSWorldSharedEpisode
-from swcub.local_vlm import LocalQwenWorkerClient, LocalQwenGUIActor
+from swcub.osworld_agent_actor import OSWorldAgentActor
 
 
 DIR = "/tmp/swcub_office"
@@ -37,6 +42,26 @@ DRAFT = "Draft"
 CALC_FINAL = [["Record", "Status"], ["Quarterly", "Approved"]]
 CALC_DRAFT = [["Record", "Status"], ["Quarterly", DRAFT]]
 WRITER_DRAFT = "Quarterly status report"
+
+
+class LocalQwenInferenceClient:
+    """Transport only: forward the official OSWorld agent's prompt to local weights."""
+
+    def __init__(self, port: int):
+        self.url = f"http://127.0.0.1:{port}/infer"
+
+    def complete(self, payload: dict[str, object], _model: str) -> str:
+        request_body = json.dumps({
+            "messages": payload["messages"],
+            "max_new_tokens": min(int(payload.get("max_tokens", 512)), 512),
+        }).encode("utf-8")
+        request = Request(self.url, data=request_body,
+                          headers={"Content-Type": "application/json"}, method="POST")
+        with urlopen(request, timeout=240) as response:
+            result = json.loads(response.read())
+        if not isinstance(result, dict) or not isinstance(result.get("text"), str):
+            raise ValueError(f"invalid local model-worker reply: {result!r}")
+        return result["text"]
 
 
 def flat_writer() -> bytes:
@@ -67,9 +92,9 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--scenario", choices=("writer-solo", "calc-solo", "sequential",
                                                 "naive-interleaving", "focus-aware",
-                                                "writer-model-solo", "calc-model-solo",
-                                                "model-sequential", "model-naive-shared",
-                                                "model-focus-aware"), required=True)
+                                                "writer-osworld-agent-solo",
+                                                "calc-osworld-agent-solo",
+                                                "writer-agent-calc-scripted-sequential"), required=True)
     scenario = parser.parse_args().scenario
     instance_spec = TaskInstanceSpec.from_dict(json.loads(
         (ROOT / "tasks/instances/office_writer_calc.json").read_text(encoding="utf-8")))
@@ -150,7 +175,7 @@ def main() -> int:
         episode.cli_action("task_setup", "python3 -c " + shlex.quote(seed_code))
 
         order = ([("writer", WRITER_PATH), ("calc", CALC_PATH)]
-                 if scenario in {"calc-solo", "calc-model-solo"}
+                 if scenario in {"calc-solo", "calc-osworld-agent-solo"}
                  else [("calc", CALC_PATH), ("writer", WRITER_PATH)])
         for app, path in order:
             flag = "--calc" if app == "calc" else "--writer"
@@ -162,21 +187,20 @@ def main() -> int:
         time.sleep(15)
         episode.refresh_observation()
 
-        expected_writer = WRITER_DRAFT if scenario in {"calc-solo", "calc-model-solo"} else WRITER_FINAL
-        expected_calc = CALC_DRAFT if scenario in {"writer-solo", "writer-model-solo"} else CALC_FINAL
+        expected_writer = WRITER_DRAFT if scenario in {"calc-solo", "calc-osworld-agent-solo"} else WRITER_FINAL
+        expected_calc = CALC_DRAFT if scenario in {"writer-solo", "writer-osworld-agent-solo"} else CALC_FINAL
         evaluator = GuestLibreOfficeEvaluator(
             lambda path: command(["cat", path]), expected_writer, expected_calc)
         writer = ScriptedWriterActor(recover_focus=scenario in {"sequential", "focus-aware"})
         calc = ScriptedCalcActor()
-        model_scenarios = {"writer-model-solo", "calc-model-solo", "model-sequential",
-                           "model-naive-shared", "model-focus-aware"}
-        model_actors: list[LocalQwenGUIActor] = []
+        model_actors: list[OSWorldAgentActor] = []
         model_metadata: dict[str, object] | None = None
-        if scenario in model_scenarios:
+        if scenario in {"writer-osworld-agent-solo", "calc-osworld-agent-solo",
+                        "writer-agent-calc-scripted-sequential"}:
             host_python = os.environ.get("SWCUB_MODEL_PYTHON", "/opt/miniconda3/bin/python")
             model_path = Path(os.environ.get(
-                "SWCUB_LOCAL_VLM_PATH", "/mnt/raid1/mjh/models/Qwen/Qwen2.5-VL-3B-Instruct"))
-            device = os.environ.get("SWCUB_LOCAL_VLM_DEVICE", "cuda:0")
+                "SWCUB_LOCAL_VLM_PATH", "/mnt/raid1/mjh/models/Qwen/Qwen3-VL-30B-A3B-Instruct"))
+            device = os.environ.get("SWCUB_LOCAL_VLM_DEVICE", "auto")
             with socket.socket() as listener:
                 listener.bind(("127.0.0.1", 0))
                 port = listener.getsockname()[1]
@@ -184,104 +208,63 @@ def main() -> int:
             worker_env = os.environ.copy()
             worker_env.update({"HF_HUB_OFFLINE": "1", "TRANSFORMERS_OFFLINE": "1",
                                "HF_HUB_DISABLE_TELEMETRY": "1"})
+            worker_env.setdefault("CUDA_VISIBLE_DEVICES", "0,2,3,4,5,6,7")
             model_worker = subprocess.Popen(
                 [host_python, str(ROOT / "scripts/local_qwen_worker.py"),
                  "--model", str(model_path), "--device", device, "--port", str(port)],
                 env=worker_env, stdout=worker_log, stderr=subprocess.STDOUT)
-            worker_client = LocalQwenWorkerClient(f"http://127.0.0.1:{port}")
+            worker_log.close()
             deadline = time.monotonic() + 600
+            health_url = f"http://127.0.0.1:{port}/health"
             while time.monotonic() < deadline:
                 if model_worker.poll() is not None:
-                    worker_log.close()
                     raise RuntimeError(f"local Qwen worker exited; see {out / 'model_worker.log'}")
                 try:
-                    model_metadata = worker_client.health()
+                    with urlopen(health_url, timeout=5) as response:
+                        model_metadata = json.loads(response.read())
                     break
                 except Exception:
                     time.sleep(2)
             else:
                 model_worker.terminate()
-                worker_log.close()
                 raise TimeoutError("local Qwen worker did not become ready within 600 seconds")
-            worker_log.close()
+            worker_client = LocalQwenInferenceClient(port)
+            model_agent = Qwen3VLAgent(
+                platform="ubuntu", model="qwen3-vl", max_tokens=512,
+                action_space="pyautogui", observation_type="screenshot",
+                coordinate_type="relative")
+            # Keep OSWorld's official prompt, multi-image history, action schema,
+            # coordinate conversion, and parser; replace only its hosted transport.
+            model_agent.call_llm = worker_client.complete
 
             def record_model_step(record: dict[str, object]) -> None:
                 before = episode.snapshot()
                 episode.log.record(str(record.get("actor_id", "gui_actor")), "model",
-                                   "local_qwen.generate", before, before,
+                                   "osworld.qwen3vl.predict", before, before,
                                    observed_revision=record.get("observed_revision")
                                    if type(record.get("observed_revision")) is int else None,
                                    details=record)
 
-            writer_task = (
-                'In the Writer document, replace all existing document text with exactly '
-                '"Approved by GUI actor" and save the document. Follow this order: click directly '
-                'inside the visible existing paragraph to focus Writer; press Ctrl+A; type exactly '
-                '"Approved by GUI actor"; press Ctrl+S; then return done. Never type before both '
-                'the paragraph click and Ctrl+A appear in the action history. Do not edit the spreadsheet.')
-            calc_task = (
-                'In the Calc spreadsheet, change only cell B2 (column B, row 2: the right-hand '
-                'Status cell next to Quarterly) from "Draft" to exactly "Approved". Do not edit '
-                'A2, which contains Quarterly. Preserve the headers and other cells, save the '
-                'spreadsheet, then return done.')
-            def writer_guard(action: dict[str, object], history: list[dict[str, object]]) -> str | None:
-                clicked = any(item.get("op") == "click" for item in history)
-                selected = any(item.get("op") == "key" and item.get("key") == "ctrl+a" for item in history)
-                typed = any(item.get("op") == "type" for item in history)
-                saved = any(item.get("op") == "key" and item.get("key") == "ctrl+s" for item in history)
-                op = action.get("op")
-                if not clicked and op != "click":
-                    return "click within the existing Writer paragraph before keyboard or text input"
-                if clicked and not selected and op not in {"click", "key"}:
-                    return "press Ctrl+A after focusing the paragraph before typing replacement text"
-                if clicked and not selected and op == "key" and action.get("key") != "ctrl+a":
-                    return "press Ctrl+A before any other key action"
-                if selected and not typed and op != "type":
-                    return "type the exact replacement text after Ctrl+A"
-                if typed and not saved and not (op == "key" and action.get("key") == "ctrl+s"):
-                    return "save with Ctrl+S after typing"
-                if saved and op != "done":
-                    return "the requested edit is saved; return done"
-                return None
-
-            def calc_guard(action: dict[str, object], history: list[dict[str, object]]) -> str | None:
-                clicked = any(item.get("op") == "click" for item in history)
-                typed = any(item.get("op") == "type" for item in history)
-                saved = any(item.get("op") == "key" and item.get("key") == "ctrl+s" for item in history)
-                op = action.get("op")
-                if not clicked and op != "click":
-                    return "click the B2 cell before changing a spreadsheet value"
-                if clicked and not typed and op != "type":
-                    return "type Approved into the selected B2 cell"
-                if typed and not saved and not (op == "key" and action.get("key") == "ctrl+s"):
-                    return "save the spreadsheet with Ctrl+S after editing B2"
-                if saved and op != "done":
-                    return "the spreadsheet edit is saved; return done"
-                return None
-            if scenario == "writer-model-solo":
-                model_actors = [LocalQwenGUIActor(worker_client, writer_task, max_steps=6,
-                    event_callback=record_model_step, actor_id="gui_actor", action_guard=writer_guard)]
-                actors, schedule = model_actors, ["gui_actor"] * 6
-            elif scenario == "calc-model-solo":
-                model_actors = [LocalQwenGUIActor(worker_client, calc_task, max_steps=6,
-                    event_callback=record_model_step, actor_id="gui_actor", action_guard=calc_guard)]
-                actors, schedule = model_actors, ["gui_actor"] * 6
+            task = ("In LibreOffice Writer, first click inside the visible existing paragraph "
+                    '"Quarterly status report" to put the text cursor in the document. Then '
+                    'replace all document text with exactly "Approved by GUI actor" and save. '
+                    "Do not edit the spreadsheet."
+                    if scenario in {"writer-osworld-agent-solo",
+                                    "writer-agent-calc-scripted-sequential"} else
+                    'In the Calc spreadsheet, change cell B2 from "Draft" to "Approved" and save. '
+                    'Keep all other cells unchanged.')
+            actor = OSWorldAgentActor(model_agent, task, actor_id="gui_actor", max_steps=20,
+                                      event_callback=record_model_step)
+            model_actors = [actor]
+            if scenario == "writer-agent-calc-scripted-sequential":
+                actors, schedule = [actor, calc], ["gui_actor", "calc_actor"]
             else:
-                writer_actor = LocalQwenGUIActor(
-                    worker_client, writer_task, max_steps=6, event_callback=record_model_step,
-                    actor_id="writer_vlm", reuse_first_observation=scenario == "model-naive-shared",
-                    action_guard=writer_guard)
-                calc_actor = LocalQwenGUIActor(
-                    worker_client, calc_task, max_steps=6, event_callback=record_model_step,
-                    actor_id="calc_vlm", action_guard=calc_guard)
-                model_actors = [writer_actor, calc_actor]
-                actors = model_actors
-                if scenario == "model-sequential":
-                    schedule = ["writer_vlm"] * 6 + ["calc_vlm"] * 6
-                else:
-                    schedule = ["writer_vlm"] + ["calc_vlm"] * 6 + ["writer_vlm"] * 5
-            model_metadata = {"name": model_metadata["model"], "device": model_metadata["device"],
-                              "worker": "local loopback HTTP; local_files_only"}
+                actors, schedule = model_actors, ["gui_actor"]
+            model_metadata = {"name": model_metadata["model"], "device": device,
+                              "worker": "local Transformers inference; local_files_only",
+                              "agent_framework": "OSWorld-V2.1 Qwen3VLAgent",
+                              "agent_source": str(OSWORLD_V2_DIR / "mm_agents/qwen3vl_agent.py"),
+                              "coordinate_type": "relative 0..999; native OSWorld parser scales to screenshot pixels"}
         elif scenario in {"writer-solo", "calc-solo"}:
             actors = [writer] if scenario == "writer-solo" else [calc]
             schedule = ["writer_actor", "writer_actor"] if scenario == "writer-solo" else ["calc_actor"]
@@ -302,15 +285,16 @@ def main() -> int:
         final_state = report["evaluation"].get("final_state", {})
         active_ids = {actor.actor_id for actor in actors}
         report["individual_goals"] = {}
-        if "writer_actor" in active_ids or "writer_vlm" in active_ids or scenario == "writer-model-solo":
-            writer_id = ("gui_actor" if scenario == "writer-model-solo" else
-                         "writer_vlm" if "writer_vlm" in active_ids else "writer_actor")
+        if "writer_actor" in active_ids or scenario in {
+                "writer-osworld-agent-solo", "writer-agent-calc-scripted-sequential"}:
+            writer_id = ("gui_actor" if scenario in {
+                "writer-osworld-agent-solo", "writer-agent-calc-scripted-sequential"}
+                else "writer_actor")
             report["individual_goals"][writer_id] = {
                 "success": final_state.get("writer_text") == expected_writer,
                 "expected": expected_writer, "actual": final_state.get("writer_text")}
-        if "calc_actor" in active_ids or "calc_vlm" in active_ids or scenario == "calc-model-solo":
-            calc_id = ("gui_actor" if scenario == "calc-model-solo" else
-                       "calc_vlm" if "calc_vlm" in active_ids else "calc_actor")
+        if "calc_actor" in active_ids or scenario == "calc-osworld-agent-solo":
+            calc_id = ("gui_actor" if scenario == "calc-osworld-agent-solo" else "calc_actor")
             report["individual_goals"][calc_id] = {
                 "success": final_state.get("calc_cells") == expected_calc,
                 "expected": expected_calc, "actual": final_state.get("calc_cells")}
@@ -321,7 +305,7 @@ def main() -> int:
                                              for item in all_traces), encoding="utf-8")
             report["model"] = {**model_metadata, "trace": "model_trace.jsonl",
                                "steps": len(all_traces),
-                               "coordinate_mapping": "screenshot pixels to Guest PyAutoGUI pixels, 1:1; actions bounds-checked"}
+                               "action_steps": sum(len(item.get("native_actions", [])) for item in all_traces)}
         episode.copy_artifacts(out)
 
         before_reset = episode.snapshot()
@@ -342,7 +326,7 @@ def main() -> int:
                                   "previous_guest_container_id": old_container,
                                   "new_guest_container_id": after_reset.get("guest_container_id")}
         task_ok = bool(report["evaluation"]["success"])
-        if scenario in {"naive-interleaving", "model-naive-shared"}:
+        if scenario == "naive-interleaving":
             observed = report["evaluation"].get("final_state", {})
             reproduced_focus_interference = (
                 observed.get("writer_text") == WRITER_DRAFT
@@ -358,13 +342,13 @@ def main() -> int:
         report["scenario_success"] = bool(scenario_ok)
         report["success"] = bool(scenario_ok and reset_ok)
         if model_actors:
+            model_actor_results = [report["actors"].get(actor.actor_id, {})
+                                   for actor in model_actors]
             if report["evaluation"]["success"]:
                 report["model_failure_class"] = "none"
-            elif scenario == "model-naive-shared" and scenario_ok:
-                report["model_failure_class"] = "shared_desktop_interference"
-            elif (all(report["actors"].get(actor.actor_id, {}).get("success") for actor in model_actors)
-                  or any("task action precondition" in str(report["actors"].get(
-                      actor.actor_id, {}).get("error", "")) for actor in model_actors)):
+            elif (all(result.get("success") for result in model_actor_results)
+                  or any("did not terminate within" in str(result.get("error", ""))
+                         for result in model_actor_results)):
                 report["model_failure_class"] = "model_task_failure"
             else:
                 report["model_failure_class"] = "model_or_action_execution_failure"

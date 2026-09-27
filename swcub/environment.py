@@ -370,6 +370,18 @@ class ActorContext:
         self._require_gui()
         self._act("gui", {"op": "key", "key": key})
 
+    def execute_gui_action(self, action: str) -> None:
+        """Execute an action string emitted by a native computer-use framework.
+
+        This method is for adapters that already speak the environment's native
+        action protocol (for example OSWorld agents returning PyAutoGUI code).
+        It does not add planning or action parsing.
+        """
+        self._require_gui()
+        if not isinstance(action, str) or not action.strip():
+            raise ValueError("native GUI action must be a non-empty string")
+        self._act("gui", action)
+
     def run_cli(self, command: Sequence[str]) -> str:
         if self._role != "cli":
             raise PermissionError("this actor has no CLI capability")
