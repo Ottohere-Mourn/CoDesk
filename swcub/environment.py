@@ -357,7 +357,6 @@ class DockerX11Workspace:
         if self.container_id:
             cleanup_docker_cli_container(
                 self.container_id, self.resource_identity, reason="DockerX11Workspace.close",
-                runner=self._run,
                 inspect_fn=lambda container_id: self._inspect_container(container_id))
             self.container_id = ""
             self.container_name = ""
