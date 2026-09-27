@@ -107,4 +107,11 @@ The machine-readable 15-run aggregate is `/mnt/raid1/mjh/Shared-Workspace-Benchm
 
 ## Operational incident
 
-During environment diagnosis, an older stopped/created Docker container named `focused_curran` (`easyr1:latest`, creation time reported as 2026-01-09) was mistakenly removed. It predated this calibration and was not created by these runs. Its container metadata cannot be reconstructed from the available record. No image or other container was removed.
+During environment diagnosis, I mistakenly ran `docker rm focused_curran`. At that point it was a container in `Created` state, not a container started by this calibration:
+
+- Container ID: `975c4ff5bb3e652ec5add228f37acade50c50f275336fba0dc6e330a81a2a903`.
+- Created: `2026-01-09T05:02:06.918134184Z`.
+- Image: `easyr1:latest`, image ID `sha256:1e28ff0a960879cd22a70e2f53e38dafd1ee71c847908a37b5d91613697ef007` (image creation time `2026-01-08T21:22:14.613724299Z`). The image remains present.
+- Since the command was `docker rm` without `-f` and the container had never started, there was no running process to stop. Its container metadata/writable layer is no longer available through Docker; I did not recreate a replacement.
+
+An ownership clue, but not proof: another surviving container, `heuristic_brattain`, used the identical image and was created at `2026-01-09T05:06:24.237282549Z`, about four minutes later. It binds `/mnt/data`, and its retained terminal log shows an attempted EasyR1 Qwen2.5-VL Geo3K GRPO command and paths under `/home/ywj/MedRAG/EasyR1`. The host account database identifies `ywj` as `yanwenjie`; that home directory is not readable to the current account, so I did not inspect its contents. This makes an EasyR1 activity associated with account `ywj` the most plausible context for the nearby same-image containers, but it does **not** establish who created `focused_curran`, prove that its configuration matched the surviving sibling, or establish anyone's relationship to you. Available Docker and system logs do not supply a creator identity. No image or other container was removed.
