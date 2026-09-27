@@ -116,8 +116,10 @@ def main() -> int:
             (out / "driver-output.txt").write_text(proc.stdout, encoding="utf-8")
             report_path = out / "report.json"
             report = json.loads(report_path.read_text(encoding="utf-8")) if report_path.is_file() else None
+            is_final_report = report is not None and "reset_check" in report
             row.update({"finished_utc": utc_now(), "exit_code": proc.returncode,
-                        "status": "finished" if report is not None else "no_report",
+                        "status": ("finished" if is_final_report else
+                                   "incomplete_report" if report is not None else "no_report"),
                         "success": report.get("success") if report else None,
                         "scenario_success": report.get("scenario_success") if report else None,
                         "report": str(report_path) if report else None})
