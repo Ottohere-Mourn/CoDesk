@@ -8,15 +8,22 @@ import json
 import os
 from pathlib import Path
 import shlex
+import socket
+import subprocess
 import sys
 import time
+from urllib.request import Request, urlopen
 
 import requests
 from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
+OSWORLD_V2_DIR = Path(os.environ.get(
+    "OSWORLD_V2_DIR", ROOT.parent / "_deps/OSWorld-V2-osworld-v2.1")).resolve()
+sys.path.insert(0, str(OSWORLD_V2_DIR))
 from desktop_env.desktop_env import DesktopEnv
+from mm_agents.qwen3vl_agent import Qwen3VLAgent
 
 from swcub.actors import (ScriptedBrowserGUIActor, ScriptedBrowserHumanReplayActor,
                           ScriptedWebCacheGUIActor, ScriptedGuestCLIActor)
@@ -25,6 +32,7 @@ from swcub.evaluator import GuestWebStateEvaluator
 from swcub.instances import TaskInstanceSpec
 from swcub.orchestrator import DualActorOrchestrator
 from swcub.osworld_adapter import OSWorldSharedEpisode
+from swcub.osworld_agent_actor import OSWorldAgentActor
 from swcub.tasks.web_workspace import server_source
 
 
@@ -34,7 +42,26 @@ ALL_EXPECTED = {
     "human_goal": "Reviewed by human", "agent_goal": "Approved by GUI actor",
 }
 SCENARIOS = ("gui-cli-gui-solo", "gui-cli-cli-solo", "gui-cli-refresh", "gui-cli-stale",
-             "human-solo", "agent-solo", "human-agent-focus-aware", "human-agent-naive")
+             "human-solo", "agent-solo", "agent-qwen-solo",
+             "human-agent-focus-aware", "human-agent-naive")
+
+
+class LocalQwenInferenceClient:
+    """Transport adapter used by the pinned OSWorld Qwen3VLAgent."""
+
+    def __init__(self, port: int):
+        self.url = f"http://127.0.0.1:{port}/infer"
+
+    def complete(self, payload: dict[str, object], _model: str) -> str:
+        body = json.dumps({"messages": payload["messages"],
+                           "max_new_tokens": min(int(payload.get("max_tokens", 512)), 512)}).encode()
+        request = Request(self.url, data=body,
+                          headers={"Content-Type": "application/json"}, method="POST")
+        with urlopen(request, timeout=240) as response:
+            result = json.loads(response.read())
+        if not isinstance(result, dict) or not isinstance(result.get("text"), str):
+            raise ValueError(f"invalid local model-worker reply: {result!r}")
+        return result["text"]
 
 
 def main() -> int:
@@ -50,7 +77,7 @@ def main() -> int:
     out.mkdir(parents=True, exist_ok=True)
     guest_image = os.environ.get(
         "SWCUB_OSWORLD_GUEST_IMAGE",
-        "/mnt/raid1/mjh/Projects/_deps/osworld-v2.1/docker_vm_data/osworld-v2-ubuntu-x86.qcow2",
+        str(OSWORLD_V2_DIR / "docker_vm_data/osworld-v2-ubuntu-x86.qcow2"),
     )
     desktop = DesktopEnv(provider_name="docker", path_to_vm=guest_image,
                          cache_dir=os.environ.get(
@@ -100,6 +127,7 @@ def main() -> int:
 
     episode = OSWorldSharedEpisode(desktop, cli_executor=lambda raw: command(shlex.split(raw)))
     episode.log = EventLog()
+    model_worker: subprocess.Popen[bytes] | None = None
 
     source = base64.b64encode(server_source()).decode("ascii")
     initial_state = json.dumps(instance_spec.initial_state, separators=(",", ":"))
@@ -159,6 +187,61 @@ def main() -> int:
             actors, schedule, expected = [ScriptedBrowserHumanReplayActor()], ["human_replay"], {"human_goal": ALL_EXPECTED["human_goal"]}
         elif scenario == "agent-solo":
             actors, schedule, expected = [ScriptedBrowserGUIActor(recover_focus=True)], ["gui_actor", "gui_actor"], {"agent_goal": ALL_EXPECTED["agent_goal"]}
+        elif scenario == "agent-qwen-solo":
+            host_python = os.environ.get("SWCUB_MODEL_PYTHON", "/opt/miniconda3/bin/python")
+            model_path = Path(os.environ.get(
+                "SWCUB_LOCAL_VLM_PATH", "/mnt/raid1/mjh/models/Qwen/Qwen3-VL-30B-A3B-Instruct"))
+            device = os.environ.get("SWCUB_LOCAL_VLM_DEVICE", "auto")
+            with socket.socket() as listener:
+                listener.bind(("127.0.0.1", 0))
+                port = listener.getsockname()[1]
+            worker_log = (out / "model_worker.log").open("w", encoding="utf-8")
+            worker_env = os.environ.copy()
+            worker_env.update({"HF_HUB_OFFLINE": "1", "TRANSFORMERS_OFFLINE": "1",
+                               "HF_HUB_DISABLE_TELEMETRY": "1"})
+            worker_env.setdefault("CUDA_VISIBLE_DEVICES", "0,2,3,4,5,6,7")
+            model_worker = subprocess.Popen(
+                [host_python, str(ROOT / "scripts/local_qwen_worker.py"),
+                 "--model", str(model_path), "--device", device, "--port", str(port)],
+                env=worker_env, stdout=worker_log, stderr=subprocess.STDOUT)
+            worker_log.close()
+            deadline = time.monotonic() + 600
+            while time.monotonic() < deadline:
+                if model_worker.poll() is not None:
+                    raise RuntimeError(f"local Qwen worker exited; see {out / 'model_worker.log'}")
+                try:
+                    with urlopen(f"http://127.0.0.1:{port}/health", timeout=5) as response:
+                        model_metadata = json.loads(response.read())
+                    break
+                except Exception:
+                    time.sleep(2)
+            else:
+                raise TimeoutError("local Qwen worker did not become ready within 600 seconds")
+            model_agent = Qwen3VLAgent(
+                platform="ubuntu", model="qwen3-vl", max_tokens=512,
+                action_space="pyautogui", observation_type="screenshot",
+                coordinate_type="relative")
+            model_agent.call_llm = LocalQwenInferenceClient(port).complete
+
+            def record_model_step(record: dict[str, object]) -> None:
+                before = episode.snapshot()
+                episode.log.record(str(record.get("actor_id", "gui_actor")), "model",
+                                   "osworld.qwen3vl.predict", before, before,
+                                   observed_revision=record.get("observed_revision")
+                                   if type(record.get("observed_revision")) is int else None,
+                                   details=record)
+
+            task = ('In the browser review form, enter exactly "Approved by GUI actor" '
+                    'in the GUI Agent Goal field and submit it.')
+            qwen_actor = OSWorldAgentActor(model_agent, task, actor_id="gui_actor", max_steps=20,
+                                           event_callback=record_model_step)
+            actors, schedule, expected = [qwen_actor], ["gui_actor"] * qwen_actor.max_steps, {
+                "agent_goal": ALL_EXPECTED["agent_goal"]}
+            model_metadata = {"name": model_metadata["model"], "device": device,
+                              "worker": "local Transformers inference; local_files_only",
+                              "agent_framework": "OSWorld-V2.1 Qwen3VLAgent",
+                              "agent_source": str(OSWORLD_V2_DIR / "mm_agents/qwen3vl_agent.py"),
+                              "coordinate_type": "relative 0..999; native OSWorld parser scales to screenshot pixels"}
         else:
             recover = scenario == "human-agent-focus-aware"
             actors = [ScriptedBrowserGUIActor(recover_focus=recover), ScriptedBrowserHumanReplayActor()]
@@ -173,6 +256,23 @@ def main() -> int:
             "gui-cli-refresh", "human-agent-focus-aware"} else f"browser-v0-{scenario}-seed0")
         report["same_guest_container_id"] = episode.snapshot().get("guest_container_id")
         report["guest_apps"] = probe.strip().splitlines()
+        if scenario == "agent-qwen-solo":
+            trace_path = out / "model_trace.jsonl"
+            trace_path.write_text("".join(json.dumps(item, ensure_ascii=False) + "\n"
+                                                 for item in qwen_actor.trace), encoding="utf-8")
+            report["model"] = {**model_metadata, "trace": "model_trace.jsonl",
+                               "steps": len(qwen_actor.trace),
+                               "action_steps": sum(len(item.get("native_actions", []))
+                                                   for item in qwen_actor.trace)}
+            actor_result = report["actors"].get("gui_actor", {})
+            if report["evaluation"]["success"]:
+                report["model_failure_class"] = "none"
+            elif "did not terminate within" in str(actor_result.get("error", "")):
+                report["model_failure_class"] = "model_task_failure"
+            elif actor_result.get("error"):
+                report["model_failure_class"] = "environment_or_action_execution_failure"
+            else:
+                report["model_failure_class"] = "model_task_failure"
         state = report["evaluation"].get("final_state", {})
         active_actor_ids = {actor.actor_id for actor in actors}
         if scenario.startswith("gui-cli-"):
@@ -183,7 +283,8 @@ def main() -> int:
             if "cli_actor" in active_actor_ids:
                 report["individual_goals"]["cli_actor"] = {
                     "success": state.get("cli_note") == "Reviewed by CLI", "actual": state.get("cli_note")}
-        elif scenario in {"human-solo", "agent-solo", "human-agent-focus-aware", "human-agent-naive"}:
+        elif scenario in {"human-solo", "agent-solo", "agent-qwen-solo",
+                          "human-agent-focus-aware", "human-agent-naive"}:
             report["individual_goals"] = {}
             if "human_replay" in active_actor_ids:
                 report["individual_goals"]["human_replay"] = {
@@ -205,6 +306,16 @@ def main() -> int:
             report["scenario_success"] = bool(report["evaluation"]["success"])
 
         episode.copy_artifacts(out)
+        # Model inference is finished before the reset validation; release its
+        # CPU/GPU resources while the Guest restarts.
+        if model_worker is not None and model_worker.poll() is None:
+            model_worker.terminate()
+            try:
+                model_worker.wait(timeout=10)
+            except subprocess.TimeoutExpired:
+                model_worker.kill()
+                model_worker.wait(timeout=5)
+
         before = episode.snapshot()
         old_id = before.get("guest_container_id")
         episode.reset(task_config=None)
@@ -229,6 +340,13 @@ def main() -> int:
         print(json.dumps(report, indent=2))
         return 0 if report["success"] else 1
     finally:
+        if model_worker is not None and model_worker.poll() is None:
+            model_worker.terminate()
+            try:
+                model_worker.wait(timeout=10)
+            except subprocess.TimeoutExpired:
+                model_worker.kill()
+                model_worker.wait(timeout=5)
         episode.close()
 
 

@@ -5,7 +5,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 V2_DIR="${OSWORLD_V2_DIR:-$(cd "$ROOT/.." && pwd)/_deps/OSWorld-V2-osworld-v2.1}"
 OUT="${OSWORLD_V2_RUN_DIR:-$ROOT/outputs/osworld-v2.1/office/${1:-unspecified}}"
 IMAGE="${OSWORLD_DOCKER_RUNTIME_IMAGE:-swcub/osworld-v2.1-qemu-runtime:local}"
-GUEST_IMAGE="${SWCUB_OSWORLD_GUEST_IMAGE:-/mnt/raid1/mjh/Projects/_deps/osworld-v2.1/docker_vm_data/osworld-v2-ubuntu-x86.qcow2}"
+GUEST_IMAGE="${SWCUB_OSWORLD_GUEST_IMAGE:-$V2_DIR/docker_vm_data/osworld-v2-ubuntu-x86.qcow2}"
 OVERLAY_DIR="${SWCUB_OSWORLD_OVERLAY_HOST_DIR:-/mnt/raid1/mjh/Projects/_deps/osworld-v2.1/overlays}"
 
 if [[ $# -ne 1 ]]; then

@@ -346,6 +346,17 @@ class ActorContext:
         self._observed_revision = revision if type(revision) is int else None
         return observation
 
+    def refresh_observation(self) -> dict[str, Any]:
+        """Fetch a new observation when an adapter reports a transient empty frame."""
+        self._require_gui()
+        refresh = getattr(self._environment, "refresh_observation", None)
+        if not callable(refresh):
+            return self.observe()
+        observation = refresh(self.actor_id)
+        revision = getattr(self._environment, "revision", None)
+        self._observed_revision = revision if type(revision) is int else None
+        return observation
+
     def _act(self, interface: str, action: Any) -> Any:
         return self._environment.act(self.actor_id, interface, action,
                                      observed_revision=self._observed_revision)

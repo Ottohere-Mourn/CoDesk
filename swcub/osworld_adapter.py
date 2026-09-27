@@ -86,6 +86,10 @@ class OSWorldSharedEpisode(Episode):
             raise RuntimeError("DesktopEnv does not expose its observation refresh hook")
         before = self.snapshot()
         self.observation = getter()
+        screenshot = self.observation.get("screenshot") if isinstance(self.observation, dict) else None
+        if isinstance(screenshot, bytes) and screenshot:
+            self.screenshot_history.append(
+                (f"refresh-{len(self.screenshot_history) + 1:02d}-{source}", screenshot))
         self.log.record(source, "observation", "osworld.refresh_observation",
                         before, self.snapshot(), observed_revision=self.revision,
                         details={"environment_id": self.environment_id,

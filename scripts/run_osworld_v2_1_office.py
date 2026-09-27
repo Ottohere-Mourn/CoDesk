@@ -102,7 +102,7 @@ def main() -> int:
     out.mkdir(parents=True, exist_ok=True)
     guest_image = os.environ.get(
         "SWCUB_OSWORLD_GUEST_IMAGE",
-        "/mnt/raid1/mjh/Projects/_deps/osworld-v2.1/docker_vm_data/osworld-v2-ubuntu-x86.qcow2",
+        str(OSWORLD_V2_DIR / "docker_vm_data/osworld-v2-ubuntu-x86.qcow2"),
     )
     desktop = DesktopEnv(provider_name="docker", path_to_vm=guest_image,
                          cache_dir=os.environ.get(
@@ -257,9 +257,9 @@ def main() -> int:
                                       event_callback=record_model_step)
             model_actors = [actor]
             if scenario == "writer-agent-calc-scripted-sequential":
-                actors, schedule = [actor, calc], ["gui_actor", "calc_actor"]
+                actors, schedule = [actor, calc], ["gui_actor"] * actor.max_steps + ["calc_actor"]
             else:
-                actors, schedule = model_actors, ["gui_actor"]
+                actors, schedule = model_actors, ["gui_actor"] * actor.max_steps
             model_metadata = {"name": model_metadata["model"], "device": device,
                               "worker": "local Transformers inference; local_files_only",
                               "agent_framework": "OSWorld-V2.1 Qwen3VLAgent",
@@ -307,6 +307,16 @@ def main() -> int:
                                "steps": len(all_traces),
                                "action_steps": sum(len(item.get("native_actions", [])) for item in all_traces)}
         episode.copy_artifacts(out)
+
+        # The model is no longer needed for grading or the reset check; release
+        # CPU/GPU resources so Guest reset is not competing with inference.
+        if model_worker is not None and model_worker.poll() is None:
+            model_worker.terminate()
+            try:
+                model_worker.wait(timeout=10)
+            except subprocess.TimeoutExpired:
+                model_worker.kill()
+                model_worker.wait(timeout=5)
 
         before_reset = episode.snapshot()
         old_container = before_reset.get("guest_container_id")

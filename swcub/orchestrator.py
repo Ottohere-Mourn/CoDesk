@@ -33,7 +33,9 @@ class DualActorOrchestrator:
         completed: set[str] = set()
         for actor_id in schedule:
             if actor_id in completed:
-                raise ValueError(f"schedule runs completed actor again: {actor_id}")
+                # Repeated slots are the static turn budget for a stateful
+                # run_step actor. Completed actors simply leave those slots idle.
+                continue
             actor = by_id[actor_id]
             context = contexts[actor_id]
             before = self.environment.snapshot()

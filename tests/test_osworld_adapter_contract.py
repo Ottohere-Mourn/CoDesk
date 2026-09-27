@@ -80,9 +80,12 @@ def test_osworld_adapter_supports_no_argument_evaluator_wrappers():
 def test_osworld_adapter_refreshes_observation_after_cli_setup():
     episode = OSWorldSharedEpisode(DesktopEnvStub())
     episode.reset({"id": "task", "instruction": "open app"})
-    result = episode.refresh_observation()
+    context = ActorContext("gui_actor", episode, "gui")
+    result = context.refresh_observation()
     assert result["screenshot"] == b"refreshed-screen"
     assert episode.log.events[-1].action == "osworld.refresh_observation"
+    assert episode.log.events[-1].actor == "gui_actor"
+    assert episode.screenshot_history[-1][1] == b"refreshed-screen"
 
 
 def test_actor_context_gui_operations_translate_and_focus_is_injectable():
