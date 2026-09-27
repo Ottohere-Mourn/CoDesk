@@ -9,6 +9,7 @@ from __future__ import annotations
 import inspect
 import json
 import logging
+import re
 import shlex
 from typing import Any, Callable
 
@@ -54,6 +55,16 @@ class OSWorldSharedEpisode(Episode):
         self.actor_steps: dict[str, int] = {}
         super().__init__({})
 
+    def _active_window_title(self) -> str | None:
+        """Extract the publicly visible focused window from OSWorld's UI tree."""
+        if not isinstance(self.observation, dict):
+            return None
+        tree = self.observation.get("accessibility_tree")
+        if not isinstance(tree, str):
+            return None
+        match = re.search(r'<frame name="([^"]+)"[^>]*st:active="true"', tree)
+        return match.group(1) if match else None
+
     def snapshot(self) -> Any:
         provider = getattr(self.desktop_env, "provider", None)
         guest_container = getattr(provider, "container", None)
@@ -73,6 +84,7 @@ class OSWorldSharedEpisode(Episode):
                         observed_revision=self.revision,
                         details={"environment_id": self.environment_id,
                                  "guest_container_id": self.snapshot().get("guest_container_id"),
+                                 "active_window_title": self._active_window_title(),
                                  "observation": _digestable(self.observation)})
         screenshot = self.observation.get("screenshot") if isinstance(self.observation, dict) else None
         if isinstance(screenshot, bytes):
@@ -154,8 +166,10 @@ class OSWorldSharedEpisode(Episode):
                    source_action: Any | None = None,
                    observed_revision: int | None = None) -> Any:
         before = self.snapshot()
+        active_window_before = self._active_window_title()
         observed_revision = self.revision if observed_revision is None else observed_revision
         self.observation, reward, done, info = self.desktop_env.step(action, pause=pause)
+        active_window_after = self._active_window_title()
         self.revision += 1
         self.actor_steps[actor] = self.actor_steps.get(actor, 0) + 1
         self.log.record(actor, "gui", "osworld.step", before, self.snapshot(),
@@ -166,6 +180,8 @@ class OSWorldSharedEpisode(Episode):
                                                     "guest_container_id": self.snapshot().get("guest_container_id"),
                                                     "revision_before_action": before["revision"],
                                                     "revision_after_action": self.revision,
+                                                    "active_window_before": active_window_before,
+                                                    "active_window_after": active_window_after,
                                                     "stale_observation": (observed_revision is not None
                                                                            and observed_revision < before["revision"]),
                                                     "reward": reward, "done": done,

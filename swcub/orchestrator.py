@@ -2,7 +2,7 @@
 from __future__ import annotations
 import json
 from pathlib import Path
-from typing import Sequence
+from typing import Callable, Sequence
 
 from .actors import Actor
 from .core import EventLog
@@ -16,7 +16,8 @@ class DualActorOrchestrator:
         self.event_log = event_log or environment.log
 
     def run(self, actors: Sequence[Actor], schedule: Sequence[str],
-            evaluator: Evaluator, out: Path, *, copy_artifacts: bool = True) -> dict[str, object]:
+            evaluator: Evaluator, out: Path, *, copy_artifacts: bool = True,
+            before_actor_turn: Callable[[Actor, int], None] | None = None) -> dict[str, object]:
         by_id = {actor.actor_id: actor for actor in actors}
         if len(by_id) != len(actors):
             raise ValueError("actor_id values must be unique")
@@ -31,12 +32,14 @@ class DualActorOrchestrator:
             for actor_id in dict.fromkeys(schedule)
         }
         completed: set[str] = set()
-        for actor_id in schedule:
+        for turn_index, actor_id in enumerate(schedule, start=1):
             if actor_id in completed:
                 # Repeated slots are the static turn budget for a stateful
                 # run_step actor. Completed actors simply leave those slots idle.
                 continue
             actor = by_id[actor_id]
+            if before_actor_turn is not None:
+                before_actor_turn(actor, turn_index)
             context = contexts[actor_id]
             before = self.environment.snapshot()
             result = actor_results[actor_id]

@@ -25,6 +25,7 @@ from swcub.environment import ActorContext
 from swcub.evaluator import GuestCsvEvaluator, GuestFocusEvaluator
 from swcub.orchestrator import DualActorOrchestrator
 from swcub.osworld_adapter import OSWorldSharedEpisode
+from swcub.resource_safety import ensure_resource_identity
 
 
 CSV_PATH = "/tmp/swcub_shared.csv"
@@ -43,6 +44,7 @@ def main() -> int:
     scenario = parser.parse_args().scenario
     out = Path(os.environ.get("SWCUB_OSWORLD_RUN_DIR", ROOT / "outputs/osworld-v2.1/shared-csv"))
     out.mkdir(parents=True, exist_ok=True)
+    resource_identity = ensure_resource_identity(out / "resource-events.jsonl")
     guest_image = os.environ.get(
         "SWCUB_OSWORLD_GUEST_IMAGE",
         "/mnt/raid1/mjh/Projects/_deps/osworld-v2.1/docker_vm_data/osworld-v2-ubuntu-x86.qcow2",
@@ -168,6 +170,8 @@ def main() -> int:
                                   out, copy_artifacts=False)
         shared_guest_container_id = episode.snapshot().get("guest_container_id")
         report["shared_guest_container_id"] = shared_guest_container_id
+        report["resource_run_id"] = resource_identity.run_id
+        report["resource_ledger"] = str(resource_identity.ledger_path)
         stale_actions = [event for event in episode.log.events
                          if event.details.get("stale_observation")]
         report["interaction_metrics"] = {

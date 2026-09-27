@@ -6,8 +6,10 @@ import argparse
 import json
 import os
 from pathlib import Path
+import secrets
 import subprocess
 import sys
+import uuid
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -71,7 +73,12 @@ def main() -> int:
                 task_success = bool(report.get("evaluation", {}).get("success"))
                 return_code = 0 if report.get("success") else 1
             else:
-                trial_env = env | {"SWCUB_OSWORLD_RUN_DIR": str(out)}
+                trial_env = env | {
+                    "SWCUB_OSWORLD_RUN_DIR": str(out),
+                    "SWCUB_RUN_ID": f"solo-{task}-{run_no:02d}-{uuid.uuid4().hex[:16]}",
+                    "SWCUB_OWNER_TOKEN": secrets.token_hex(32),
+                    "SWCUB_RESOURCE_LEDGER": str(out / "resource-events.jsonl"),
+                }
                 cmd = ["uv", "--project", str(V2_DIR), "run", "--frozen", "python",
                        str(ROOT / f"scripts/run_osworld_v2_1_{'browser' if area == 'browser' else 'office'}.py"),
                        "--scenario", scenario]

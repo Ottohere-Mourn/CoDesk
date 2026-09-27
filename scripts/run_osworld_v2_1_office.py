@@ -32,6 +32,7 @@ from swcub.instances import TaskInstanceSpec
 from swcub.orchestrator import DualActorOrchestrator
 from swcub.osworld_adapter import OSWorldSharedEpisode
 from swcub.osworld_agent_actor import OSWorldAgentActor
+from swcub.resource_safety import ensure_resource_identity
 
 
 DIR = "/tmp/swcub_office"
@@ -100,6 +101,7 @@ def main() -> int:
         (ROOT / "tasks/instances/office_writer_calc.json").read_text(encoding="utf-8")))
     out = Path(os.environ.get("SWCUB_OSWORLD_RUN_DIR", ROOT / "outputs/osworld-v2.1/office" / scenario))
     out.mkdir(parents=True, exist_ok=True)
+    resource_identity = ensure_resource_identity(out / "resource-events.jsonl")
     guest_image = os.environ.get(
         "SWCUB_OSWORLD_GUEST_IMAGE",
         str(OSWORLD_V2_DIR / "docker_vm_data/osworld-v2-ubuntu-x86.qcow2"),
@@ -279,6 +281,8 @@ def main() -> int:
         report["task_instance_id"] = (instance_spec.instance_id if scenario == "sequential"
                                        else f"office-v0-{scenario}-seed0")
         report["same_guest_container_id"] = episode.snapshot().get("guest_container_id")
+        report["resource_run_id"] = resource_identity.run_id
+        report["resource_ledger"] = str(resource_identity.ledger_path)
         report["guest_apps"] = app_probe.strip().splitlines()
         report["stale_actions"] = sum(bool(event.details.get("stale_observation"))
                                       for event in episode.log.events)

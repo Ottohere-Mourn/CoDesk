@@ -8,6 +8,7 @@ from pathlib import Path
 PINNED = "happysixd/osworld-docker@sha256:0e6497a9295647cf05bf2b2af522fdd79bdeba2737595259cab310a3bcf6baa9"
 RUNTIME_MARKER = "# SWCUB_LOCAL_RUNTIME_OVERRIDE"
 OVERLAY_MARKER = "# SWCUB_RAID1_OVERLAY_MOUNT"
+OWNERSHIP_MARKER = "# SWCUB_OWNED_RESOURCE_SAFETY"
 
 
 def patch(path: Path) -> bool:
@@ -51,6 +52,115 @@ def patch(path: Path) -> bool:
 
     if "import uuid\n" not in source:
         source = source.replace("import time\n", "import time\nimport uuid\n")
+
+    if OWNERSHIP_MARKER not in source:
+        imports = '''from pathlib import Path
+\n# SWCUB_OWNED_RESOURCE_SAFETY
+from swcub.resource_safety import (ResourceLedger, ensure_resource_identity,
+                                   remove_verified_container, verify_container_identity)
+'''
+        if source.count("from pathlib import Path\n") != 1:
+            raise RuntimeError(f"Expected one pathlib import in {path}")
+        source = source.replace("from pathlib import Path\n", imports, 1)
+
+        init_old = """        self.container = None
+        self.environment = {"DISK_SIZE": "32G", "RAM_SIZE": "4G", "CPU_CORES": "4"}  # Modify if needed
+"""
+        init_new = """        self.container = None
+        self._swcub_identity = ensure_resource_identity()
+        self._swcub_container_id = None
+        self.environment = {"DISK_SIZE": "32G", "RAM_SIZE": "4G", "CPU_CORES": "4"}  # Modify if needed
+"""
+        if source.count(init_old) != 1:
+            raise RuntimeError(f"Expected one DockerProvider container initialization in {path}")
+        source = source.replace(init_old, init_new, 1)
+
+        call_end = """                    detach=True
+                )
+"""
+        call_end_new = """                    detach=True,
+                    labels=self._swcub_identity.labels,
+                )
+                self._swcub_container_id = self.container.id
+                self.container.reload()
+                verify_container_identity(self._swcub_container_id,
+                                          self.container.attrs, self._swcub_identity)
+                ResourceLedger(self._swcub_identity.ledger_path).created_container(
+                    self._swcub_container_id, self._swcub_identity,
+                    name=self.container.name, image=runtime_image)
+"""
+        if source.count(call_end) != 1:
+            raise RuntimeError(f"Expected one Docker container run terminator in {path}")
+        source = source.replace(call_end, call_end_new, 1)
+
+        exception_cleanup_old = """        except Exception as e:
+            # Clean up if anything goes wrong
+            if self.container:
+                try:
+                    self.container.stop()
+                    self.container.remove()
+                except:
+                    pass
+            raise e
+"""
+        exception_cleanup_new = """        except Exception:
+            if self.container:
+                self._swcub_cleanup_container("start_emulator_error")
+            raise
+"""
+        if source.count(exception_cleanup_old) != 1:
+            raise RuntimeError(f"Expected one DockerProvider start failure cleanup block in {path}")
+        source = source.replace(exception_cleanup_old, exception_cleanup_new, 1)
+
+        method_marker = "    def get_ip_address(self, path_to_vm: str) -> str:\n"
+        safe_method = """    def _swcub_cleanup_container(self, reason: str) -> None:
+        if self.container is None:
+            return
+        if self._swcub_container_id is None:
+            raise RuntimeError("refusing cleanup: no recorded full container ID")
+        remove_verified_container(self.container, self._swcub_identity, reason=reason)
+        self.container = None
+        self._swcub_container_id = None
+        self.server_port = None
+        self.vnc_port = None
+        self.chromium_port = None
+        self.vlc_port = None
+
+"""
+        if source.count(method_marker) != 1:
+            raise RuntimeError(f"Expected one get_ip_address method in {path}")
+        source = source.replace(method_marker, safe_method + method_marker, 1)
+
+        stop_old = """    def stop_emulator(self, path_to_vm: str, region=None, *args, **kwargs):
+        # Note: region parameter is ignored for Docker provider
+        # but kept for interface consistency with other providers
+        if self.container:
+            logger.info("Stopping VM...")
+            try:
+                self.container.stop()
+                self.container.remove()
+                time.sleep(WAIT_TIME)
+            except Exception as e:
+                logger.error(f"Error stopping container: {e}")
+            finally:
+                self.container = None
+                self.server_port = None
+                self.vnc_port = None
+                self.chromium_port = None
+                self.vlc_port = None
+"""
+        stop_new = """    def stop_emulator(self, path_to_vm: str, region=None, *args, **kwargs):
+        # Note: region parameter is ignored for Docker provider.
+        # Remove only the full-ID container created and ledgered by this run.
+        if self.container:
+            logger.info("Stopping verified project Guest container...")
+            self._swcub_cleanup_container("provider.stop_emulator")
+            time.sleep(WAIT_TIME)
+"""
+        if source.count(stop_old) != 1:
+            raise RuntimeError(f"Expected one DockerProvider stop method in {path}")
+        source = source.replace(stop_old, stop_new, 1)
+
     if source != original:
         path.write_text(source, encoding="utf-8")
     return source != original

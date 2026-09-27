@@ -26,13 +26,15 @@ from desktop_env.desktop_env import DesktopEnv
 from mm_agents.qwen3vl_agent import Qwen3VLAgent
 
 from swcub.actors import (ScriptedBrowserGUIActor, ScriptedBrowserHumanReplayActor,
-                          ScriptedWebCacheGUIActor, ScriptedGuestCLIActor)
+                          ScriptedWebCacheGUIActor, ScriptedGuestCLIActor, ScriptedWriterActor)
 from swcub.core import EventLog
+from swcub.comparison_metrics import summarize_focus_events
 from swcub.evaluator import GuestWebStateEvaluator
 from swcub.instances import TaskInstanceSpec
 from swcub.orchestrator import DualActorOrchestrator
 from swcub.osworld_adapter import OSWorldSharedEpisode
 from swcub.osworld_agent_actor import OSWorldAgentActor
+from swcub.resource_safety import ensure_resource_identity
 from swcub.tasks.web_workspace import server_source
 
 
@@ -43,7 +45,45 @@ ALL_EXPECTED = {
 }
 SCENARIOS = ("gui-cli-gui-solo", "gui-cli-cli-solo", "gui-cli-refresh", "gui-cli-stale",
              "human-solo", "agent-solo", "agent-qwen-solo",
-             "human-agent-focus-aware", "human-agent-naive")
+             "human-agent-focus-aware", "human-agent-naive",
+             "comparison-agent-solo", "comparison-writer-solo",
+             "comparison-sequential", "comparison-naive-shared",
+             "comparison-focus-aware")
+
+
+def make_comparison_writer(scenario: str):
+    """Reuse the calibrated scripted Writer turns with a real visible app switch.
+
+    The browser episode opens Chrome in kiosk mode, so the existing office actor's
+    dock click cannot reach Writer. For non-focus-aware runs it uses the ordinary
+    GUI Alt+Tab operation once at the start of its first turn; later turns receive
+    no scheduler help, allowing the shared focus to change naturally.
+    """
+    from swcub.actors import ScriptedWriterActor
+
+    class ComparisonWriterActor:
+        actor_id = "writer_actor"
+        role = "gui"
+
+        def __init__(self):
+            self.delegate = ScriptedWriterActor(recover_focus=False)
+            self.did_initial_switch = False
+
+        def run_step(self, context):
+            if not self.did_initial_switch:
+                self.did_initial_switch = True
+                if scenario != "comparison-focus-aware":
+                    context.press_key("alt+tab")
+                    # Observe the newly focused public desktop. The underlying
+                    # action and observation events retain actor provenance.
+                    context.observe()
+            return self.delegate.run_step(context)
+
+        def run(self, context):
+            while not self.run_step(context):
+                pass
+
+    return ComparisonWriterActor()
 
 
 class LocalQwenInferenceClient:
@@ -75,6 +115,7 @@ def main() -> int:
     instance_spec = TaskInstanceSpec.from_dict(json.loads(instance_path.read_text(encoding="utf-8")))
     out = Path(os.environ.get("SWCUB_OSWORLD_RUN_DIR", ROOT / "outputs/osworld-v2.1/browser" / scenario))
     out.mkdir(parents=True, exist_ok=True)
+    resource_identity = ensure_resource_identity(out / "resource-events.jsonl")
     guest_image = os.environ.get(
         "SWCUB_OSWORLD_GUEST_IMAGE",
         str(OSWORLD_V2_DIR / "docker_vm_data/osworld-v2-ubuntu-x86.qcow2"),
@@ -154,6 +195,17 @@ def main() -> int:
         if "google-chrome" not in probe:
             raise RuntimeError(f"Chrome is unavailable in Guest: {probe!r}")
 
+        if scenario.startswith("comparison-"):
+            from scripts.run_osworld_v2_1_office import flat_writer, WRITER_DRAFT, WRITER_FINAL, WRITER_PATH
+            writer_b64 = base64.b64encode(flat_writer()).decode("ascii")
+            seed_writer = ("from pathlib import Path; import base64; "
+                           "p=Path('/tmp/swcub_office'); p.mkdir(exist_ok=True); "
+                           f"Path('{WRITER_PATH}').write_bytes(base64.b64decode('{writer_b64}'))")
+            episode.cli_action("task_setup", "python3 -c " + shlex.quote(seed_writer))
+            writer_launch = (f"soffice --nologo --norestore --nofirststartwizard --writer {shlex.quote(WRITER_PATH)} "
+                             ">/tmp/swcub_office/writer-launch.log 2>&1 & sleep 10")
+            episode.cli_action("task_setup", "bash -lc " + shlex.quote(writer_launch))
+
         start = ("python3 /tmp/swcub_web/server.py >/tmp/swcub_web/server.log 2>&1 & "
                  "for n in $(seq 1 30); do curl -fsS http://127.0.0.1:8765/health >/dev/null && exit 0; sleep 1; done; exit 1")
         episode.cli_action("task_setup", "bash -lc " + shlex.quote(start))
@@ -187,7 +239,9 @@ def main() -> int:
             actors, schedule, expected = [ScriptedBrowserHumanReplayActor()], ["human_replay"], {"human_goal": ALL_EXPECTED["human_goal"]}
         elif scenario == "agent-solo":
             actors, schedule, expected = [ScriptedBrowserGUIActor(recover_focus=True)], ["gui_actor", "gui_actor"], {"agent_goal": ALL_EXPECTED["agent_goal"]}
-        elif scenario == "agent-qwen-solo":
+        elif scenario == "agent-qwen-solo" or scenario in {
+                "comparison-agent-solo", "comparison-sequential",
+                "comparison-naive-shared", "comparison-focus-aware"}:
             host_python = os.environ.get("SWCUB_MODEL_PYTHON", "/opt/miniconda3/bin/python")
             model_path = Path(os.environ.get(
                 "SWCUB_LOCAL_VLM_PATH", "/mnt/raid1/mjh/models/Qwen/Qwen3-VL-30B-A3B-Instruct"))
@@ -235,8 +289,25 @@ def main() -> int:
                     'in the GUI Agent Goal field and submit it.')
             qwen_actor = OSWorldAgentActor(model_agent, task, actor_id="gui_actor", max_steps=20,
                                            event_callback=record_model_step)
-            actors, schedule, expected = [qwen_actor], ["gui_actor"] * qwen_actor.max_steps, {
-                "agent_goal": ALL_EXPECTED["agent_goal"]}
+            if scenario.startswith("comparison-"):
+                writer_actor = make_comparison_writer(scenario)
+                if scenario == "comparison-agent-solo":
+                    actors, schedule = [qwen_actor], ["gui_actor"] * qwen_actor.max_steps
+                elif scenario == "comparison-sequential":
+                    actors, schedule = [qwen_actor, writer_actor], (
+                        ["gui_actor"] * qwen_actor.max_steps + ["writer_actor"] * 2)
+                elif scenario == "comparison-naive-shared":
+                    actors, schedule = [qwen_actor, writer_actor], (
+                        [actor_id for _ in range(qwen_actor.max_steps)
+                         for actor_id in ("gui_actor", "writer_actor")])
+                else:
+                    actors, schedule = [qwen_actor, writer_actor], (
+                        [actor_id for _ in range(qwen_actor.max_steps)
+                         for actor_id in ("gui_actor", "writer_actor")])
+                expected = {}
+            else:
+                actors, schedule, expected = [qwen_actor], ["gui_actor"] * qwen_actor.max_steps, {
+                    "agent_goal": ALL_EXPECTED["agent_goal"]}
             model_metadata = {"name": model_metadata["model"], "device": device,
                               "worker": "local Transformers inference; local_files_only",
                               "agent_framework": "OSWorld-V2.1 Qwen3VLAgent",
@@ -247,16 +318,74 @@ def main() -> int:
             actors = [ScriptedBrowserGUIActor(recover_focus=recover), ScriptedBrowserHumanReplayActor()]
             schedule = instance_spec.materialize_schedule()
             expected = instance_spec.expected_state
-        evaluator = GuestWebStateEvaluator(lambda: command(["cat", STATE_PATH]), expected)
+        if scenario == "comparison-writer-solo":
+            writer_actor = make_comparison_writer(scenario)
+            actors, schedule, expected = [writer_actor], ["writer_actor", "writer_actor"], {}
+        if scenario.startswith("comparison-"):
+            from scripts.run_osworld_v2_1_office import WRITER_DRAFT, WRITER_FINAL, WRITER_PATH
+            active = {actor.actor_id for actor in actors}
+            expected_agent = (ALL_EXPECTED["agent_goal"] if "gui_actor" in active else "")
+            expected_writer = (WRITER_FINAL if "writer_actor" in active else WRITER_DRAFT)
+            class ComparisonEvaluator:
+                def evaluate(self, environment):
+                    web_state = json.loads(command(["cat", STATE_PATH]))
+                    writer_xml = command(["cat", WRITER_PATH])
+                    import xml.etree.ElementTree as ET
+                    root = ET.fromstring(writer_xml)
+                    writer_text = "\n".join("".join(p.itertext()) for p in root.iter(
+                        "{urn:oasis:names:tc:opendocument:xmlns:text:1.0}p"))
+                    agent_ok = web_state.get("agent_goal", "") == expected_agent
+                    writer_ok = writer_text == expected_writer
+                    goals = {"qwen_browser": {"active": "gui_actor" in active,
+                                               "success": agent_ok,
+                                               "expected": expected_agent,
+                                               "actual": web_state.get("agent_goal", "")},
+                             "scripted_writer": {"active": "writer_actor" in active,
+                                                  "success": writer_ok,
+                                                  "expected": expected_writer,
+                                                  "actual": writer_text}}
+                    return {"success": all(g["success"] for g in goals.values()),
+                            "individual_goals": goals,
+                            "final_state": {"web": web_state, "writer_text": writer_text},
+                            "missing": {k: v for k, v in goals.items() if not v["success"]}}
+            evaluator = ComparisonEvaluator()
+        else:
+            evaluator = GuestWebStateEvaluator(lambda: command(["cat", STATE_PATH]), expected)
+
+        def record_turn_focus(actor, turn_index):
+            before = episode.snapshot()
+            active_window = command(["bash", "-lc", "xdotool getactivewindow getwindowname 2>/dev/null || true"]).strip()
+            target = "Chrome" if actor.actor_id == "gui_actor" else "Writer"
+            if scenario == "comparison-focus-aware":
+                app_class = "google-chrome" if actor.actor_id == "gui_actor" else "soffice"
+                focus_cmd = (f"window=$(xdotool search --onlyvisible --class {shlex.quote(app_class)} | tail -n 1); "
+                             "test -n \"$window\" && xdotool windowactivate --sync \"$window\"; "
+                             "xdotool getactivewindow getwindowname")
+                active_window = command(["bash", "-lc", focus_cmd]).strip()
+            episode.log.record("focus_scheduler", "focus", "actor_turn.focus", before,
+                               episode.snapshot(), details={"actor_id": actor.actor_id,
+                                                            "turn_index": turn_index,
+                                                            "policy": scenario if scenario.startswith("comparison-") else "none",
+                                                            "target_app": target,
+                                                            "active_window_title": active_window,
+                                                            "target_visible": (target.lower() in active_window.lower())})
+        focus_hook = record_turn_focus if scenario.startswith("comparison-") else None
         report = DualActorOrchestrator(episode).run(actors, schedule, evaluator, out,
-                                                    copy_artifacts=False)
+                                                    copy_artifacts=False,
+                                                    before_actor_turn=focus_hook)
+        if scenario.startswith("comparison-"):
+            report["focus_metrics"] = summarize_focus_events(episode.log.events)
         report["scenario"] = scenario
         report["task_id"] = instance_spec.task_id
         report["task_instance_id"] = (instance_spec.instance_id if scenario in {
             "gui-cli-refresh", "human-agent-focus-aware"} else f"browser-v0-{scenario}-seed0")
         report["same_guest_container_id"] = episode.snapshot().get("guest_container_id")
+        report["resource_run_id"] = resource_identity.run_id
+        report["resource_ledger"] = str(resource_identity.ledger_path)
         report["guest_apps"] = probe.strip().splitlines()
-        if scenario == "agent-qwen-solo":
+        if scenario == "agent-qwen-solo" or scenario in {
+                "comparison-agent-solo", "comparison-sequential",
+                "comparison-naive-shared", "comparison-focus-aware"}:
             trace_path = out / "model_trace.jsonl"
             trace_path.write_text("".join(json.dumps(item, ensure_ascii=False) + "\n"
                                                  for item in qwen_actor.trace), encoding="utf-8")
@@ -265,7 +394,11 @@ def main() -> int:
                                "action_steps": sum(len(item.get("native_actions", []))
                                                    for item in qwen_actor.trace)}
             actor_result = report["actors"].get("gui_actor", {})
-            if report["evaluation"]["success"]:
+            model_goal = (report["evaluation"].get("individual_goals", {})
+                          .get("qwen_browser", {}).get("success")
+                          if scenario.startswith("comparison-")
+                          else report["evaluation"].get("success"))
+            if model_goal is True:
                 report["model_failure_class"] = "none"
             elif "did not terminate within" in str(actor_result.get("error", "")):
                 report["model_failure_class"] = "model_task_failure"
@@ -275,7 +408,15 @@ def main() -> int:
                 report["model_failure_class"] = "model_task_failure"
         state = report["evaluation"].get("final_state", {})
         active_actor_ids = {actor.actor_id for actor in actors}
-        if scenario.startswith("gui-cli-"):
+        if scenario.startswith("comparison-"):
+            report["condition"] = scenario.removeprefix("comparison-")
+            report["task_pair"] = {"actor_a": "OSWorld V2.1 Qwen3VLAgent Browser review form",
+                                   "actor_b": "existing ScriptedWriterActor Writer document"}
+            report["task_id"] = "SWCUB-BROWSER-WRITER-PAIR-001"
+            report["task_instance_id"] = f"browser-writer-v0-{report['condition']}-seed0"
+            report["same_guest_container_id"] = episode.snapshot().get("guest_container_id")
+            report["individual_goals"] = report["evaluation"].get("individual_goals", {})
+        elif scenario.startswith("gui-cli-"):
             report["individual_goals"] = {}
             if "gui_actor" in active_actor_ids:
                 report["individual_goals"]["gui_actor"] = {
@@ -292,7 +433,9 @@ def main() -> int:
             if "gui_actor" in active_actor_ids:
                 report["individual_goals"]["gui_actor"] = {
                     "success": state.get("agent_goal") == ALL_EXPECTED["agent_goal"], "actual": state.get("agent_goal")}
-        if scenario in {"gui-cli-stale", "human-agent-naive"}:
+        if scenario.startswith("comparison-"):
+            report["scenario_success"] = bool(report["evaluation"]["success"])
+        elif scenario in {"gui-cli-stale", "human-agent-naive"}:
             if scenario == "gui-cli-stale":
                 expected_negative = (state.get("gui_status") == "Approved"
                                      and state.get("cli_note") != "Reviewed by CLI")
@@ -322,8 +465,8 @@ def main() -> int:
         reset_ok = wait_for_desktop(episode)
         after = episode.snapshot()
         clean = command(["bash", "-lc",
-                         "if test -e /tmp/swcub_web/state.json; then echo task-files-remain; "
-                         "else echo reset-clean; fi"]) if reset_ok else ""
+                         "if test -e /tmp/swcub_web/state.json || test -e /tmp/swcub_office/document.fodt; "
+                         "then echo task-files-remain; else echo reset-clean; fi"]) if reset_ok else ""
         reset_ok = reset_ok and clean.strip() == "reset-clean"
         episode.log.record("evaluator", "reset_check", "guest.reset_clean", before, after,
                            outcome="pass" if reset_ok else "fail",

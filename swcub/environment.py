@@ -4,6 +4,8 @@ from __future__ import annotations
 import hashlib
 import json
 from pathlib import Path
+import re
+import shutil
 import subprocess
 import tempfile
 import time
@@ -11,6 +13,8 @@ import uuid
 from typing import Any, Protocol, Sequence, runtime_checkable
 
 from .core import EventLog
+from .resource_safety import (PROJECT_NAME, ResourceLedger, ensure_resource_identity,
+                              cleanup_docker_cli_container, verify_owned_directory)
 
 
 class EnvironmentError(RuntimeError):
@@ -42,7 +46,10 @@ class DockerX11Workspace:
         self.image = image or self.IMAGE
         self.log = log or EventLog()
         self.command_timeout = command_timeout
+        self.resource_identity = ensure_resource_identity()
+        self.resource_ledger = ResourceLedger(self.resource_identity.ledger_path)
         self.container_name = ""
+        self.container_id = ""
         self.environment_id = ""
         self.workspace: Path | None = None
         self.csv_path: Path | None = None
@@ -68,8 +75,25 @@ class DockerX11Workspace:
         return proc
 
     def build(self) -> None:
-        self._run(["docker", "build", "--tag", self.image,
-                   "--file", self.project_root / "Dockerfile", self.project_root], timeout=900)
+        existing = self._run(["docker", "image", "inspect", self.image], check=False)
+        if existing.returncode == 0:
+            raise EnvironmentError(f"refusing to replace pre-existing image tag {self.image!r}; "
+                                   "choose a new tag or use --skip-build")
+        command = ["docker", "build", "--tag", self.image,
+                   "--label", f"org.swcub.project={PROJECT_NAME}",
+                   "--label", f"org.swcub.run-id={self.resource_identity.run_id}",
+                   "--label", f"org.swcub.owner-token={self.resource_identity.owner_token}",
+                   "--file", self.project_root / "Dockerfile", self.project_root]
+        self._run(command, timeout=900)
+        rows = json.loads(self._run(["docker", "image", "inspect", self.image]).stdout)
+        if len(rows) != 1:
+            raise EnvironmentError("image build did not return exactly one image")
+        image = rows[0]
+        labels = ((image.get("Config") or {}).get("Labels") or {})
+        if labels != self.resource_identity.labels:
+            raise EnvironmentError("built image ownership labels do not match this run")
+        self.resource_ledger.record_created_resource("image", image["Id"],
+                                                     self.resource_identity, tag=self.image)
 
     def reset(self, *, stale_gui_write: bool = False, task: str = "csv") -> str:
         if task not in {"csv", "focus"}:
@@ -85,6 +109,16 @@ class DockerX11Workspace:
         self.task = task
         self.revision = 0
         self.workspace = Path(tempfile.mkdtemp(prefix=f"{self.environment_id}-"))
+        workspace_id = uuid.uuid4().hex
+        marker = {"project": PROJECT_NAME, "run_id": self.resource_identity.run_id,
+                  "owner_token": self.resource_identity.owner_token,
+                  "resource_id": workspace_id, "path": str(self.workspace.resolve())}
+        (self.workspace / ".swcub-resource.json").write_text(
+            json.dumps(marker, sort_keys=True) + "\n", encoding="utf-8")
+        self.workspace_id = workspace_id
+        self.resource_ledger.record_created_resource("directory", workspace_id,
+                                                     self.resource_identity,
+                                                     path=str(self.workspace.resolve()))
         self.csv_path = self.workspace / "shared.csv"
         self.csv_path.write_text("id,actor,value\n", encoding="utf-8")
         self.state_path = self.workspace / "focus_state.json"
@@ -92,9 +126,19 @@ class DockerX11Workspace:
             self.state_path.write_text(json.dumps({"Document": "", "Chat": ""}), encoding="utf-8")
         self.window_id = None
         self.window_ids = {}
-        self._run(["docker", "run", "--detach", "--rm", "--name", self.container_name,
+        run_argv = ["docker", "run", "--detach", "--name", self.container_name]
+        for key, value in self.resource_identity.labels.items():
+            run_argv.extend(["--label", f"{key}={value}"])
+        run_argv.extend([
                    "--volume", f"{self.workspace}:/workspace", "--workdir", "/workspace",
                    self.image, "sleep", "infinity"])
+        self.container_id = self._run(run_argv).stdout.strip()
+        if not re.fullmatch(r"[0-9a-f]{64}", self.container_id):
+            raise EnvironmentError("docker run did not return a full container ID; leaving resource untouched")
+        attrs = self._inspect_owned_container()
+        self.resource_ledger.created_container(self.container_id, self.resource_identity,
+                                               name=self.container_name,
+                                               image=str(attrs.get("Config", {}).get("Image", self.image)))
         self._run(["docker", "exec", "--detach", self.container_name,
                    "Xvfb", ":99", "-screen", "0", "1024x768x24", "-ac", "-nolisten", "tcp"])
         self._wait_for_x()
@@ -164,8 +208,10 @@ class DockerX11Workspace:
         raw = self._csv_bytes()
         state_raw = self.state_path.read_bytes() if self.state_path and self.state_path.exists() else b""
         return {"environment_id": self.environment_id,
+                "resource_run_id": self.resource_identity.run_id,
                 "revision": self.revision,
                 "container": self.container_name,
+                "container_id": self.container_id,
                 "csv_sha256": hashlib.sha256(raw).hexdigest(),
                 "csv_bytes": len(raw),
                 "application_state_sha256": hashlib.sha256(state_raw).hexdigest(),
@@ -305,8 +351,12 @@ class DockerX11Workspace:
             (out / "focus_state.json").write_bytes(self.state_path.read_bytes())
 
     def close_container(self) -> None:
-        if self.container_name:
-            self._run(["docker", "rm", "--force", self.container_name], check=False, timeout=30)
+        if self.container_id:
+            cleanup_docker_cli_container(
+                self.container_id, self.resource_identity, reason="DockerX11Workspace.close",
+                runner=self._run,
+                inspect_fn=lambda container_id: self._inspect_container(container_id))
+            self.container_id = ""
             self.container_name = ""
         self.window_id = None
 
@@ -318,11 +368,36 @@ class DockerX11Workspace:
 
     def _cleanup_workspace(self) -> None:
         if self.workspace and self.workspace.exists():
-            for path in self.workspace.iterdir():
-                if path.is_file():
-                    path.unlink()
-            self.workspace.rmdir()
+            if self.workspace.is_symlink() or self.workspace.parent.resolve() != Path(tempfile.gettempdir()).resolve():
+                raise EnvironmentError("refusing workspace cleanup outside the exact temporary directory")
+            marker_path = self.workspace / ".swcub-resource.json"
+            if not marker_path.is_file() or marker_path.is_symlink():
+                raise EnvironmentError("refusing workspace cleanup without its ownership marker")
+            marker = json.loads(marker_path.read_text(encoding="utf-8"))
+            verify_owned_directory(self.workspace, marker, self.resource_identity, self.workspace_id)
+            if not self.resource_ledger.has_created_resource(
+                    "directory", self.workspace_id, self.resource_identity):
+                raise EnvironmentError("refusing workspace cleanup without this run's ledger entry")
+            self.resource_ledger.record_destroyed_resource(
+                "directory", self.workspace_id, self.resource_identity,
+                path=str(self.workspace.resolve()))
+            shutil.rmtree(self.workspace)
         self.workspace = None
+
+    def _inspect_container(self, container_id: str) -> dict[str, Any]:
+        proc = self._run(["docker", "inspect", "--type", "container", container_id])
+        rows = json.loads(proc.stdout)
+        if len(rows) != 1 or not isinstance(rows[0], dict):
+            raise EnvironmentError("docker inspect did not return exactly one container")
+        from .resource_safety import verify_container_identity
+        verify_container_identity(container_id, rows[0], self.resource_identity)
+        return rows[0]
+
+    def _inspect_owned_container(self) -> dict[str, Any]:
+        attrs = self._inspect_container(self.container_id)
+        if attrs.get("Id") != self.container_id:
+            raise EnvironmentError("container inspect ID differs from docker run's full ID")
+        return attrs
 
 
 class ActorContext:
