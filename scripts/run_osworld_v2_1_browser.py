@@ -73,6 +73,15 @@ def make_comparison_writer(scenario: str):
         def run_step(self, context):
             if not self.did_initial_switch:
                 self.did_initial_switch = True
+                if scenario == "comparison-writer-solo":
+                    # The solo control is initialized with Writer as its target
+                    # window. Place the caret in the visible document body;
+                    # a window title alone does not guarantee keyboard focus
+                    # inside LibreOffice's document canvas.
+                    context.click(800, 375)
+                    context.observe()
+                    self.delegate.turn = 1
+                    return False
                 if scenario != "comparison-focus-aware":
                     context.press_key("alt+tab")
                     # Observe the newly focused public desktop. The underlying
@@ -130,7 +139,11 @@ def main() -> int:
     def command(argv: list[str]) -> str:
         response = requests.post(
             f"http://{desktop.vm_ip}:{desktop.server_port}/execute",
-            json={"command": argv, "shell": False, "timeout": 45}, timeout=(5, 55))
+            # Chrome's DevTools activation loop below can legitimately take
+            # up to 60 s on a cold Guest. Keep the API command timeout above
+            # that bound so slow startup returns its own status instead of a
+            # spurious Guest-side HTTP 500.
+            json={"command": argv, "shell": False, "timeout": 90}, timeout=(5, 105))
         response.raise_for_status()
         payload = response.json()
         if payload.get("returncode", 0) not in (0, None):
@@ -270,6 +283,20 @@ def main() -> int:
                                details={"active_window_title": episode._active_window_title(),
                                         "sampled_colors": colors})
             raise TimeoutError("Guest desktop remained visually blank after task setup")
+
+        if scenario == "comparison-writer-solo":
+            focus_writer = (
+                "for n in $(seq 1 45); do "
+                "window=$(xdotool search --onlyvisible --name 'document.fodt' 2>/dev/null | tail -1); "
+                "if test -n \"$window\"; then "
+                "xdotool windowactivate --sync \"$window\" && xdotool getactivewindow getwindowname && exit 0; "
+                "fi; sleep 1; done; exit 1"
+            )
+            focused_title = episode.cli_action(
+                "task_setup", "bash -lc " + shlex.quote(focus_writer)).strip()
+            episode.refresh_observation(source="writer_solo_preflight")
+            if "document.fodt" not in focused_title or "Writer" not in focused_title:
+                raise RuntimeError(f"Writer solo preflight did not focus the seeded document: {focused_title!r}")
 
         expected: dict[str, str]
         actors: list[object]

@@ -31,6 +31,24 @@ def utc_now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
+def report_is_complete_success(report_path: Path) -> bool:
+    try:
+        report = json.loads(report_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return False
+    reset = report.get("reset_check") or {}
+    return bool(report.get("success") and reset.get("success")
+                and reset.get("task_files_absent"))
+
+
+def successful_repeat_paths(artifact_root: Path, condition: str, repeat: int) -> list[Path]:
+    condition_root = artifact_root / condition
+    canonical = condition_root / f"run-{repeat:02d}"
+    candidates = [canonical]
+    candidates.extend(sorted(condition_root.glob(f"run-{repeat:02d}-attempt-*")))
+    return [path for path in candidates if report_is_complete_success(path / "report.json")]
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--artifact-root", type=Path, default=Path(
@@ -57,16 +75,11 @@ def main() -> int:
             missing_or_failed = []
             for solo_condition in ("agent-solo", "writer-solo"):
                 for repeat in range(1, args.repeats + 1):
-                    report_path = artifact_root / solo_condition / f"run-{repeat:02d}" / "report.json"
-                    try:
-                        solo_report = json.loads(report_path.read_text(encoding="utf-8"))
-                    except (OSError, json.JSONDecodeError):
+                    successful_paths = successful_repeat_paths(artifact_root, solo_condition, repeat)
+                    if not successful_paths:
                         missing_or_failed.append({"condition": solo_condition,
-                                                  "repeat": repeat, "reason": "missing report"})
-                        continue
-                    if not solo_report.get("success"):
-                        missing_or_failed.append({"condition": solo_condition,
-                                                  "repeat": repeat, "reason": "solo goal/reset failed"})
+                                                  "repeat": repeat,
+                                                  "reason": "no complete report with successful reset"})
             if missing_or_failed:
                 row = {"started_utc": utc_now(), "condition": condition,
                        "status": "blocked_solo_control", "failures": missing_or_failed}
@@ -76,6 +89,19 @@ def main() -> int:
                 return 2
         scenario = CONDITION_SCENARIOS[condition]
         for repeat in range(args.first_repeat, args.repeats + 1):
+            existing_successes = successful_repeat_paths(artifact_root, condition, repeat)
+            if existing_successes and not args.dry_run:
+                chosen = existing_successes[0]
+                report_path = chosen / "report.json"
+                report = json.loads(report_path.read_text(encoding="utf-8"))
+                row = {"started_utc": utc_now(), "condition": condition,
+                       "scenario": scenario, "repeat": repeat,
+                       "artifact_dir": str(chosen), "status": "reused_existing_report",
+                       "success": True, "report": str(report_path)}
+                with manifest.open("a", encoding="utf-8") as stream:
+                    stream.write(json.dumps(row, ensure_ascii=False) + "\n")
+                print(json.dumps(row, ensure_ascii=False), flush=True)
+                continue
             out = artifact_root / condition / f"run-{repeat:02d}"
             command = [str(RUNNER), scenario]
             row = {"started_utc": utc_now(), "condition": condition,
@@ -99,11 +125,23 @@ def main() -> int:
                     print(json.dumps(row, ensure_ascii=False), flush=True)
                     continue
             if out.exists() and any(out.iterdir()):
-                row["status"] = "refused_existing_artifacts"
-                with manifest.open("a", encoding="utf-8") as stream:
-                    stream.write(json.dumps(row, ensure_ascii=False) + "\n")
-                print(json.dumps(row, ensure_ascii=False), flush=True)
-                return 2
+                attempt = 2
+                while True:
+                    candidate = out.parent / f"{out.name}-attempt-{attempt:02d}"
+                    if not candidate.exists():
+                        out = candidate
+                        break
+                    attempt += 1
+                row["artifact_dir"] = str(out)
+                row["attempt"] = attempt
+                report_path = out / "report.json"
+                if report_is_complete_success(report_path):
+                    row.update({"status": "reused_existing_report", "success": True,
+                                "report": str(report_path)})
+                    with manifest.open("a", encoding="utf-8") as stream:
+                        stream.write(json.dumps(row, ensure_ascii=False) + "\n")
+                    print(json.dumps(row, ensure_ascii=False), flush=True)
+                    continue
             out.mkdir(parents=True, exist_ok=True)
             env = os.environ.copy()
             env["SWCUB_OSWORLD_RUN_DIR"] = str(out)
