@@ -1,4 +1,4 @@
-# Shared-Workspace Benchmark Task API V2
+# CoDesk Task API V2 (Historical Shared-Workspace Prototype)
 
 ## Version boundaries
 

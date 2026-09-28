@@ -1,4 +1,4 @@
-# Shared-Workspace Interaction Taxonomy V1
+# CoDesk Interaction Taxonomy V1
 
 ## Purpose and evidence boundary
 

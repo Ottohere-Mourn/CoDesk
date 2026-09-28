@@ -1,4 +1,6 @@
-# Shared-Workspace Benchmark Collaboration Guide
+# CoDesk Collaboration Guide
+
+CoDesk is the current project name; Shared-Workspace Benchmark is the historical prototype name used by earlier artifacts and identifiers.
 
 ## Repository status
 

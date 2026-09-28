@@ -1,6 +1,8 @@
-# Shared-Workspace Computer-Use Benchmark V0
+# CoDesk — Collaborative Desktop Use Benchmark
 
-A reproducible, scripted two-actor framework for operating one real GUI desktop and shared application state. Verified paths include the Docker/Xvfb cases and a pinned OSWorld V2.1 QEMU Guest with LibreOffice and a Guest-local browser app. Real episodes use actual desktop input and Guest-side state; interface-only contract tests use explicit stubs and are labeled separately. No model calls, training, or data generation are used.
+**CoDesk** is the current project name. Its full name is **Collaborative Desktop Use Benchmark**. The project was previously called **Shared-Workspace Computer-Use Benchmark**; that name remains in historical reports, task IDs, artifact paths, and provenance records so existing evidence remains traceable.
+
+CoDesk evaluates Computer-Use Agents under shared, non-exclusive desktop environments: independent actors pursue their own goals while sharing a live desktop, application context, and sometimes backend state. The current prototype provides a scripted two-actor framework and a pinned OSWorld V2.1 QEMU Guest path. Verified paths include Docker/Xvfb cases and real Guest applications; interface-only tests use explicit stubs and are labeled separately. Existing small model smoke results are diagnostic, not benchmark-wide performance claims.
 
 ## Quick start
 
@@ -38,23 +40,28 @@ The Docker/Xvfb path has GUI+CLI shared CSV and GUI+Human Replay window focus ca
 
 The machine-readable task specs, including independent goals, joint goals, pass/fail interactions, and exact final states, live in [`tasks/v0_manifest.json`](tasks/v0_manifest.json). Validate the catalog with `python scripts/validate_task_manifest.py`.
 
-## Research notes
+## Project and research documents
 
+- [Project positioning](PROJECT_POSITIONING.md)
+- [Code and adapter sketch](CODE_SKETCH.md)
+- [V1 roadmap](V1_ROADMAP.md)
+- [Collaboration guide](COLLABORATION_GUIDE.md)
+- [Interaction taxonomy](INTERACTION_TAXONOMY_V1.md)
+- [Task expansion plan](TASK_EXPANSION_PLAN.md)
 - [Agent framework review and integration decision](AGENT_FRAMEWORK_REVIEW.md)
-- [POSITIONING](docs/POSITIONING.md)
-- [RELATED_WORK](docs/RELATED_WORK.md)
-- [TASK_TAXONOMY](docs/TASK_TAXONOMY.md)
-- [EVALUATION](docs/EVALUATION.md)
+- [Related work](docs/RELATED_WORK.md)
+- [Task taxonomy](docs/TASK_TAXONOMY.md)
+- [Evaluation](docs/EVALUATION.md)
 - [Data production plan](docs/DATA_PRODUCTION.md)
-- [RUN_LOG](RUN_LOG.md), [TEST_RESULTS](TEST_RESULTS.md), [NEXT_STEPS](NEXT_STEPS.md)
+- [Run log](RUN_LOG.md), [test results](TEST_RESULTS.md), [next steps](NEXT_STEPS.md)
 
 ## OSWorld V2.1 real Guest path
 
-The project now has an additional real OSWorld Guest adapter path. Follow [ENV_SETUP.md](ENV_SETUP.md) to reproduce the pinned V2.1 setup, local QEMU/KVM runtime fallback, official quickstart, GUI+CLI shared CSV/conflict episodes, and GUI+Human Replay two-window focus episodes. Both branches use one Guest per episode and hidden programmatic final-state checks. The V2.1 gated official task set and official scoring remain unavailable.
+The project has an additional real OSWorld Guest adapter path. Follow [ENV_SETUP.md](ENV_SETUP.md) to reproduce the pinned V2.1 setup, local QEMU/KVM runtime fallback, official quickstart, GUI+CLI shared CSV/conflict episodes, and GUI+Human Replay two-window focus episodes. Both branches use one Guest per episode and hidden programmatic final-state checks. The V2.1 gated official task set and official scoring remain unavailable.
 
 To run the deliberate lost-update control, pass `--scenario stale-overwrite` to the same launcher. A successful control result means the evaluator caught the missing CLI row and reset still cleared the Guest; see [ENV_SETUP.md](ENV_SETUP.md) for the command and evidence files.
 
-The benchmark's novelty remains a hypothesis. V0 demonstrates controlled shared-file and focus interactions only; it supports no model-performance or paper-level conclusion.
+The novelty claim remains a hypothesis. The prototype demonstrates controlled shared-file and focus interactions and small diagnostic model smoke results; it supports no broad model-performance or paper-level conclusion.
 
 ## Real application episodes
 
@@ -85,6 +92,6 @@ python scripts/summarize_osworld_runs.py outputs/osworld-v2.1 --successful-only 
 
 The `naive-interleaving`, `gui-cli-stale`, and `human-agent-naive` commands return success only when their expected interference is detected. A report's `evaluation.success` remains false for those negative controls by design; `scenario_success` records successful reproduction of the failure condition. These are scripted real-Guest experiments, not model or human performance measurements.
 
-The model office scenarios use the pinned OSWorld V2.1 `Qwen3VLAgent` pipeline with local Qwen3-VL weights. The default is `/mnt/raid1/mjh/models/Qwen/Qwen3-VL-30B-A3B-Instruct`; set `SWCUB_LOCAL_VLM_PATH=/mnt/raid1/mjh/models/Qwen3-VL-4B-Instruct` to use the smaller local checkpoint. Inference is offline and loopback-only through `/opt/miniconda3/bin/python`; set `SWCUB_MODEL_PYTHON` or `SWCUB_LOCAL_VLM_DEVICE` to select another installed runtime/device. The benchmark does not replace OSWorld's prompt, visual history, action format, parser, coordinate conversion, or PyAutoGUI generation. Episode trace artifacts include screenshot hashes/resolution, model response, native action strings and inference time. The framework comparison and adapter boundary are in [AGENT_FRAMEWORK_REVIEW.md](AGENT_FRAMEWORK_REVIEW.md); execution status is in [TEST_RESULTS.md](TEST_RESULTS.md).
+The model office scenarios use the pinned OSWorld V2.1 `Qwen3VLAgent` pipeline with local Qwen3-VL weights. The default is `/mnt/raid1/mjh/models/Qwen/Qwen3-VL-30B-A3B-Instruct`; set `SWCUB_LOCAL_VLM_PATH=/mnt/raid1/mjh/models/Qwen3-VL-4B-Instruct` to use the smaller local checkpoint. Inference is offline and loopback-only through `/opt/miniconda3/bin/python`; set `SWCUB_MODEL_PYTHON` or `SWCUB_LOCAL_VLM_DEVICE` to select another installed runtime/device. CoDesk does not replace OSWorld's prompt, visual history, action format, parser, coordinate conversion, or PyAutoGUI generation. Episode trace artifacts include screenshot hashes/resolution, model response, native action strings and inference time. The framework comparison and adapter boundary are in [AGENT_FRAMEWORK_REVIEW.md](AGENT_FRAMEWORK_REVIEW.md); execution status is in [TEST_RESULTS.md](TEST_RESULTS.md).
 
 To run five solo Qwen baseline trials each for Writer, Calc, and Browser, use `python scripts/calibrate_qwen_baseline.py --repeat 5 --resume`. See [BASELINE_CALIBRATION.md](BASELINE_CALIBRATION.md) for the fixed checkpoint, success gate, run status, and artifact locations. Calibration outputs are stored on RAID1.

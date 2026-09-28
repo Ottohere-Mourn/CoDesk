@@ -1,8 +1,8 @@
-# POSITIONING
+# CoDesk Positioning (Historical Research Notes)
 
 Status: research hypothesis revised after the GUI/Desktop novelty audit (2026-09-26).
 
-Shared-Workspace Benchmark V0 studies **Multi-Actor Computer Use**: separate, independently goal-directed principals acting through GUI, CLI or Human Replay while sharing a live desktop/application workspace. The planned branches are GUI+GUI, GUI+CLI and GUI+Human. Shared-file conflicts are a useful auxiliary task family; the central evaluation is each actor’s outcome, joint application state, cross-actor interaction and recovery.
+CoDesk (formerly Shared-Workspace Benchmark V0) studies **Multi-Actor Computer Use**: separate, independently goal-directed principals acting through GUI, CLI or Human Replay while sharing a live desktop/application workspace. The planned branches are GUI+GUI, GUI+CLI and GUI+Human. Shared-file conflicts are a useful auxiliary task family; the central evaluation is each actor’s outcome, joint application state, cross-actor interaction and recovery. See [PROJECT_POSITIONING.md](../PROJECT_POSITIONING.md) for current project scope and research question.
 
 The current audit found **no direct collision** among the reviewed GUI/Desktop/Computer-Use benchmarks for independently tasked actors concurrently sharing one desktop session and being evaluated on both goals and interference. Important partial GUI overlaps include ParaGUIBench (concurrent GUI workers, shared files and documented same-document edit failures, but isolated desktops and planner-decomposed tasks), MACU (parallel CUA workers in isolated VMs), PC-Agent/UFO (hierarchical agent roles), MMBench-GUI L4 (one agent coordinating applications), and DeskCraft/GUIDE (user messages or recorded human activity). See [POSITIONING_REVISION.md](../POSITIONING_REVISION.md), [NOVELTY_AUDIT.md](../NOVELTY_AUDIT.md), and [OVERLAP_MATRIX.md](../OVERLAP_MATRIX.md).
 

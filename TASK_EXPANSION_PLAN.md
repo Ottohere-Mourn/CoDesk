@@ -1,4 +1,4 @@
-# Shared-Workspace Task Expansion Plan
+# CoDesk Task Expansion Plan
 
 ## Planning boundary
 

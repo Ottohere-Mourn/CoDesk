@@ -1,8 +1,10 @@
-# Shared-Workspace Benchmark Protocol V2
+# CoDesk Protocol V2 (Historical Shared-Workspace Suite)
 
 ## Protocol version and scope
 
 - Benchmark suite: `SWCUB-V2-SCRIPTED-REAL-GUEST`
+- Current project name: CoDesk (Collaborative Desktop Use Benchmark)
+- Historical prototype name: Shared-Workspace Benchmark
 - Task version: `2.0.0`
 - Task-spec schema: `TaskInstanceSpec` schema `1`
 - Episode metadata schema: `1`

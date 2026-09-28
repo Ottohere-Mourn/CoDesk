@@ -1,5 +1,7 @@
 # Computer-use agent framework review
 
+Current project: CoDesk (formerly Shared-Workspace Benchmark). This framework review records the existing OSWorld agent integration decision.
+
 **Decision (2026-09-27):** the original OSWorld paper's published baseline recipe is GPT-4o with screenshot observations and OSWorld's pluggable agent/environment runner. Given the existing local-only constraint, test OSWorld V2.1's first-party `Qwen3VLAgent` with the already-local Qwen3-VL-30B-A3B checkpoint as the first reusable local baseline. This is an OSWorld-native agent implementation; it is **not** the original GPT-4o baseline or a public leaderboard result. Do not extend the project's retired, custom `LocalQwenGUIActor` prompt/action format. The benchmark adapter should remain a narrow bridge between the agent's existing `reset()` / `predict(instruction, observation)` API and `ActorContext`.
 
 ## Comparison

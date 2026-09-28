@@ -1,4 +1,6 @@
-# TASK_TAXONOMY
+# CoDesk Task Taxonomy (Historical V0 Cases)
+
+CoDesk is the current project name. The cases below retain their original Shared-Workspace V0 task names and semantics.
 
 ## V0 real case: CSV-001
 

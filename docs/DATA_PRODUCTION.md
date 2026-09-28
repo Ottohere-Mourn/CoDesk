@@ -1,5 +1,7 @@
 # Data production plan
 
+This is the CoDesk data-production plan; references to V0 describe the historical Shared-Workspace prototype and remain unchanged for provenance.
+
 1. **Scenario authoring:** V0's [`tasks/v0_manifest.json`](../tasks/v0_manifest.json) is the first versioned task catalog. New tasks should describe app initial state, actor roles/instructions, action graph, intended race, independent solutions, joint solution, evaluator predicates and deterministic schedule in that manifest schema or a deliberately versioned successor.
 2. **Scripted verification:** implement baseline and recovery actors; replay from reset at least twice; assert byte-stable final state and equivalent event sequence. Use negative-state fixtures to ensure the grader rejects lost updates and misdirected text.
 3. **Human replay capture:** capture consented, task-focused action traces (window/action/timing/state transitions) with secrets removed; parameterize timing windows but pin replay schedule per release. Include multiple valid human traces where real variation matters.

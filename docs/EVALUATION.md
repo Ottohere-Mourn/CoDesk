@@ -1,4 +1,6 @@
-# EVALUATION
+# CoDesk Evaluation (Historical V0 Protocol Notes)
+
+CoDesk is the current benchmark name; this page records evaluation behavior from the Shared-Workspace prototype and its existing task versions.
 
 ## V0 task ground truth
 
