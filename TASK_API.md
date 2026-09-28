@@ -98,7 +98,7 @@ The Orchestrator invokes the evaluator once after all scheduled actors finish (i
   "task_id": "SWCUB-FOCUS-ROUTING-001",
   "task_version": "2.0.0",
   "task_instance_id": "swcub-focus-routing-001-focus-recovery-seed0",
-  "condition": "recovery",
+  "condition": "coordination_recovery",
   "environment_id": "osworld-...",
   "shared_guest_container_id": "<full 64-character container ID>",
   "schedule": ["gui_actor", "human_replay", "gui_actor"],

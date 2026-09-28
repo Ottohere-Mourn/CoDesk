@@ -2,7 +2,7 @@
 
 ## Status and scope
 
-V2 contains two mechanism-focused tasks and eight validated real-Guest episodes. Five episodes were run for this suite build; the three GUI+Human Replay episodes were previously completed real OSWorld Guest runs, retained with their reports, event logs, screenshots, and reset checks. All actors are deterministic scripted actors. No model was loaded, no evaluator rule was changed, and no benchmark task-count sweep was performed.
+V2 contains two mechanism-focused tasks and eight validated real-Guest episodes. During Phase 3, the three legacy GUI+Human Replay focus episodes were rerun into fresh output directories under the current ownership ledger and stamped with the same task version and provenance schema as the five existing suite episodes. All actors are deterministic scripted actors. No model was loaded, no evaluator rule was changed, and no benchmark task-count sweep was performed.
 
 | Task | Interaction mechanism | Independent goals | Naive trigger | Recovery condition | Evaluator |
 |---|---|---|---|---|---|
@@ -47,53 +47,53 @@ This task tests stale-cache overwrite and refresh/rebase behavior. The local `/r
 | Episode | Condition | Evaluator | Scenario / reset | Evidence |
 |---|---|---:|---:|---|
 | `focus-gui-solo` | GUI solo | pass | pass / pass | [report](</mnt/raid1/mjh/Shared-Workspace-Benchmark-V0-artifacts/osworld-v2.1/task-suite-v2/focus-gui-solo/report.json>), [screenshot](</mnt/raid1/mjh/Shared-Workspace-Benchmark-V0-artifacts/osworld-v2.1/task-suite-v2/focus-gui-solo/guest-screen.png>), [event log](</mnt/raid1/mjh/Shared-Workspace-Benchmark-V0-artifacts/osworld-v2.1/task-suite-v2/focus-gui-solo/events.jsonl>) |
-| `focus-human-solo` | Human Replay solo | pass | pass / pass | [report](</home/mjh/Projects/Shared-Workspace-Benchmark-V0/outputs/osworld-v2.1/focus-human-solo/report.json>), [screenshot](</home/mjh/Projects/Shared-Workspace-Benchmark-V0/outputs/osworld-v2.1/focus-human-solo/guest-screen.png>) |
-| `focus-stale` | Naive focus-loss trigger | expected fail | detected / pass | [report](</home/mjh/Projects/Shared-Workspace-Benchmark-V0/outputs/osworld-v2.1/focus-stale-attempt-01/report.json>), [misrouted screenshot](</home/mjh/Projects/Shared-Workspace-Benchmark-V0/outputs/osworld-v2.1/focus-stale-attempt-01/guest-screen.png>), [event log](</home/mjh/Projects/Shared-Workspace-Benchmark-V0/outputs/osworld-v2.1/focus-stale-attempt-01/events.jsonl>) |
-| `focus-recovery` | Coordinated focus recovery | pass | pass / pass | [report](</home/mjh/Projects/Shared-Workspace-Benchmark-V0/outputs/osworld-v2.1/focus-recovery-attempt-01/report.json>), [screenshot](</home/mjh/Projects/Shared-Workspace-Benchmark-V0/outputs/osworld-v2.1/focus-recovery-attempt-01/guest-screen.png>), [event log](</home/mjh/Projects/Shared-Workspace-Benchmark-V0/outputs/osworld-v2.1/focus-recovery-attempt-01/events.jsonl>) |
+| `focus-human-solo` | Human Replay solo | pass | pass / pass | [report](</mnt/raid1/mjh/Shared-Workspace-Benchmark-V0-artifacts/osworld-v2.1/task-suite-v2-protocol/focus-human-solo/report.json>), [provenance](</mnt/raid1/mjh/Shared-Workspace-Benchmark-V0-artifacts/osworld-v2.1/task-suite-v2-protocol/focus-human-solo/provenance.json>), [screenshot](</mnt/raid1/mjh/Shared-Workspace-Benchmark-V0-artifacts/osworld-v2.1/task-suite-v2-protocol/focus-human-solo/guest-screen.png>), [event log](</mnt/raid1/mjh/Shared-Workspace-Benchmark-V0-artifacts/osworld-v2.1/task-suite-v2-protocol/focus-human-solo/events.jsonl>) |
+| `focus-stale` | Naive focus-loss trigger | expected fail | detected / pass | [report](</mnt/raid1/mjh/Shared-Workspace-Benchmark-V0-artifacts/osworld-v2.1/task-suite-v2-protocol/focus-stale/report.json>), [provenance](</mnt/raid1/mjh/Shared-Workspace-Benchmark-V0-artifacts/osworld-v2.1/task-suite-v2-protocol/focus-stale/provenance.json>), [misrouted screenshot](</mnt/raid1/mjh/Shared-Workspace-Benchmark-V0-artifacts/osworld-v2.1/task-suite-v2-protocol/focus-stale/guest-screen.png>), [event log](</mnt/raid1/mjh/Shared-Workspace-Benchmark-V0-artifacts/osworld-v2.1/task-suite-v2-protocol/focus-stale/events.jsonl>) |
+| `focus-recovery` | Coordinated focus recovery | pass | pass / pass | [report](</mnt/raid1/mjh/Shared-Workspace-Benchmark-V0-artifacts/osworld-v2.1/task-suite-v2-protocol/focus-recovery/report.json>), [provenance](</mnt/raid1/mjh/Shared-Workspace-Benchmark-V0-artifacts/osworld-v2.1/task-suite-v2-protocol/focus-recovery/provenance.json>), [screenshot](</mnt/raid1/mjh/Shared-Workspace-Benchmark-V0-artifacts/osworld-v2.1/task-suite-v2-protocol/focus-recovery/guest-screen.png>), [event log](</mnt/raid1/mjh/Shared-Workspace-Benchmark-V0-artifacts/osworld-v2.1/task-suite-v2-protocol/focus-recovery/events.jsonl>) |
 | `gui-cli-gui-solo` | GUI solo | pass | pass / pass | [report](</mnt/raid1/mjh/Shared-Workspace-Benchmark-V0-artifacts/osworld-v2.1/task-suite-v2/gui-cli-gui-solo/report.json>), [screenshot](</mnt/raid1/mjh/Shared-Workspace-Benchmark-V0-artifacts/osworld-v2.1/task-suite-v2/gui-cli-gui-solo/guest-screen.png>), [event log](</mnt/raid1/mjh/Shared-Workspace-Benchmark-V0-artifacts/osworld-v2.1/task-suite-v2/gui-cli-gui-solo/events.jsonl>) |
 | `gui-cli-cli-solo` | CLI solo | pass | pass / pass | [report](</mnt/raid1/mjh/Shared-Workspace-Benchmark-V0-artifacts/osworld-v2.1/task-suite-v2/gui-cli-cli-solo/report.json>), [screenshot](</mnt/raid1/mjh/Shared-Workspace-Benchmark-V0-artifacts/osworld-v2.1/task-suite-v2/gui-cli-cli-solo/guest-screen.png>), [event log](</mnt/raid1/mjh/Shared-Workspace-Benchmark-V0-artifacts/osworld-v2.1/task-suite-v2/gui-cli-cli-solo/events.jsonl>) |
 | `gui-cli-stale` | Naive stale-save trigger | expected fail | detected / pass | [report](</mnt/raid1/mjh/Shared-Workspace-Benchmark-V0-artifacts/osworld-v2.1/task-suite-v2/gui-cli-stale/report.json>), [screenshot](</mnt/raid1/mjh/Shared-Workspace-Benchmark-V0-artifacts/osworld-v2.1/task-suite-v2/gui-cli-stale/guest-screen.png>), [event log](</mnt/raid1/mjh/Shared-Workspace-Benchmark-V0-artifacts/osworld-v2.1/task-suite-v2/gui-cli-stale/events.jsonl>) |
 | `gui-cli-refresh` | Coordinated refresh and merge | pass | pass / pass | [report](</mnt/raid1/mjh/Shared-Workspace-Benchmark-V0-artifacts/osworld-v2.1/task-suite-v2/gui-cli-refresh/report.json>), [screenshot](</mnt/raid1/mjh/Shared-Workspace-Benchmark-V0-artifacts/osworld-v2.1/task-suite-v2/gui-cli-refresh/guest-screen.png>), [event log](</mnt/raid1/mjh/Shared-Workspace-Benchmark-V0-artifacts/osworld-v2.1/task-suite-v2/gui-cli-refresh/events.jsonl>) |
 
-All eight entries pass the suite validator. Five episodes were run during this suite build (the fresh GUI solo control and all four GUI+CLI cases); each has an ownership ledger with full Guest container ID, project/run/owner labels, create/destroy records, screenshots, event log, evaluator report, and reset screenshot. The other three focus episodes are prior real Guest artifacts. Their reports contain full Guest IDs and successful reset checks, but they predate the per-episode ownership-ledger change, so `resource_ledger_present=false` is retained in the validation summary rather than inferred.
+All eight entries pass the suite validator. Every episode now has an ownership ledger with full Guest container ID, project/run/owner labels, create/destroy records, screenshots, event log, evaluator report, reset screenshot, and a provenance sidecar whose artifact digests validate. The three focus reruns use new paths; previous artifacts were preserved.
 
-The complete machine-readable result is [`suite-validation.json`](</mnt/raid1/mjh/Shared-Workspace-Benchmark-V0-artifacts/osworld-v2.1/task-suite-v2/suite-validation.json>). It records 8/8 validated episodes, two task mechanisms, exact active actor rosters, one shared Guest per episode, screenshots, evaluator outcome, reset outcome, and whether a resource ledger exists.
+The complete machine-readable result is [`suite-validation.json`](</mnt/raid1/mjh/Shared-Workspace-Benchmark-V0-artifacts/osworld-v2.1/task-suite-v2-protocol/suite-validation.json>). It records 8/8 validated episodes, two task mechanisms, exact active actor rosters, one shared Guest per episode, screenshots, evaluator outcome, reset outcome, and verified ownership ledgers.
 
 ## Reproduction
 
 Prerequisites are the existing pinned OSWorld V2.1 checkout, runtime image, and Guest image documented in [`ENV_SETUP.md`](ENV_SETUP.md). The runner uses no model and makes no external API call. Each command writes episode logs and screenshots to its own RAID1 directory:
 
 ```bash
-RUN_ROOT=/mnt/raid1/mjh/Shared-Workspace-Benchmark-V0-artifacts/osworld-v2.1/task-suite-v2
-export SWCUB_OSWORLD_OVERLAY_HOST_DIR="$RUN_ROOT/overlays"
+SUITE_ROOT=/mnt/raid1/mjh/Shared-Workspace-Benchmark-V0-artifacts/osworld-v2.1/task-suite-v2
+PROTOCOL_ROOT=/mnt/raid1/mjh/Shared-Workspace-Benchmark-V0-artifacts/osworld-v2.1/task-suite-v2-protocol
+export SWCUB_OSWORLD_OVERLAY_HOST_DIR="$PROTOCOL_ROOT/overlays"
 
-OSWORLD_V2_RUN_DIR="$RUN_ROOT/focus-gui-solo" \
-  scripts/run_osworld_v2_1_shared_csv.sh --scenario focus-gui-solo
-OSWORLD_V2_RUN_DIR="$RUN_ROOT/focus-human-solo" \
+OSWORLD_V2_RUN_DIR="$PROTOCOL_ROOT/focus-human-solo" \
   scripts/run_osworld_v2_1_shared_csv.sh --scenario focus-human-solo
-OSWORLD_V2_RUN_DIR="$RUN_ROOT/focus-stale" \
+OSWORLD_V2_RUN_DIR="$PROTOCOL_ROOT/focus-stale" \
   scripts/run_osworld_v2_1_shared_csv.sh --scenario focus-stale
-OSWORLD_V2_RUN_DIR="$RUN_ROOT/focus-recovery" \
+OSWORLD_V2_RUN_DIR="$PROTOCOL_ROOT/focus-recovery" \
   scripts/run_osworld_v2_1_shared_csv.sh --scenario focus-recovery
 
-SWCUB_OSWORLD_RUN_DIR="$RUN_ROOT/gui-cli-gui-solo" \
+SWCUB_OSWORLD_RUN_DIR="$SUITE_ROOT/gui-cli-gui-solo" \
   scripts/run_osworld_v2_1_browser.sh gui-cli-gui-solo
-SWCUB_OSWORLD_RUN_DIR="$RUN_ROOT/gui-cli-cli-solo" \
+SWCUB_OSWORLD_RUN_DIR="$SUITE_ROOT/gui-cli-cli-solo" \
   scripts/run_osworld_v2_1_browser.sh gui-cli-cli-solo
-SWCUB_OSWORLD_RUN_DIR="$RUN_ROOT/gui-cli-stale" \
+SWCUB_OSWORLD_RUN_DIR="$SUITE_ROOT/gui-cli-stale" \
   scripts/run_osworld_v2_1_browser.sh gui-cli-stale
-SWCUB_OSWORLD_RUN_DIR="$RUN_ROOT/gui-cli-refresh" \
+SWCUB_OSWORLD_RUN_DIR="$SUITE_ROOT/gui-cli-refresh" \
   scripts/run_osworld_v2_1_browser.sh gui-cli-refresh
 
 python scripts/validate_task_suite_v2.py \
-  --output "$RUN_ROOT/suite-validation.json"
+  --run-root "$SUITE_ROOT" \
+  --output "$PROTOCOL_ROOT/suite-validation.json"
 ```
 
-The GUI focus commands above reproduce the full four-episode task family; the three legacy rows can be rerun into these fresh paths if a fully ledgered refresh is needed. Do not reuse an existing episode output directory: the runners retain evidence and do not clean old artifacts.
+These commands show the original episode output locations. All eight episode directories already exist at those paths. For a new execution, choose a fresh output directory and use a copied manifest whose `artifact_dir` points to that directory before stamping and validation. Never rerun into an existing output directory; runners preserve episode evidence and do not clean old artifacts.
 
 ## Validation summary and limits
 
-- **Passed:** 2 task mechanisms; both actors' solo goals for each task; two real shared Guest negative controls detected by hidden-state evaluators; two coordinated recovery episodes; reset checks for all eight; 8/8 suite validation.
+- **Passed:** 2 task mechanisms; both actors' solo goals for each task; two real shared Guest negative controls detected by hidden-state evaluators; two coordinated recovery episodes; reset checks and provenance validation for all eight episodes; 8/8 suite validation.
 - **Intentional evaluator failures:** `focus-stale` and `gui-cli-stale`. Their suite episode outcome passes because the evaluator and scenario classifier detect the specified interference.
 - **Not tested:** model behavior, statistical reliability, multi-machine coordination, simultaneous sub-step concurrency, or server-side CAS conflict rejection.
 - **Operational note:** OSWorld logs a missing optional `dataimpulse.json` proxy-settings warning at import time. It did not block these local-only Guest tasks; Chrome used the local loopback service.
