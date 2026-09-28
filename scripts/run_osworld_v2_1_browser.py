@@ -46,11 +46,16 @@ ALL_EXPECTED = {
     "human_goal": "Reviewed by human", "agent_goal": "Approved by GUI actor",
 }
 SCENARIOS = ("gui-cli-gui-solo", "gui-cli-cli-solo", "gui-cli-refresh", "gui-cli-stale",
+             "qwen-gui-cli-solo", "qwen-gui-cli-naive", "qwen-gui-cli-recovery",
              "human-solo", "agent-solo", "agent-qwen-solo",
              "human-agent-focus-aware", "human-agent-naive",
              "comparison-agent-solo", "comparison-writer-solo",
              "comparison-sequential", "comparison-naive-shared",
              "comparison-focus-aware")
+QWEN_GUI_CLI_SCENARIOS = {"qwen-gui-cli-solo", "qwen-gui-cli-naive",
+                          "qwen-gui-cli-recovery"}
+GUI_CLI_SCENARIOS = {scenario for scenario in SCENARIOS
+                     if scenario.startswith("gui-cli-")} | QWEN_GUI_CLI_SCENARIOS
 
 
 def make_comparison_writer(scenario: str):
@@ -121,7 +126,7 @@ def main() -> int:
     args = parser.parse_args()
     scenario = args.scenario
     instance_path = (ROOT / "tasks/instances/browser_gui_cli.json"
-                     if scenario.startswith("gui-cli-") else
+                     if scenario in GUI_CLI_SCENARIOS else
                      ROOT / "tasks/instances/browser_human_gui.json")
     instance_spec = TaskInstanceSpec.from_dict(json.loads(instance_path.read_text(encoding="utf-8")))
     out = Path(os.environ.get("SWCUB_OSWORLD_RUN_DIR", ROOT / "outputs/osworld-v2.1/browser" / scenario))
@@ -321,7 +326,7 @@ def main() -> int:
             actors, schedule, expected = [ScriptedBrowserHumanReplayActor()], ["human_replay"], {"human_goal": ALL_EXPECTED["human_goal"]}
         elif scenario == "agent-solo":
             actors, schedule, expected = [ScriptedBrowserGUIActor(recover_focus=True)], ["gui_actor", "gui_actor"], {"agent_goal": ALL_EXPECTED["agent_goal"]}
-        elif scenario == "agent-qwen-solo" or scenario in {
+        elif scenario == "agent-qwen-solo" or scenario in QWEN_GUI_CLI_SCENARIOS or scenario in {
                 "comparison-agent-solo", "comparison-sequential",
                 "comparison-naive-shared", "comparison-focus-aware"}:
             host_python = os.environ.get("SWCUB_MODEL_PYTHON", "/opt/miniconda3/bin/python")
@@ -367,8 +372,13 @@ def main() -> int:
                                    if type(record.get("observed_revision")) is int else None,
                                    details=record)
 
-            task = ('In the browser review form, enter exactly "Approved by GUI actor" '
-                    'in the GUI Agent Goal field and submit it.')
+            if scenario in QWEN_GUI_CLI_SCENARIOS:
+                task = ('In the Shared Workspace page, set the GUI status field to exactly '
+                        'Approved and save the record. Preserve every other field. If the visible '
+                        'record may be stale, you may refresh it before saving. Stop when the task is complete.')
+            else:
+                task = ('In the browser review form, enter exactly "Approved by GUI actor" '
+                        'in the GUI Agent Goal field and submit it.')
             qwen_actor = OSWorldAgentActor(model_agent, task, actor_id="gui_actor", max_steps=20,
                                            event_callback=record_model_step)
             if scenario.startswith("comparison-"):
@@ -387,6 +397,19 @@ def main() -> int:
                         [actor_id for _ in range(qwen_actor.max_steps)
                          for actor_id in ("gui_actor", "writer_actor")])
                 expected = {}
+            elif scenario in QWEN_GUI_CLI_SCENARIOS:
+                cli_actor = ScriptedGuestCLIActor([
+                    "curl", "-fsS", "-X", "POST", "http://127.0.0.1:8765/cli",
+                    "-H", "Content-Type: application/json",
+                    "-d", '{"cli_note":"Reviewed by CLI"}'])
+                if scenario == "qwen-gui-cli-solo":
+                    actors, schedule = [qwen_actor], ["gui_actor"] * qwen_actor.max_steps
+                    expected = {"gui_status": "Approved"}
+                else:
+                    actors = [qwen_actor, cli_actor]
+                    schedule = ["gui_actor", "cli_actor"] + [
+                        "gui_actor"] * (qwen_actor.max_steps - 1)
+                    expected = instance_spec.expected_state
             else:
                 actors, schedule, expected = [qwen_actor], ["gui_actor"] * qwen_actor.max_steps, {
                     "agent_goal": ALL_EXPECTED["agent_goal"]}
@@ -436,6 +459,28 @@ def main() -> int:
 
         def record_turn_focus(actor, turn_index):
             before = episode.snapshot()
+            if scenario in QWEN_GUI_CLI_SCENARIOS and actor.actor_id == "gui_actor":
+                active_before = episode._active_window_title()
+                scheduler_action = None
+                # The public Refresh button is the declared recovery intervention.
+                # Turn 3 follows the first Qwen step and the CLI update in the fixed schedule.
+                if scenario == "qwen-gui-cli-recovery" and turn_index == 3:
+                    scheduler_action = "pyautogui.click(145, 410)"
+                    episode.gui_action(
+                        "focus_scheduler", scheduler_action,
+                        source_action={"op": "scheduler_refresh_latest_state",
+                                       "turn_index": turn_index,
+                                       "target_control": "Refresh latest state"})
+                active_after = episode._active_window_title()
+                episode.log.record(
+                    "focus_scheduler" if scheduler_action else "focus_observer", "focus",
+                    "qwen_gui_cli_actor_turn", before, episode.snapshot(),
+                    details={"actor_id": actor.actor_id, "turn_index": turn_index,
+                             "policy": scenario, "active_window_before": active_before,
+                             "active_window_after": active_after,
+                             "scheduler_action": scheduler_action,
+                             "cli_trigger_expected": turn_index >= 3})
+                return
             active_window = command(["bash", "-lc", "xdotool getactivewindow getwindowname 2>/dev/null || true"]).strip()
             target = "Chrome" if actor.actor_id == "gui_actor" else "Writer"
             if scenario == "comparison-focus-aware":
@@ -456,10 +501,46 @@ def main() -> int:
                                                             "target_app": target,
                                                             "active_window_title": active_window,
                                                             "target_visible": (target.lower() in active_window.lower())})
-        focus_hook = record_turn_focus if scenario.startswith("comparison-") else None
+        focus_hook = (record_turn_focus if scenario.startswith("comparison-")
+                      or scenario in QWEN_GUI_CLI_SCENARIOS else None)
         report = DualActorOrchestrator(episode).run(actors, schedule, evaluator, out,
                                                     copy_artifacts=False,
                                                     before_actor_turn=focus_hook)
+        if scenario in QWEN_GUI_CLI_SCENARIOS and qwen_actor is not None:
+            model_events = [event for event in episode.log.events
+                            if event.actor == "gui_actor" and event.kind == "model"]
+            cli_events = [event for event in episode.log.events
+                          if event.actor == "cli_actor" and event.kind == "cli"]
+            interference_seq = min((event.seq for event in cli_events), default=None)
+            recovery_steps = (sum(event.seq > interference_seq for event in model_events)
+                              if interference_seq is not None else 0)
+            focus_conflicts = []
+            for event in episode.log.events:
+                if event.actor != "gui_actor" or event.kind != "gui":
+                    continue
+                title = event.details.get("active_window_before")
+                action = str(event.details.get("action", "")).lower()
+                is_input = any(token in action for token in
+                               ("pyautogui.write", "pyautogui.press", "pyautogui.hotkey"))
+                if is_input and isinstance(title, str) and "chrome" not in title.lower():
+                    focus_conflicts.append(event)
+            invalid_action_count = sum(
+                event.outcome != "ok" for event in episode.log.events
+                if event.actor == "gui_actor" and event.kind in {"gui", "actor"})
+            report["interaction_metrics"] = {
+                "focus_conflict_count": len(focus_conflicts),
+                "invalid_action_count": invalid_action_count,
+                "recovery_steps": recovery_steps,
+                "total_steps": sum(1 for event in episode.log.events
+                                   if event.kind in {"gui", "cli"}
+                                   and event.actor not in {"task_setup", "environment"}),
+                "model_decision_steps": len(model_events),
+                "focus_conflict_event_sequences": [event.seq for event in focus_conflicts],
+                "cli_interference_event_sequence": interference_seq,
+                "scheduler_refresh_count": sum(
+                    event.actor == "focus_scheduler" and event.kind == "gui"
+                    for event in episode.log.events),
+            }
         if scenario.startswith("comparison-"):
             report["focus_metrics"] = summarize_focus_events(episode.log.events)
             focus_turns = report["focus_metrics"]["focus_events"]
@@ -474,27 +555,36 @@ def main() -> int:
                     "failed_turns": failed_turns,
                 }
         report["scenario"] = scenario
-        report["task_id"] = ("SWCUB-STALE-MERGE-001" if scenario.startswith("gui-cli-")
+        report["task_id"] = ("SWCUB-STALE-MERGE-001" if scenario in GUI_CLI_SCENARIOS
                               else instance_spec.task_id)
-        if scenario.startswith("gui-cli-"):
+        if scenario in GUI_CLI_SCENARIOS:
             report["task_version"] = TASK_VERSION
             report["condition"] = {
                 "gui-cli-gui-solo": "solo", "gui-cli-cli-solo": "solo",
                 "gui-cli-stale": "naive_shared", "gui-cli-refresh": "recovery",
+                "qwen-gui-cli-solo": "solo", "qwen-gui-cli-naive": "naive_shared",
+                "qwen-gui-cli-recovery": "recovery_aware",
             }[scenario]
-        report["task_instance_id"] = (instance_spec.instance_id if scenario in {
-            "gui-cli-refresh", "human-agent-focus-aware"} else f"browser-v0-{scenario}-seed0")
+        repeat_id = os.environ.get("SWCUB_EPISODE_REPEAT", "01")
+        if scenario in QWEN_GUI_CLI_SCENARIOS:
+            report["task_instance_id"] = f"{instance_spec.instance_id}-{scenario}-repeat{repeat_id}"
+        elif scenario in {"gui-cli-refresh", "human-agent-focus-aware"}:
+            report["task_instance_id"] = instance_spec.instance_id
+        else:
+            report["task_instance_id"] = f"browser-v0-{scenario}-seed0"
         report["same_guest_container_id"] = episode.snapshot().get("guest_container_id")
         report["resource_run_id"] = resource_identity.run_id
         report["resource_ledger"] = str(resource_identity.ledger_path)
         report["guest_apps"] = probe.strip().splitlines()
-        if scenario == "agent-qwen-solo" or scenario in {
+        if scenario == "agent-qwen-solo" or scenario in QWEN_GUI_CLI_SCENARIOS or scenario in {
                 "comparison-agent-solo", "comparison-sequential",
                 "comparison-naive-shared", "comparison-focus-aware"}:
             trace_path = out / "model_trace.jsonl"
             trace_path.write_text("".join(json.dumps(item, ensure_ascii=False) + "\n"
                                                  for item in qwen_actor.trace), encoding="utf-8")
             report["model"] = {**model_metadata, "trace": "model_trace.jsonl",
+                               "name": "Qwen3-VL-30B-A3B-Instruct",
+                               "model_config_sha256": "6129b3f54d517a18553cf7525ff4886be6831c5806fc094d632b8ef38d859912",
                                "steps": len(qwen_actor.trace),
                                "action_steps": sum(len(item.get("native_actions", []))
                                                    for item in qwen_actor.trace)}
@@ -511,6 +601,18 @@ def main() -> int:
                 report["model_failure_class"] = "environment_or_action_execution_failure"
             else:
                 report["model_failure_class"] = "model_task_failure"
+            if scenario in QWEN_GUI_CLI_SCENARIOS and model_goal is not True:
+                final_state = report["evaluation"].get("final_state", {})
+                scheduler_count = report.get("interaction_metrics", {}).get(
+                    "scheduler_refresh_count", 0)
+                if actor_result.get("error"):
+                    report["model_failure_class"] = "grounding"
+                elif scenario == "qwen-gui-cli-naive" and final_state.get("cli_note") != "Reviewed by CLI":
+                    report["model_failure_class"] = "interaction_conflict"
+                elif scenario == "qwen-gui-cli-recovery" and scheduler_count != 1:
+                    report["model_failure_class"] = "scheduler_issue"
+                else:
+                    report["model_failure_class"] = "model_capability"
         state = report["evaluation"].get("final_state", {})
         active_actor_ids = {actor.actor_id for actor in actors}
         if scenario.startswith("comparison-"):
@@ -521,7 +623,7 @@ def main() -> int:
             report["task_instance_id"] = f"browser-writer-v0-{report['condition']}-seed0"
             report["same_guest_container_id"] = episode.snapshot().get("guest_container_id")
             report["individual_goals"] = report["evaluation"].get("individual_goals", {})
-        elif scenario.startswith("gui-cli-"):
+        elif scenario in GUI_CLI_SCENARIOS:
             report["individual_goals"] = {}
             if "gui_actor" in active_actor_ids:
                 report["individual_goals"]["gui_actor"] = {
@@ -551,6 +653,17 @@ def main() -> int:
                                      and state.get("agent_goal") != ALL_EXPECTED["agent_goal"])
                 report["scenario_outcome"] = "human_agent_focus_interference" if expected_negative else "focus_interference_not_reproduced"
             report["scenario_success"] = bool(expected_negative)
+        elif scenario in QWEN_GUI_CLI_SCENARIOS:
+            report["scenario_success"] = bool(report["evaluation"]["success"])
+            report["scenario_outcome"] = (
+                "joint_goal_success" if report["scenario_success"] else "joint_goal_failure")
+            if scenario == "qwen-gui-cli-recovery":
+                scheduler_count = report.get("interaction_metrics", {}).get(
+                    "scheduler_refresh_count", 0)
+                report["scheduler_recovery_success"] = bool(
+                    scheduler_count == 1 and report["scenario_success"])
+                if scheduler_count != 1:
+                    report["model_failure_class"] = "scheduler_issue"
         else:
             report["scenario_success"] = bool(report["evaluation"]["success"])
 
@@ -587,7 +700,7 @@ def main() -> int:
         (out / "report.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
         episode.log.write(out / "events.jsonl")
         print(json.dumps(report, indent=2))
-        return 0 if report["success"] else 1
+        return 0 if (reset_ok or scenario in QWEN_GUI_CLI_SCENARIOS) else 1
     except Exception as exc:
         # Keep screenshots, event history, and the precise setup failure even
         # when an episode cannot reach actor scheduling or evaluator scoring.
@@ -611,7 +724,7 @@ def main() -> int:
                 model_worker.kill()
                 model_worker.wait(timeout=5)
         episode.close()
-        if report is not None and scenario.startswith("gui-cli-"):
+        if report is not None and scenario in GUI_CLI_SCENARIOS:
             actor_metadata = {
                 actor.actor_id: {"class": type(actor).__name__, "role": actor.role}
                 for actor in actors
@@ -623,7 +736,8 @@ def main() -> int:
                             ROOT / "swcub/tasks/web_workspace.py",
                             ROOT / "tasks/task_suite_v2.json",
                             ROOT / "scripts/stamp_task_suite_v2_provenance.py",
-                            ROOT / "tasks/instances/browser_gui_cli.json"]
+                            ROOT / "tasks/instances/browser_gui_cli.json",
+                            ROOT / "scripts/local_qwen_worker.py"]
             stamp_episode_provenance(
                 out, report, repo_root=ROOT,
                 task_id="SWCUB-STALE-MERGE-001", task_version=TASK_VERSION,
@@ -632,7 +746,7 @@ def main() -> int:
                 evaluator_class=type(evaluator).__name__, source_files=source_files,
                 osworld_checkout=OSWORLD_V2_DIR,
                 release_manifest=ROOT / "outputs/osworld-v2.1/environment/release_manifest.json",
-                guest_image=Path(guest_image))
+                guest_image=Path(guest_image), model_metadata=report.get("model"))
 
 
 if __name__ == "__main__":

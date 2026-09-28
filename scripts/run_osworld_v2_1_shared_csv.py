@@ -6,15 +6,21 @@ import json
 import os
 import argparse
 import shlex
+import socket
+import subprocess
 from pathlib import Path
 import sys
 import time
+from urllib.request import Request, urlopen
 
 import requests
 from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
+OSWORLD_V2_DIR = Path(os.environ.get(
+    "OSWORLD_V2_DIR", ROOT.parent / "_deps/OSWorld-V2-osworld-v2.1")).resolve()
+sys.path.insert(0, str(OSWORLD_V2_DIR))
 
 from desktop_env.desktop_env import DesktopEnv
 
@@ -25,22 +31,95 @@ from swcub.environment import ActorContext
 from swcub.evaluator import GuestCsvEvaluator, GuestFocusEvaluator
 from swcub.orchestrator import DualActorOrchestrator
 from swcub.osworld_adapter import OSWorldSharedEpisode
+from swcub.osworld_agent_actor import OSWorldAgentActor
 from swcub.provenance import TASK_VERSION, stamp_episode_provenance
 from swcub.resource_safety import ensure_resource_identity
+from mm_agents.qwen3vl_agent import Qwen3VLAgent
 
 
 CSV_PATH = "/tmp/swcub_shared.csv"
+FOCUS_QWEN_SCENARIOS = {"focus-qwen-solo", "focus-qwen-naive", "focus-qwen-recovery"}
 EXPECTED = [
     {"actor": "gui", "value": "GUI_VALUE"},
     {"actor": "cli", "value": "CLI_VALUE"},
 ]
 
 
+class LocalQwenInferenceClient:
+    """Call the existing offline Qwen worker over loopback."""
+
+    def __init__(self, port: int):
+        self.url = f"http://127.0.0.1:{port}/infer"
+
+    def complete(self, payload: dict[str, object], _model: str) -> str:
+        request = Request(self.url, data=json.dumps({
+            "messages": payload["messages"],
+            "max_new_tokens": min(int(payload.get("max_tokens", 512)), 512),
+        }).encode(), headers={"Content-Type": "application/json"}, method="POST")
+        with urlopen(request, timeout=240) as response:
+            result = json.loads(response.read())
+        if not isinstance(result, dict) or not isinstance(result.get("text"), str):
+            raise ValueError(f"invalid local model-worker reply: {result!r}")
+        return result["text"]
+
+
+def start_qwen_worker(out: Path) -> tuple[subprocess.Popen[bytes], int, dict[str, object]]:
+    host_python = os.environ.get("SWCUB_MODEL_PYTHON", "/opt/miniconda3/bin/python")
+    model_path = Path(os.environ.get(
+        "SWCUB_LOCAL_VLM_PATH", "/mnt/raid1/mjh/models/Qwen/Qwen3-VL-30B-A3B-Instruct"))
+    device = os.environ.get("SWCUB_LOCAL_VLM_DEVICE", "auto")
+    with socket.socket() as listener:
+        listener.bind(("127.0.0.1", 0))
+        port = listener.getsockname()[1]
+    worker_log_path = out / "model_worker.log"
+    worker_log = worker_log_path.open("w", encoding="utf-8")
+    worker_env = os.environ.copy()
+    worker_env.update({"HF_HUB_OFFLINE": "1", "TRANSFORMERS_OFFLINE": "1",
+                       "HF_HUB_DISABLE_TELEMETRY": "1"})
+    worker_env.setdefault("CUDA_VISIBLE_DEVICES", "0,2,3,4,5,6,7")
+    worker = subprocess.Popen(
+        [host_python, str(ROOT / "scripts/local_qwen_worker.py"),
+         "--model", str(model_path), "--device", device, "--port", str(port)],
+        env=worker_env, stdout=worker_log, stderr=subprocess.STDOUT)
+    worker_log.close()
+    deadline = time.monotonic() + 600
+    while time.monotonic() < deadline:
+        if worker.poll() is not None:
+            raise RuntimeError(f"local Qwen worker exited; see {worker_log_path}")
+        try:
+            with urlopen(f"http://127.0.0.1:{port}/health", timeout=5) as response:
+                metadata = json.loads(response.read())
+            break
+        except Exception:
+            time.sleep(2)
+    else:
+        worker.terminate()
+        raise TimeoutError(f"local Qwen worker did not become ready; see {worker_log_path}")
+    metadata.update({"device": device, "worker": "local Transformers; local_files_only",
+                     "agent_framework": "OSWorld-V2.1 Qwen3VLAgent",
+                     "agent_source": str(OSWORLD_V2_DIR / "mm_agents/qwen3vl_agent.py"),
+                     "model_config_sha256": "6129b3f54d517a18553cf7525ff4886be6831c5806fc094d632b8ef38d859912",
+                     "coordinate_type": "relative 0..999; native OSWorld parser scales to screenshot pixels"})
+    return worker, port, metadata
+
+
+def stop_qwen_worker(worker: subprocess.Popen[bytes] | None) -> None:
+    if worker is None or worker.poll() is not None:
+        return
+    worker.terminate()
+    try:
+        worker.wait(timeout=10)
+    except subprocess.TimeoutExpired:
+        worker.kill()
+        worker.wait(timeout=5)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--scenario", choices=("shared-csv", "stale-overwrite",
                                                   "focus-recovery", "focus-stale",
-                                                  "focus-gui-solo", "focus-human-solo"),
+                                                  "focus-gui-solo", "focus-human-solo",
+                                                  *sorted(FOCUS_QWEN_SCENARIOS)),
                         default="shared-csv")
     scenario = parser.parse_args().scenario
     out = Path(os.environ.get("SWCUB_OSWORLD_RUN_DIR", ROOT / "outputs/osworld-v2.1/shared-csv"))
@@ -57,6 +136,11 @@ def main() -> int:
                         ),
                         os_type="Ubuntu", action_space="pyautogui")
     report: dict[str, object] | None = None
+    model_worker: subprocess.Popen[bytes] | None = None
+    model_metadata: dict[str, object] | None = None
+    qwen_actor: OSWorldAgentActor | None = None
+    actors: list[object] = []
+    evaluator: GuestFocusEvaluator | GuestCsvEvaluator | None = None
 
     def command(argv: list[str]) -> str:
         response = requests.post(
@@ -134,7 +218,39 @@ def main() -> int:
                 time.sleep(1)
             else:
                 raise TimeoutError("Guest focus task terminal windows did not start within 30 seconds")
-            if scenario == "focus-gui-solo":
+            if scenario in FOCUS_QWEN_SCENARIOS:
+                model_worker, model_port, model_metadata = start_qwen_worker(out)
+                model_agent = Qwen3VLAgent(
+                    platform="ubuntu", model="qwen3-vl", max_tokens=512,
+                    action_space="pyautogui", observation_type="screenshot",
+                    coordinate_type="relative")
+                model_agent.call_llm = LocalQwenInferenceClient(model_port).complete
+
+                def record_model_step(record: dict[str, object]) -> None:
+                    before = episode.snapshot()
+                    episode.log.record("gui_actor", "model", "osworld.qwen3vl.predict",
+                                       before, before,
+                                       observed_revision=record.get("observed_revision")
+                                       if type(record.get("observed_revision")) is int else None,
+                                       details=record)
+
+                instruction = (
+                    'In the terminal window titled "Document", enter exactly Approved and press '
+                    'Enter. Do not enter text in the Chat window. Stop when the line is present.'
+                )
+                qwen_actor = OSWorldAgentActor(
+                    model_agent, instruction, actor_id="gui_actor", max_steps=20,
+                    event_callback=record_model_step)
+                if scenario == "focus-qwen-solo":
+                    expected_focus = {"Document": "Approved\n", "Chat": ""}
+                    actors = [qwen_actor]
+                    schedule = ["gui_actor"] * qwen_actor.max_steps
+                else:
+                    expected_focus = {"Document": "Approved\n", "Chat": "Review note\n"}
+                    actors = [qwen_actor, ScriptedGuestHumanReplayActor()]
+                    schedule = ["gui_actor", "human_replay"] + [
+                        "gui_actor"] * (qwen_actor.max_steps - 1)
+            elif scenario == "focus-gui-solo":
                 expected_focus = {"Document": "Approved\n", "Chat": ""}
                 actors = [ScriptedGuestFocusGUIActor(recover=True)]
                 schedule = ["gui_actor", "gui_actor"]
@@ -142,7 +258,7 @@ def main() -> int:
                 expected_focus = {"Document": "", "Chat": "Review note\n"}
                 actors = [ScriptedGuestHumanReplayActor()]
                 schedule = ["human_replay"]
-            else:
+            elif scenario not in FOCUS_QWEN_SCENARIOS:
                 expected_focus = {"Document": "Approved\n", "Chat": "Review note\n"}
                 actors = [
                     ScriptedGuestFocusGUIActor(recover=scenario == "focus-recovery"),
@@ -168,8 +284,108 @@ def main() -> int:
                       ScriptedGuestCLIActor(["python3", "-c", cli_code])]
             schedule = ["gui_actor", "cli_actor", "gui_actor"]
         orchestrator = DualActorOrchestrator(episode)
-        report = orchestrator.run(actors, schedule, evaluator,
-                                  out, copy_artifacts=False)
+
+        def focus_turn_hook(actor: object, turn_index: int) -> None:
+            if scenario not in FOCUS_QWEN_SCENARIOS or getattr(actor, "actor_id", None) != "gui_actor":
+                return
+            before = episode.snapshot()
+            active_before = episode._active_window_title()
+            scheduler_action = None
+            if scenario == "focus-qwen-recovery":
+                # Match the V2 recovery policy: re-activate the visible Document window.
+                scheduler_action = "pyautogui.click(420, 220)"
+                episode.gui_action("focus_scheduler", scheduler_action,
+                                   source_action={"op": "scheduler_focus_reacquire",
+                                                  "target_window": "Document",
+                                                  "turn_index": turn_index})
+            active_after = episode._active_window_title()
+            episode.log.record(
+                "focus_scheduler" if scheduler_action else "focus_observer", "focus",
+                "qwen_actor_turn_focus", before, episode.snapshot(),
+                details={"actor_id": "gui_actor", "turn_index": turn_index,
+                         "policy": scenario, "target_window": "Document",
+                         "active_window_before": active_before,
+                         "active_window_after": active_after,
+                         "scheduler_action": scheduler_action})
+
+        report = orchestrator.run(actors, schedule, evaluator, out,
+                                  copy_artifacts=False,
+                                  before_actor_turn=focus_turn_hook)
+        stop_qwen_worker(model_worker)
+        if qwen_actor is not None:
+            trace_path = out / "model_trace.jsonl"
+            trace_path.write_text("".join(json.dumps(row, ensure_ascii=False) + "\n"
+                                             for row in qwen_actor.trace), encoding="utf-8")
+            report["model"] = {**(model_metadata or {}),
+                               "name": "Qwen3-VL-30B-A3B-Instruct",
+                               "weights_path": os.environ.get(
+                                   "SWCUB_LOCAL_VLM_PATH",
+                                   "/mnt/raid1/mjh/models/Qwen/Qwen3-VL-30B-A3B-Instruct"),
+                               "trace": "model_trace.jsonl",
+                               "steps": len(qwen_actor.trace),
+                               "action_steps": sum(len(row.get("native_actions", []))
+                                                   for row in qwen_actor.trace)}
+            report["model_failure_class"] = "none"
+            if any(event.actor == "gui_actor" and event.kind == "actor"
+                   and event.outcome != "ok" for event in episode.log.events):
+                report["model_failure_class"] = "grounding"
+        model_events = [event for event in episode.log.events
+                        if event.actor == "gui_actor" and event.kind == "model"]
+        conflict_events = []
+        for event in episode.log.events:
+            if event.actor != "gui_actor" or event.kind != "gui":
+                continue
+            title = event.details.get("active_window_before")
+            action = str(event.details.get("action", "")).lower()
+            is_input = any(token in action for token in
+                           ("pyautogui.write", "pyautogui.press", "pyautogui.hotkey"))
+            if is_input and isinstance(title, str) and "document" not in title.lower():
+                conflict_events.append(event)
+        interference_events = [event for event in episode.log.events
+                               if event.actor == "human_replay"]
+        first_interference = min((event.seq for event in interference_events), default=None)
+        recovery_steps = (sum(event.seq > first_interference for event in model_events)
+                          if first_interference is not None else 0)
+        invalid_action_count = sum(
+            event.outcome != "ok" for event in episode.log.events
+            if event.actor == "gui_actor" and event.kind in {"gui", "actor"})
+        report["interaction_metrics"] = {
+            "focus_conflict_count": len(conflict_events),
+            "unknown_focus_observation_count": sum(
+                event.actor == "gui_actor" and event.kind == "gui"
+                and event.details.get("active_window_before") is None
+                for event in episode.log.events),
+            "invalid_action_count": invalid_action_count,
+            "recovery_steps": recovery_steps,
+            "total_steps": sum(1 for event in episode.log.events
+                               if event.kind in {"gui", "cli"}
+                               and event.actor not in {"environment", "task_setup"}),
+            "model_decision_steps": len(model_events),
+            "focus_conflict_event_sequences": [event.seq for event in conflict_events],
+            "interference_event_sequence": first_interference,
+        }
+        if qwen_actor is not None and not report["evaluation"].get("success"):
+            final = report["evaluation"].get("final_state", {})
+            qwen_error = report.get("actors", {}).get("gui_actor", {}).get("error", "")
+            if scenario == "focus-qwen-recovery":
+                focus_checks = [event.details for event in episode.log.events
+                                if event.actor == "focus_scheduler" and event.kind == "focus"]
+                scheduler_ok = bool(focus_checks) and all(
+                    "document" in str(row.get("active_window_after") or "").lower()
+                    for row in focus_checks)
+                report["scheduler_recovery_success"] = scheduler_ok
+                report["model_failure_class"] = (
+                    "scheduler_issue" if not scheduler_ok else "model_capability")
+            elif (scenario == "focus-qwen-naive"
+                  and final.get("Chat") == "Review note\nApproved\n"):
+                report["model_failure_class"] = "interaction_conflict"
+            elif report["interaction_metrics"]["focus_conflict_count"]:
+                report["model_failure_class"] = (
+                    "interaction_conflict" if scenario != "focus-qwen-solo" else "grounding")
+            elif "did not terminate within" in str(qwen_error):
+                report["model_failure_class"] = "model_capability"
+            else:
+                report["model_failure_class"] = "model_capability"
         shared_guest_container_id = episode.snapshot().get("guest_container_id")
         report["shared_guest_container_id"] = shared_guest_container_id
         report["resource_run_id"] = resource_identity.run_id
@@ -182,6 +398,7 @@ def main() -> int:
             "current_revision_at_first_stale_action": (
                 stale_actions[0].details.get("revision_before_action") if stale_actions else None
             ),
+            **report.get("interaction_metrics", {}),
         }
         episode.copy_artifacts(out)
 
@@ -216,9 +433,12 @@ def main() -> int:
         elif scenario == "focus-recovery":
             scenario_success = eval_success
             outcome = "focus_recovery_success" if eval_success else "focus_recovery_failed"
-        elif scenario in {"focus-gui-solo", "focus-human-solo"}:
+        elif scenario in {"focus-gui-solo", "focus-human-solo", "focus-qwen-solo"}:
             scenario_success = eval_success
             outcome = "independent_goal_success" if eval_success else "independent_goal_failed"
+        elif scenario in {"focus-qwen-naive", "focus-qwen-recovery"}:
+            scenario_success = eval_success
+            outcome = "joint_goal_success" if eval_success else "joint_goal_failure"
         else:
             final = report["evaluation"].get("final_state", {})
             scenario_success = (not eval_success and final.get("Document") == ""
@@ -231,16 +451,21 @@ def main() -> int:
         task_id = "SWCUB-FOCUS-ROUTING-001" if scenario.startswith("focus-") else "SWCUB-CSV-LEGACY-001"
         report["task_id"] = task_id
         report["task_version"] = TASK_VERSION
-        report["task_instance_id"] = f"{task_id.lower()}-{scenario}-seed0"
+        repeat_id = os.environ.get("SWCUB_EPISODE_REPEAT", "01")
+        report["task_instance_id"] = f"{task_id.lower()}-{scenario}-seed0-repeat{repeat_id}"
         report["condition"] = {
             "focus-gui-solo": "solo", "focus-human-solo": "solo",
             "focus-stale": "naive_shared", "focus-recovery": "recovery",
+            "focus-qwen-solo": "solo", "focus-qwen-naive": "naive_shared",
+            "focus-qwen-recovery": "recovery_aware",
         }.get(scenario, scenario)
         (out / "report.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
         episode.log.write(out / "events.jsonl")
         print(json.dumps(report, indent=2))
-        return 0 if report["success"] else 1
+        # Model/evaluator failure is data, not a runner crash; continue the repeat matrix.
+        return 0 if reset_ok else 1
     finally:
+        stop_qwen_worker(model_worker)
         episode.close()
         if report is not None and scenario.startswith("focus-"):
             actor_metadata = {
@@ -251,13 +476,16 @@ def main() -> int:
                             ROOT / "swcub/evaluator.py", ROOT / "swcub/orchestrator.py",
                             ROOT / "swcub/osworld_adapter.py", ROOT / "swcub/core.py",
                             ROOT / "swcub/provenance.py",
+                            ROOT / "swcub/osworld_agent_actor.py",
                             ROOT / "scripts/stamp_task_suite_v2_provenance.py",
-                            ROOT / "tasks/task_suite_v2.json"]
+                            ROOT / "tasks/task_suite_v2.json",
+                            ROOT / "scripts/local_qwen_worker.py"]
             stamp_episode_provenance(
                 out, report, repo_root=ROOT,
                 task_id="SWCUB-FOCUS-ROUTING-001", task_version=TASK_VERSION,
                 condition=report["condition"], seed=0, actor_metadata=actor_metadata,
                 evaluator_class=type(evaluator).__name__, source_files=source_files,
+                model_metadata=report.get("model"),
                 osworld_checkout=Path(os.environ.get(
                     "OSWORLD_V2_DIR", ROOT.parent / "_deps/OSWorld-V2-osworld-v2.1")),
                 release_manifest=ROOT / "outputs/osworld-v2.1/environment/release_manifest.json",
