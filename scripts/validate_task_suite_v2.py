@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 from pathlib import Path
 import re
@@ -42,6 +43,17 @@ def validate_episode(episode: dict[str, Any], task_id: str, run_root: Path) -> d
         raise ValidationError(f"{episode_id}: report scenario does not match manifest")
     if report.get("task_id") not in {None, task_id, "BROWSER-GUI-CLI-001", "FOCUS-001"}:
         raise ValidationError(f"{episode_id}: unexpected task id {report.get('task_id')!r}")
+    if report.get("task_version") != "2.0.0":
+        raise ValidationError(f"{episode_id}: task_version is not frozen at 2.0.0")
+    metadata = report.get("episode_metadata")
+    if not isinstance(metadata, dict) or metadata.get("metadata_schema_version") != 1:
+        raise ValidationError(f"{episode_id}: missing episode metadata schema v1")
+    provenance_path = artifact_dir / str(report.get("provenance_file", "provenance.json"))
+    provenance = _read_json(provenance_path)
+    if provenance.get("artifact_sha256", {}).get("report.json") is None:
+        raise ValidationError(f"{episode_id}: provenance has no report digest")
+    if provenance.get("resources", {}).get("guest_created_and_destroyed") is not True:
+        raise ValidationError(f"{episode_id}: provenance does not prove ledgered Guest lifecycle")
     evaluation = report.get("evaluation") or {}
     reset = report.get("reset_check") or {}
     if reset.get("success") is not True:
@@ -111,6 +123,12 @@ def validate_episode(episode: dict[str, Any], task_id: str, run_root: Path) -> d
     if (reset_guest_id[0] != guest_id or not FULL_ID.fullmatch(str(reset_guest_id[1] or ""))
             or reset_guest_id[0] == reset_guest_id[1]):
         raise ValidationError(f"{episode_id}: reset did not create a distinct clean Guest")
+    for relative, expected_digest in provenance.get("artifact_sha256", {}).items():
+        candidate = (artifact_dir / relative).resolve()
+        if not candidate.is_relative_to(artifact_dir.resolve()) or not candidate.is_file():
+            raise ValidationError(f"{episode_id}: invalid provenance artifact path {relative!r}")
+        if hashlib.sha256(candidate.read_bytes()).hexdigest() != expected_digest:
+            raise ValidationError(f"{episode_id}: artifact digest mismatch for {relative}")
 
     return {"task_id": task_id, "episode_id": episode_id, "condition": episode["condition"],
             "scenario": report["scenario"], "success": True,
@@ -136,6 +154,8 @@ def validate_suite(manifest_path: Path, run_root: Path) -> dict[str, Any]:
             if expected_condition not in conditions:
                 raise ValidationError(f"{task.get('task_id')}: missing {expected_condition}")
         task_actors = set((task.get("actors") or {}).keys())
+        if task.get("task_version") != manifest.get("suite_version"):
+            raise ValidationError(f"{task.get('task_id')}: task and suite versions differ")
         solo_actors = {actor_id for row in episodes if row.get("condition") == "solo"
                        for actor_id in row.get("active_actors", [])}
         if solo_actors != task_actors:

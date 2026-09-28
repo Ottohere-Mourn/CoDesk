@@ -35,6 +35,7 @@ from swcub.instances import TaskInstanceSpec
 from swcub.orchestrator import DualActorOrchestrator
 from swcub.osworld_adapter import OSWorldSharedEpisode
 from swcub.osworld_agent_actor import OSWorldAgentActor
+from swcub.provenance import TASK_VERSION, stamp_episode_provenance
 from swcub.resource_safety import ensure_resource_identity
 from swcub.tasks.web_workspace import server_source
 
@@ -183,6 +184,7 @@ def main() -> int:
     episode = OSWorldSharedEpisode(desktop, cli_executor=lambda raw: command(shlex.split(raw)))
     episode.log = EventLog()
     model_worker: subprocess.Popen[bytes] | None = None
+    report: dict[str, object] | None = None
 
     source = base64.b64encode(server_source()).decode("ascii")
     initial_state = json.dumps(instance_spec.initial_state, separators=(",", ":"))
@@ -472,7 +474,14 @@ def main() -> int:
                     "failed_turns": failed_turns,
                 }
         report["scenario"] = scenario
-        report["task_id"] = instance_spec.task_id
+        report["task_id"] = ("SWCUB-STALE-MERGE-001" if scenario.startswith("gui-cli-")
+                              else instance_spec.task_id)
+        if scenario.startswith("gui-cli-"):
+            report["task_version"] = TASK_VERSION
+            report["condition"] = {
+                "gui-cli-gui-solo": "solo", "gui-cli-cli-solo": "solo",
+                "gui-cli-stale": "naive_shared", "gui-cli-refresh": "recovery",
+            }[scenario]
         report["task_instance_id"] = (instance_spec.instance_id if scenario in {
             "gui-cli-refresh", "human-agent-focus-aware"} else f"browser-v0-{scenario}-seed0")
         report["same_guest_container_id"] = episode.snapshot().get("guest_container_id")
@@ -602,6 +611,28 @@ def main() -> int:
                 model_worker.kill()
                 model_worker.wait(timeout=5)
         episode.close()
+        if report is not None and scenario.startswith("gui-cli-"):
+            actor_metadata = {
+                actor.actor_id: {"class": type(actor).__name__, "role": actor.role}
+                for actor in actors
+            }
+            source_files = [Path(__file__), ROOT / "swcub/actors.py",
+                            ROOT / "swcub/evaluator.py", ROOT / "swcub/orchestrator.py",
+                            ROOT / "swcub/osworld_adapter.py", ROOT / "swcub/osworld_agent_actor.py",
+                            ROOT / "swcub/core.py", ROOT / "swcub/provenance.py",
+                            ROOT / "swcub/tasks/web_workspace.py",
+                            ROOT / "tasks/task_suite_v2.json",
+                            ROOT / "scripts/stamp_task_suite_v2_provenance.py",
+                            ROOT / "tasks/instances/browser_gui_cli.json"]
+            stamp_episode_provenance(
+                out, report, repo_root=ROOT,
+                task_id="SWCUB-STALE-MERGE-001", task_version=TASK_VERSION,
+                condition=report["condition"], seed=instance_spec.seed,
+                actor_metadata=actor_metadata,
+                evaluator_class=type(evaluator).__name__, source_files=source_files,
+                osworld_checkout=OSWORLD_V2_DIR,
+                release_manifest=ROOT / "outputs/osworld-v2.1/environment/release_manifest.json",
+                guest_image=Path(guest_image))
 
 
 if __name__ == "__main__":

@@ -25,6 +25,7 @@ from swcub.environment import ActorContext
 from swcub.evaluator import GuestCsvEvaluator, GuestFocusEvaluator
 from swcub.orchestrator import DualActorOrchestrator
 from swcub.osworld_adapter import OSWorldSharedEpisode
+from swcub.provenance import TASK_VERSION, stamp_episode_provenance
 from swcub.resource_safety import ensure_resource_identity
 
 
@@ -55,6 +56,7 @@ def main() -> int:
                             "/mnt/raid1/mjh/Projects/_deps/osworld-v2.1/task-cache",
                         ),
                         os_type="Ubuntu", action_space="pyautogui")
+    report: dict[str, object] | None = None
 
     def command(argv: list[str]) -> str:
         response = requests.post(
@@ -226,12 +228,40 @@ def main() -> int:
         report["scenario_outcome"] = outcome
         report["scenario_success"] = scenario_success
         report["success"] = scenario_success and reset_ok
+        task_id = "SWCUB-FOCUS-ROUTING-001" if scenario.startswith("focus-") else "SWCUB-CSV-LEGACY-001"
+        report["task_id"] = task_id
+        report["task_version"] = TASK_VERSION
+        report["task_instance_id"] = f"{task_id.lower()}-{scenario}-seed0"
+        report["condition"] = {
+            "focus-gui-solo": "solo", "focus-human-solo": "solo",
+            "focus-stale": "naive_shared", "focus-recovery": "recovery",
+        }.get(scenario, scenario)
         (out / "report.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
         episode.log.write(out / "events.jsonl")
         print(json.dumps(report, indent=2))
         return 0 if report["success"] else 1
     finally:
         episode.close()
+        if report is not None and scenario.startswith("focus-"):
+            actor_metadata = {
+                actor.actor_id: {"class": type(actor).__name__, "role": actor.role}
+                for actor in actors
+            }
+            source_files = [Path(__file__), ROOT / "swcub/actors.py",
+                            ROOT / "swcub/evaluator.py", ROOT / "swcub/orchestrator.py",
+                            ROOT / "swcub/osworld_adapter.py", ROOT / "swcub/core.py",
+                            ROOT / "swcub/provenance.py",
+                            ROOT / "scripts/stamp_task_suite_v2_provenance.py",
+                            ROOT / "tasks/task_suite_v2.json"]
+            stamp_episode_provenance(
+                out, report, repo_root=ROOT,
+                task_id="SWCUB-FOCUS-ROUTING-001", task_version=TASK_VERSION,
+                condition=report["condition"], seed=0, actor_metadata=actor_metadata,
+                evaluator_class=type(evaluator).__name__, source_files=source_files,
+                osworld_checkout=Path(os.environ.get(
+                    "OSWORLD_V2_DIR", ROOT.parent / "_deps/OSWorld-V2-osworld-v2.1")),
+                release_manifest=ROOT / "outputs/osworld-v2.1/environment/release_manifest.json",
+                guest_image=Path(guest_image))
 
 
 if __name__ == "__main__":
