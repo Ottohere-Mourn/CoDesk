@@ -54,6 +54,7 @@ class OSWorldSharedEpisode(Episode):
         self.screenshot_history: list[tuple[str, bytes]] = []
         self.revision = 0
         self.actor_steps: dict[str, int] = {}
+        self._revision_actors: list[str] = []
         self.environment_health: dict[str, Any] = {
             "observation_refresh_attempts": 0,
             "observation_transient_failures": 0,
@@ -200,6 +201,7 @@ class OSWorldSharedEpisode(Episode):
         self.observation = self.desktop_env.reset(task_config=task_config, seed=seed)
         self.revision = 0
         self.actor_steps.clear()
+        self._revision_actors.clear()
         self.log.record("orchestrator", "reset", "osworld.reset", before, self.snapshot(),
                         details={"task_config_id": task_config.get("id") if isinstance(task_config, dict) else None,
                                  "seed": seed,
@@ -212,9 +214,11 @@ class OSWorldSharedEpisode(Episode):
         before = self.snapshot()
         active_window_before = self._active_window_title()
         observed_revision = self.revision if observed_revision is None else observed_revision
+        intervening_actors = self._revision_actors[observed_revision: self.revision]
         self.observation, reward, done, info = self.desktop_env.step(action, pause=pause)
         active_window_after = self._active_window_title()
         self.revision += 1
+        self._revision_actors.append(actor)
         self.actor_steps[actor] = self.actor_steps.get(actor, 0) + 1
         self.log.record(actor, "gui", "osworld.step", before, self.snapshot(),
                         observed_revision, details={"action": _digestable(action),
@@ -228,6 +232,10 @@ class OSWorldSharedEpisode(Episode):
                                                     "active_window_after": active_window_after,
                                                     "stale_observation": (observed_revision is not None
                                                                            and observed_revision < before["revision"]),
+                                                    "stale_due_other_actor": any(
+                                                        other_actor != actor
+                                                        for other_actor in intervening_actors),
+                                                    "intervening_action_actors": intervening_actors,
                                                     "reward": reward, "done": done,
                                                     "info": _digestable(info)})
         return self.observation
@@ -238,6 +246,7 @@ class OSWorldSharedEpisode(Episode):
             raise RuntimeError("provide cli_executor bound to the same OSWorld guest workspace")
         before = self.snapshot()
         observed_revision = self.revision if observed_revision is None else observed_revision
+        intervening_actors = self._revision_actors[observed_revision: self.revision]
         # DesktopEnv marks itself used after GUI steps. A CLI command can mutate
         # the same Guest filesystem without a GUI step, so mark it explicitly to
         # ensure the next reset reverts the VM snapshot too.
@@ -245,6 +254,7 @@ class OSWorldSharedEpisode(Episode):
             self.desktop_env.is_environment_used = True
         result = self.cli_executor(command)
         self.revision += 1
+        self._revision_actors.append(actor)
         self.actor_steps[actor] = self.actor_steps.get(actor, 0) + 1
         self.log.record(actor, "cli", "shared_guest.command", before, self.snapshot(),
                         observed_revision, details={"command": command,
@@ -254,6 +264,10 @@ class OSWorldSharedEpisode(Episode):
                                                     "revision_after_action": self.revision,
                                                     "stale_observation": (observed_revision is not None
                                                                            and observed_revision < before["revision"]),
+                                                    "stale_due_other_actor": any(
+                                                        other_actor != actor
+                                                        for other_actor in intervening_actors),
+                                                    "intervening_action_actors": intervening_actors,
                                                     "result": _digestable(result)})
         return result
 

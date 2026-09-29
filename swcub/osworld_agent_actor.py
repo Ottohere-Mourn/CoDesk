@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 import hashlib
+import os
+from pathlib import Path
 import time
 from typing import Any, Callable
 
@@ -20,12 +22,15 @@ class OSWorldAgentActor:
 
     def __init__(self, agent: Any, instruction: str, *, actor_id: str = "gui_actor",
                  max_steps: int = 20,
-                 event_callback: Callable[[dict[str, Any]], None] | None = None):
+                 event_callback: Callable[[dict[str, Any]], None] | None = None,
+                 artifact_directory: Path | None = None):
         self.agent = agent
         self.instruction = instruction
         self.actor_id = actor_id
         self.max_steps = max_steps
         self.event_callback = event_callback
+        self.artifact_directory = (Path(artifact_directory).resolve()
+                                   if artifact_directory is not None else None)
         self.trace: list[dict[str, Any]] = []
         self.terminated = False
         self.paused = False
@@ -63,22 +68,48 @@ class OSWorldAgentActor:
             self.reset()
         if self.steps >= self.max_steps:
             raise RuntimeError(f"OSWorld agent did not terminate within {self.max_steps} steps")
-        observation = context.observe()
+        try:
+            observation = context.observe()
+        except Exception as exc:
+            raise OSWorldAgentActorError("observation", exc) from exc
         screenshot = observation.get("screenshot")
         refreshes = 0
         while (not isinstance(screenshot, bytes) or not screenshot) and refreshes < 3:
             refreshes += 1
             time.sleep(1)
-            observation = context.refresh_observation()
+            try:
+                observation = context.refresh_observation()
+            except Exception as exc:
+                raise OSWorldAgentActorError("observation", exc) from exc
             screenshot = observation.get("screenshot")
         if not isinstance(screenshot, bytes) or not screenshot:
-            raise RuntimeError("OSWorld agent received no screenshot bytes after 3 refresh attempts")
+            raise OSWorldAgentActorError(
+                "observation", RuntimeError(
+                    "OSWorld agent received no screenshot bytes after 3 refresh attempts"))
         from PIL import Image
         import io
         with Image.open(io.BytesIO(screenshot)) as image:
             screen_size = list(image.size)
+        observation_file = None
+        if self.artifact_directory is not None:
+            observation_path = (self.artifact_directory / "observations"
+                                / f"step-{self.steps + 1:03d}.png")
+            observation_path.parent.mkdir(parents=True, exist_ok=True)
+            observation_path.write_bytes(screenshot)
+            observation_file = str(observation_path.relative_to(
+                self.artifact_directory.parent.parent))
         started = time.monotonic()
-        response, actions = self.agent.predict(self.instruction, observation)
+        previous_cwd = os.getcwd()
+        try:
+            if self.artifact_directory is not None:
+                self.artifact_directory.mkdir(parents=True, exist_ok=True)
+                os.chdir(self.artifact_directory)
+            response, actions = self.agent.predict(self.instruction, observation)
+        except Exception as exc:
+            raise OSWorldAgentActorError("model_inference", exc) from exc
+        finally:
+            if os.getcwd() != previous_cwd:
+                os.chdir(previous_cwd)
         inference_ms = round((time.monotonic() - started) * 1000, 2)
         actions = list(actions or [])
         self.steps += 1
@@ -87,6 +118,7 @@ class OSWorldAgentActor:
             "actor_id": self.actor_id,
             "agent": type(self.agent).__name__,
             "screenshot_sha256": hashlib.sha256(screenshot).hexdigest(),
+            "observation_file": observation_file,
             "screen_size": screen_size,
             "observed_revision": context._observed_revision,
             "response": response,
@@ -106,7 +138,10 @@ class OSWorldAgentActor:
                 return True
             if action == "FAIL":
                 raise RuntimeError("official OSWorld agent returned FAIL")
-            context.execute_gui_action(action)
+            try:
+                context.execute_gui_action(action)
+            except Exception as exc:
+                raise OSWorldAgentActorError("gui_action", exc) from exc
         if self.steps >= self.max_steps:
             raise RuntimeError(f"OSWorld agent did not terminate within {self.max_steps} steps")
         return False
@@ -114,3 +149,12 @@ class OSWorldAgentActor:
     def run(self, context: ActorContext) -> None:
         while not self.run_step(context):
             pass
+
+
+class OSWorldAgentActorError(RuntimeError):
+    """Identify whether an agent turn failed at observation, inference, or input."""
+
+    def __init__(self, stage: str, cause: Exception):
+        self.stage = stage
+        self.cause = cause
+        super().__init__(f"{stage}: {type(cause).__name__}: {cause}")

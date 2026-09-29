@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 import base64
+from pathlib import Path
+import json
+from pathlib import Path
 
 import pytest
 
@@ -27,6 +30,14 @@ class FakeAgent:
 
     def reset(self):
         self.reset_count += 1
+
+
+class CacheWritingAgent(FakeAgent):
+    def predict(self, instruction, observation):
+        cache = Path("draft/message_cache/messages_step_0.json")
+        cache.parent.mkdir(parents=True, exist_ok=True)
+        cache.write_text(instruction, encoding="utf-8")
+        return super().predict(instruction, observation)
 
 
 class FakeContext:
@@ -123,3 +134,56 @@ def test_scheduler_yield_and_pause_resume_work_with_osworld_agent_actor():
     scheduler.resume("writer_actor")
     assert scheduler.run_next() == "writer_actor"
     assert scheduler.states["writer_actor"].completed
+
+
+def test_actor_observations_and_official_agent_debug_cache_are_isolated(tmp_path):
+    original_cwd = Path.cwd()
+    writer_dir = tmp_path / "model-actors" / "writer_actor"
+    calc_dir = tmp_path / "model-actors" / "calc_actor"
+    writer = OSWorldAgentActor(CacheWritingAgent([["DONE"]]), "Writer prompt",
+                               actor_id="writer_actor", artifact_directory=writer_dir)
+    calc = OSWorldAgentActor(CacheWritingAgent([["DONE"]]), "Calc prompt",
+                             actor_id="calc_actor", artifact_directory=calc_dir)
+
+    writer.run_step(ActorContext("writer_actor", FakeContext("writer"), "gui"))
+    calc.run_step(ActorContext("calc_actor", FakeContext("calc"), "gui"))
+
+    assert Path.cwd() == original_cwd
+    assert (writer_dir / "draft/message_cache/messages_step_0.json").read_text() == "Writer prompt"
+    assert (calc_dir / "draft/message_cache/messages_step_0.json").read_text() == "Calc prompt"
+    assert (writer_dir / "observations/step-001.png").is_file()
+    assert (calc_dir / "observations/step-001.png").is_file()
+    assert writer.trace[0]["observation_file"] == "model-actors/writer_actor/observations/step-001.png"
+    assert calc.trace[0]["observation_file"] == "model-actors/calc_actor/observations/step-001.png"
+
+
+def test_actor_observations_and_official_debug_cache_are_saved_per_actor(tmp_path):
+    class DebugAgent(FakeAgent):
+        def predict(self, instruction, observation):
+            Path("draft/message_cache").mkdir(parents=True, exist_ok=True)
+            Path("draft/message_cache/messages_step_0.json").write_text(
+                json.dumps({"instruction": instruction,
+                            "screenshot_size": len(observation["screenshot"])}))
+            return super().predict(instruction, observation)
+
+    writer_dir = tmp_path / "model-actors" / "writer_actor"
+    calc_dir = tmp_path / "model-actors" / "calc_actor"
+    writer = OSWorldAgentActor(DebugAgent([["DONE"]]), "writer",
+                               actor_id="writer_actor", artifact_directory=writer_dir)
+    calc = OSWorldAgentActor(DebugAgent([["DONE"]]), "calc",
+                             actor_id="calc_actor", artifact_directory=calc_dir)
+    original_cwd = Path.cwd()
+
+    assert writer.run_step(ActorContext("writer_actor", FakeContext("writer"), "gui"))
+    assert calc.run_step(ActorContext("calc_actor", FakeContext("calc"), "gui"))
+
+    assert Path.cwd() == original_cwd
+    assert (writer_dir / "observations/step-001.png").is_file()
+    assert (calc_dir / "observations/step-001.png").is_file()
+    writer_cache = writer_dir / "draft/message_cache/messages_step_0.json"
+    calc_cache = calc_dir / "draft/message_cache/messages_step_0.json"
+    assert writer_cache.is_file() and calc_cache.is_file()
+    assert json.loads(writer_cache.read_text())["instruction"] == "writer"
+    assert json.loads(calc_cache.read_text())["instruction"] == "calc"
+    assert writer.trace[0]["observation_file"].endswith("writer_actor/observations/step-001.png")
+    assert calc.trace[0]["observation_file"].endswith("calc_actor/observations/step-001.png")

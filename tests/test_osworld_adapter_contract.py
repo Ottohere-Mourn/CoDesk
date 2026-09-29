@@ -88,6 +88,26 @@ def test_osworld_adapter_refreshes_observation_after_cli_setup():
     assert episode.screenshot_history[-1][1] == b"refreshed-screen"
 
 
+def test_stale_observation_metric_identifies_only_intervening_other_actor_actions():
+    episode = OSWorldSharedEpisode(DesktopEnvStub())
+    episode.reset({"id": "shared-turns", "instruction": "interleave actors"})
+    writer = ActorContext("writer_actor", episode, "gui")
+    calc = ActorContext("calc_actor", episode, "gui")
+    writer.observe()
+    calc.observe()
+
+    calc.execute_gui_action("pyautogui.press('c')")
+    writer.execute_gui_action("pyautogui.press('w')")
+    assert episode.log.events[-1].details["stale_due_other_actor"] is True
+    assert episode.log.events[-1].details["intervening_action_actors"] == ["calc_actor"]
+
+    writer.observe()
+    writer.execute_gui_action("pyautogui.press('w')")
+    writer.execute_gui_action("pyautogui.press('w')")
+    assert episode.log.events[-1].details["stale_observation"] is True
+    assert episode.log.events[-1].details["stale_due_other_actor"] is False
+
+
 def test_actor_context_gui_operations_translate_and_focus_is_injectable():
     desktop = DesktopEnvStub()
     episode = OSWorldSharedEpisode(

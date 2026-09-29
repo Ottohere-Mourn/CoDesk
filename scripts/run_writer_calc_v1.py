@@ -34,7 +34,7 @@ from swcub.actors import ScriptedCalcActor, ScriptedWriterActor
 from swcub.core import EventLog
 from swcub.environment import ActorContext
 from swcub.evaluator import GuestLibreOfficeBindingEvaluator
-from swcub.osworld_agent_actor import OSWorldAgentActor
+from swcub.osworld_agent_actor import OSWorldAgentActor, OSWorldAgentActorError
 from swcub.osworld_adapter import OSWorldSharedEpisode
 from swcub.osworld_readiness import wait_for_guest_desktop
 from swcub.comparison_metrics import summarize_focus_events
@@ -53,6 +53,11 @@ CALC_DRAFT = [["Record", "Status"], ["Quarterly", "Draft"]]
 CALC_FINAL = [["Record", "Status"], ["Quarterly", "Approved"]]
 MODEL_STEP_BUDGET = 20
 MODEL_STARTUP_TIMEOUT_SECONDS = 1800
+MODEL_INTERLEAVED_SCHEDULE = [
+    actor_id
+    for _ in range(MODEL_STEP_BUDGET)
+    for actor_id in ("writer_actor", "calc_actor")
+]
 
 
 class LocalQwenInferenceClient:
@@ -102,31 +107,37 @@ def start_local_qwen_worker(out: Path) -> tuple[subprocess.Popen[bytes],
             env=worker_env, stdout=worker_log, stderr=subprocess.STDOUT)
     deadline = time.monotonic() + MODEL_STARTUP_TIMEOUT_SECONDS
     health_url = f"http://127.0.0.1:{port}/health"
-    while time.monotonic() < deadline:
-        if process.poll() is not None:
-            raise RuntimeError(f"local Qwen worker exited; see {log_path}")
-        try:
-            with urlopen(health_url, timeout=5) as response:
-                health = json.loads(response.read())
-            break
-        except Exception:
-            time.sleep(2)
-    else:
-        process.terminate()
-        try:
-            process.wait(timeout=10)
-        except subprocess.TimeoutExpired:
-            process.kill()
-            process.wait(timeout=5)
-        raise TimeoutError(
-            f"local Qwen worker did not become ready within "
-            f"{MODEL_STARTUP_TIMEOUT_SECONDS} seconds")
+    try:
+        while time.monotonic() < deadline:
+            if process.poll() is not None:
+                raise RuntimeError(f"local Qwen worker exited; see {log_path}")
+            try:
+                with urlopen(health_url, timeout=5) as response:
+                    health = json.loads(response.read())
+                break
+            except Exception:
+                time.sleep(2)
+        else:
+            raise TimeoutError(
+                f"local Qwen worker did not become ready within "
+                f"{MODEL_STARTUP_TIMEOUT_SECONDS} seconds")
+    except BaseException:
+        stop_local_qwen_worker(process)
+        raise
+    worker_instance_id = str(uuid.uuid4())
     return process, LocalQwenInferenceClient(port), {
         "name": model_path.name,
         "path": str(model_path),
         "config_sha256": sha256_file(config_path),
         "device": device,
         "worker": "scripts/local_qwen_worker.py; local_files_only",
+        "worker_instance_id": worker_instance_id,
+        "worker_pid": process.pid,
+        "worker_sharing": "one local inference process shared by both actor objects",
+        "worker_bind": "127.0.0.1",
+        "effective_generation": {"max_new_tokens": 512, "do_sample": False,
+                                 "agent_temperature": 0.0, "agent_top_p": 0.9,
+                                 "note": "local worker uses deterministic greedy decoding"},
         "agent_framework": "OSWorld-V2.1 Qwen3VLAgent",
         "agent_source": str(OSWORLD_V2_DIR / "mm_agents/qwen3vl_agent.py"),
         "coordinate_type": "relative 0..999; native OSWorld parser scales to screenshot pixels",
@@ -227,8 +238,29 @@ def make_desktop(binding: str, log: EventLog, out: Path) -> tuple[OSWorldSharedE
     episode = OSWorldSharedEpisode(
         desktop, cli_executor=lambda raw, desktop=desktop: guest_command(desktop, shlex.split(raw)))
     episode.log = log
-    episode.reset(task_config=None)
-    wait_for_guest_desktop(episode, desktop, timeout=300, retry_interval=5)
+    try:
+        episode.reset(task_config=None)
+        wait_for_guest_desktop(episode, desktop, timeout=300, retry_interval=5)
+    except BaseException as exc:
+        before = episode.snapshot()
+        episode.log.record("environment", "startup_error", "guest.startup_abort",
+                           before, before, outcome="failed",
+                           details={"desktop_binding": binding,
+                                    "error": f"{type(exc).__name__}: {exc}"})
+        try:
+            episode.copy_artifacts(out / "guest-readiness-failure" / binding)
+        except Exception:
+            pass
+        try:
+            episode.log.write(out / "events.jsonl")
+        except Exception:
+            pass
+        try:
+            episode.close()
+        except Exception as close_error:
+            (out / f"{binding}-close-error.txt").write_text(
+                f"{type(close_error).__name__}: {close_error}\n", encoding="utf-8")
+        raise
     out.mkdir(parents=True, exist_ok=True)
     return episode, desktop
 
@@ -244,6 +276,25 @@ def read_seeded_state(episode: OSWorldSharedEpisode, desktop: DesktopEnv) -> dic
               calc_root.iter(f"{{{table_ns}}}table")]
     return {"writer_text": writer_text, "calc_cells": calc_cells,
             "calc_sheet_names": sheets}
+
+
+def save_final_odf_artifacts(environments: EpisodeBindings, out: Path) -> dict[str, Any]:
+    saved: dict[str, Any] = {}
+    for binding, (_episode, desktop) in environments.items():
+        target = out / "final-odf" / binding
+        target.mkdir(parents=True, exist_ok=True)
+        files = {}
+        for guest_path, filename in ((WRITER_PATH, "document.fodt"),
+                                     (CALC_PATH, "table.fods")):
+            raw = guest_command(desktop, ["cat", guest_path])
+            data = raw.encode("utf-8")
+            destination = target / filename
+            destination.write_bytes(data)
+            files[filename] = {"path": str(destination.relative_to(out)),
+                               "sha256": hashlib.sha256(data).hexdigest(),
+                               "size_bytes": len(data)}
+        saved[binding] = files
+    return saved
 
 
 def _document_title_matches(title: str | None, app: str, path: str) -> bool:
@@ -429,6 +480,14 @@ def initial_states(bindings: dict[str, str]) -> dict[str, dict[str, Any]]:
     return {binding: dict(initial) for binding in sorted(set(bindings.values()))}
 
 
+def is_guest_transport_error(exc: Exception) -> bool:
+    if isinstance(exc, (requests.ConnectionError, requests.Timeout, TimeoutError)):
+        return True
+    response = getattr(exc, "response", None)
+    status = getattr(response, "status_code", None)
+    return type(status) is int and status >= 500
+
+
 def run_actors(condition: str, environments: EpisodeBindings,
                actor_bindings: dict[str, str], schedule: list[str], log: EventLog,
                actor_implementation: str = "scripted",
@@ -440,8 +499,8 @@ def run_actors(condition: str, environments: EpisodeBindings,
             "writer_actor": ScriptedWriterActor(recover_focus=recover_writer),
             "calc_actor": ScriptedCalcActor()}
     elif actor_implementation == "qwen3vl":
-        if condition != "solo" or qwen_client is None or out is None:
-            raise ValueError("Qwen smoke currently requires Solo, local client, and artifact path")
+        if qwen_client is None or out is None:
+            raise ValueError("Qwen actors require the shared local client and artifact path")
         prompts = {
             "writer_actor": (
                 'In LibreOffice Writer, click inside the visible existing paragraph '
@@ -452,15 +511,20 @@ def run_actors(condition: str, environments: EpisodeBindings,
                 'Keep all other cells unchanged and do not edit the Writer document.')}
         actors = {}
 
+        actor_specs: dict[str, dict[str, Any]] = {}
+
         def record_model_step(record: dict[str, Any]) -> None:
             actor_id = str(record.get("actor_id", "unknown_actor"))
             binding = actor_bindings[actor_id]
             episode = environments[binding][0]
             state = episode.snapshot()
-            log.record(actor_id, "model", "osworld.qwen3vl.predict", state, state,
+            log.record(actor_id, "model_decision", "osworld.qwen3vl.predict", state, state,
                        observed_revision=(record.get("observed_revision")
                            if type(record.get("observed_revision")) is int else None),
                        details={"desktop_binding": binding, **record})
+            event = log.events[-1]
+            record["event_seq"] = event.seq
+            record["ts_utc"] = event.ts_utc
 
         for actor_id in ("writer_actor", "calc_actor"):
             agent = Qwen3VLAgent(
@@ -469,9 +533,25 @@ def run_actors(condition: str, environments: EpisodeBindings,
                 coordinate_type="relative")
             # Keep the official OSWorld planner, grounding, action schema and parser.
             agent.call_llm = qwen_client.complete
+            artifact_directory = out / "model-actors" / actor_id
             actors[actor_id] = OSWorldAgentActor(
                 agent, prompts[actor_id], actor_id=actor_id,
-                max_steps=MODEL_STEP_BUDGET, event_callback=record_model_step)
+                max_steps=MODEL_STEP_BUDGET, event_callback=record_model_step,
+                artifact_directory=artifact_directory)
+            actor_specs[actor_id] = {
+                "actor_instance_id": str(uuid.uuid4()),
+                "actor_id": actor_id,
+                "task_goal": ("replace and save the Writer document" if actor_id == "writer_actor"
+                              else "set Calc Sheet1 B2 to Approved and save"),
+                "prompt": prompts[actor_id],
+                "prompt_sha256": hashlib.sha256(prompts[actor_id].encode()).hexdigest(),
+                "agent_class": type(agent).__name__,
+                "history_n": agent.history_n,
+                "action_budget": MODEL_STEP_BUDGET,
+                "desktop_binding": actor_bindings[actor_id],
+                "observation_directory": str(artifact_directory / "observations"),
+                "debug_message_directory": str(artifact_directory / "draft" / "message_cache"),
+            }
     else:
         raise ValueError(f"unknown actor implementation: {actor_implementation}")
     contexts = {actor_id: ActorContext(actor_id, environments[actor_bindings[actor_id]][0], "gui")
@@ -481,6 +561,10 @@ def run_actors(condition: str, environments: EpisodeBindings,
                    "desktop_binding": actor_bindings[actor_id],
                    "environment_id": contexts[actor_id].environment_id}
         for actor_id in actors}
+    turn_times_ms = {actor_id: 0.0 for actor_id in actors}
+    environment_invalid = False
+    environment_invalid_reason: str | None = None
+    model_service_failure = False
     completed: set[str] = set()
     failed: set[str] = set()
     for turn_index, actor_id in enumerate(schedule, 1):
@@ -488,6 +572,11 @@ def run_actors(condition: str, environments: EpisodeBindings,
             continue
         env = environments[actor_bindings[actor_id]][0]
         before = env.snapshot()
+        log.record("coordinator", "schedule", "writer_calc.actor_turn_begin",
+                   before, before, details={"actor_id": actor_id,
+                       "desktop_binding": actor_bindings[actor_id],
+                       "turn_index": turn_index, "schedule_index": turn_index - 1})
+        turn_started = time.monotonic()
         try:
             step = getattr(actors[actor_id], "run_step", None)
             done = (bool(step(contexts[actor_id])) if callable(step)
@@ -505,18 +594,40 @@ def run_actors(condition: str, environments: EpisodeBindings,
             results[actor_id]["turns"] += 1
             results[actor_id]["success"] = False
             results[actor_id]["error"] = f"{type(exc).__name__}: {exc}"
+            if isinstance(exc, OSWorldAgentActorError):
+                if exc.stage == "observation":
+                    failure_class = "environment_invalid"
+                    environment_invalid = True
+                    environment_invalid_reason = "guest_observation_or_accessibility_failure"
+                elif exc.stage == "model_inference":
+                    failure_class = "model_service_failure"
+                    model_service_failure = True
+                elif exc.stage == "gui_action" and is_guest_transport_error(exc.cause):
+                    failure_class = "environment_invalid"
+                    environment_invalid = True
+                    environment_invalid_reason = "guest_action_transport_failure"
+                else:
+                    failure_class = "model_action_execution_failure"
+                results[actor_id]["failure_stage"] = exc.stage
+            else:
+                failure_class = "model_task_failure"
+            results[actor_id]["failure_class"] = failure_class
             failed.add(actor_id)
             log.record(actor_id, "actor", "writer_calc.turn", before, env.snapshot(),
                        outcome="failed", details={"error": results[actor_id]["error"],
+                                                  "failure_class": failure_class,
                                                   "desktop_binding": actor_bindings[actor_id]})
-            if actor_implementation == "scripted":
+            if actor_implementation == "scripted" or environment_invalid or model_service_failure:
                 break
+        finally:
+            turn_times_ms[actor_id] += (time.monotonic() - turn_started) * 1000
     for actor_id, result in results.items():
         if not result["completed"] and result["success"]:
             result["success"] = False
             result["error"] = "actor did not complete within its declared turn budget"
     if actor_implementation == "qwen3vl" and out is not None:
         traces = [record for actor in actors.values() for record in actor.trace]
+        traces.sort(key=lambda record: record.get("event_seq", 0))
         trace_path = out / "model_trace.jsonl"
         trace_path.write_text(
             "".join(json.dumps(record, ensure_ascii=False) + "\n" for record in traces),
@@ -525,7 +636,22 @@ def run_actors(condition: str, environments: EpisodeBindings,
             results[actor_id].update({"agent": type(actor.agent).__name__,
                                       "model_steps": len(actor.trace),
                                       "step_budget": actor.max_steps,
+                                      "actor_instance_id": actor_specs[actor_id][
+                                          "actor_instance_id"],
+                                      "actor_config": actor_specs[actor_id],
+                                      "model_turn_elapsed_ms": round(
+                                          turn_times_ms[actor_id], 2),
+                                      "submitted_gui_action_count": sum(
+                                          1 for event in log.events
+                                          if event.actor == actor_id
+                                          and event.kind == "gui"
+                                          and event.action == "osworld.step"),
                                       "trace_file": trace_path.name})
+        results["_episode_runtime"] = {"environment_invalid": environment_invalid,
+                                       "environment_invalid_reason": environment_invalid_reason,
+                                       "model_service_failure": model_service_failure,
+                                       "schedule_turn_count": len(schedule),
+                                       "schedule_policy": "round-robin one model decision per actor turn"}
     return results
 
 
@@ -606,8 +732,6 @@ def main() -> int:
     parser.add_argument("--actor-implementation", choices=("scripted", "qwen3vl"),
                         default="scripted")
     args = parser.parse_args()
-    if args.actor_implementation == "qwen3vl" and args.condition != "solo":
-        parser.error("qwen3vl smoke is currently restricted to the Solo condition")
     out = args.artifact_parent.expanduser().resolve() / args.run_id
     out.mkdir(parents=True, exist_ok=False)
     (out / "overlays").mkdir()
@@ -632,6 +756,7 @@ def main() -> int:
         "instance_id": "writer-calc-independent-edits-v1-seed0", "condition": args.condition,
         "repeat": args.repeat, "started_utc": started, "model": None,
         "actor_implementation": args.actor_implementation,
+        "artifact_directory": str(out),
         "run_id": args.run_id, "resource_run_id": identity.run_id,
         "resource_ledger": str(ledger_path), "schedule": [], "actors": {},
         "desktop_bindings": {}, "setup_validation": {"ready": False,
@@ -640,8 +765,7 @@ def main() -> int:
     try:
         actor_bindings, apps_by_binding, schedule = condition_plan(args.condition)
         if args.actor_implementation == "qwen3vl":
-            schedule = (["writer_actor"] * MODEL_STEP_BUDGET
-                        + ["calc_actor"] * MODEL_STEP_BUDGET)
+            schedule = MODEL_INTERLEAVED_SCHEDULE.copy()
         report["schedule"] = schedule
         report["actor_bindings"] = actor_bindings
         for binding, apps in apps_by_binding.items():
@@ -682,6 +806,7 @@ def main() -> int:
         actors = run_actors(args.condition, environments, actor_bindings, schedule, log,
                             actor_implementation=args.actor_implementation,
                             qwen_client=qwen_client, out=out)
+        actor_runtime = actors.pop("_episode_runtime", {})
         # Release model resources before hidden-state scoring and Guest reset.
         stop_local_qwen_worker(model_worker)
         model_worker = None
@@ -690,6 +815,7 @@ def main() -> int:
                 "steps_by_actor": {actor_id: actor.get("model_steps", 0)
                                    for actor_id, actor in actors.items()},
                 "trace_file": "model_trace.jsonl"})
+            report["model"]["scripted_fallback"] = False
         expected, goals = expected_states(args.condition, actor_bindings)
         initial = initial_states(actor_bindings)
         evaluator = GuestLibreOfficeBindingEvaluator(
@@ -700,6 +826,11 @@ def main() -> int:
                    {"bindings": sorted(environments)}, grading,
                    outcome="pass" if grading["success"] else "fail",
                    details={"hidden_state_access": "post_episode_only"})
+        final_odf_files = save_final_odf_artifacts(environments, out)
+        log.record("evaluator", "artifact", "writer_calc.final_odf_export",
+                   {"bindings": sorted(environments)}, final_odf_files,
+                   details={"post_episode_only": True,
+                            "contains_evaluator_visible_final_documents": True})
         focus_by_binding = {
             binding: summarize_focus_events([event for event in log.events
                 if event.details.get("environment_id") == episode.environment_id])
@@ -732,20 +863,48 @@ def main() -> int:
                        and event.details.get("active_window_before")
                        != event.details.get("active_window_after")]
         misinputs = focus.get("mis_input_actions", [])
+        shared_interference = False
         if args.condition == "ma_sd":
-            final = grading["final_state_by_binding"]["shared_desktop"]
-            misplaced_writer_text = any(WRITER_FINAL in cell for row in final["calc_cells"]
-                                        for cell in row)
-            interference = (not grading["success"] and misplaced_writer_text
-                            and final["writer_text"] != WRITER_FINAL
-                            and any(item.get("actor") == "writer_actor" for item in misinputs))
-            scenario_success = bool(interference)
-            outcome = "shared_focus_interference_attributed" if interference else "expected_interference_not_attributed"
+            shared_interference = (
+                not grading["success"] and bool(misinputs)
+                and bool(grading.get("contamination_events")))
+            if args.actor_implementation == "scripted":
+                # Keep the frozen scripted negative-control interpretation.
+                scenario_success = bool(shared_interference)
+                outcome = ("shared_focus_interference_attributed" if shared_interference
+                           else "expected_interference_not_attributed")
+            else:
+                scenario_success = bool(grading["success"])
+                outcome = ("all_actor_goals_met" if scenario_success else
+                           "shared_focus_interference_supported" if shared_interference else
+                           "actor_goal_failure_without_attributed_interference")
         else:
             scenario_success = bool(grading["success"] and all(
                 item.get("success") for item in grading["actor_goal_success"].values()))
             outcome = "all_isolated_goals_met" if scenario_success else "isolated_goal_failure"
+        if args.actor_implementation == "qwen3vl":
+            if actor_runtime.get("environment_invalid") or actor_runtime.get(
+                    "model_service_failure"):
+                outcome = "environment_invalid"
+            report["episode_validity"] = {
+                "valid_for_agent_success_rate": not (
+                    actor_runtime.get("environment_invalid", False)
+                    or actor_runtime.get("model_service_failure", False)),
+                "reason": (actor_runtime.get("environment_invalid_reason")
+                           if actor_runtime.get("environment_invalid") else
+                           "local_model_service_failure"
+                           if actor_runtime.get("model_service_failure") else None),
+            }
+            if actor_runtime.get("environment_invalid") or actor_runtime.get(
+                    "model_service_failure"):
+                scenario_success = False
+        else:
+            report["episode_validity"] = {
+                "valid_for_agent_success_rate": True,
+                "reason": None,
+            }
         report.update({"actors": actors, "evaluation": grading,
+            "final_odf_files": final_odf_files,
             "focus_metrics": focus, "focus_transitions": focus.get("focus_events", []),
             "window_activation_events": activations,
             "keyboard_routing": focus.get("mis_input_actions", [])
@@ -754,8 +913,19 @@ def main() -> int:
             "failure_attribution": {"task_state_failure": not grading["success"],
                 "focus_input_conflict": bool(misinputs),
                 "misrouted_input_count": len(misinputs),
-                "unknown_route_count": focus.get("unknown_input_action_count", 0)},
+                "unknown_route_count": focus.get("unknown_input_action_count", 0),
+                "cross_actor_stale_observations": sum(
+                    1 for event in log.events if event.kind == "gui"
+                    and event.details.get("stale_due_other_actor") is True)},
             "scenario_success": scenario_success, "scenario_outcome": outcome,
+            "schedule_protocol": {"policy": actor_runtime.get("schedule_policy",
+                    "scripted fixed schedule"), "planned_turn_slots": len(schedule),
+                    "submitted_turn_count": sum(
+                        1 for event in log.events
+                        if event.action == "writer_calc.actor_turn"),
+                    "model_decision_budget_per_actor": MODEL_STEP_BUDGET
+                        if args.actor_implementation == "qwen3vl" else None,
+                    "actions_submitted_serially": True},
             "desktop_bindings": {binding: {"environment_id": episode.environment_id,
                 "guest_container_id": episode.snapshot().get("guest_container_id")}
                 for binding, (episode, _) in environments.items()}})
@@ -763,10 +933,22 @@ def main() -> int:
             model_actor_errors = {actor_id: result.get("error")
                                   for actor_id, result in actors.items()
                                   if result.get("error")}
-            report["model_failure_class"] = (
-                "none" if grading["success"] else
-                "model_or_action_execution_failure" if model_actor_errors else
-                "model_task_failure")
+            if actor_runtime.get("environment_invalid"):
+                report["model_failure_class"] = next((
+                    result.get("failure_class") for result in actors.values()
+                    if result.get("failure_class")), "environment_invalid")
+            elif actor_runtime.get("model_service_failure"):
+                report["model_failure_class"] = "model_service_failure"
+            elif grading["success"]:
+                report["model_failure_class"] = "none"
+            elif shared_interference:
+                report["model_failure_class"] = "shared_desktop_interference_supported"
+            elif model_actor_errors:
+                report["model_failure_class"] = next((
+                    result.get("failure_class") for result in actors.values()
+                    if result.get("failure_class")), "model_task_failure")
+            else:
+                report["model_failure_class"] = "unattributed_goal_failure"
             report["model_actor_errors"] = model_actor_errors
         report["environment_health"] = {binding: dict(episode.environment_health)
                                          for binding, (episode, _) in environments.items()}
@@ -839,14 +1021,25 @@ def main() -> int:
                           "provenance_status": "complete", "artifact_dir": str(out),
                           "episode_seconds": report["elapsed_seconds"]}))
         return 0 if report["success"] else 1
-    except Exception as exc:
+    except (Exception, KeyboardInterrupt) as exc:
         stop_local_qwen_worker(model_worker)
         model_worker = None
         is_setup_failure = current_stage in {"guest_startup", "application_setup"}
         report["finished_utc"] = utc_now()
         report["error"] = f"{type(exc).__name__}: {exc}"
-        report["episode_status"] = "readiness_failed" if is_setup_failure else "runtime_failed"
+        interrupted = isinstance(exc, KeyboardInterrupt)
+        report["episode_status"] = ("operator_interrupted" if interrupted else
+                                     "readiness_failed" if is_setup_failure else
+                                     "runtime_failed")
         report["failure_stage"] = current_stage
+        report["episode_validity"] = {"valid_for_agent_success_rate": False,
+                                       "reason": report["episode_status"]}
+        if args.actor_implementation == "qwen3vl":
+            report["model_failure_class"] = (
+                "model_service_failure" if current_stage == "model_startup" else
+                "environment_readiness_failure"
+                if current_stage in {"guest_startup", "application_setup"} else
+                "runner_or_environment_failure")
         if isinstance(exc, SetupReadinessError):
             report["setup_failure_diagnostics"] = exc.diagnostics
         for binding, (episode, desktop) in list(environments.items()):
@@ -885,11 +1078,15 @@ def main() -> int:
         (out / "error.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
         log.write(out / "events.jsonl")
         try:
+            report["provenance_status"] = "complete"
+            (out / "error.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
             write_provenance(out, report)
         except Exception as provenance_error:
+            report["provenance_status"] = "failed"
             (out / "provenance-error.txt").write_text(
                 f"{type(provenance_error).__name__}: {provenance_error}\n", encoding="utf-8")
-        return 2 if is_setup_failure else 1
+            (out / "error.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+        return 130 if interrupted else 2 if is_setup_failure else 1
     finally:
         stop_local_qwen_worker(model_worker)
         for episode, _desktop in environments.values():
