@@ -22,6 +22,10 @@ OFFICE_FAMILY_ID = "CODESK-TA-OFFICE"
 OFFICE_TEMPLATE_ID = "writer_calc_independent_edits_v1"
 CLIPBOARD_FAMILY_ID = "CODESK-TB-CLIPBOARD"
 CLIPBOARD_TEMPLATE_ID = "clipboard_transfer_v1"
+MODAL_FAMILY_ID = "CODESK-TC-MODAL"
+MODAL_TEMPLATE_ID = "writer_calc_save_dialog_v1"
+CONTEXT_FAMILY_ID = "CODESK-TE-APP-CONTEXT"
+CONTEXT_TEMPLATE_ID = "chromium_two_tab_context_v1"
 TEMPLATE_VERSION = "1.0.0"
 
 _TEXT_NS = GuestLibreOfficeBindingEvaluator.TEXT_NS
@@ -526,6 +530,22 @@ TEMPLATE_REGISTRY = {
                                         "design_only_until_guest_observer_validation",
                                         generate_clipboard_instance),
 }
+
+# Keep application-specific manifests on the same deterministic Task Factory API.
+# Their code-level evaluators and Guest execution gates are explicitly separate.
+from .tasks.prototypes_v1 import (generate_browser_context_instance,
+                                  generate_modal_instance)
+
+TEMPLATE_REGISTRY.update({
+    MODAL_TEMPLATE_ID: TaskTemplate(MODAL_FAMILY_ID, MODAL_TEMPLATE_ID,
+                                    "1.0.0-prototype",
+                                    "offline_prototype_guest_unverified",
+                                    generate_modal_instance),
+    CONTEXT_TEMPLATE_ID: TaskTemplate(CONTEXT_FAMILY_ID, CONTEXT_TEMPLATE_ID,
+                                      "1.0.0-prototype",
+                                      "offline_prototype_guest_unverified",
+                                      generate_browser_context_instance),
+})
 
 
 def get_template(template_id: str) -> TaskTemplate:

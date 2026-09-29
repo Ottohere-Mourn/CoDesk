@@ -244,6 +244,49 @@ class ScriptedCalcActor:
         context.press_key("ctrl+s")
 
 
+class ScriptedBrowserTabActor:
+    """Submit one actor-local goal in a fixed tab of a shared Chromium window.
+
+    Setup must open /actor-a and /actor-b in tabs 1 and 2 of the same window.
+    The actor explicitly selects its tab before editing; the coordinator does not
+    route actions. Tab activation is logged by the local fixture server.
+    """
+    role = "gui"
+
+    def __init__(self, actor_id: str, value: str):
+        if actor_id not in {"actor_a", "actor_b"}:
+            raise ValueError("browser tab actor must be actor_a or actor_b")
+        self.actor_id = actor_id
+        self.value = value
+        self.tab_key = "ctrl+1" if actor_id == "actor_a" else "ctrl+2"
+        self.turn = 0
+
+    def run_step(self, context: ActorContext) -> bool:
+        if self.turn > (1 if self.actor_id == "actor_a" else 0):
+            raise RuntimeError(f"{self.actor_id} received an unexpected extra turn")
+        context.press_key(self.tab_key)
+        observation = context.observe()
+        screenshot = observation.get("screenshot")
+        if not isinstance(screenshot, bytes) or not screenshot:
+            raise RuntimeError("Browser context actor received no Guest screenshot")
+        if self.actor_id == "actor_a" and self.turn == 1:
+            context.click(170, 255)
+            self.turn += 1
+            return True
+        context.click(260, 180)
+        context.press_key("ctrl+a")
+        context.type_text(self.value)
+        self.turn += 1
+        if self.actor_id == "actor_a":
+            return False
+        context.click(170, 255)
+        return True
+
+    def run(self, context: ActorContext) -> None:
+        while not self.run_step(context):
+            pass
+
+
 class ScriptedWebCacheGUIActor:
     """Edit the GUI field in a browser-cached state, optionally refreshing."""
     actor_id = "gui_actor"

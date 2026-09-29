@@ -9,8 +9,9 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-from swcub.task_factory import (generate_clipboard_instance, generate_office_instance,
-                                validate_office_candidate,
+from swcub.task_factory import (CONTEXT_TEMPLATE_ID, MODAL_TEMPLATE_ID,
+                                CLIPBOARD_TEMPLATE_ID, OFFICE_TEMPLATE_ID,
+                                get_template, validate_office_candidate,
                                 verify_instance_directory, write_instance)
 
 
@@ -18,7 +19,9 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
     gen = commands.add_parser("generate", help="write immutable per-instance directories")
-    gen.add_argument("--family", choices=("office_writer_calc", "clipboard"), required=True)
+    gen.add_argument("--family", choices=("office_writer_calc", "clipboard",
+                                           "modal_writer_calc", "browser_tab_context"),
+                     required=True)
     gen.add_argument("--count", type=int, default=8, choices=range(1, 301))
     gen.add_argument("--start-seed", type=int, default=0)
     gen.add_argument("--output", type=Path, required=True)
@@ -30,8 +33,11 @@ def main() -> int:
     if args.command == "generate":
         if args.start_seed < 0:
             parser.error("--start-seed must be non-negative")
-        factory = (generate_office_instance if args.family == "office_writer_calc"
-                   else generate_clipboard_instance)
+        template_id = {"office_writer_calc": OFFICE_TEMPLATE_ID,
+                       "clipboard": CLIPBOARD_TEMPLATE_ID,
+                       "modal_writer_calc": MODAL_TEMPLATE_ID,
+                       "browser_tab_context": CONTEXT_TEMPLATE_ID}[args.family]
+        factory = get_template(template_id).generate
         manifests = [factory(seed) for seed in range(args.start_seed,
                                                       args.start_seed + args.count)]
         if len({item["task_id"] for item in manifests}) != len(manifests):
@@ -63,7 +69,7 @@ def main() -> int:
                "files": {"success": all(item["valid"]
                                          for item in directory_result["files"]),
                          "details": directory_result["files"]}}
-        if data.get("template_id") == "writer_calc_independent_edits_v1":
+        if data.get("template_id") == OFFICE_TEMPLATE_ID:
             row["offline_oracle_validation"] = validate_office_candidate(data)
         results.append(row)
     data_rows = [json.loads(path.read_text(encoding="utf-8")) for path in manifests]
