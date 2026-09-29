@@ -4,7 +4,7 @@ from __future__ import annotations
 from typing import Any, Iterable
 
 
-TARGET_APP = {"gui_actor": "chrome", "writer_actor": "writer"}
+TARGET_APP = {"gui_actor": "chrome", "writer_actor": "writer", "calc_actor": "calc"}
 
 
 def _get(event: Any, field: str, default: Any = None) -> Any:
@@ -36,6 +36,7 @@ def summarize_focus_events(events: Iterable[Any]) -> dict[str, Any]:
     gui_events = [event for event in events
                   if _get(event, "kind") == "gui" and _get(event, "action") == "osworld.step"]
     rows: list[dict[str, Any]] = []
+    unknown_input_actions: list[dict[str, Any]] = []
     previous_focus = None
     switches = 0
     for index, event in enumerate(gui_events):
@@ -43,14 +44,21 @@ def summarize_focus_events(events: Iterable[Any]) -> dict[str, Any]:
         details = _details(event)
         title = details.get("active_window_before")
         target = TARGET_APP.get(actor)
+        source = details.get("source_action", {})
+        is_input, explicit_switch, action_kind = _input_action(source)
+        if target and not isinstance(title, str):
+            if is_input and not explicit_switch:
+                unknown_input_actions.append({"seq": _get(event, "seq"), "actor": actor,
+                                              "target_app": target, "action_kind": action_kind,
+                                              "source_action": source,
+                                              "reason": "active-window observation missing"})
+            continue
         if title and previous_focus and title != previous_focus:
             switches += 1
         if title:
             previous_focus = title
         if not target or not isinstance(title, str) or target in title.lower():
             continue
-        source = details.get("source_action", {})
-        is_input, explicit_switch, action_kind = _input_action(source)
         title_after = details.get("active_window_after")
         recovered_later = any(
             _get(later, "actor", "") == actor
@@ -84,6 +92,8 @@ def summarize_focus_events(events: Iterable[Any]) -> dict[str, Any]:
             "unintended_focus_action_count": len(unintended_actions),
             "unintended_focus_actions": unintended_actions,
             "mis_input_action_count": len(mis_inputs),
+            "unknown_input_action_count": len(unknown_input_actions),
+            "unknown_input_actions": unknown_input_actions,
             "mis_input_definition": (
                 "text and non-focus keyboard actions executed while another actor's app had focus"),
             "mis_input_actions": mis_inputs,

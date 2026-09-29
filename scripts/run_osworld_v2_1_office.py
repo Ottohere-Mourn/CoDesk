@@ -15,7 +15,6 @@ import time
 from urllib.request import Request, urlopen
 
 import requests
-from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
@@ -32,6 +31,8 @@ from swcub.instances import TaskInstanceSpec
 from swcub.orchestrator import DualActorOrchestrator
 from swcub.osworld_adapter import OSWorldSharedEpisode
 from swcub.osworld_agent_actor import OSWorldAgentActor
+from swcub.comparison_metrics import summarize_focus_events
+from swcub.osworld_readiness import wait_for_guest_desktop
 from swcub.resource_safety import ensure_resource_identity
 
 
@@ -123,34 +124,8 @@ def main() -> int:
         return str(payload.get("output", ""))
 
     def wait_for_desktop(episode: OSWorldSharedEpisode, timeout: float = 300) -> bool:
-        import io
-        deadline = time.monotonic() + timeout
-        attempts = 0
-        last_reason = "screenshot endpoint not ready"
-        while time.monotonic() < deadline:
-            attempts += 1
-            try:
-                response = requests.get(f"http://{desktop.vm_ip}:{desktop.server_port}/screenshot",
-                                        timeout=(5, 10))
-                response.raise_for_status()
-                image_bytes = response.content
-                with Image.open(io.BytesIO(image_bytes)) as image:
-                    pixels = list(image.convert("RGB").resize((64, 64)).getdata())
-                visible = sum(max(pixel) > 24 for pixel in pixels) / len(pixels)
-                if visible > 0.05 and len(set(pixels)) > 16:
-                    episode.observation = {"screenshot": image_bytes}
-                    episode.log.record("environment", "healthcheck", "guest.desktop_ready",
-                                       {"attempts": attempts - 1}, {"attempts": attempts},
-                                       outcome="ready", details={"visible_ratio": visible})
-                    return True
-                last_reason = f"blank screenshot visible_ratio={visible:.4f}"
-            except (requests.RequestException, OSError, ValueError) as exc:
-                last_reason = f"{type(exc).__name__}: {exc}"
-            time.sleep(5)
-        episode.log.record("environment", "healthcheck", "guest.desktop_ready",
-                           {"attempts": attempts}, {"ready": False}, outcome="timeout",
-                           details={"last_reason": last_reason})
-        return False
+        wait_for_guest_desktop(episode, desktop, timeout=timeout, retry_interval=5)
+        return True
 
     episode = OSWorldSharedEpisode(desktop, cli_executor=lambda raw: command(shlex.split(raw)))
     episode.log = EventLog()
@@ -276,6 +251,7 @@ def main() -> int:
             actors, schedule = [writer, calc], ["writer_actor", "calc_actor", "writer_actor"]
         report = DualActorOrchestrator(episode).run(actors, schedule, evaluator, out,
                                                     copy_artifacts=False)
+        report["focus_metrics"] = summarize_focus_events(episode.log.events)
         report["scenario"] = scenario
         report["task_id"] = instance_spec.task_id
         report["task_instance_id"] = (instance_spec.instance_id if scenario == "sequential"

@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "task_id": "CODESK-TA-OFFICE-001",
+  "task_version": "1.0.0",
+  "instance_id": "writer-calc-independent-edits-v1-seed0",
+  "seed": 0,
+  "environment": {
+    "adapter": "OSWorldSharedEpisode",
+    "release": "osworld-v2.1",
+    "guest_application": "LibreOffice 7.3.7.2",
+    "initial_state": {
+      "writer_document": {
+        "path": "/tmp/swcub_office/document.fodt",
+        "text": "Quarterly status report"
+      },
+      "calc_sheet": {
+        "path": "/tmp/swcub_office/table.fods",
+        "cells": [["Record", "Status"], ["Quarterly", "Draft"]]
+      }
+    },
+    "shared_resources": [
+      "desktop window focus",
+      "keyboard and pointer",
+      "Writer document",
+      "Calc spreadsheet"
+    ]
+  },
+  "actors": {
+    "writer_actor": {"role": "gui", "application": "LibreOffice Writer"},
+    "calc_actor": {"role": "gui", "application": "LibreOffice Calc"}
+  },
+  "actor_goals": {
+    "writer_actor": {
+      "resource": "writer_document",
+      "operation": "replace complete document content and save",
+      "expected_text": "Approved by GUI actor"
+    },
+    "calc_actor": {
+      "resource": "calc_sheet",
+      "operation": "change B2 only and save",
+      "expected_cells": [["Record", "Status"], ["Quarterly", "Approved"]]
+    }
+  },
+  "conditions": {
+    "solo": {
+      "definition": "Paired actor-specific controls: each actor runs alone on its own clean Guest; the other application remains seeded and must remain unchanged.",
+      "bindings": {"writer_actor": "writer_desktop", "calc_actor": "calc_desktop"}
+    },
+    "ma_id": {
+      "definition": "Both independent actors run on separate OSWorld Guest desktops with separate focus and input state.",
+      "bindings": {"writer_actor": "writer_desktop", "calc_actor": "calc_desktop"}
+    },
+    "ma_sd": {
+      "definition": "Both independent actors run on the same Guest, X11 desktop, Writer/Calc windows, keyboard, and pointer.",
+      "bindings": {"writer_actor": "shared_desktop", "calc_actor": "shared_desktop"},
+      "schedule": ["writer_actor", "calc_actor", "writer_actor"]
+    }
+  },
+  "expected_interference": {
+    "mechanism": "Calc activates after Writer's first observation; Writer resumes without reacquiring focus, so its replacement keystrokes can enter Calc.",
+    "condition": "ma_sd",
+    "deterministic_trigger": "shared desktop focus transfer under the frozen naive schedule",
+    "no_random_noise": true
+  },
+  "evaluator": {
+    "type": "GuestLibreOfficeBindingEvaluator",
+    "oracle": "saved Flat ODF XML exact comparison",
+    "checks": ["writer final text", "all Calc cells", "non-goal application state", "event-attributed focus/input routing"]
+  },
+  "reset": {
+    "method": "OSWorld V2.1 fresh Guest reset",
+    "oracle": "new Guest container identity and both seeded file paths absent before task initialization"
+  }
+}

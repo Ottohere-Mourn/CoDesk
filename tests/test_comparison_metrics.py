@@ -36,3 +36,16 @@ def test_alt_tab_is_a_focus_transition_not_a_mis_input():
     ])
     assert result["mis_input_action_count"] == 0
     assert result["recovery_action_count"] == 1
+
+
+def test_office_metrics_track_calc_focus_and_unknown_routing_separately():
+    result = summarize_focus_events([
+        event(1, "calc_actor", "osworld.step", before="LibreOffice Writer",
+              source={"op": "key", "key": "ctrl+home"}),
+        event(2, "calc_actor", "osworld.step", before=None,
+              source={"op": "type", "value": "Approved"}),
+    ])
+    assert result["mis_input_action_count"] == 1
+    assert result["mis_input_actions"][0]["active_window_before"] == "LibreOffice Writer"
+    assert result["unknown_input_action_count"] == 1
+    assert result["unknown_input_actions"][0]["reason"] == "active-window observation missing"

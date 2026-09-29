@@ -126,6 +126,102 @@ class GuestLibreOfficeEvaluator:
                 "no_cross_application_contamination": not missing}
 
 
+class GuestLibreOfficeBindingEvaluator:
+    """Grade exact saved ODF state for one or more isolated Guest desktops.
+
+    The evaluator receives a host-held reader callback keyed by desktop binding;
+    actor contexts never receive file-reader capabilities or expected values.
+    ``expected_by_binding`` includes the non-goal application state, so edits to
+    the other office file are detected as contamination as well as goal failure.
+    """
+
+    TEXT_NS = GuestLibreOfficeEvaluator.TEXT_NS
+    TABLE_NS = GuestLibreOfficeEvaluator.TABLE_NS
+
+    def __init__(self, read_file: Callable[[str, str], str],
+                 expected_by_binding: dict[str, dict[str, Any]],
+                 actor_goals: dict[str, dict[str, str]],
+                 initial_state_by_binding: dict[str, dict[str, Any]]):
+        self._read_file = read_file
+        self._expected_by_binding = {key: dict(value)
+                                     for key, value in expected_by_binding.items()}
+        self._actor_goals = {key: dict(value) for key, value in actor_goals.items()}
+        self._initial_state_by_binding = {key: dict(value)
+                                          for key, value in initial_state_by_binding.items()}
+        if set(self._initial_state_by_binding) != set(self._expected_by_binding):
+            raise ValueError("initial and expected state must cover the same desktop bindings")
+
+    @staticmethod
+    def _parse_writer(raw: str) -> str:
+        import xml.etree.ElementTree as ET
+        root = ET.fromstring(raw)
+        return "\n".join("".join(paragraph.itertext())
+                         for paragraph in root.iter(
+                             f"{{{GuestLibreOfficeBindingEvaluator.TEXT_NS}}}p"))
+
+    @staticmethod
+    def _parse_calc(raw: str) -> list[list[str]]:
+        import xml.etree.ElementTree as ET
+        root = ET.fromstring(raw)
+        rows: list[list[str]] = []
+        for row in root.iter(f"{{{GuestLibreOfficeBindingEvaluator.TABLE_NS}}}table-row"):
+            cells: list[str] = []
+            for cell in row.findall(f"{{{GuestLibreOfficeBindingEvaluator.TABLE_NS}}}table-cell"):
+                value = "\n".join("".join(paragraph.itertext()) for paragraph in
+                                   cell.findall(f"{{{GuestLibreOfficeBindingEvaluator.TEXT_NS}}}p"))
+                repeat = int(cell.get("{urn:oasis:names:tc:opendocument:xmlns:table:1.0}"
+                                      "number-columns-repeated", "1"))
+                cells.extend([value] * min(repeat, 64))
+            if cells:
+                rows.append(cells)
+        return rows
+
+    def evaluate(self, _environment: Any = None) -> dict[str, object]:
+        actual_by_binding: dict[str, dict[str, Any]] = {}
+        contamination: list[dict[str, Any]] = []
+        missing: list[dict[str, Any]] = []
+        for binding, expected in self._expected_by_binding.items():
+            writer_text = self._parse_writer(
+                self._read_file(binding, "/tmp/swcub_office/document.fodt"))
+            calc_cells = self._parse_calc(
+                self._read_file(binding, "/tmp/swcub_office/table.fods"))
+            actual = {"writer_text": writer_text, "calc_cells": calc_cells}
+            actual_by_binding[binding] = actual
+            initial = self._initial_state_by_binding[binding]
+            for field, value in (("writer_text", writer_text), ("calc_cells", calc_cells)):
+                if value != expected[field]:
+                    mismatch = {"desktop_binding": binding, "field": field,
+                                "expected": expected[field], "actual": value}
+                    missing.append(mismatch)
+                    # A missed goal that leaves the original state intact is an
+                    # objective failure, not contamination. Count a mutation as
+                    # contamination only when the observed value differs from
+                    # both the intended final value and the task's initial value.
+                    if value != initial[field]:
+                        contamination.append({**mismatch,
+                                              "initial": initial[field],
+                                              "classification": "unexpected_state_mutation"})
+
+        actor_goal_success: dict[str, dict[str, Any]] = {}
+        for actor_id, goal in self._actor_goals.items():
+            binding = goal["desktop_binding"]
+            field = goal["field"]
+            expected = goal["expected"]
+            actual = actual_by_binding[binding][field]
+            actor_goal_success[actor_id] = {
+                "desktop_binding": binding, "field": field,
+                "expected": expected, "actual": actual, "success": actual == expected}
+        return {"success": not missing,
+                "actor_goal_success": actor_goal_success,
+                "final_state_by_binding": actual_by_binding,
+                "expected_state_by_binding": self._expected_by_binding,
+                "initial_state_by_binding": self._initial_state_by_binding,
+                "missing": missing,
+                "contamination_events": contamination,
+                "no_non_goal_application_contamination": not contamination,
+                "no_unexpected_state_mutation": not contamination}
+
+
 class GuestWebStateEvaluator:
     """Compare exact local web-app backend state through a private Guest reader."""
     def __init__(self, read_state: Callable[[], str], expected: dict[str, Any]):

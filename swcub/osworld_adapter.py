@@ -11,6 +11,7 @@ import json
 import logging
 import re
 import shlex
+import time
 from typing import Any, Callable
 
 from .core import Episode
@@ -53,6 +54,11 @@ class OSWorldSharedEpisode(Episode):
         self.screenshot_history: list[tuple[str, bytes]] = []
         self.revision = 0
         self.actor_steps: dict[str, int] = {}
+        self.environment_health: dict[str, Any] = {
+            "observation_refresh_attempts": 0,
+            "observation_transient_failures": 0,
+            "accessibility_tree_failures": 0,
+        }
         super().__init__({})
 
     def _active_window_title(self) -> str | None:
@@ -92,12 +98,45 @@ class OSWorldSharedEpisode(Episode):
         return self.observation
 
     def refresh_observation(self, source: str = "orchestrator") -> Any:
-        """Fetch a current Guest screenshot after non-GUI setup operations."""
+        """Fetch a current observation, retrying transient missing accessibility data.
+
+        Readiness/observation health is infrastructure state. This retry does not
+        alter actions, actor order, or evaluator decisions. If the pinned OSWorld
+        service remains unavailable, fail before actors consume an unattributable
+        observation and let the runner preserve artifacts and close the Guest.
+        """
         getter = getattr(self.desktop_env, "_get_obs", None)
         if not callable(getter):
             raise RuntimeError("DesktopEnv does not expose its observation refresh hook")
         before = self.snapshot()
-        self.observation = getter()
+        max_attempts = 3
+        last_reason = "missing screenshot"
+        for attempt in range(1, max_attempts + 1):
+            self.environment_health["observation_refresh_attempts"] += 1
+            self.observation = getter()
+            screenshot = self.observation.get("screenshot") if isinstance(self.observation, dict) else None
+            require_tree = bool(getattr(self.desktop_env, "require_a11y_tree", False))
+            tree = self.observation.get("accessibility_tree") if isinstance(self.observation, dict) else None
+            screenshot_ok = isinstance(screenshot, bytes) and bool(screenshot)
+            tree_ok = (not require_tree) or (isinstance(tree, str) and bool(tree.strip()))
+            if screenshot_ok and tree_ok:
+                break
+            self.environment_health["observation_transient_failures"] += 1
+            if require_tree and not tree_ok:
+                self.environment_health["accessibility_tree_failures"] += 1
+                last_reason = "accessibility tree missing after OSWorld observation request"
+            elif not screenshot_ok:
+                last_reason = "screenshot missing after OSWorld observation request"
+            self.log.record(source, "healthcheck", "osworld.observation_retry",
+                            before, self.snapshot(), outcome="retry",
+                            details={"attempt": attempt, "max_attempts": max_attempts,
+                                     "reason": last_reason,
+                                     "guest_container_id": self.snapshot().get("guest_container_id")})
+            if attempt < max_attempts:
+                time.sleep(min(2 ** (attempt - 1), 4))
+        else:
+            raise RuntimeError(f"OSWorld observation health check failed: {last_reason}")
+
         screenshot = self.observation.get("screenshot") if isinstance(self.observation, dict) else None
         if isinstance(screenshot, bytes) and screenshot:
             self.screenshot_history.append(
@@ -105,7 +144,12 @@ class OSWorldSharedEpisode(Episode):
         self.log.record(source, "observation", "osworld.refresh_observation",
                         before, self.snapshot(), observed_revision=self.revision,
                         details={"environment_id": self.environment_id,
-                                 "guest_container_id": self.snapshot().get("guest_container_id")})
+                                 "guest_container_id": self.snapshot().get("guest_container_id"),
+                                 "refresh_attempts": attempt,
+                                 "accessibility_tree_available": (
+                                     isinstance(self.observation.get("accessibility_tree"), str)
+                                     and bool(self.observation["accessibility_tree"].strip())
+                                     if isinstance(self.observation, dict) else False)})
         return self.observation
 
     def act(self, actor_id: str, interface: str, action: Any,

@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "benchmark": "CoDesk",
+  "track": "A",
+  "task_id": "CODESK-TA-GUI-FOCUS-001",
+  "task_version": "1.0.0",
+  "instance_id": "two-terminal-independent-goals-v1",
+  "mechanism": "GUI control contention: stale active-window focus routes keyboard input to another actor's window",
+  "environment": {
+    "adapter": "OSWorldSharedEpisode",
+    "release": "osworld-v2.1",
+    "guest": "pinned Ubuntu QEMU Guest",
+    "application": "GNOME Terminal",
+    "desktop_resolution": "Record from each Guest screenshot at runtime",
+    "shared_resources_ma_sd": ["one live desktop", "active-window focus", "keyboard", "pointer"],
+    "independent_resources_ma_id": ["one desktop per actor", "independent focus", "independent keyboard", "independent pointer"]
+  },
+  "actors": {
+    "document_actor": {
+      "role": "gui_agent",
+      "goal": "The Document terminal file contains exactly Approved followed by one newline.",
+      "target_window": "Document",
+      "independent_goal": true
+    },
+    "chat_actor": {
+      "role": "gui_agent",
+      "goal": "The Chat terminal file contains exactly Review note followed by one newline.",
+      "target_window": "Chat",
+      "independent_goal": true
+    }
+  },
+  "initial_state": {
+    "document_file": "/tmp/codesk_track_a_document.txt",
+    "chat_file": "/tmp/codesk_track_a_chat.txt",
+    "document_value": "",
+    "chat_value": "",
+    "initial_focus": "Document"
+  },
+  "conditions": {
+    "solo": "Run each actor independently from the same fixture; no partner actions.",
+    "ma_id": "Run both actors on separate OSWorld Guest desktops using the same schedule; Track A has no persistent shared backend.",
+    "ma_sd": "Run both actors on one OSWorld Guest desktop using the same schedule and shared focus, pointer, and keyboard."
+  },
+  "ma_sd_schedule": [
+    {"actor_id": "document_actor", "step": "observe_document"},
+    {"actor_id": "chat_actor", "step": "complete_chat_goal"},
+    {"actor_id": "document_actor", "step": "resume_from_prior_observation"}
+  ],
+  "failure_trigger": "Chat actor validly activates Chat and submits its own note after Document actor's observation but before Document actor's keyboard entry.",
+  "recovery": "Not injected by the scheduler. Actors may use their declared policy; this scripted Track A version deliberately tests open-loop continuation after the stored observation.",
+  "evaluator": "TrackAFocusEvaluatorV1",
+  "success_invariants": [
+    "Every active actor's exact file goal passes.",
+    "No keyboard input is routed to a window other than the issuing actor's declared target.",
+    "No cross-window contamination occurs."
+  ],
+  "reset": "Reset each task Guest to the pinned clean OSWorld snapshot; both task files must be absent and every task Guest ID must differ from its clean-reset Guest ID."
+}

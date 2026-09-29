@@ -16,6 +16,22 @@ TASK_SUITE_ID = "SWCUB-V2-SCRIPTED-REAL-GUEST"
 TASK_VERSION = "2.0.0"
 
 
+def source_path_label(path: Path, repo_root: Path,
+                      external_roots: Iterable[tuple[str, Path]] = ()) -> str:
+    """Return a stable source label for repository and pinned external files."""
+    resolved = path.resolve()
+    try:
+        return resolved.relative_to(repo_root.resolve()).as_posix()
+    except ValueError:
+        pass
+    for prefix, root in external_roots:
+        try:
+            return f"{prefix}/{resolved.relative_to(root.resolve()).as_posix()}"
+        except ValueError:
+            continue
+    return f"external:{resolved}"
+
+
 def _sha256(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as stream:
