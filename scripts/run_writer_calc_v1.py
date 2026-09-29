@@ -40,6 +40,7 @@ from swcub.osworld_readiness import wait_for_guest_desktop
 from swcub.comparison_metrics import summarize_focus_events
 from swcub.provenance import source_path_label
 from swcub.resource_safety import PROJECT_NAME, ResourceLedger, ensure_resource_identity
+from swcub.task_factory import render_calc_fods, render_writer_fodt
 
 
 TASK_ID = "CODESK-TA-OFFICE-001"
@@ -179,27 +180,11 @@ def git_source_state() -> dict[str, Any]:
 
 
 def flat_writer() -> bytes:
-    return f'''<?xml version="1.0" encoding="UTF-8"?>
-<office:document xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0"
- xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0"
- office:version="1.2" office:mimetype="application/vnd.oasis.opendocument.text">
- <office:body><office:text><text:p>{WRITER_DRAFT}</text:p></office:text></office:body>
-</office:document>'''.encode()
+    return render_writer_fodt([WRITER_DRAFT])
 
 
 def flat_calc() -> bytes:
-    return b'''<?xml version="1.0" encoding="UTF-8"?>
-<office:document xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0"
- xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0"
- xmlns:table="urn:oasis:names:tc:opendocument:xmlns:table:1.0"
- office:version="1.2" office:mimetype="application/vnd.oasis.opendocument.spreadsheet">
- <office:body><office:spreadsheet><table:table table:name="Sheet1">
-  <table:table-row><table:table-cell office:value-type="string"><text:p>Record</text:p></table:table-cell>
-   <table:table-cell office:value-type="string"><text:p>Status</text:p></table:table-cell></table:table-row>
-  <table:table-row><table:table-cell office:value-type="string"><text:p>Quarterly</text:p></table:table-cell>
-   <table:table-cell office:value-type="string"><text:p>Draft</text:p></table:table-cell></table:table-row>
- </table:table></office:spreadsheet></office:body>
-</office:document>'''
+    return render_calc_fods(CALC_DRAFT)
 
 
 class EpisodeBindings(dict[str, tuple[OSWorldSharedEpisode, DesktopEnv]]):

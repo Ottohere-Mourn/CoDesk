@@ -24,17 +24,17 @@ FINAL_STATE = {
 }
 
 
-def writer_seed_odf() -> bytes:
+def writer_seed_odf(source: str = WRITER_SOURCE) -> bytes:
     """Flat ODF with one source paragraph and one empty paste destination."""
     return f'''<?xml version="1.0" encoding="UTF-8"?>
 <office:document xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0"
  xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0"
  office:version="1.2" office:mimetype="application/vnd.oasis.opendocument.text">
- <office:body><office:text><text:p>{WRITER_SOURCE}</text:p><text:p/></office:text></office:body>
+ <office:body><office:text><text:p>{source}</text:p><text:p/></office:text></office:body>
 </office:document>'''.encode("utf-8")
 
 
-def calc_seed_odf() -> bytes:
+def calc_seed_odf(source: str = CALC_SOURCE) -> bytes:
     """Flat ODF with source A1 and empty destination A2."""
     return f'''<?xml version="1.0" encoding="UTF-8"?>
 <office:document xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0"
@@ -42,7 +42,7 @@ def calc_seed_odf() -> bytes:
  xmlns:table="urn:oasis:names:tc:opendocument:xmlns:table:1.0"
  office:version="1.2" office:mimetype="application/vnd.oasis.opendocument.spreadsheet">
  <office:body><office:spreadsheet><table:table table:name="Sheet1">
- <table:table-row><table:table-cell office:value-type="string"><text:p>{CALC_SOURCE}</text:p></table:table-cell></table:table-row>
+ <table:table-row><table:table-cell office:value-type="string"><text:p>{source}</text:p></table:table-cell></table:table-row>
  <table:table-row><table:table-cell/></table:table-row>
  </table:table></office:spreadsheet></office:body>
 </office:document>'''.encode("utf-8")
@@ -53,6 +53,10 @@ class ClipboardTaskEvaluator:
     """Private reader over saved Guest files; actor contexts get no read handle."""
     read_file: Callable[[str], str]
     required_actors: tuple[str, ...] = ("writer_actor", "calc_actor")
+    writer_source: str = WRITER_SOURCE
+    calc_source: str = CALC_SOURCE
+    task_id: str = TASK_ID
+    task_version: str = TASK_VERSION
 
     def evaluate(self, _environment: Any = None) -> dict[str, Any]:
         writer_text = GuestLibreOfficeBindingEvaluator._parse_writer(
@@ -63,27 +67,31 @@ class ClipboardTaskEvaluator:
         if not self.required_actors or not set(self.required_actors) <= {
                 "writer_actor", "calc_actor"}:
             raise ValueError("required_actors must be a nonempty subset of task actors")
-        expected = dict(INITIAL_STATE)
+        initial = {"writer_text": f"{self.writer_source}\n",
+                   "calc_cells": [[self.calc_source], [""]]}
+        final = {"writer_text": f"{self.writer_source}\n{self.writer_source}",
+                 "calc_cells": [[self.calc_source], [self.calc_source]]}
+        expected = dict(initial)
         if "writer_actor" in self.required_actors:
-            expected["writer_text"] = FINAL_STATE["writer_text"]
+            expected["writer_text"] = final["writer_text"]
         if "calc_actor" in self.required_actors:
-            expected["calc_cells"] = FINAL_STATE["calc_cells"]
+            expected["calc_cells"] = final["calc_cells"]
         writer_ok = writer_text == expected["writer_text"]
         calc_ok = calc_cells == expected["calc_cells"]
         contamination = []
-        if not writer_ok and writer_text != INITIAL_STATE["writer_text"]:
-            contamination.append({"artifact": "writer", "initial": INITIAL_STATE["writer_text"],
-                                  "expected": FINAL_STATE["writer_text"], "actual": writer_text})
-        if not calc_ok and calc_cells != INITIAL_STATE["calc_cells"]:
-            contamination.append({"artifact": "calc", "initial": INITIAL_STATE["calc_cells"],
-                                  "expected": FINAL_STATE["calc_cells"], "actual": calc_cells})
+        if not writer_ok and writer_text != initial["writer_text"]:
+            contamination.append({"artifact": "writer", "initial": initial["writer_text"],
+                                  "expected": final["writer_text"], "actual": writer_text})
+        if not calc_ok and calc_cells != initial["calc_cells"]:
+            contamination.append({"artifact": "calc", "initial": initial["calc_cells"],
+                                  "expected": final["calc_cells"], "actual": calc_cells})
         goals = {"writer_actor": writer_ok, "calc_actor": calc_ok}
-        return {"task_id": TASK_ID, "task_version": TASK_VERSION,
+        return {"task_id": self.task_id, "task_version": self.task_version,
                 "success": all(goals[actor] for actor in self.required_actors),
                 "actor_goal_success": {actor: goals[actor]
                                        for actor in self.required_actors},
                 "required_actors": list(self.required_actors),
-                "initial_state": INITIAL_STATE, "expected_final_state": expected,
+                "initial_state": initial, "expected_final_state": expected,
                 "final_state": actual,
                 "missing": {"writer": None if writer_ok else {
                     "expected": expected["writer_text"], "actual": writer_text},
@@ -105,12 +113,16 @@ def clipboard_setup_commands() -> list[list[str]]:
     ]
 
 
-def readiness_state(read_file: Callable[[str], str]) -> dict[str, Any]:
+def readiness_state(read_file: Callable[[str], str], *,
+                    writer_source: str = WRITER_SOURCE,
+                    calc_source: str = CALC_SOURCE) -> dict[str, Any]:
     """Fail-closed initial-state gate before any actor receives control."""
     writer = GuestLibreOfficeBindingEvaluator._parse_writer(read_file(WRITER_PATH))
     calc = GuestLibreOfficeBindingEvaluator._parse_calc(read_file(CALC_PATH))
     actual = {"writer_text": writer, "calc_cells": calc}
-    return {"ready": actual == INITIAL_STATE, "expected": INITIAL_STATE,
+    expected = {"writer_text": f"{writer_source}\n",
+                "calc_cells": [[calc_source], [""]]}
+    return {"ready": actual == expected, "expected": expected,
             "actual": actual, "identity": {"writer_path": WRITER_PATH,
                                            "calc_path": CALC_PATH,
                                            "calc_sheet": "Sheet1",
