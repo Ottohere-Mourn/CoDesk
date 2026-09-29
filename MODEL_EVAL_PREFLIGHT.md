@@ -4,11 +4,11 @@
 
 The artifact described below under run ID `codesk-real-v1-qwen-solo-r01-20260929` is present and internally consistent, but it came from a separately launched run while this checkout and shared OSWorld host were being used concurrently. Its report records a complete provenance manifest, 10 Qwen decisions, exact Writer/Calc goal states, and a successful reset. Because the run's source revision at process start cannot be established and it was not isolated under this evaluation's ownership ledger, it is **not counted** toward P1's three new controlled Solo repeats or as controlled P0 verification.
 
-This turn's attempt `dualqwen-solo-r01b-20260929` did not reach model startup: the localhost:5000 screenshot service timed out during Writer readiness while other run IDs had QEMU Guests forwarding the same host ports. It is retained as an environment-invalid attempt with screenshots and a complete resource ledger; it is not a model failure. An earlier explicit management abort is retained separately. Thus this evaluation has **0/3 accepted new P1 Solo repeats** and has not entered MA-ID or MA-SD. The independent-run artifact below is descriptive evidence only pending a clean, exclusive reproduction.
+This turn's attempt `dualqwen-solo-r01b-20260929` did not reach model startup: the localhost:5000 screenshot service timed out during Writer readiness while QEMU Guests from other run IDs and compute-heavy processes were concurrently active on the host. The cause cannot be separated into service instability versus host contention. It is retained as an environment-invalid attempt with screenshots and a complete resource ledger; it is not a model failure. An earlier explicit management abort is retained separately. Thus this evaluation has **0/3 accepted new P1 Solo repeats** and has not entered MA-ID or MA-SD. The independent-run artifact below is descriptive evidence only pending a clean, exclusive reproduction.
 
 ## Status
 
-P0 preflight passed on a new real OSWorld V2.1 episode. Task ID/version remain `CODESK-TA-OFFICE-001` / `1.0.0`; model and `GuestLibreOfficeBindingEvaluator` scoring rules were not changed. The episode also counts as Solo stability repeat 1 for each actor.
+Task ID/version remain `CODESK-TA-OFFICE-001` / `1.0.0`; model and `GuestLibreOfficeBindingEvaluator` scoring rules were not changed. The separately launched artifact below contains useful real-run evidence, but controlled P0 verification and P1 stability remain pending.
 
 ## Separately launched artifact (not accepted as a controlled repeat)
 

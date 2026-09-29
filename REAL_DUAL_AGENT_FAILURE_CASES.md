@@ -18,7 +18,7 @@ Source artifact root: `/mnt/raid1/mjh/CoDesk-V1-artifacts/real-dual-agent-eval-2
 - Condition/repeat: `solo` / `1`
 - Valid for model scoring: `False`
 - Category: `environment_service_failure`
-- Reason: `OSWorld screenshot service at localhost:5000 repeatedly timed out during Writer readiness. At interruption, separate OSWorld QEMU Guests from other run IDs were concurrently active and also forwarded localhost:5000; the run is contaminated for readiness diagnosis and excluded from model scoring.`
+- Reason: `OSWorld screenshot service at localhost:5000 repeatedly timed out during Writer readiness. Separate QEMU Guests from other run IDs and several compute-heavy processes were concurrently active on the host, so transient service failure versus host contention cannot be separated from this attempt. The attempt is excluded from model scoring.`
 - Scenario: `None`
 - Actor goals: `{'writer_actor': None, 'calc_actor': None}`
 - Actor errors: `{}`
