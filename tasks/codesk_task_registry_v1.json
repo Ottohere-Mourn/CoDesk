@@ -13,48 +13,116 @@
       "status": "scripted_anchor",
       "source_spec": "tasks/codesk_writer_calc_v1.json",
       "actors": {
-        "writer_actor": {"modality": "GUI", "goal": "Save the Writer document with exactly 'Approved by GUI actor'.", "oracle_checks": [{"path": "writer.text", "equals": "Approved by GUI actor"}]},
-        "calc_actor": {"modality": "GUI", "goal": "Set Calc B2 to Approved and preserve every other seeded cell.", "oracle_checks": [{"path": "calc.cells", "equals": [["Record", "Status"], ["Quarterly", "Approved"]]}]}
+        "writer_actor": {
+          "modality": "GUI",
+          "goal": "Save the Writer document with exactly 'Approved by GUI actor'.",
+          "oracle_checks": [
+            {
+              "path": "writer.text",
+              "equals": "Approved by GUI actor"
+            }
+          ]
+        },
+        "calc_actor": {
+          "modality": "GUI",
+          "goal": "Set Calc B2 to Approved and preserve every other seeded cell.",
+          "oracle_checks": [
+            {
+              "path": "calc.cells",
+              "equals": [
+                [
+                  "Record",
+                  "Status"
+                ],
+                [
+                  "Quarterly",
+                  "Approved"
+                ]
+              ]
+            }
+          ]
+        }
       },
-      "initial_state": {"writer.text": "Quarterly status report", "calc.cells": [["Record", "Status"], ["Quarterly", "Draft"]]},
-      "shared_resources": ["focus", "keyboard", "pointer", "desktop_session"],
-      "interaction": {"mechanism": "Focus and keyboard routing between Writer and Calc windows.", "ma_sd_path": "Each actor performs its own valid app operation; the second app becomes active between the Writer observation and its next keyboard action. The actor may observe and recover.", "naive_failure_trigger": "Frozen alternating schedule places Calc activation between Writer observation and Writer edit; no wrong-window action is injected."},
-      "joint_feasibility": {"feasible": true, "reason": "Writer document and Calc workbook are distinct persistent objects; both exact targets can hold simultaneously."},
+      "initial_state": {
+        "writer.text": "Quarterly status report",
+        "calc.cells": [
+          [
+            "Record",
+            "Status"
+          ],
+          [
+            "Quarterly",
+            "Draft"
+          ]
+        ]
+      },
+      "shared_resources": [
+        "focus",
+        "keyboard",
+        "pointer",
+        "desktop_session"
+      ],
+      "interaction": {
+        "mechanism": "Focus and keyboard routing between Writer and Calc windows.",
+        "ma_sd_path": "Each actor performs its own valid app operation; the second app becomes active between the Writer observation and its next keyboard action. The actor may observe and recover.",
+        "naive_failure_trigger": "Frozen alternating schedule places Calc activation between Writer observation and Writer edit; no wrong-window action is injected."
+      },
+      "joint_feasibility": {
+        "feasible": true,
+        "reason": "Writer document and Calc workbook are distinct persistent objects; both exact targets can hold simultaneously."
+      },
       "conditions": {
-        "solo": {"topology": "One actor on a clean Guest; paired controls use separate clean Guest resets.", "control": "Run each actor goal independently and assert the inactive artifact remains seeded."},
-        "ma_id": {"topology": "One Guest desktop per actor.", "control": "Same actor goals and turn order; focus and input devices are independent."},
-        "ma_sd": {"topology": "One Guest and one live desktop shared by both actors.", "control": "Same goals and actor order as MA-ID; natural window activation only."}
+        "solo": {
+          "topology": "One actor on a clean Guest; paired controls use separate clean Guest resets.",
+          "control": "Run each actor goal independently and assert the inactive artifact remains seeded.",
+          "backend_binding": "per_actor_seed_clone"
+        },
+        "ma_id": {
+          "topology": "One Guest desktop per actor.",
+          "control": "Revised protocol requirement, not prior-run topology: connect both independent Guest display/input sessions to the same external or mounted workspace backend used by MA-SD; keep output artifacts distinct.",
+          "backend_binding": "same_workspace_backend"
+        },
+        "ma_sd": {
+          "topology": "One Guest and one live desktop shared by both actors.",
+          "control": "Revised protocol requirement: use the identical workspace backend instance and task seed as MA-ID, with both actors sharing one desktop/input session.",
+          "backend_binding": "same_workspace_backend"
+        }
       },
-      "evaluator": {"oracle": "Existing GuestLibreOfficeBindingEvaluator; exact persisted Flat ODF state.", "checks": ["both actor goals", "all non-target Writer/Calc content", "focus and input event sequence"], "invariants": []},
-      "attribution": {"supported_when": "A focus transition by the other actor occurs after the affected actor's observation and before its action, and the final exact oracle or contamination check fails consistently with the routed action.", "otherwise": "Model, setup, or unclassified failure; do not attribute from condition label alone."},
-      "recovery": {"opportunity": "Actor can re-observe, inspect active window, restore target focus, and correct its own artifact.", "metrics": ["focus transition count", "cross-window contamination", "recovery actions", "actor and joint success"]},
-      "reset": {"verification": "Fresh Guest identity, seeded files re-created at pinned paths, save/reopen persistence verified."},
-      "references": ["prior real-app scripted validation reported by project owner; Qwen Solo currently 2 controlled successes", "tasks/codesk_writer_calc_v1.json"]
-    },
-    {
-      "task_id": "CODESK-TA-CONTEXT-002",
-      "version": "1.0.0-proposed",
-      "family": "focus_input_routing",
-      "title": "Keyboard focus handoff during a multi-step edit",
-      "status": "design_only",
-      "actors": {
-        "writer_actor": {"modality": "GUI", "goal": "Append the exact review sentence to the designated Writer document and save it.", "oracle_checks": [{"path": "writer.review", "equals": "Checked by editor A"}]},
-        "calc_actor": {"modality": "GUI", "goal": "Enter its exact audit label in the designated Calc cell and save it.", "oracle_checks": [{"path": "calc.audit_cell", "equals": "Checked by editor B"}]}
+      "evaluator": {
+        "oracle": "Existing GuestLibreOfficeBindingEvaluator; exact persisted Flat ODF state.",
+        "checks": [
+          "both actor goals",
+          "all non-target Writer/Calc content",
+          "focus and input event sequence"
+        ],
+        "invariants": []
       },
-      "initial_state": {"writer.review": "", "calc.audit_cell": ""},
-      "shared_resources": ["focus", "keyboard", "desktop_session"],
-      "interaction": {"mechanism": "Input routing changes between a multi-action keyboard sequence, testing whether the actor revalidates target focus after an interruption point.", "ma_sd_path": "B completes its own Calc edit while A is between two valid Writer keystrokes; A may reacquire focus and continue.", "naive_failure_trigger": "A's observation and first keystroke precede B's normal Calc task; A resumes its own target workflow without forced misrouting."},
-      "joint_feasibility": {"feasible": true, "reason": "Different files and designated fields permit both exact end states."},
-      "conditions": {
-        "solo": {"topology": "Separate clean runs for each actor.", "control": "Verify each goal and untouched partner artifact."},
-        "ma_id": {"topology": "Independent Guest per actor.", "control": "Identical scripted schedule and budgets; no common focus device."},
-        "ma_sd": {"topology": "One shared live desktop.", "control": "Same actor schedule and actions are not rewritten by the coordinator."}
+      "attribution": {
+        "supported_when": "A focus transition by the other actor occurs after the affected actor's observation and before its action, and the final exact oracle or contamination check fails consistently with the routed action.",
+        "otherwise": "Model, setup, or unclassified failure; do not attribute from condition label alone."
       },
-      "evaluator": {"oracle": "Exact saved ODF content and designated Calc cell; inspect complete artifacts for unintended edits.", "checks": ["actor goals", "wrong-window text", "other-cell/document contamination"], "invariants": []},
-      "attribution": {"supported_when": "Window/focus log proves another actor activated the target before an action and the exact destination artifact contains that action's unintended content.", "otherwise": "Unattributed task failure."},
-      "recovery": {"opportunity": "Refresh observation and verify window title/document identity before resuming the remaining edit.", "metrics": ["focus transitions", "re-ground actions", "repair actions", "contamination" ]},
-      "reset": {"verification": "Reopen fixed seed documents and exact initial content from a clean Guest snapshot."},
-      "references": ["New task proposal; requires implementation and real-Guest validation"]
+      "recovery": {
+        "opportunity": "Actor can re-observe, inspect active window, restore target focus, and correct its own artifact.",
+        "metrics": [
+          "focus transition count",
+          "cross-window contamination",
+          "recovery actions",
+          "actor and joint success"
+        ]
+      },
+      "reset": {
+        "verification": "Fresh Guest identity, seeded files re-created at pinned paths, save/reopen persistence verified."
+      },
+      "references": [
+        "prior real-app scripted validation reported by project owner; Qwen Solo currently 2 controlled successes",
+        "tasks/codesk_writer_calc_v1.json"
+      ],
+      "evidence_boundary": {
+        "prior_project_evidence": "Project history reports 5/5 scripted episodes in Solo, MA-ID, and MA-SD; this phase does not rerun or alter those results.",
+        "prior_topology": "The prior MA-ID runner created separate Guest desktops/workspaces for the actors; MA-SD used one Guest.",
+        "causal_limit": "Because backend/workspace identity was not held constant, prior MA-ID-versus-MA-SD success differences do not isolate desktop sharing. They remain valid task/setup/evaluator evidence, not a controlled desktop-effect estimate.",
+        "revised_protocol_status": "same-backend MA-ID/MA-SD protocol is design-only and has not been implemented or validated."
+      }
     },
     {
       "task_id": "CODESK-TB-CLIPBOARD-001",
@@ -63,48 +131,105 @@
       "title": "Clipboard replacement between independent copy and paste goals",
       "status": "design_only",
       "actors": {
-        "writer_actor": {"modality": "GUI", "goal": "Copy the signed reference token from the source document into the designated Writer field.", "oracle_checks": [{"path": "writer.destination", "equals": "REF-7319"}]},
-        "calc_actor": {"modality": "GUI", "goal": "Copy its own batch code into the designated Calc cell.", "oracle_checks": [{"path": "calc.destination", "equals": "BATCH-204"}]}
+        "writer_actor": {
+          "modality": "GUI",
+          "goal": "Copy the signed reference token from the source document into the designated Writer field.",
+          "oracle_checks": [
+            {
+              "path": "writer.destination",
+              "equals": "REF-7319"
+            }
+          ]
+        },
+        "calc_actor": {
+          "modality": "GUI",
+          "goal": "Copy its own batch code into the designated Calc cell.",
+          "oracle_checks": [
+            {
+              "path": "calc.destination",
+              "equals": "BATCH-204"
+            }
+          ]
+        }
       },
-      "initial_state": {"writer.source": "REF-7319", "writer.destination": "", "calc.source": "BATCH-204", "calc.destination": ""},
-      "shared_resources": ["session_clipboard", "focus", "desktop_session"],
-      "interaction": {"mechanism": "Session-wide clipboard ownership changes while target focus can remain correct.", "ma_sd_path": "A copies its source; B performs its independent copy-and-paste transaction; A then resumes and may re-copy or verify clipboard contents before its paste.", "naive_failure_trigger": "Natural B copy replaces the session clipboard between A copy and A paste; no paste payload is scripted by the coordinator."},
-      "joint_feasibility": {"feasible": true, "reason": "Each exact token belongs in a separate destination and both source values remain available for recopy."},
+      "initial_state": {
+        "writer.source": "REF-7319",
+        "writer.destination": "",
+        "calc.source": "BATCH-204",
+        "calc.destination": ""
+      },
+      "shared_resources": [
+        "session_clipboard",
+        "focus",
+        "desktop_session"
+      ],
+      "interaction": {
+        "mechanism": "Session-wide clipboard ownership changes while target focus can remain correct.",
+        "ma_sd_path": "A copies its source; B performs its independent copy-and-paste transaction; A then resumes and may re-copy or verify clipboard contents before its paste.",
+        "naive_failure_trigger": "Natural B copy replaces the session clipboard between A copy and A paste; no paste payload is scripted by the coordinator."
+      },
+      "joint_feasibility": {
+        "feasible": true,
+        "reason": "Each exact token belongs in a separate destination and both source values remain available for recopy."
+      },
       "conditions": {
-        "solo": {"topology": "Each actor on a clean session clipboard.", "control": "Verify each destination and source preservation."},
-        "ma_id": {"topology": "Independent Guest sessions with separate clipboards.", "control": "Same actor operations and ordering as MA-SD."},
-        "ma_sd": {"topology": "One live desktop and one session clipboard.", "control": "Both actors act normally; actor observations and clipboard recovery are allowed."}
+        "solo": {
+          "topology": "Each actor on a clean session clipboard.",
+          "control": "Verify each destination and source preservation.",
+          "backend_binding": "per_actor_seed_clone"
+        },
+        "ma_id": {
+          "topology": "Independent desktop/X selections and input sessions; actors read/write distinct artifacts in the same workspace backend.",
+          "control": "Same schedule and task seed; clipboard selection state is per desktop, while filesystem/workspace backend identity is held constant with MA-SD.",
+          "backend_binding": "same_workspace_backend"
+        },
+        "ma_sd": {
+          "topology": "One live desktop/X server selection (one CLIPBOARD resource) and common keyboard/pointer.",
+          "control": "Same workspace backend, actor goals, action budgets, and schedule as MA-ID; only the desktop clipboard/control session is shared.",
+          "backend_binding": "same_workspace_backend"
+        }
       },
-      "evaluator": {"oracle": "Exact destination and source values from saved Writer/Calc ODF files plus clipboard generation trace.", "checks": ["both destinations", "source preservation", "wrong-token contamination", "clipboard ownership changes"], "invariants": []},
-      "attribution": {"supported_when": "Clipboard trace records B replacing the generation copied by A before A's paste, and A's destination contains B's token or misses A's exact token.", "otherwise": "Do not infer clipboard interference from a wrong value alone."},
-      "recovery": {"opportunity": "A can recopy from the stable source and verify the destination; B's correct destination must remain unchanged.", "metrics": ["clipboard generation changes", "recopy actions", "recovery success", "cross-destination contamination"]},
-      "reset": {"verification": "Clean Guest session, known clipboard cleared by reset, source files match exact seed hashes."},
-      "references": ["Task Expansion Plan T4 candidate; not yet implemented"]
-    },
-    {
-      "task_id": "CODESK-TB-CLIPBOARD-002",
-      "version": "1.0.0-proposed",
-      "family": "clipboard_ownership",
-      "title": "Clipboard range ownership and Calc cell-boundary preservation",
-      "status": "design_only",
-      "actors": {
-        "calc_actor": {"modality": "GUI", "goal": "Transfer a two-cell row as values into the assigned Calc range with both cell boundaries intact.", "oracle_checks": [{"path": "calc.destination_row", "equals": ["ZONE-C", "READY"]}]},
-        "writer_actor": {"modality": "GUI", "goal": "Copy its independent ticket phrase into the designated Writer paragraph.", "oracle_checks": [{"path": "writer.destination", "equals": "Ticket 58: release approved"}]}
+      "evaluator": {
+        "oracle": "Exact destination and source values from saved Writer/Calc ODF files plus clipboard generation trace.",
+        "checks": [
+          "both destinations",
+          "source preservation",
+          "wrong-token contamination",
+          "clipboard ownership changes"
+        ],
+        "invariants": []
       },
-      "initial_state": {"calc.source_row": ["ZONE-C", "READY"], "calc.destination_row": ["", ""], "writer.source": "Ticket 58: release approved", "writer.destination": ""},
-      "shared_resources": ["session_clipboard", "clipboard_format", "focus", "desktop_session"],
-      "interaction": {"mechanism": "A multi-cell TSV clipboard payload is replaced by another actor's text payload, testing payload ownership and structural integrity rather than just focus.", "ma_sd_path": "Calc actor copies its two-cell range; Writer actor normally copies and pastes its phrase before Calc commits; Calc may detect the changed payload and recopy.", "naive_failure_trigger": "Writer's valid copy changes clipboard format/content; the coordinator does not issue a wrong paste."},
-      "joint_feasibility": {"feasible": true, "reason": "Both source values remain stable and can be recopied into distinct destinations."},
-      "conditions": {
-        "solo": {"topology": "Each actor alone with a clean clipboard.", "control": "Verify exact cell boundaries and phrase."},
-        "ma_id": {"topology": "Independent Guest sessions and clipboard state.", "control": "Same order and task instructions as MA-SD."},
-        "ma_sd": {"topology": "Same desktop clipboard and application sessions.", "control": "No forced format mutation or wrong-window paste."}
+      "attribution": {
+        "supported_when": "Clipboard trace records B replacing the generation copied by A before A's paste, and A's destination contains B's token or misses A's exact token.",
+        "otherwise": "Do not infer clipboard interference from a wrong value alone."
       },
-      "evaluator": {"oracle": "Saved Calc cell matrix and Writer document content, plus private clipboard format/generation log.", "checks": ["two distinct Calc cells", "exact Writer phrase", "source preservation", "unintended adjacent-cell writes"], "invariants": []},
-      "attribution": {"supported_when": "The trace shows clipboard payload or format changed after Calc copy and before paste, and the Calc range result matches that changed payload or corrupts cell boundaries.", "otherwise": "Grounding/task error or unattributed failure."},
-      "recovery": {"opportunity": "Re-select stable source range, copy again, and inspect destination cells before save.", "metrics": ["payload replacement", "cell-boundary errors", "recovery actions", "goal recovery"]},
-      "reset": {"verification": "Fresh Guest clipboard generation and exact seed workbook/document; saved-and-reopened state matches seed."},
-      "references": ["Task Expansion Plan T4 candidate; distinct payload structure hypothesis requires pilot"]
+      "recovery": {
+        "opportunity": "A can recopy from the stable source and verify the destination; B's correct destination must remain unchanged.",
+        "metrics": [
+          "clipboard generation changes",
+          "recopy actions",
+          "recovery success",
+          "cross-destination contamination"
+        ]
+      },
+      "reset": {
+        "verification": "Clean Guest session, known clipboard cleared by reset, source files match exact seed hashes."
+      },
+      "references": [
+        "Task Expansion Plan T4 candidate; not yet implemented"
+      ],
+      "clipboard_observability": {
+        "owner": "Private Guest-side observer records X11 CLIPBOARD selection owner window XID, owner process/window mapping when resolvable, and X server selection timestamp. Never assume OS clipboard owner equals logical actor.",
+        "generation": "Increment an observer generation when owner/timestamp or canonical payload/target digest changes. Observe TARGETS/MIME types and UTF8_STRING digest before/after every actor action; owner changes alone are insufficient.",
+        "attribution": "Associate a payload transition with an actor only when one actor copy/cut action is the sole candidate in the bracketed interval and its source/value matches; otherwise mark owner actor unknown.",
+        "focus_and_target": "Record intended app, X11 active-window XID/title, accessible focused widget or Calc cell where available, and final saved destination. Missing recipient evidence makes routing attribution unknown, not clipboard interference.",
+        "privacy": "Store payload hashes, byte length, MIME targets, owner metadata and source-action linkage. Do not expose observer results to actors or their prompts."
+      },
+      "recovery_control": {
+        "scripted_positive_control": "Run an action-only scripted actor pair with the same normal GUI copy/paste actions. If A detects that its payload changed, A reselects its stable source, copies again, confirms the new digest, focuses its own destination, pastes, saves, and verifies. This proves recoverability; it is not model performance.",
+        "model_readout": "For model episodes keep autonomous observation and recopy available in MA-SD. Score natural recovery from event/action evidence; do not force a wrong paste or inject a clipboard value.",
+        "optional_intervention": "A recovery-instruction condition may be reported separately as an intervention and must not be merged with the primary MA-SD rate."
+      }
     },
     {
       "task_id": "CODESK-TC-MODAL-001",
@@ -113,48 +238,103 @@
       "title": "Independent save confirmations with owned modal dialogs",
       "status": "design_only",
       "actors": {
-        "writer_actor": {"modality": "GUI", "goal": "Save its document to the designated ODT path and confirm the requested native format.", "oracle_checks": [{"path": "writer.saved_text", "equals": "Board minutes: final"}, {"path": "writer.saved_path", "equals": "/workspace/minutes.odt"}]},
-        "calc_actor": {"modality": "GUI", "goal": "Save its workbook to the designated ODS path and preserve its assigned cell values.", "oracle_checks": [{"path": "calc.saved_path", "equals": "/workspace/roster.ods"}, {"path": "calc.cells.B2", "equals": "Present"}]}
+        "writer_actor": {
+          "modality": "GUI",
+          "goal": "Save its document to the designated ODT path and confirm the requested native format.",
+          "oracle_checks": [
+            {
+              "path": "writer.saved_text",
+              "equals": "Board minutes: final"
+            },
+            {
+              "path": "writer.saved_path",
+              "equals": "/workspace/minutes.odt"
+            }
+          ]
+        },
+        "calc_actor": {
+          "modality": "GUI",
+          "goal": "Save its workbook to the designated ODS path and preserve its assigned cell values.",
+          "oracle_checks": [
+            {
+              "path": "calc.saved_path",
+              "equals": "/workspace/roster.ods"
+            },
+            {
+              "path": "calc.cells.B2",
+              "equals": "Present"
+            }
+          ]
+        }
       },
-      "initial_state": {"writer.document": "Board minutes: final", "writer.save_path": "", "calc.cells.B2": "Present", "calc.save_path": ""},
-      "shared_resources": ["window_stack", "modal_dialog", "keyboard", "focus", "desktop_session"],
-      "interaction": {"mechanism": "Modal ownership and window restoration: a keypress or confirmation must be associated with the correct actor's native save dialog.", "ma_sd_path": "Each actor independently opens its own save dialog and completes a valid save; one actor's dialog may cover the other's target window while that actor waits or re-observes.", "naive_failure_trigger": "Interleaved valid dialog workflows create competing active/modal contexts; no scheduler-generated confirmation keystroke is redirected."},
-      "joint_feasibility": {"feasible": true, "reason": "Distinct output paths and non-overlapping artifacts allow both save operations to complete."},
+      "initial_state": {
+        "writer.document": "Board minutes: final",
+        "writer.save_path": "",
+        "calc.cells.B2": "Present",
+        "calc.save_path": ""
+      },
+      "shared_resources": [
+        "window_stack",
+        "modal_dialog",
+        "keyboard",
+        "focus",
+        "desktop_session"
+      ],
+      "interaction": {
+        "mechanism": "Modal ownership and window restoration: a keypress or confirmation must be associated with the correct actor's native save dialog.",
+        "ma_sd_path": "Each actor independently opens its own save dialog and completes a valid save; one actor's dialog may cover the other's target window while that actor waits or re-observes.",
+        "naive_failure_trigger": "Interleaved valid dialog workflows create competing active/modal contexts; no scheduler-generated confirmation keystroke is redirected."
+      },
+      "joint_feasibility": {
+        "feasible": true,
+        "reason": "Distinct output paths and non-overlapping artifacts allow both save operations to complete."
+      },
       "conditions": {
-        "solo": {"topology": "Each actor saves its own seeded artifact in isolation.", "control": "Reopen exact output file and validate content and format."},
-        "ma_id": {"topology": "One independent Guest/dialog stack per actor.", "control": "Same task and schedule; dialog ownership cannot cross desktops."},
-        "ma_sd": {"topology": "One desktop with both application windows and a shared modal/window stack.", "control": "Actors may wait, inspect, cancel their own dialog, and recover."}
+        "solo": {
+          "topology": "Each actor saves its own seeded artifact in isolation.",
+          "control": "Reopen exact output file and validate content and format.",
+          "backend_binding": "per_actor_seed_clone"
+        },
+        "ma_id": {
+          "topology": "One independent Guest/dialog stack per actor.",
+          "control": "Same task and schedule; dialog ownership cannot cross desktops.",
+          "backend_binding": "same_workspace_backend"
+        },
+        "ma_sd": {
+          "topology": "One desktop with both application windows and a shared modal/window stack.",
+          "control": "Actors may wait, inspect, cancel their own dialog, and recover.",
+          "backend_binding": "same_workspace_backend"
+        }
       },
-      "evaluator": {"oracle": "Filesystem path, ODF content/format, and window/modal event trace.", "checks": ["both exact save paths", "reopened file content", "no accidental overwrite", "dialog owner at each confirmation"], "invariants": []},
-      "attribution": {"supported_when": "The action is sent while a different actor's modal is active and the resulting persisted path/content or dialog event proves the action affected that modal.", "otherwise": "Save-dialog capability or app error, not established interaction interference."},
-      "recovery": {"opportunity": "Actor re-observes window title and dialog, dismisses only its own recoverable dialog, then reopens/saves its designated path.", "metrics": ["modal transitions", "cross-owner dialog actions", "cancel/reopen count", "recovery success"]},
-      "reset": {"verification": "Remove only task-owned outputs under fresh Guest fixture; reopen exact seeded documents and confirm no modal remains."},
-      "references": ["Candidate based on desktop focus/dialog robustness literature; no CoDesk implementation yet"]
-    },
-    {
-      "task_id": "CODESK-TC-WINDOW-002",
-      "version": "1.0.0-proposed",
-      "family": "window_dialog_competition",
-      "title": "Browser download overwrite prompt while office task remains open",
-      "status": "design_only",
-      "actors": {
-        "browser_actor": {"modality": "GUI", "goal": "Download the assigned CSV to the designated folder without replacing the pre-existing reference file.", "oracle_checks": [{"path": "files.downloaded_csv.sha256", "equals": "task-pinned-digest"}, {"path": "files.reference_csv.sha256", "equals": "seed-digest"}]},
-        "writer_actor": {"modality": "GUI", "goal": "Save the assigned Writer note at its unique path with exact content.", "oracle_checks": [{"path": "writer.saved_text", "equals": "Review copy complete"}, {"path": "writer.saved_path", "equals": "/workspace/review.odt"}]}
+      "evaluator": {
+        "oracle": "Filesystem path, ODF content/format, and window/modal event trace.",
+        "checks": [
+          "both exact save paths",
+          "reopened file content",
+          "no accidental overwrite",
+          "dialog owner at each confirmation"
+        ],
+        "invariants": []
       },
-      "initial_state": {"files.reference_csv.sha256": "seed-digest", "browser.download_target": "/workspace/reference.csv", "writer.text": "Review copy complete", "writer.saved_path": ""},
-      "shared_resources": ["window_stack", "download_prompt", "file_picker", "focus", "filesystem"],
-      "interaction": {"mechanism": "Application switch plus a browser download/save prompt changes the window context while another actor has a separate persistence goal.", "ma_sd_path": "Browser actor completes its own download decision; Writer actor resumes its independently prepared save and can verify the active window and path.", "naive_failure_trigger": "The ordinary browser prompt becomes active during Writer's save workflow; no destructive overwrite response is forced."},
-      "joint_feasibility": {"feasible": true, "reason": "Browser output uses a declared non-colliding path or safe rename, and Writer output is unique; reference file is immutable."},
-      "conditions": {
-        "solo": {"topology": "Run each browser and Writer goal separately from the same seed fixture.", "control": "Verify file hashes, path identity, and saved document."},
-        "ma_id": {"topology": "Independent desktops and file dialogs.", "control": "Same task schedule, with independent focus and prompt ownership."},
-        "ma_sd": {"topology": "One shared desktop/session and common window stack.", "control": "Natural prompt handling; agents can pause and re-observe."}
+      "attribution": {
+        "supported_when": "The action is sent while a different actor's modal is active and the resulting persisted path/content or dialog event proves the action affected that modal.",
+        "otherwise": "Save-dialog capability or app error, not established interaction interference."
       },
-      "evaluator": {"oracle": "Exact file hashes and paths plus saved Writer ODF content and window/download event log.", "checks": ["assigned download present", "reference file unchanged", "Writer save correct", "no accidental prompt action"], "invariants": []},
-      "attribution": {"supported_when": "A prompt/window transition by Browser actor lies between Writer's observation and action and event plus filesystem evidence links Writer's action to the prompt or wrong output.", "otherwise": "Unattributed save/download failure."},
-      "recovery": {"opportunity": "Re-observe active window, resolve only the owned prompt safely, restore Writer, and verify both files."},
-      "reset": {"verification": "Seed hash checks pass and no task-owned downloads/prompts persist after reset."},
-      "references": ["Candidate based on OSWorld-Noisy dialog/focus perturbation boundary; independent second goal distinguishes it from injected noise"]
+      "recovery": {
+        "opportunity": "Actor re-observes window title and dialog, dismisses only its own recoverable dialog, then reopens/saves its designated path.",
+        "metrics": [
+          "modal transitions",
+          "cross-owner dialog actions",
+          "cancel/reopen count",
+          "recovery success"
+        ]
+      },
+      "reset": {
+        "verification": "Remove only task-owned outputs under fresh Guest fixture; reopen exact seeded documents and confirm no modal remains."
+      },
+      "references": [
+        "Candidate based on desktop focus/dialog robustness literature; no CoDesk implementation yet"
+      ]
     },
     {
       "task_id": "CODESK-TD-STALE-MERGE-001",
@@ -164,48 +344,121 @@
       "status": "registered_anchor",
       "source_spec": "tasks/instances/browser_gui_cli.json",
       "actors": {
-        "gui_actor": {"modality": "GUI", "goal": "Set gui_status to Approved while preserving the current CLI annotation.", "oracle_checks": [{"path": "record.gui_status", "equals": "Approved"}]},
-        "cli_actor": {"modality": "CLI", "goal": "Set cli_note to Reviewed by CLI and preserve GUI status.", "oracle_checks": [{"path": "record.cli_note", "equals": "Reviewed by CLI"}]}
+        "gui_actor": {
+          "modality": "GUI",
+          "goal": "Set gui_status to Approved while preserving the current CLI annotation.",
+          "oracle_checks": [
+            {
+              "path": "record.gui_status",
+              "equals": "Approved"
+            }
+          ]
+        },
+        "cli_actor": {
+          "modality": "CLI",
+          "goal": "Set cli_note to Reviewed by CLI and preserve GUI status.",
+          "oracle_checks": [
+            {
+              "path": "record.cli_note",
+              "equals": "Reviewed by CLI"
+            }
+          ]
+        }
       },
-      "initial_state": {"record.gui_status": "Draft", "record.cli_note": "Draft", "record.revision": 0},
-      "shared_resources": ["record_backend", "browser_cached_record", "workspace_file"],
-      "interaction": {"mechanism": "Stale cached whole-record save overwrites a newer CLI revision.", "ma_sd_path": "CLI performs its independent annotation update after GUI reads but before GUI commits; GUI may refresh and merge.", "naive_failure_trigger": "Frozen order exposes a stale snapshot; neither actor is commanded to overwrite the other."},
-      "joint_feasibility": {"feasible": true, "reason": "The goals affect separate fields and can coexist in the authoritative record."},
+      "initial_state": {
+        "record.gui_status": "Draft",
+        "record.cli_note": "Draft",
+        "record.revision": 0
+      },
+      "shared_resources": [
+        "record_backend",
+        "browser_cached_record",
+        "workspace_file"
+      ],
+      "interaction": {
+        "mechanism": "Stale cached whole-record save overwrites a newer CLI revision.",
+        "ma_sd_path": "CLI performs its independent annotation update after GUI reads but before GUI commits; GUI may refresh and merge.",
+        "naive_failure_trigger": "Frozen order exposes a stale snapshot; neither actor is commanded to overwrite the other.",
+        "analysis_note": "The stale backend conflict can occur in both MA-ID and MA-SD. It is not evidence of a shared-desktop effect unless the shared desktop adds an independently logged GUI-control effect. Treat backend sharing as constant for MA-ID versus MA-SD."
+      },
+      "joint_feasibility": {
+        "feasible": true,
+        "reason": "The goals affect separate fields and can coexist in the authoritative record."
+      },
       "conditions": {
-        "solo": {"topology": "Each actor independently updates its assigned field from clean state.", "control": "Verify its goal and preservation of unrelated initial field."},
-        "ma_id": {"topology": "Independent desktop sessions connected to equivalent isolated record backends.", "control": "Same read/write schedule but no shared record instance."},
-        "ma_sd": {"topology": "One shared backend and one live GUI session; CLI and GUI address the same record.", "control": "Same task, evaluator, and schedule; refresh/recovery is permitted."}
+        "solo": {
+          "topology": "Each actor runs alone from a clean clone of the same seed backend and a clean desktop.",
+          "control": "Verify its goal and preservation of unrelated initial field.",
+          "backend_binding": "per_episode_seed_clone"
+        },
+        "ma_id": {
+          "topology": "Independent GUI/input sessions for the two actors, both connected to the same authoritative record backend instance.",
+          "control": "Keep the exact shared backend instance, task schedule, browser record, actor budgets, and evaluator used in MA-SD; only desktop focus/input session is independent.",
+          "backend_binding": "same_episode_backend"
+        },
+        "ma_sd": {
+          "topology": "One shared live desktop; GUI and CLI operations address the same authoritative record backend instance.",
+          "control": "Same backend instance, task schedule, browser record, actor budgets, and evaluator as MA-ID; desktop session is shared.",
+          "backend_binding": "same_episode_backend"
+        }
       },
-      "evaluator": {"oracle": "Existing GuestWebStateEvaluator; exact authoritative backend fields and revision.", "checks": ["both independent fields", "no lost update", "record schema and revision"], "invariants": []},
-      "attribution": {"supported_when": "The GUI observation revision predates the CLI write, the GUI whole-record commit follows it, and final oracle shows the CLI field lost or changed.", "otherwise": "Do not label an ordinary field-edit failure stale-state interference."},
-      "recovery": {"opportunity": "Refresh authoritative record, merge only GUI-owned field, and verify both values.", "metrics": ["stale observation count", "refresh count", "lost updates", "recovery reads", "joint success"]},
-      "reset": {"verification": "Backend seed fields/revision and browser cache are freshly initialized and final reset oracle confirms initial state."},
-      "references": ["tasks/instances/browser_gui_cli.json", "tasks/task_suite_v2.json; preserve its evaluator unchanged"]
+      "evaluator": {
+        "oracle": "Existing GuestWebStateEvaluator; exact authoritative backend fields and revision.",
+        "checks": [
+          "both independent fields",
+          "no lost update",
+          "record schema and revision"
+        ],
+        "invariants": []
+      },
+      "attribution": {
+        "supported_when": "The GUI observation revision predates the CLI write, the GUI whole-record commit follows it, and final oracle shows the CLI field lost or changed.",
+        "otherwise": "Do not label an ordinary field-edit failure stale-state interference."
+      },
+      "recovery": {
+        "opportunity": "Refresh authoritative record, merge only GUI-owned field, and verify both values.",
+        "metrics": [
+          "stale observation count",
+          "refresh count",
+          "lost updates",
+          "recovery reads",
+          "joint success"
+        ]
+      },
+      "reset": {
+        "verification": "Backend seed fields/revision and browser cache are freshly initialized and final reset oracle confirms initial state."
+      },
+      "references": [
+        "tasks/instances/browser_gui_cli.json",
+        "tasks/task_suite_v2.json; preserve its evaluator unchanged"
+      ],
+      "evidence_boundary": {
+        "prior_project_evidence": "Existing task specification and evaluator are registered; this phase did not rerun it.",
+        "prior_comparison": "No claim is made here that prior MA-ID/MA-SD runs held the authoritative backend constant.",
+        "revised_protocol_status": "same-backend MA-ID/MA-SD topology is required but not yet implemented or validated."
+      }
+    }
+  ],
+  "deferred_variants": [
+    {
+      "candidate_id": "CODESK-TA-CONTEXT-002",
+      "decision": "merge_as_focus_stress_variant",
+      "reason": "Same active-window/input-routing mechanism and same exact-state signature as CODESK-TA-OFFICE-001; retain only if compound-action timing yields a distinct evaluator signature."
     },
     {
-      "task_id": "CODESK-TD-APPEND-002",
-      "version": "1.0.0-proposed",
-      "family": "gui_cli_shared_state",
-      "title": "GUI and CLI append independent review entries without truncation or duplication",
-      "status": "design_only",
-      "actors": {
-        "gui_actor": {"modality": "GUI", "goal": "Append one uniquely keyed GUI review entry to the shared activity log.", "oracle_checks": [{"path": "log.entries.GUI-17", "equals": "Visual check complete"}]},
-        "cli_actor": {"modality": "CLI", "goal": "Append one uniquely keyed CLI review entry to the shared activity log.", "oracle_checks": [{"path": "log.entries.CLI-22", "equals": "Checksum verified"}]}
-      },
-      "initial_state": {"log.entries": {"SEED-01": "Workspace created"}, "log.schema": ["id", "note"]},
-      "shared_resources": ["activity_log_file", "record_revision", "browser_file_view"],
-      "interaction": {"mechanism": "Append versus whole-file replacement and retry idempotence under concurrent shared-file modification.", "ma_sd_path": "GUI and CLI actors append distinct records through their normal tools; after an interruption either may re-read and append only a missing key.", "naive_failure_trigger": "Both actors observe a valid prior log before independent appends; no write is synthetically dropped."},
-      "joint_feasibility": {"feasible": true, "reason": "Unique IDs and append-only semantics allow both entries plus the seed entry to remain."},
-      "conditions": {
-        "solo": {"topology": "Each actor appends its entry to a fresh seeded log.", "control": "Assert its new key, seed preservation, and exactly-once semantics."},
-        "ma_id": {"topology": "Separate isolated log copies and desktops.", "control": "Same task and action order, without a shared file revision."},
-        "ma_sd": {"topology": "Both interfaces write the same file and authoritative revision.", "control": "Same IDs and order; recoverable re-read is allowed."}
-      },
-      "evaluator": {"oracle": "Parse authoritative JSONL/CSV log and compare exact key/value multiset, schema, and per-key count.", "checks": ["both entries exactly once", "seed preserved", "valid schema", "no unrelated rows"], "invariants": []},
-      "attribution": {"supported_when": "A write event truncates or duplicates a key after observing a revision that includes the partner's update, and final parsed log proves that exact mutation.", "otherwise": "Generic file-edit error, not proven append interference."},
-      "recovery": {"opportunity": "Re-read the complete log and add only the absent unique key; verify count and schema."},
-      "reset": {"verification": "Seed log hash and exact one-row parsed state restored before each episode."},
-      "references": ["Task Expansion Plan T3 append-only candidate; requires prototype before promotion"]
+      "candidate_id": "CODESK-TB-CLIPBOARD-002",
+      "decision": "merge_as_clipboard_payload_variant",
+      "reason": "Same session clipboard replacement mechanism as CODESK-TB-CLIPBOARD-001. TSV cell-boundary corruption is a stress variant only unless it demonstrates a separate failure and recovery signature."
+    },
+    {
+      "candidate_id": "CODESK-TC-WINDOW-002",
+      "decision": "defer_as_modal_context_variant",
+      "reason": "Browser download prompt plus Writer save repeats modal/window ownership. It adds browser download-policy and filesystem risks before a distinct mechanism is established."
+    },
+    {
+      "candidate_id": "CODESK-TD-APPEND-002",
+      "decision": "defer_as_auxiliary_consistency_candidate",
+      "reason": "Append-only exactly-once behavior may be distinct from stale whole-record overwrite, but it is an auxiliary transaction-semantics family and lacks a validated GUI write path."
     }
   ]
 }

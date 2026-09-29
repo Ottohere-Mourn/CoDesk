@@ -1,68 +1,89 @@
 # CoDesk Task Suite V1
 
-**State:** design freeze candidate plus offline contract code. This phase did not launch a Guest, model, application, or real episode. Only the Writer/Calc scripted anchor has prior three-condition scripted evidence as reported in the project history; the registered GUI+CLI task is an existing protocol anchor. All other entries are design-only.
+**Revision:** backend-controlled comparison and mechanism de-duplication, based on `b645f24`.
 
-## Research question and task boundary
+**Evidence boundary:** this phase only changed offline design/code. It did not launch a Guest, model, or application. Project history reports prior Writer/Calc scripted three-condition validation, but static runner inspection shows old MA-ID used separate Guests/workspaces while MA-SD used one Guest. Those runs validate task/setup/evaluator behavior, but do not isolate a causal shared-desktop effect. The GUI+CLI anchor is registered in the prior protocol and was not rerun here. Clipboard and modal tasks below remain design-only.
 
-CoDesk V1 asks whether independently goal-directed actors lose performance, contaminate one another's work, or need extra recovery when their actions share one live desktop session. Its primary treatment is the shared control plane: active window, keyboard, pointer, modal stack, clipboard, and application context. GUI+CLI shared-record work is retained as an auxiliary state-consistency comparison, not the definition of the benchmark.
+## Scope and experiment boundary
 
-The unit is a two-actor task with two independently scorable goals. Every actor must pass its Solo control. Joint feasibility is stated as a simultaneous exact final state. MA-ID and MA-SD preserve the same goal text, application seed, actor budget, and schedule; desktop topology is the intended contrast. The task suite does not count independent workers on independent screens as shared-desktop interaction.
+CoDesk's core outcome is the extra effect of sharing a live desktop control plane: focus, keyboard, pointer, window/modal stack, and session clipboard. An application backend or shared filesystem is a separate factor. A contrast that changes both desktop topology and backend topology cannot identify a shared-desktop effect.
 
-## Related-work boundary checked for V1
+Keep these two studies distinct:
 
-The nearest GUI-computer-use work reviewed is materially different in its execution boundary:
+1. **Shared-desktop core:** hold the application/backend instance, seed, actor goals, budgets, schedule, and evaluator constant between MA-ID and MA-SD. MA-ID uses independent desktop/input sessions connected to the same backend; MA-SD uses one session. Use unique non-overlapping files/fields where the task is meant to test only desktop controls.
+2. **Shared-state auxiliary:** hold the same authoritative backend instance constant in MA-ID and MA-SD as well. Both conditions may experience backend-level stale state. The MA-ID vs MA-SD contrast estimates only additional desktop-mediated effects. Add backend-private cells as a separate factor if the backend effect itself is being measured; do not call the diagonal `MA-ID/private backend` vs `MA-SD/shared backend` a desktop-sharing comparison.
 
-- **ParaGUIBench** uses multiple GUI workers with separate full desktop/container instances and per-worker mouse/keyboard focus, connected through a shared mounted filesystem. Its tasks cover web/file search, shopping/navigation, file operations, and search-and-write. It is a close parallel-GUI/shared-file baseline, but its published setup does not put workers on one live display/input session. See the [paper, especially §3.1–3.3](https://arxiv.org/html/2607.22689) and [task/code repository](https://github.com/pkgunboat/ParaGUIBench).
-- **OSWorld-Noisy / ENVS** keeps OSWorld-style single-agent tasks and evaluators while inserting deterministic, recoverable perturbations such as dialogs, overlays, and benign user activity. Its user activity is interference/noise, not a second actor with an independently scored task goal. CoDesk must therefore give the second actor a real goal and score both actors. See [paper, §3 and benchmark construction](https://arxiv.org/html/2606.22948) and [code](https://github.com/ArtysicistZ/ENVS).
-- **DeskCraft** includes multi-turn user interaction, interruptions, and user-simulator feedback in desktop workflows. This is relevant to interruption and recovery, but its protocol is centered on one agent interacting with a user simulator; it does not establish simultaneous independent actors sharing keyboard, pointer, and focus. See [paper, task protocol](https://arxiv.org/html/2606.03103) and [code](https://github.com/mrwwk/DeskCraft).
-- **WeaveBench** evaluates one computer-use trajectory that combines GUI and CLI/code interfaces in a task. That motivates the auxiliary GUI+CLI track, but does not itself compare independent actors contending for one desktop session. See [paper](https://arxiv.org/html/2606.09426), [project](https://weavebench.github.io), and [Microsoft Research record](https://www.microsoft.com/en-us/research/publication/weavebench-a-long-horizon-real-world-benchmark-for-computer-use-agents-with-hybrid-interfaces/).
-- **OSWorld** remains the single-agent desktop baseline and supplies the Guest/desktop execution substrate, not a multi-actor shared-input protocol. See [official repository](https://github.com/xlang-ai/OSWorld) and [NeurIPS benchmark record](https://proceedings.neurips.cc/paper_files/paper/2024/hash/5d413e48f84dc61244b6be550f1cd8f5-Abstract-Datasets_and_Benchmarks_Track.html).
+For a causal decomposition of state-consistency tasks, record a 2x2 topology: desktop `{independent, shared}` × backend `{private, shared}`. The controlled shared-desktop effect is the independent-vs-shared desktop contrast at a fixed backend level. If the environment cannot connect independent desktop sessions to the same backend, defer that causal claim rather than silently substituting isolated copies. Static inspection of `scripts/run_writer_calc_v1.py` confirmed its previous MA-ID made a separate Guest per actor, so the new same-backend condition is not covered by those old results.
 
-These sources support a scope distinction, not a novelty claim. Before claiming a first benchmark of this kind, a fresh citation-chain and artifact audit is still required at paper submission time. Source check date: 2026-09-29.
+Each task has two independently scored goals. Both must pass their own Solo controls, and their exact desired outputs must be simultaneously satisfiable. Actor actions remain autonomous. The scheduler may arrange a deterministic opportunity for interaction, but may not inject the wrong clipboard value, redirect an action, or require an error.
 
-## V1 family and instance plan
+## Literature boundary checked
 
-Eight instances are the initial design target across four families. Two are existing anchors; six are prospective. A design-only task is not yet executable simply because its contract is in the registry.
+ParaGUIBench is the nearest parallel GUI benchmark reviewed: its workers use separate full desktops and input focus while coordinating over a shared mounted directory, so it covers parallel execution and artifact coordination rather than one shared live input session. [Paper §III-A–C](https://arxiv.org/html/2607.22689), [repository](https://github.com/pkgunboat/ParaGUIBench).
 
-| ID | Family / status | Actor A goal | Actor B goal | Shared object and natural interaction | Joint oracle and attribution |
-|---|---|---|---|---|---|
-| `CODESK-TA-OFFICE-001` | Focus/input routing; scripted anchor | Save exact Writer text | Set Calc B2 and preserve other cells | Same desktop focus, keyboard and pointer; normal Writer/Calc window activation interleaves | Existing exact saved ODF evaluator checks both outputs and contamination; attribute only when focus/input events precede the mismatching action |
-| `CODESK-TA-CONTEXT-002` | Focus/input routing; design-only | Append exact review sentence in Writer | Enter exact audit label in Calc | B completes its own valid Calc step between A's Writer keystrokes; tests focus revalidation across a compound action | Exact ODF content/cells and wrong-window/other-cell inspection; evidence must link the focus change to the action |
-| `CODESK-TB-CLIPBOARD-001` | Clipboard ownership; design-only | Transfer `REF-7319` to its Writer destination | Transfer `BATCH-204` to its Calc destination | B's valid copy replaces the session clipboard after A copies; focus may still be correct | Exact source/destinations plus clipboard generation trace; wrong value alone is insufficient attribution |
-| `CODESK-TB-CLIPBOARD-002` | Clipboard ownership; design-only | Preserve a two-cell Calc TSV transfer | Place exact ticket phrase in Writer | Text copy changes a shared multi-cell clipboard payload/format; probes cell boundaries rather than only token value | Saved cell matrix/document plus private clipboard format/generation; exact adjacent-cell contamination check |
-| `CODESK-TC-MODAL-001` | Window/dialog competition; design-only | Save Writer to exact ODT path/format | Save Calc to exact ODS path and preserve cell value | Actors open their own save/format dialogs; other dialog may cover a waiting target | Reopened file content, exact path/format, and modal-owner-at-action trace; no forced wrong confirmation |
-| `CODESK-TC-WINDOW-002` | Window/dialog competition; design-only | Save Writer review copy | Download assigned CSV while preserving existing reference | Browser's normal download decision changes the active window while Writer has a separate persistence goal | File hashes, exact paths, saved ODF and prompt/window event trace; destructive overwrite is never injected |
-| `CODESK-TD-STALE-MERGE-001` | GUI+CLI shared state; registered anchor | Set GUI status, preserve CLI note | Set CLI note, preserve GUI status | GUI cached whole-record snapshot and CLI update address one record | Existing authoritative backend evaluator checks both fields/schema/revision; lost update requires read/write revision evidence |
-| `CODESK-TD-APPEND-002` | GUI+CLI shared state; design-only | Append unique GUI review entry | Append unique CLI review entry | Both read and append a shared activity log; tests truncation, duplicate retry, and append completeness | Parse exact entry multiset/counts and schema; attribute only with write/revision evidence |
+OSWorld-Noisy evaluates recoverable interruptions layered over original single-agent OSWorld tasks; its concurrent benign activity is a perturbation source, not a second independent goal that is jointly scored. [Paper §4 and Appendix B](https://arxiv.org/html/2606.22948), [code](https://github.com/ArtysicistZ/ENVS). DeskCraft's interaction protocol advances user phases in response to `agent_ask`, fixed step count, or completion and uses a user simulator; this is close to interruption/recovery but not independent actors sharing the same input device. [Paper §3.3 and Appendix B](https://arxiv.org/html/2606.03103), [code](https://github.com/mrwwk/DeskCraft). WeaveBench requires one agent to interleave GUI and CLI/code operations in a task trajectory; it motivates the auxiliary hybrid interface track but does not test two actors sharing a desktop. [Paper](https://arxiv.org/html/2606.09426), [project](https://weavebench.github.io). OSWorld remains the single-agent live desktop substrate. [Official repository](https://github.com/xlang-ai/OSWorld).
 
-### Why these are not eight surface variants
+These comparisons establish a scope distinction, not an absolute novelty claim. Artifact/version and citation-chain review remains necessary before publication.
 
-The four families expose different shared resources and evaluator evidence: (1) OS focus/input target, (2) session-global clipboard payload independent of focus, (3) modal/window ownership and persistence action semantics, and (4) backend/file revision and append integrity. The second instance in a family is retained only if an offline contract and later real pilot show a distinct evaluator signature. In particular, Clipboard 002 is a hypothesis about structured payload boundaries; drop it if it reduces to the same lost-token outcome as Clipboard 001. The two window tasks likewise need distinct action evidence, not just different application names.
+## Retained V1 suite
 
-## Control protocol
+The suite is reduced to four entries across four families; the former eight-entry list is not retained as eight tasks.
 
-| Condition | Desktop/input topology | State control | Interpretation |
+| ID | Family / status | Independent goals | Mechanism and controlled oracle |
 |---|---|---|---|
-| Solo | Run A and B separately on clean resets | Same task seed; inactive actor's target remains at its seeded value | Establish both individual capabilities and evaluator correctness |
-| MA-ID | One independent desktop/input session per actor, same goals and frozen schedule | Desktop-contention tasks use non-colliding output artifacts; shared-state tasks use isolated backend clones | Control for independent work and orchestration without shared state mutation |
-| MA-SD | Both actors on one live Guest desktop/session; coordinator serializes action submission | Same goals, actor budgets and schedule; the natural shared resource is common | Estimate extra loss/contamination/recovery associated with sharing the actual resource |
+| `CODESK-TA-OFFICE-001` | Focus/input routing; prior scripted anchor, revised control unvalidated | Writer saves exact text; Calc sets B2 and preserves all other cells | Existing saved-ODF evaluator and focus/input event trace. Revised MA-ID and MA-SD require the same workspace/backend binding; only input-session topology differs. |
+| `CODESK-TB-CLIPBOARD-001` | Clipboard ownership; design-only priority pilot | Writer transfers its source token to its destination; Calc transfers a different source token to its destination | Distinguishes session clipboard replacement from focus by observing clipboard generation/payload, active/focused target, and exact final destination. Full plan below. |
+| `CODESK-TC-MODAL-001` | Window/dialog competition; design-only | Writer saves exact ODT at its path; Calc saves exact ODS at its path and preserves its assigned value | Exact persisted paths/content plus active modal/window owner at action. No confirmation key is forced into the wrong dialog. |
+| `CODESK-TD-STALE-MERGE-001` | GUI+CLI shared state; existing auxiliary anchor | GUI changes status; CLI changes note; both preserve the partner field | Existing authoritative record evaluator. Backend identity is the same in MA-ID and MA-SD, so backend stale-write effects cannot masquerade as a desktop-sharing effect. |
 
-Do not compare MA-ID and MA-SD if their actor order, number of opportunities, reset seed, model budget, or evaluator changes. Do not silently share a backend in a desktop-only control: where a task's mechanism is explicitly a shared backend, clone it for MA-ID and use one backend in MA-SD. Record this topology per instance.
+### Candidate de-duplication decisions
 
-## Per-episode measures
+| Prior candidate | Decision | Reason |
+|---|---|---|
+| Focus 002, multi-step focus handoff | Merge as a stress variant of the existing focus family | Same active-window/keyboard-routing mechanism and exact destination-contamination signature. Retain only if compound-action timing gives a different causal/evaluator signature. |
+| Clipboard 002, multi-cell TSV payload | Merge as a payload-format variant of Clipboard 001 | It still tests replacement of the same session-global clipboard. Cell-boundary corruption is a useful secondary signature, but not yet evidence for a separate task. |
+| Window 002, browser download prompt | Defer as a modal-context variant | It repeats active-window/modal ownership while adding download policy and filesystem overwrite risks. Keep only if it exposes a distinct, observable dialog-ownership failure. |
+| Append 002, GUI+CLI activity log | Defer as an auxiliary consistency candidate | Exactly-once append semantics may be distinct from stale whole-record overwrite, but it expands the auxiliary transaction family and lacks a validated GUI append path. |
 
-Primary outcomes: actor-A success, actor-B success, joint success (both plus integrity invariants), and Solo-to-MA condition delta. Additional measures are:
+The deferred IDs live in `deferred_variants` metadata, not in the benchmark task count or experiment config.
 
-- **Interference:** exact target/cross-target mismatch with an event chain identifying another actor's intervening change to the named shared resource. Report unsupported cases as unattributed.
-- **Coordination failure:** task goal lost after a valid partner action, stale/unowned context action, duplicate/truncated append, or wrong modal/payload use. Keep mechanism-specific counts separate.
-- **Recovery:** conflict detection evidence, recovery actions after the first conflict, actions/time until both exact goals hold, and whether recovery preserves the partner's goal.
-- **State consistency:** exact final document/cell/file/backend values, schema, source preservation, and duplicate/unintended writes.
-- **Work and environment:** per-actor actions, elapsed active time, focus/modal/clipboard generation changes, reset success, and environment-validity status.
+## Outcome accounting
 
-All success is determined by task code against hidden authoritative state. Screenshots and event evidence support attribution; a vision-language judge does not decide correctness.
+Never collapse exposure, terminal task result, and recovery into one “interference rate.” For each episode record three independent blocks:
 
-## Validation gates and current boundary
+1. **Exposure:** count declared exposure opportunities and actually observed resource changes separately. Tag each with `source=natural` or `source=scheduled_stress` and a unique `opportunity_id`. The episode exposure rate is unique opportunities with at least one observed exposure / declared opportunities, reported separately by source; raw exposure-event counts are also retained. A scheduled competition window is a stress opportunity; it is not a failure and is not a natural-model failure rate.
+2. **Task outcome:** evaluate Actor A, Actor B, and joint success from the hidden exact-state oracle, independently of whether an exposure happened. Overall model task-failure rate uses all valid assigned episodes as its denominator. Conditional failure given exposure may be a secondary diagnostic only and must state its denominator.
+3. **Recovery:** record conflict evidence/detection, recovery actions, and final success after a recovery action as separate fields. `recovery_success` is not applicable if no conflict/recovery occurred. Report operational recovery from trace and final state; do not infer internal model awareness.
 
-For every prospective instance: prove A Solo, prove B Solo, demonstrate an oracle-positive joint state, run a negative-control schedule that allows organic failure without force-routing, demonstrate recovery availability, test reset, and inspect an event-linked failure signature. Then run a small real-Guest pilot. Do not promote from design-only on unit tests alone.
+If an episode has a failing final state but no event chain linking it to the shared resource, classify it as model/task failure or unattributed; do not assign a shared-desktop cause based on its condition label.
 
-Offline code added in this phase validates the eight-entry registry, review-only config, exact-state oracle helper, reset-state helper, and evidence-gated interaction metrics. It does not implement app setup for the six new instances, connect those instances to `run_codesk_experiment.py`, or establish real-Guest success. See [registry](TASK_REGISTRY_V1.md) and [implementation checklist](TASK_SUITE_V1_IMPLEMENTATION.md).
+## Clipboard 001 task protocol
+
+**Seed:** two stable source values in distinct saved artifacts; two empty, distinct destination fields; known clean session clipboard. Actor A is assigned the Writer source/destination; actor B the Calc source/destination. Token values are exact and different. Each source remains available for recovery. Both targets are checked after saving and reopening.
+
+**Solo controls:** run A alone and B alone from clean fixtures. Each must demonstrate actual GUI copy then paste, achieve its own exact destination, preserve its source, and leave the inactive artifact unchanged. Also run a reset/clipboard-clear check. If either Solo goal fails, do not interpret paired failures.
+
+**MA-ID:** two independent displays/input sessions with one constant workspace/backend identity and separate X11 clipboard selections. Use the same instructions, per-actor budgets, turn schedule, source seed, distinct destinations, and oracle as MA-SD. This checks that shared files/backend alone do not create the clipboard interaction.
+
+**MA-SD:** one live Guest desktop/X server and one `CLIPBOARD` selection shared by both actors; same workspace/backend, goals, budgets, schedule, and evaluator as MA-ID. The predeclared stress schedule places B's valid copy/paste between A's copy and paste as an opportunity. The coordinator does not perform A's paste, alter either payload, or command an incorrect action. A may re-observe, re-copy, verify its payload, refocus, and recover normally.
+
+**Recovery positive control:** run scripted actors that use the same ordinary GUI copy/paste actions. When the observer reports that A's payload changed, the recovery actor reselects A's stable source, copies it again, checks that the observed generation/digest is A's, focuses A's destination, pastes, saves, and verifies both outputs. This is only a recoverability/evaluator control, never mixed into model success statistics. Real model MA-SD episodes retain autonomy; a recovery-instruction prompt, if later tested, is a separately labeled intervention.
+
+## Clipboard observation and attribution plan
+
+The current OSWorld adapter logs action source, observed revision, and active-window title before/after an action. A repository code search found no clipboard payload, selection owner, or generation observer. Therefore the current artifacts cannot yet distinguish clipboard replacement from wrong focus.
+
+Add a private Guest-side observer before episodes:
+
+- **Owner:** sample the X11 `CLIPBOARD` selection owner XID and X server timestamp. Subscribe to XFixes owner-change notification if available. Do not equate owner XID/process with an actor: clipboard managers may own the selection.
+- **Payload/generation:** sample offered `TARGETS`/MIME types and a digest of canonical text (`UTF8_STRING`, fallback `STRING`) before/after every actor action. Increment a task-local generation when owner/timestamp or digest changes. Owner-change events alone can miss same-owner replacement; the ICCCM says an owner should reacquire ownership if its selection value changes, but measure payload as a cross-check. Do not expose hashes or state to the agents.
+- **Logical owner attribution:** link a changed digest to an Actor only when the event is bracketed by a single actor's copy/cut action and the digest matches that actor's known source. If multiple candidate actions, clipboard-manager handoff, missing sample, or unsupported format makes it ambiguous, store `logical_actor=null` and do not claim which actor overwrote it.
+- **Focus and paste target:** log intended application, active X11 window XID/title, and focused accessibility object/Calc cell immediately before paste where available; record the paste action's actor/source and resulting saved Writer/Calc state. Active window alone is not proof of focused widget. If recipient evidence is missing, keep routing attribution unknown.
+- **Cause rules:** clipboard-supported case requires (a) A copied its expected payload, (b) another actor's action changed clipboard generation/payload before A's paste, (c) A's paste was directed to A's expected target, and (d) final state or trace shows the wrong/missing payload. Focus-routing case requires target-window/widget mismatch or wrong destination evidence. If both occur, allow a multi-cause/ambiguous category; do not force a single label.
+- **Observer validity:** first test whether read-only selection sampling itself changes ownership, stalls copy/paste, or changes actor timing. Compare observer-on/observer-off scripted Solo controls. If sampling perturbs the environment or misses an in-action change, mark instrumentation invalid and do not use those episodes for causal claims.
+
+X11 defines a selection owner window and a server timestamp; XFixes provides selection-change notifications. The ICCCM describes selection transfer and instructs a client whose selection value changes to reacquire ownership, but owner identity still does not identify the benchmark actor. See [XGetSelectionOwner/XSetSelectionOwner reference](https://xorg.freedesktop.org/archive/X11R6.8.0/doc/XGetSelectionOwner.3.html), [X.Org release notes on XFixes selection notification](https://www.x.org/archive/X11R6.8.1/PDF/RELNOTES.pdf), and [ICCCM selection conventions](https://xorg.freedesktop.org/archive/X11R7.7/doc/xorg-docs/icccm/icccm.html).
+
+## Promotion gate
+
+Do not promote Clipboard 001 from design-only until: observer fidelity and non-perturbation are demonstrated; both Solo controls and MA-ID joint state pass; scheduled stress produces logged exposure without forced action; clipboard and focus error signatures can be separated; scripted recopy recovery restores both goals; reset clears selection and restores exact artifact seeds. Then run limited real-agent evaluation and report natural and scheduled-stress strata separately.

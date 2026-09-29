@@ -1,61 +1,90 @@
-# CoDesk Task Suite V1 Implementation Checklist
+# CoDesk V1 Implementation Plan and Audit
 
-## Work completed offline
+## This phase
 
-- [x] Audited the frozen protocol, Task API, current Writer/Calc task, legacy focus/CSV tasks, GUI+CLI Browser instance, task manifest, and current runner family map.
-- [x] Added an eight-entry V1 declarative registry, grouped into four mechanism families.
-- [x] Added a review-only config that refuses to enable Guest/model launch.
-- [x] Added schema validation, detached initial-state fixture helper, exact reset comparison, hidden-state exact oracle helper, and event-evidence interaction/recovery metrics.
-- [x] Added offline unit tests for registry shape, config guard, state-oracle behavior, reset integrity, evidence-supported attribution, and recovery counting.
-- [x] Added task-suite, registry, and implementation-boundary documentation.
+- [x] Audited protocol, existing task specs, runner family map, action/event logging, and active-window observation code.
+- [x] Corrected the MA-ID/MA-SD backend-binding invariant in the registry. The GUI+CLI state task now specifies the same authoritative backend for both conditions.
+- [x] Split measured exposure, exact task outcome, and recovery outcome in an offline summarizer.
+- [x] Reduced active registry from eight proposed entries to four retained entries. Four former entries are explicit deferred variants, not tasks.
+- [x] Added a detailed Clipboard 001 instrumentation, Solo/MA-ID/MA-SD, pressure, and recovery-control plan.
+- [x] No Guest, model, app, or container was started.
 
-## Offline verification performed
+## Current instrumentation audit (static source inspection only)
 
-- Registry/config CLI validation: passed; 8 task entries, 4 families, 6 design-only entries, 3 conditions.
-- Targeted task/evaluator/runner regression: 28 passed (`test_task_registry_v1.py`, `test_task_manifest.py`, `test_task_instances.py`, `test_runner_v1_config.py`, `test_writer_calc_evaluator.py`).
-- Offline suite excluding the real-workspace test module: 76 passed. `tests/test_real_workspace.py` was intentionally not run because this phase forbids starting or using a real Guest.
-- `git diff --check`: passed before checkpoint.
-- No Guest, model, Docker/container, or application was started by this phase.
+Existing `OSWorldSharedEpisode` and office/browser runners log actor action provenance, observation revisions, and active-window titles before/after actions. The Writer+Calc runner has saved-document/cell evaluation and focus-attribution reports. A repository search found no implementation that records X11 `CLIPBOARD` owner, payload, MIME targets, or clipboard generation. Existing active-window title is not sufficient evidence for the focused widget/cell at paste time. Therefore clipboard-cause attribution is currently unsupported by implementation, despite the new design/API contract.
 
-## Not implemented or not validated
+Relevant source locations: `swcub/osworld_adapter.py` action/focus logging; `scripts/run_writer_calc_v1.py` application readiness, saved-ODF checks, and focus summary; `swcub/task_registry_v1.py` offline result accounting. This audit did not invoke any of them against a Guest.
 
-- [ ] No Guest, GUI application, CLI workspace episode, or model was launched in this phase.
-- [ ] Six design-only tasks have no app-specific setup, actor actions, screenshots, task evaluator implementation, or reset validation.
-- [ ] The GUI+CLI stale-merge registered anchor was not rerun here.
-- [ ] The Writer/Calc scripted evidence and two prior Qwen Solo successes were not repeated or independently re-scored here.
-- [ ] `run_codesk_experiment.py` does not consume the new catalog or offline config; live registry-to-runner integration is deliberately deferred.
-- [ ] The generic helper is not a secure hidden-state boundary by itself. Production integration must keep the oracle in the environment/evaluator process and out of actor context and artifacts visible during acting.
-- [ ] Clipboard instrumentation, dialog ownership instrumentation, and browser download event attribution are not present in the existing adapter and need a capability audit before task pilots.
+## Clipboard 001 implementation sequence
 
-## Task-specific real-environment gates
+### 1. Freeze task fixture and action trace contract
 
-| Task | Offline contract | Required before promotion |
-|---|---|---|
-| Writer+Calc anchor | Registered, exact goal/path contract; previous scripted evidence retained | Preserve current readiness and saved-ODF evaluator; rerun only when host scheduling permits |
-| Multi-step focus handoff | Goal and causal rule specified | Ensure the normal action sequence has a deterministic scheduling barrier without forcing a misrouted action; inspect input/focus event fidelity |
-| Clipboard token transfer | Shared payload replacement and exact destinations specified | Verify Guest clipboard persistence/format API; instrument generation and owner without exposing hidden score; run both Solo goals and safe recovery |
-| Clipboard multi-cell transfer | Cell-boundary oracle specified | Prove the clipboard format actually carries TSV/range structure in pinned LibreOffice; drop if evaluator signature duplicates token overwrite |
-| Native save-modal ownership | Paths, content, owner evidence specified | Confirm Writer/Calc save dialogs are reproducible at the pinned version; derive active-modal owner from desktop events/accessibility evidence |
-| Browser prompt + Writer save | File hash/path oracle specified | Pin the download source and prompt behavior; ensure no real network, unsafe overwrite, or nondeterministic browser policy |
-| GUI+CLI stale merge anchor | Existing task spec/evaluator linked | Revalidate reset and provenance under current owner ledger before model comparison |
-| Append-only activity log | Exactly-once multiset oracle specified | Implement GUI/CLI paths that naturally append; prove that a complete log is jointly reachable and retries are idempotent |
+- Use two persisted source strings and two distinct destination fields, in Writer and Calc respectively. Sources remain unchanged so either actor can re-copy.
+- Make each Solo control demonstrate UI-level copy and paste; do not seed the destinations or use CLI to place target text.
+- Capture each action as a separate provenance event so the observer can bracket copy, partner activity, and paste. If an actor emits a compound command whose internal clipboard transitions cannot be observed, flag that interval unobservable.
+- Define target locator evidence: target application/document, active-window XID/title, focused accessibility object or Calc cell when available, and exact persisted destination after save/reopen.
 
-## Recommended next implementation order
+### 2. Add read-only clipboard observer in the Guest adapter
 
-1. Run only offline tests and inspect the resulting local diff/checkpoint.
-2. Once host resources are available, revalidate the two anchors (Writer/Calc and stale merge) from clean state; preserve every attempt.
-3. Check what OSWorld V2.1 exposes for clipboard contents, active window, active modal, and input target. Add adapter instrumentation only where evidence is unavailable; do not infer from screenshots alone.
-4. Implement one clipboard token task as the first new pilot. It is the cleanest separation from focus routing if focus is recorded and held as an independent dimension. Keep exact source/destination state and allow a recopy recovery path.
-5. Implement one modal-dialog task only if active modal ownership is observable and both actor goals have non-colliding outputs.
-6. Run each pilot's Solo A, Solo B, MA-ID, MA-SD, and recovery controls before considering a second instance in that family. Drop or merge any instance whose evaluator signature duplicates an existing task.
-7. Only after a candidate passes these gates, adapt the existing config-driven runner to load a registry ID. Preserve current runner's resource ownership ledger, provenance, artifact isolation, reset verification, and max-worker safety gates.
+Proposed observer record fields:
 
-## Safe offline commands
-
-```bash
-python -m swcub.task_registry_v1 tasks/codesk_task_registry_v1.json \
-  --config configs/task_suite_v1_offline_review.json
-pytest -q tests/test_task_registry_v1.py
+```json
+{
+  "sequence": 41,
+  "kind": "clipboard_snapshot",
+  "selection": "CLIPBOARD",
+  "owner_xid": "0x...",
+  "owner_window": "...",
+  "selection_timestamp": 123456,
+  "targets": ["TARGETS", "UTF8_STRING"],
+  "payload_sha256": "...",
+  "payload_bytes": 9,
+  "generation": 3,
+  "sample_reason": "after_actor_action",
+  "logical_actor": null
+}
 ```
 
-Do not use the current review config to launch an experiment: it intentionally has no live execution mode and explicitly disables Guest/model launch.
+Subscribe to XFixes selection-owner notifications where available and sample owner/timestamp plus canonical payload digest before/after every actor action. Owner-only events are insufficient; content can change while the same application remains involved. Maintain a task-local generation when owner/timestamp or payload digest changes. Log only hashes, lengths, target types, and owner metadata in normal artifacts; keep raw payload out of model-visible context. Logical actor is attributed only when a unique actor copy/cut action explains the observed transition and known source; clipboard manager ownership does not identify the actor.
+
+Before using the observer, compare observer-on and observer-off scripted Solo runs. Check that selection reads neither change the owner/payload nor introduce meaningful timing changes. Verify text transfer for the pinned Guest clipboard manager and formats actually used by LibreOffice. Any missed/ambiguous interval becomes `instrumentation_unknown` and cannot support a causal claim.
+
+### 3. Observe focus and paste destination independently
+
+At every paste action record the actor's intended app/target, active X11 window XID/title, focused accessibility node or selected Calc cell when the API reports it, and the action source. Afterward, read only evaluator-side saved ODF state. If focused-object instrumentation is unavailable, retain active-window evidence and mark widget-level routing unknown. Do not conclude “clipboard conflict” just because the wrong token appears.
+
+### 4. Run the control matrix
+
+| Control | Desktop/clipboard | Workspace backend | Purpose |
+|---|---|---|---|
+| Solo A | One isolated GUI session and clean clipboard | Clean clone of the common seed | Prove Writer copy/paste goal and source preservation |
+| Solo B | One isolated GUI session and clean clipboard | Same seed clone | Prove Calc copy/paste goal and all other cells preserved |
+| MA-ID | Separate desktop sessions and separate X selections | Same workspace/backend identity as MA-SD, distinct output paths | Control that shared files alone do not share the clipboard |
+| MA-SD | One X server/session and one CLIPBOARD selection | Same exact workspace/backend as MA-ID | Test clipboard sharing plus independently logged focus effects |
+| Scripted recovery positive control | Same MA-SD desktop and action schedule | Same backend and evaluator | After observed overwrite, re-copy from stable source, validate digest/target, paste and save; prove the goals remain jointly recoverable |
+
+For stress runs, register a `scheduled_stress` exposure opportunity when A has copied and has not yet pasted; schedule B's valid copy/paste in that interval. The coordinator records the opportunity, then lets A act. It never injects a paste, changes clipboard contents, directs A to a wrong target, or treats an opportunity as realized exposure. Natural runs are a separately tagged stratum.
+
+### 5. Cause and recovery scoring
+
+- `clipboard_exposure`: payload digest/generation changes between A's copy and paste; report whether the transition is uniquely linked to B's normal copy.
+- `focus_exposure`: active/focused target changes away from the declared target during that same interval; record separately from clipboard exposure.
+- `clipboard_attributed_failure`: B-linked payload replacement precedes A's paste; target evidence shows A pasted into the intended field; final saved state shows wrong/missing payload.
+- `focus_attributed_failure`: paste action's active/focused recipient is inconsistent with A's declared destination and state/events corroborate routing there.
+- `mixed_or_unknown`: both mechanisms occurred, observer interval is incomplete, actor owner linkage is ambiguous, or final state cannot disambiguate. Do not force exclusive attribution.
+- `recovery_attempt`: after a logged conflict or bad paste, actor takes corrective GUI actions (normally re-copy, re-ground target, paste, save). `recovery_success` requires later exact joint oracle pass. Exposure without failure is not counted as recovery.
+
+The primary failure denominator is every valid assigned episode. Report the proportion exposed as a separate metric; conditional failure given exposure is secondary. Keep scheduled stress and natural exposure in separate rows. Invalid Guest/readiness/instrumentation episodes are excluded from model failure rate but retained and counted as invalid.
+
+## De-duplication and retained scope
+
+- **Focus 002:** same active focus/input mechanism; merge as a stress schedule of Track A unless a new event/evaluator signature is established.
+- **Clipboard 002:** same global clipboard; merge as a structured-format variant of Clipboard 001 until cell-boundary corruption gives an independent causal and recovery signature.
+- **Window 002:** same active-modal ownership family, with extra browser download nondeterminism; defer until Modal 001 proves observable and safe.
+- **Append 002:** potentially distinct exactly-once transaction semantics, but auxiliary and without an established GUI append implementation; retain as future candidate, not a V1 task.
+
+## Offline verification and limits
+
+Run `python -m swcub.task_registry_v1 tasks/codesk_task_registry_v1.json --config configs/task_suite_v1_offline_review.json` and `pytest -q tests/test_task_registry_v1.py`. These commands validate data contracts and synthetic examples only. They do not prove X11 instrumentation, application readiness, clipboard reset, joint feasibility, or real-agent recovery. Do not connect the new clipboard design to the live runner until the observer and positive controls pass in an authorized real-Guest phase.
+
+Latest offline result for this revision: registry check reports 4 retained tasks, 4 families, 2 design-only tasks; `pytest -q --ignore=tests/test_real_workspace.py` reports 79 passed. The real-workspace test module was excluded by instruction. `git diff --check` passed. These are code/data tests, not Guest results.

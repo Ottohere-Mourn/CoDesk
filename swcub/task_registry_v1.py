@@ -93,8 +93,16 @@ def validate_registry(registry: Any) -> dict[str, int]:
             errors.append(f"{p}.conditions must define solo, ma_id, and ma_sd")
         else:
             for condition, spec in conditions.items():
-                if not isinstance(spec, dict) or not spec.get("control") or not spec.get("topology"):
-                    errors.append(f"{p}.conditions.{condition} needs control and topology")
+                if (not isinstance(spec, dict) or not spec.get("control")
+                        or not spec.get("topology") or not spec.get("backend_binding")):
+                    errors.append(
+                        f"{p}.conditions.{condition} needs control, topology, and backend_binding")
+            if (isinstance(conditions.get("ma_id"), dict)
+                    and isinstance(conditions.get("ma_sd"), dict)
+                    and conditions["ma_id"].get("backend_binding")
+                    != conditions["ma_sd"].get("backend_binding")):
+                errors.append(
+                    f"{p}.conditions MA-ID and MA-SD must hold application backend constant")
         evaluator = task.get("evaluator")
         if not isinstance(evaluator, dict) or not evaluator.get("oracle") or not evaluator.get("checks"):
             errors.append(f"{p}.evaluator needs an objective oracle and exact checks")
@@ -217,6 +225,73 @@ def interaction_metrics(events: list[dict[str, Any]], task: dict[str, Any]) -> d
             "action_count_by_actor": actions_by_actor, "evidence_supported_conflicts": conflicts,
             "recovery_steps_by_actor": recovery_steps,
             "unattributed_failures": "must be decided by comparing oracle result and event evidence"}
+
+
+def summarize_episode_outcomes(evaluator: dict[str, Any],
+                               events: list[dict[str, Any]]) -> dict[str, Any]:
+    """Keep resource exposure, terminal failure, and recovery as separate outcomes.
+
+    Exposure is counted only from explicit observer events. A scheduled opportunity is
+    a denominator, not a failure or an assertion that interference actually occurred.
+    """
+    ordered = sorted(events, key=lambda e: e.get("sequence", 0))
+    opportunities = [e for e in ordered if e.get("kind") == "exposure_opportunity"]
+    exposures = [e for e in ordered if e.get("kind") == "interference_exposure"]
+    sources = ("natural", "scheduled_stress")
+    exposure_counts = {}
+    opportunity_counts = {}
+    exposure_event_counts = {}
+    for source in sources:
+        opportunity_ids = {e.get("opportunity_id") for e in opportunities
+                           if e.get("source") == source and e.get("opportunity_id")}
+        exposed_ids = {e.get("opportunity_id") for e in exposures
+                       if e.get("source") == source and e.get("opportunity_id")}
+        opportunity_counts[source] = len(opportunity_ids)
+        exposure_counts[source] = len(opportunity_ids & exposed_ids)
+        exposure_event_counts[source] = sum(e.get("source") == source for e in exposures)
+    conflicts = [e for e in ordered if e.get("kind") == "conflict_detected"]
+    recovery_actions = [e for e in ordered if e.get("kind") == "action"
+                        and e.get("details", {}).get("recovery") is True]
+    joint_success = evaluator.get("joint_success") is True
+    recovery_success: bool | None
+    if not recovery_actions:
+        recovery_success = None
+    else:
+        had_prior_conflict = any(c.get("sequence", 0) < recovery_actions[-1].get("sequence", 0)
+                                 for c in conflicts)
+        recovery_success = bool(had_prior_conflict and joint_success)
+    actor_success = evaluator.get("actor_success", {})
+    return {
+        "exposure": {
+            "opportunities_by_source": opportunity_counts,
+            "realized_exposures_by_source": exposure_counts,
+            "exposure_events_by_source": exposure_event_counts,
+            "unlinked_opportunity_event_count": sum(
+                e.get("source") in sources and not e.get("opportunity_id") for e in opportunities),
+            "unlinked_exposure_event_count": sum(
+                e.get("source") in sources and not e.get("opportunity_id") for e in exposures),
+            "unsupported_source_event_count": sum(
+                e.get("source") not in sources for e in opportunities + exposures),
+            "rate_by_source": {
+                source: (exposure_counts[source] / opportunity_counts[source]
+                         if opportunity_counts[source] else None)
+                for source in sources
+            },
+            "events": exposures,
+        },
+        "task_outcome": {
+            "actor_success": actor_success,
+            "actor_failure_count": sum(value is False for value in actor_success.values()),
+            "joint_success": joint_success,
+            "joint_failure": not joint_success,
+        },
+        "recovery": {
+            "conflict_detected_count": len(conflicts),
+            "recovery_action_count": len(recovery_actions),
+            "recovery_success": recovery_success,
+            "interpretation": "Operational recovery outcome only; no claim about internal awareness.",
+        },
+    }
 
 
 def _get_path(state: Any, dotted_path: str) -> Any:

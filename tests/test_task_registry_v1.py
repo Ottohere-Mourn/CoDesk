@@ -9,6 +9,7 @@ from swcub.task_registry_v1 import (
     initial_state_fixture,
     interaction_metrics,
     load_registry,
+    summarize_episode_outcomes,
     validate_suite_config,
     verify_reset,
 )
@@ -22,8 +23,9 @@ CONFIG_PATH = ROOT / "configs/task_suite_v1_offline_review.json"
 def test_v1_registry_and_offline_config_are_well_formed():
     registry = load_registry(REGISTRY_PATH)
     config = json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
-    assert len(registry["tasks"]) == 8
-    assert validate_suite_config(config, registry) == {"selected_tasks": 8, "conditions": 3}
+    assert len(registry["tasks"]) == 4
+    assert len(registry["deferred_variants"]) == 4
+    assert validate_suite_config(config, registry) == {"selected_tasks": 4, "conditions": 3}
     assert {task["family"] for task in registry["tasks"]} == {
         "focus_input_routing", "clipboard_ownership", "window_dialog_competition",
         "gui_cli_shared_state",
@@ -84,3 +86,42 @@ def test_missing_recovery_contract_fails_registry_validation():
     with pytest.raises(TaskRegistryError, match="recovery.opportunity"):
         from swcub.task_registry_v1 import validate_registry
         validate_registry(registry)
+
+
+def test_registry_rejects_gui_cli_backend_confound():
+    registry = json.loads(REGISTRY_PATH.read_text(encoding="utf-8"))
+    task = next(t for t in registry["tasks"] if t["task_id"] == "CODESK-TD-STALE-MERGE-001")
+    task["conditions"]["ma_id"]["backend_binding"] = "private_backend"
+    from swcub.task_registry_v1 import validate_registry
+    with pytest.raises(TaskRegistryError, match="must hold application backend constant"):
+        validate_registry(registry)
+
+
+def test_exposure_failure_and_recovery_are_reported_separately():
+    evaluator = {"actor_success": {"writer_actor": True, "calc_actor": True},
+                 "joint_success": True}
+    events = [
+        {"sequence": 1, "kind": "exposure_opportunity", "source": "scheduled_stress",
+         "opportunity_id": "copy-window-1"},
+        {"sequence": 2, "kind": "interference_exposure", "source": "scheduled_stress",
+         "opportunity_id": "copy-window-1", "resource": "clipboard"},
+        {"sequence": 3, "kind": "conflict_detected", "sequence": 3},
+        {"sequence": 4, "actor_id": "writer_actor", "kind": "action",
+         "details": {"recovery": True}},
+    ]
+    summary = summarize_episode_outcomes(evaluator, events)
+    assert summary["exposure"]["realized_exposures_by_source"]["scheduled_stress"] == 1
+    assert summary["task_outcome"]["joint_failure"] is False
+    assert summary["recovery"]["recovery_success"] is True
+
+
+def test_scheduled_opportunity_alone_is_not_exposure_or_failure():
+    summary = summarize_episode_outcomes(
+        {"actor_success": {"a": True, "b": True}, "joint_success": True},
+        [{"sequence": 1, "kind": "exposure_opportunity", "source": "scheduled_stress",
+          "opportunity_id": "stress-1"}],
+    )
+    assert summary["exposure"]["realized_exposures_by_source"]["scheduled_stress"] == 0
+    assert summary["exposure"]["rate_by_source"]["scheduled_stress"] == 0
+    assert summary["task_outcome"]["joint_failure"] is False
+    assert summary["recovery"]["recovery_success"] is None
