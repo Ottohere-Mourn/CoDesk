@@ -276,6 +276,65 @@ class ScriptedWebCacheGUIActor:
             pass
 
 
+class ScriptedClipboardActor:
+    """Use ordinary GUI copy/paste keys; the coordinator never alters routing.
+
+    The task setup contract is: Writer is initially foreground and Calc was
+    opened immediately before Writer. In a shared desktop, Calc and the resumed
+    Writer turn use Alt+Tab to select their intended app. In Solo, launch only
+    the actor's assigned app. ``recopy_on_resume`` is a positive recovery
+    control: Writer copies its stable source again before pasting.
+    """
+    role = "gui"
+
+    def __init__(self, actor_id: str, *, shared_desktop: bool = False,
+                 recopy_on_resume: bool = False):
+        if actor_id not in {"writer_actor", "calc_actor"}:
+            raise ValueError("clipboard actor id must be writer_actor or calc_actor")
+        self.actor_id = actor_id
+        self.shared_desktop = shared_desktop
+        self.recopy_on_resume = recopy_on_resume
+        self.turn = 0
+
+    def run_step(self, context: ActorContext) -> bool:
+        if self.actor_id == "calc_actor":
+            if self.turn:
+                raise RuntimeError("Calc clipboard actor is a single-turn actor")
+            if self.shared_desktop:
+                context.press_key("alt+tab")
+            context.press_key("ctrl+home")
+            context.press_key("ctrl+c")
+            context.press_key("down")
+            context.press_key("ctrl+v")
+            context.press_key("ctrl+s")
+            self.turn = 1
+            return True
+
+        if self.turn == 0:
+            context.press_key("ctrl+home")
+            context.press_key("ctrl+shift+right")
+            context.press_key("ctrl+c")
+            self.turn = 1
+            return False
+        if self.turn != 1:
+            raise RuntimeError("Writer clipboard actor received an unexpected extra turn")
+        if self.shared_desktop:
+            context.press_key("alt+tab")
+        if self.recopy_on_resume:
+            context.press_key("ctrl+home")
+            context.press_key("ctrl+shift+right")
+            context.press_key("ctrl+c")
+        context.press_key("ctrl+end")
+        context.press_key("ctrl+v")
+        context.press_key("ctrl+s")
+        self.turn = 2
+        return True
+
+    def run(self, context: ActorContext) -> None:
+        while not self.run_step(context):
+            pass
+
+
 class ScriptedBrowserGUIActor:
     """Complete the GUI Agent's independent browser approval goal."""
     actor_id = "gui_actor"

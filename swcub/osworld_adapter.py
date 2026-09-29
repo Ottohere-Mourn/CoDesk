@@ -13,6 +13,7 @@ import re
 import shlex
 import time
 from typing import Any, Callable
+import xml.etree.ElementTree as ET
 
 from .core import Episode
 
@@ -45,11 +46,30 @@ class OSWorldSharedEpisode(Episode):
 
     def __init__(self, desktop_env: Any,
                  cli_executor: Callable[[str], Any] | None = None,
-                 window_focus_translator: Callable[[dict[str, Any]], Any] | None = None):
+                 window_focus_translator: Callable[[dict[str, Any]], Any] | None = None,
+                 clipboard_sampler: Any | None = None,
+                 require_clipboard_observer: bool = False,
+                 clipboard_actor_payload_digests: dict[str, str] | None = None):
         self.desktop_env = desktop_env
         self.environment_id = f"osworld-{id(desktop_env):x}"
         self.cli_executor = cli_executor
         self.window_focus_translator = window_focus_translator
+        self.clipboard_sampler = clipboard_sampler
+        self.require_clipboard_observer = require_clipboard_observer
+        self.clipboard_actor_payload_digests = dict(clipboard_actor_payload_digests or {})
+        self.clipboard_observer_health: dict[str, Any] = {
+            "enabled": clipboard_sampler is not None,
+            "valid": clipboard_sampler is not None,
+            "samples": 0,
+            "failures": 0,
+        }
+        # Local import keeps the legacy OSWorld adapter independent unless a
+        # clipboard task explicitly opts into private selection instrumentation.
+        if clipboard_sampler is not None:
+            from .clipboard_observer import ClipboardEventTracker
+            self._clipboard_tracker = ClipboardEventTracker()
+        else:
+            self._clipboard_tracker = None
         self.observation: Any = None
         self.screenshot_history: list[tuple[str, bytes]] = []
         self.revision = 0
@@ -71,6 +91,86 @@ class OSWorldSharedEpisode(Episode):
             return None
         match = re.search(r'<frame name="([^"]+)"[^>]*st:active="true"', tree)
         return match.group(1) if match else None
+
+    def attach_clipboard_sampler(self, sampler: Any, *,
+                                 actor_payload_digests: dict[str, str] | None = None,
+                                 required: bool = True) -> None:
+        """Opt this episode into hidden clipboard instrumentation before actors run."""
+        if self.actor_steps:
+            raise RuntimeError("clipboard observer must be attached before actor actions")
+        from .clipboard_observer import ClipboardEventTracker
+        self.clipboard_sampler = sampler
+        self.require_clipboard_observer = required
+        self.clipboard_actor_payload_digests = dict(actor_payload_digests or {})
+        self._clipboard_tracker = ClipboardEventTracker()
+        self.clipboard_observer_health.update({"enabled": True, "valid": True,
+                                               "samples": 0, "failures": 0})
+
+    def _clipboard_sample(self, actor: str, phase: str,
+                          source_action: Any = None) -> dict[str, Any] | None:
+        """Log hidden evaluator-side clipboard state without returning it to actors."""
+        if self.clipboard_sampler is None:
+            return None
+        before = self.clipboard_observer_health.copy()
+        try:
+            raw = self.clipboard_sampler.sample()
+            event = self._clipboard_tracker.record(raw, actor_id=actor,
+                                                   source_action=source_action,
+                                                   phase=phase,
+                                                   expected_payload_sha256=(
+                                                       self.clipboard_actor_payload_digests.get(actor)))
+            event["paste_target"] = self._focused_accessibility_target()
+            self.clipboard_observer_health["samples"] += 1
+            after = self.clipboard_observer_health.copy()
+            self.log.record("clipboard_observer", "instrumentation", "clipboard.sample",
+                            before, after, outcome="ok",
+                            details={**event, "source_actor": actor})
+            return event
+        except Exception as exc:
+            self.clipboard_observer_health["valid"] = False
+            self.clipboard_observer_health["failures"] += 1
+            after = self.clipboard_observer_health.copy()
+            self.log.record("clipboard_observer", "instrumentation", "clipboard.sample",
+                            before, after, outcome="unavailable",
+                            details={"phase": phase, "source_actor": actor,
+                                     "error": f"{type(exc).__name__}: {exc}"})
+            if self.require_clipboard_observer:
+                raise RuntimeError("required clipboard observer unavailable") from exc
+            return None
+
+    def _focused_accessibility_target(self) -> dict[str, Any] | None:
+        """Return the most specific focused editable a11y node, without text content."""
+        if not isinstance(self.observation, dict):
+            return None
+        tree = self.observation.get("accessibility_tree")
+        if not isinstance(tree, str) or not tree.strip():
+            return None
+        try:
+            root = ET.fromstring(tree)
+        except ET.ParseError:
+            return None
+        state_ns = "https://accessibility.ubuntu.example.org/ns/state"
+        attr_ns = "https://accessibility.ubuntu.example.org/ns/attributes"
+        component_ns = "https://accessibility.ubuntu.example.org/ns/component"
+        candidates = []
+        for node in root.iter():
+            if node.get(f"{{{state_ns}}}focused") != "true":
+                continue
+            editable = node.get(f"{{{state_ns}}}editable") == "true"
+            focusable = node.get(f"{{{state_ns}}}focusable") == "true"
+            if not editable and not focusable:
+                continue
+            candidates.append({"role": node.tag.rsplit("}", 1)[-1],
+                               "name": node.get("name") or None,
+                               "toolkit": node.get(f"{{{attr_ns}}}toolkit"),
+                               "editable": editable, "focusable": focusable,
+                               "coordinates": node.get(f"{{{component_ns}}}screencoord"),
+                               "size": node.get(f"{{{component_ns}}}size")})
+        if not candidates:
+            return None
+        # Accessibility trees report inherited focused state on ancestors too;
+        # the last eligible node in document order is normally the leaf widget.
+        return {**candidates[-1], "availability": "focused_accessibility_node"}
 
     def snapshot(self) -> Any:
         provider = getattr(self.desktop_env, "provider", None)
@@ -202,6 +302,10 @@ class OSWorldSharedEpisode(Episode):
         self.revision = 0
         self.actor_steps.clear()
         self._revision_actors.clear()
+        if self._clipboard_tracker is not None:
+            self._clipboard_tracker.reset()
+            self.clipboard_observer_health.update({"valid": True, "samples": 0,
+                                                   "failures": 0})
         self.log.record("orchestrator", "reset", "osworld.reset", before, self.snapshot(),
                         details={"task_config_id": task_config.get("id") if isinstance(task_config, dict) else None,
                                  "seed": seed,
@@ -215,6 +319,7 @@ class OSWorldSharedEpisode(Episode):
         active_window_before = self._active_window_title()
         observed_revision = self.revision if observed_revision is None else observed_revision
         intervening_actors = self._revision_actors[observed_revision: self.revision]
+        self._clipboard_sample(actor, "before_action", source_action or action)
         self.observation, reward, done, info = self.desktop_env.step(action, pause=pause)
         active_window_after = self._active_window_title()
         self.revision += 1
@@ -238,6 +343,7 @@ class OSWorldSharedEpisode(Episode):
                                                     "intervening_action_actors": intervening_actors,
                                                     "reward": reward, "done": done,
                                                     "info": _digestable(info)})
+        self._clipboard_sample(actor, "after_action", source_action or action)
         return self.observation
 
     def cli_action(self, actor: str, command: str,
@@ -252,6 +358,7 @@ class OSWorldSharedEpisode(Episode):
         # ensure the next reset reverts the VM snapshot too.
         if hasattr(self.desktop_env, "is_environment_used"):
             self.desktop_env.is_environment_used = True
+        self._clipboard_sample(actor, "before_action", command)
         result = self.cli_executor(command)
         self.revision += 1
         self._revision_actors.append(actor)
@@ -269,6 +376,7 @@ class OSWorldSharedEpisode(Episode):
                                                         for other_actor in intervening_actors),
                                                     "intervening_action_actors": intervening_actors,
                                                     "result": _digestable(result)})
+        self._clipboard_sample(actor, "after_action", command)
         return result
 
     def evaluate_osworld_task(self) -> float:
