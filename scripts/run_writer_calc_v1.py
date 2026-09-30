@@ -76,7 +76,7 @@ class LocalQwenInferenceClient:
                            }).encode("utf-8")
         request = Request(self.url, data=body,
                           headers={"Content-Type": "application/json"}, method="POST")
-        with urlopen(request, timeout=240) as response:
+        with urlopen(request, timeout=600) as response:
             result = json.loads(response.read())
         if not isinstance(result, dict) or not isinstance(result.get("text"), str):
             raise ValueError(f"invalid local model-worker reply: {result!r}")
@@ -142,6 +142,7 @@ def start_local_qwen_worker(out: Path) -> tuple[subprocess.Popen[bytes],
         "effective_generation": {"max_new_tokens": 512, "do_sample": False,
                                  "agent_temperature": 0.0, "agent_top_p": 0.9,
                                  "note": "local worker uses deterministic greedy decoding"},
+        "inference_request_timeout_seconds": 600,
         "agent_framework": "OSWorld-V2.1 Qwen3VLAgent",
         "agent_source": str(OSWORLD_V2_DIR / "mm_agents/qwen3vl_agent.py"),
         "coordinate_type": "relative 0..999; native OSWorld parser scales to screenshot pixels",
