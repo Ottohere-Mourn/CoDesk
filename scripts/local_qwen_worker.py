@@ -4,11 +4,13 @@ from __future__ import annotations
 
 import argparse
 import base64
+import hashlib
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import io
 import json
 import os
 from pathlib import Path
+import socket
 import time
 import uuid
 
@@ -55,10 +57,12 @@ class LocalQwenRuntime:
         self.torch = torch
         self.process_vision_info = process_vision_info
         device_map = getattr(self.model, "hf_device_map", {})
-        mapped_devices = sorted({str(value) for value in device_map.values()}) if device_map else []
+        self.mapped_devices = sorted({str(value) for value in device_map.values()}) if device_map else []
+        self.config_sha256 = hashlib.sha256(
+            (Path(self.model_path) / "config.json").read_bytes()).hexdigest()
         _log("model.load_ready", model=Path(self.model_path).name,
              elapsed_s=round(time.perf_counter() - load_started, 3),
-             mapped_devices=mapped_devices)
+             mapped_devices=self.mapped_devices)
 
     @staticmethod
     def _messages_with_images(messages: list[dict[str, object]]) -> list[dict[str, object]]:
@@ -161,6 +165,13 @@ def main() -> int:
                 self.send_json(404, {"error": "unknown endpoint"})
                 return
             self.send_json(200, {"ready": True, "model": args.model.name,
+                                 "model_path": str(args.model.resolve()),
+                                 "config_sha256": runtime.config_sha256,
+                                 "device": runtime.device,
+                                 "mapped_devices": runtime.mapped_devices,
+                                 "host": socket.gethostname(),
+                                 "pid": os.getpid(),
+                                 "cuda_visible_devices": os.environ.get("CUDA_VISIBLE_DEVICES"),
                                  "local_files_only": True, "bind": "127.0.0.1"})
 
         def do_POST(self) -> None:
@@ -178,7 +189,10 @@ def main() -> int:
                 max_new_tokens = int(payload.get("max_new_tokens", 512))
                 if not 1 <= max_new_tokens <= 1536:
                     raise ValueError("max_new_tokens must be between 1 and 1536")
-                request_id = uuid.uuid4().hex[:10]
+                request_id = self.headers.get("X-CoDesk-Request-ID", "")
+                if not request_id or len(request_id) > 64 or not all(
+                        char.isalnum() or char in "_-" for char in request_id):
+                    request_id = uuid.uuid4().hex[:12]
                 _log("http.request_start", request_id=request_id, bytes=size)
                 result = runtime.infer(messages, max_new_tokens, request_id)
                 self.send_json(200, result)

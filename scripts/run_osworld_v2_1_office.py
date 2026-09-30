@@ -12,6 +12,8 @@ import socket
 import subprocess
 import sys
 import time
+import uuid
+from urllib.parse import urlsplit
 from urllib.request import Request, urlopen
 
 import requests
@@ -33,6 +35,7 @@ from swcub.osworld_adapter import OSWorldSharedEpisode
 from swcub.osworld_agent_actor import OSWorldAgentActor
 from swcub.comparison_metrics import summarize_focus_events
 from swcub.osworld_readiness import wait_for_guest_desktop
+from swcub.provenance import stamp_episode_provenance
 from swcub.resource_safety import ensure_resource_identity
 
 
@@ -47,22 +50,52 @@ WRITER_DRAFT = "Quarterly status report"
 
 
 class LocalQwenInferenceClient:
-    """Transport only: forward the official OSWorld agent's prompt to local weights."""
+    """Thin HTTP transport for the pinned OSWorld agent's existing prompt/history."""
 
-    def __init__(self, port: int):
-        self.url = f"http://127.0.0.1:{port}/infer"
+    def __init__(self, port: int | None = None, *, endpoint: str | None = None,
+                 event_callback=None):
+        if endpoint:
+            self.base_url = endpoint.rstrip("/")
+        elif port is not None:
+            self.base_url = f"http://127.0.0.1:{port}"
+        else:
+            raise ValueError("provide a local worker port or remote loopback endpoint")
+        self.url = f"{self.base_url}/infer"
+        self.event_callback = event_callback
 
     def complete(self, payload: dict[str, object], _model: str) -> str:
+        request_id = uuid.uuid4().hex[:16]
+        max_new_tokens = min(int(payload.get("max_tokens", 512)), 512)
         request_body = json.dumps({
             "messages": payload["messages"],
-            "max_new_tokens": min(int(payload.get("max_tokens", 512)), 512),
+            "max_new_tokens": max_new_tokens,
         }).encode("utf-8")
-        request = Request(self.url, data=request_body,
-                          headers={"Content-Type": "application/json"}, method="POST")
-        with urlopen(request, timeout=240) as response:
-            result = json.loads(response.read())
-        if not isinstance(result, dict) or not isinstance(result.get("text"), str):
-            raise ValueError(f"invalid local model-worker reply: {result!r}")
+        request = Request(self.url, data=request_body, headers={
+            "Content-Type": "application/json",
+            "X-CoDesk-Request-ID": request_id,
+        }, method="POST")
+        started = time.monotonic()
+        if self.event_callback:
+            self.event_callback({"event": "remote_request_start", "request_id": request_id,
+                                 "request_bytes": len(request_body),
+                                 "max_new_tokens": max_new_tokens})
+        try:
+            with urlopen(request, timeout=240) as response:
+                response_body = response.read()
+            result = json.loads(response_body)
+            if not isinstance(result, dict) or not isinstance(result.get("text"), str):
+                raise ValueError("invalid model-worker response schema")
+        except Exception as exc:
+            if self.event_callback:
+                self.event_callback({"event": "remote_request_error", "request_id": request_id,
+                                     "elapsed_ms": round((time.monotonic() - started) * 1000, 2),
+                                     "error_type": type(exc).__name__})
+            raise
+        if self.event_callback:
+            self.event_callback({"event": "remote_response", "request_id": request_id,
+                                 "elapsed_ms": round((time.monotonic() - started) * 1000, 2),
+                                 "response_bytes": len(response_body),
+                                 "response_chars": len(result["text"])})
         return result["text"]
 
 
@@ -130,6 +163,7 @@ def main() -> int:
     episode = OSWorldSharedEpisode(desktop, cli_executor=lambda raw: command(shlex.split(raw)))
     episode.log = EventLog()
     model_worker: subprocess.Popen[bytes] | None = None
+    report: dict[str, object] | None = None
     try:
         episode.reset(task_config=None)
         if not wait_for_desktop(episode):
@@ -174,38 +208,74 @@ def main() -> int:
         model_metadata: dict[str, object] | None = None
         if scenario in {"writer-osworld-agent-solo", "calc-osworld-agent-solo",
                         "writer-agent-calc-scripted-sequential"}:
-            host_python = os.environ.get("SWCUB_MODEL_PYTHON", "/opt/miniconda3/bin/python")
-            model_path = Path(os.environ.get(
-                "SWCUB_LOCAL_VLM_PATH", "/mnt/raid1/mjh/models/Qwen/Qwen3-VL-30B-A3B-Instruct"))
-            device = os.environ.get("SWCUB_LOCAL_VLM_DEVICE", "auto")
-            with socket.socket() as listener:
-                listener.bind(("127.0.0.1", 0))
-                port = listener.getsockname()[1]
-            worker_log = (out / "model_worker.log").open("w", encoding="utf-8")
-            worker_env = os.environ.copy()
-            worker_env.update({"HF_HUB_OFFLINE": "1", "TRANSFORMERS_OFFLINE": "1",
-                               "HF_HUB_DISABLE_TELEMETRY": "1"})
-            worker_env.setdefault("CUDA_VISIBLE_DEVICES", "0,2,3,4,5,6,7")
-            model_worker = subprocess.Popen(
-                [host_python, str(ROOT / "scripts/local_qwen_worker.py"),
-                 "--model", str(model_path), "--device", device, "--port", str(port)],
-                env=worker_env, stdout=worker_log, stderr=subprocess.STDOUT)
-            worker_log.close()
-            deadline = time.monotonic() + 600
-            health_url = f"http://127.0.0.1:{port}/health"
-            while time.monotonic() < deadline:
-                if model_worker.poll() is not None:
-                    raise RuntimeError(f"local Qwen worker exited; see {out / 'model_worker.log'}")
-                try:
-                    with urlopen(health_url, timeout=5) as response:
-                        model_metadata = json.loads(response.read())
-                    break
-                except Exception:
-                    time.sleep(2)
+            remote_url = os.environ.get("SWCUB_QWEN_INFERENCE_URL", "").strip()
+            if remote_url:
+                parsed = urlsplit(remote_url)
+                if (parsed.scheme != "http" or parsed.hostname not in {"127.0.0.1", "localhost"}
+                        or not parsed.port or parsed.path not in {"", "/"}):
+                    raise ValueError("remote Qwen URL must be an HTTP loopback endpoint provided by SSH forwarding")
+                inference_base = remote_url.rstrip("/")
+                with urlopen(f"{inference_base}/health", timeout=10) as response:
+                    model_metadata = json.loads(response.read())
+                if (not model_metadata.get("ready")
+                        or model_metadata.get("model") != "Qwen3-VL-30B-A3B-Instruct"):
+                    raise RuntimeError("remote inference health did not identify the expected Qwen3-VL-30B-A3B model")
+                inference_events_path = out / "remote_inference_events.jsonl"
+
+                def record_inference_event(event: dict[str, object]) -> None:
+                    record = {"logged_unix_ns": time.time_ns(),
+                              "actor_id": "gui_actor",
+                              "client_host": socket.gethostname(),
+                              **event}
+                    with inference_events_path.open("a", encoding="utf-8") as stream:
+                        stream.write(json.dumps(record, ensure_ascii=False) + "\n")
+
+                worker_client = LocalQwenInferenceClient(
+                    endpoint=inference_base, event_callback=record_inference_event)
+                device = "4090 CUDA_VISIBLE_DEVICES=" + str(
+                    model_metadata.get("cuda_visible_devices") or "unknown")
+                worker_description = "4090 local Transformers worker; local_files_only"
+                inference_host = str(model_metadata.get("host") or
+                                     os.environ.get("SWCUB_QWEN_INFERENCE_HOST", "4090"))
+                inference_transport = "SSH reverse port-forward to 4090 loopback"
+                inference_url = inference_base
             else:
-                model_worker.terminate()
-                raise TimeoutError("local Qwen worker did not become ready within 600 seconds")
-            worker_client = LocalQwenInferenceClient(port)
+                host_python = os.environ.get("SWCUB_MODEL_PYTHON", "/opt/miniconda3/bin/python")
+                model_path = Path(os.environ.get(
+                    "SWCUB_LOCAL_VLM_PATH", "/mnt/raid1/mjh/models/Qwen/Qwen3-VL-30B-A3B-Instruct"))
+                device = os.environ.get("SWCUB_LOCAL_VLM_DEVICE", "auto")
+                with socket.socket() as listener:
+                    listener.bind(("127.0.0.1", 0))
+                    port = int(listener.getsockname()[1])
+                worker_log = (out / "model_worker.log").open("w", encoding="utf-8")
+                worker_env = os.environ.copy()
+                worker_env.update({"HF_HUB_OFFLINE": "1", "TRANSFORMERS_OFFLINE": "1",
+                                   "HF_HUB_DISABLE_TELEMETRY": "1"})
+                worker_env.setdefault("CUDA_VISIBLE_DEVICES", "0,2,3,4,5,6,7")
+                model_worker = subprocess.Popen(
+                    [host_python, str(ROOT / "scripts/local_qwen_worker.py"),
+                     "--model", str(model_path), "--device", device, "--port", str(port)],
+                    env=worker_env, stdout=worker_log, stderr=subprocess.STDOUT)
+                worker_log.close()
+                deadline = time.monotonic() + 600
+                health_url = f"http://127.0.0.1:{port}/health"
+                while time.monotonic() < deadline:
+                    if model_worker.poll() is not None:
+                        raise RuntimeError(f"local Qwen worker exited; see {out / 'model_worker.log'}")
+                    try:
+                        with urlopen(health_url, timeout=5) as response:
+                            model_metadata = json.loads(response.read())
+                        break
+                    except Exception:
+                        time.sleep(2)
+                else:
+                    model_worker.terminate()
+                    raise TimeoutError("local Qwen worker did not become ready within 600 seconds")
+                worker_client = LocalQwenInferenceClient(port)
+                worker_description = "local Transformers inference; local_files_only"
+                inference_host = socket.gethostname()
+                inference_transport = "same-host loopback"
+                inference_url = f"http://127.0.0.1:{port}"
             model_agent = Qwen3VLAgent(
                 platform="ubuntu", model="qwen3-vl", max_tokens=512,
                 action_space="pyautogui", observation_type="screenshot",
@@ -237,11 +307,27 @@ def main() -> int:
                 actors, schedule = [actor, calc], ["gui_actor"] * actor.max_steps + ["calc_actor"]
             else:
                 actors, schedule = model_actors, ["gui_actor"] * actor.max_steps
-            model_metadata = {"name": model_metadata["model"], "device": device,
-                              "worker": "local Transformers inference; local_files_only",
-                              "agent_framework": "OSWorld-V2.1 Qwen3VLAgent",
-                              "agent_source": str(OSWORLD_V2_DIR / "mm_agents/qwen3vl_agent.py"),
-                              "coordinate_type": "relative 0..999; native OSWorld parser scales to screenshot pixels"}
+            model_metadata = {
+                "name": model_metadata["model"],
+                "path": model_metadata.get("model_path"),
+                "config_sha256": model_metadata.get("config_sha256"),
+                "device": device,
+                "mapped_devices": model_metadata.get("mapped_devices"),
+                "worker": worker_description,
+                "inference_host": inference_host,
+                "client_host": socket.gethostname(),
+                "transport": inference_transport,
+                "endpoint": inference_url,
+                "local_files_only": model_metadata.get("local_files_only"),
+                "agent_framework": "OSWorld-V2.1 Qwen3VLAgent",
+                "agent_source": str(OSWORLD_V2_DIR / "mm_agents/qwen3vl_agent.py"),
+                "prompt_history_action_parser": "unchanged OSWorld Qwen3VLAgent",
+                "coordinate_type": "relative 0..999; native OSWorld parser scales to screenshot pixels",
+                "max_new_tokens": 512,
+                "temperature": 0.0,
+                "top_p": 0.9,
+                "step_budget": 20,
+            }
         elif scenario in {"writer-solo", "calc-solo"}:
             actors = [writer] if scenario == "writer-solo" else [calc]
             schedule = ["writer_actor", "writer_actor"] if scenario == "writer-solo" else ["calc_actor"]
@@ -355,6 +441,28 @@ def main() -> int:
                 model_worker.kill()
                 model_worker.wait(timeout=5)
         episode.close()
+        if report is not None and (out / "report.json").is_file():
+            actor_metadata = {"gui_actor": {"class": "OSWorldAgentActor",
+                                            "role": "Writer solo GUI task"}}
+            source_files = [
+                Path(__file__), ROOT / "scripts/local_qwen_worker.py",
+                ROOT / "swcub/osworld_agent_actor.py", ROOT / "swcub/osworld_adapter.py",
+                ROOT / "swcub/evaluator.py", ROOT / "swcub/core.py",
+                ROOT / "swcub/provenance.py", ROOT / "tasks/instances/office_writer_calc.json",
+                OSWORLD_V2_DIR / "mm_agents/qwen3vl_agent.py",
+            ]
+            stamp_episode_provenance(
+                out, report, repo_root=ROOT, task_id=instance_spec.task_id,
+                task_version="unversioned-prototype", condition="solo",
+                seed=instance_spec.seed, actor_metadata=actor_metadata,
+                evaluator_class=type(evaluator).__name__, source_files=source_files,
+                osworld_checkout=OSWORLD_V2_DIR,
+                release_manifest=ROOT / "outputs/osworld-v2.1/environment/release_manifest.json",
+                guest_image=Path(guest_image),
+                model_metadata=report.get("model"),
+                runtime_image=os.environ.get(
+                    "SWCUB_OSWORLD_DOCKER_RUNTIME_IMAGE",
+                    "swcub/osworld-v2.1-qemu-runtime:local"))
 
 
 if __name__ == "__main__":
