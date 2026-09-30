@@ -445,6 +445,30 @@ def wait_for_app_document(episode: OSWorldSharedEpisode, desktop: DesktopEnv,
         diagnostics)
 
 
+def _capture_guest_office_trace(desktop: DesktopEnv, app: str, out: Path) -> dict[str, Any]:
+    prefix = f"/tmp/swcub-lo-{app}.trace"
+    code = (
+        "from pathlib import Path; import json; "
+        f"ps=sorted(Path('/tmp').glob('swcub-lo-{app}.trace*')); "
+        "rows=[{'name':p.name,'text':p.read_text(errors='replace')} for p in ps]; "
+        "print(json.dumps(rows))")
+    raw = guest_command(desktop, ["python3", "-c", code], timeout=60)
+    rows = json.loads(raw) if raw.strip() else []
+    trace_dir = out / "syscall-trace"
+    trace_dir.mkdir(parents=True, exist_ok=True)
+    target = trace_dir / f"{app}-full.json"
+    target.write_text(json.dumps(rows, indent=2), encoding="utf-8")
+    text = "\n".join(item["text"] for item in rows)
+    relevant = [line for line in text.splitlines()
+                if "/tmp/swcub_office" in line or " = -1 " in line]
+    summary = trace_dir / f"{app}-relevant.txt"
+    summary.write_text("\n".join(relevant) + ("\n" if relevant else ""),
+                       encoding="utf-8")
+    return {"enabled": True, "trace_prefix": prefix, "files": len(rows),
+            "full_trace": target.name, "relevant_trace": summary.name,
+            "relevant_lines": len(relevant)}
+
+
 def seed_and_open(episode: OSWorldSharedEpisode, desktop: DesktopEnv,
                   open_apps: list[str], out: Path,
                   initialize_workspace: bool = True,
@@ -491,11 +515,25 @@ def seed_and_open(episode: OSWorldSharedEpisode, desktop: DesktopEnv,
                                   {"expected_initial_state": initial_expected,
                                    "actual_initial_state": initial_state})
     opened: list[dict[str, Any]] = []
+    trace_io = os.environ.get("SWCUB_TRACE_OFFICE_IO") == "1"
+    trace_binary = None
+    if trace_io:
+        trace_binary = guest_command(desktop, ["bash", "-lc", "command -v strace || true"]).strip()
+        if not trace_binary:
+            raise SetupReadinessError("SWCUB_TRACE_OFFICE_IO=1 but strace is not installed in Guest")
+    trace_results: list[dict[str, Any]] = []
     for app in open_apps:
         flag = "--writer" if app == "writer" else "--calc"
         path = WRITER_PATH if app == "writer" else CALC_PATH
-        launch = (f"soffice --nologo --norestore --nofirststartwizard {flag} "
-                  f"{shlex.quote(path)} >/tmp/swcub_office/{app}-launch.log 2>&1 & sleep 7")
+        soffice = (f"soffice --nologo --norestore --nofirststartwizard {flag} "
+                   f"{shlex.quote(path)}")
+        if trace_io:
+            trace_prefix = f"/tmp/swcub-lo-{app}.trace"
+            syscalls = ("openat,creat,truncate,ftruncate,rename,renameat,renameat2,"
+                        "unlink,unlinkat,flock,fcntl,fsync,fdatasync,chmod,fchmod,fchmodat")
+            soffice = (f"{shlex.quote(trace_binary)} -ff -ttt -s 256 -yy "
+                       f"-e trace={syscalls} -o {shlex.quote(trace_prefix)} " + soffice)
+        launch = f"{soffice} >/tmp/swcub_office/{app}-launch.log 2>&1 & sleep 7"
         episode.cli_action("task_setup", "bash -lc " + shlex.quote(launch))
         app_ready = wait_for_app_document(episode, desktop, app, path, out)
 
@@ -520,13 +558,19 @@ def seed_and_open(episode: OSWorldSharedEpisode, desktop: DesktopEnv,
         persisted_state = read_seeded_state(episode, desktop)
         if (not _document_title_matches(after_save_capture["active_window_title"], app, path)
                 or persisted_state != initial_expected):
+            trace_result = (_capture_guest_office_trace(desktop, app, out)
+                            if trace_io else {"enabled": False})
+            trace_results.append(trace_result)
             raise SetupReadinessError(
                 f"{app} no-op GUI save changed or lost the seeded document state",
                 {"app_ready": app_ready, "probe": probe_capture,
                  "after_save": after_save_capture,
                  "shared_backend_access": shared_file_access,
+                 "syscall_trace": trace_result,
                  "expected_initial_state": initial_expected,
                  "actual_persisted_state": persisted_state})
+        if trace_io:
+            trace_results.append(_capture_guest_office_trace(desktop, app, out))
         opened.append({"app": app, "document": Path(path).name,
                        "window_readiness": app_ready,
                        "interactive": True, "active_window_after_probe": probe_capture[
@@ -541,6 +585,7 @@ def seed_and_open(episode: OSWorldSharedEpisode, desktop: DesktopEnv,
     return {"libreoffice_version": availability.strip(),
             "initial_state_verified": True, "opened_documents": opened,
             "shared_backend_access": shared_file_access,
+            "syscall_trace": trace_results,
             "ready": len(opened) == len(open_apps)}
 
 
