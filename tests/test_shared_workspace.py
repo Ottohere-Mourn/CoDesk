@@ -53,6 +53,12 @@ def test_qemu_and_guest_mount_args_are_deterministic():
     assert "mount -t 9p" in command
     assert "version=9p2000.L" in command
     assert "codesk_workspace /tmp/swcub_office" in command
+    assert "sudo -n mount" in command
+    password_command = guest_mount_command(sudo_password="test-password")
+    assert ("printf '%s" + chr(92) + "n' test-password | sudo -S -p '' mount") in password_command
+    assert password_command.endswith("&& mountpoint -q /tmp/swcub_office")
+    with pytest.raises(WorkspaceTopologyError, match="single line"):
+        guest_mount_command(sudo_password="bad\npassword")
 
 
 def test_backend_marker_requires_fresh_path_and_records_run_ownership(tmp_path: Path):
@@ -62,6 +68,7 @@ def test_backend_marker_requires_fresh_path_and_records_run_ownership(tmp_path: 
     assert marker.is_file()
     assert marker.parent == tmp_path  # ownership metadata stays outside the Guest export
     assert marker.parent == tmp_path  # ownership metadata stays outside the Guest export
+    assert root.stat().st_mode & 0o777 == 0o777  # Guest UID can write the run-scoped 9p export
     assert '"generation": "task"' in marker.read_text()
     with pytest.raises(FileExistsError):
         write_backend_marker(root, backend_id="backend-0001",

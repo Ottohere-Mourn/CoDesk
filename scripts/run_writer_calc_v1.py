@@ -65,21 +65,50 @@ MODEL_INTERLEAVED_SCHEDULE = [
 
 
 class LocalQwenInferenceClient:
-    """Transport for the pinned OSWorld agent to the existing offline worker."""
+    """Thin transport for the pinned OSWorld agent and one shared inference worker."""
 
-    def __init__(self, port: int):
-        self.url = f"http://127.0.0.1:{port}/infer"
+    def __init__(self, port: int | None = None, *, endpoint: str | None = None,
+                 event_callback=None):
+        if endpoint:
+            self.base_url = endpoint.rstrip("/")
+        elif port is not None:
+            self.base_url = f"http://127.0.0.1:{port}"
+        else:
+            raise ValueError("provide a worker port or SSH-forwarded loopback endpoint")
+        self.url = f"{self.base_url}/infer"
+        self.event_callback = event_callback
 
-    def complete(self, payload: dict[str, Any], _model: str) -> str:
+    def complete(self, payload: dict[str, Any], _model: str,
+                 actor_id: str = "unknown_actor") -> str:
+        request_id = uuid.uuid4().hex[:16]
         body = json.dumps({"messages": payload["messages"],
                            "max_new_tokens": min(int(payload.get("max_tokens", 512)), 512)
                            }).encode("utf-8")
         request = Request(self.url, data=body,
-                          headers={"Content-Type": "application/json"}, method="POST")
-        with urlopen(request, timeout=600) as response:
-            result = json.loads(response.read())
-        if not isinstance(result, dict) or not isinstance(result.get("text"), str):
-            raise ValueError(f"invalid local model-worker reply: {result!r}")
+                          headers={"Content-Type": "application/json",
+                                   "X-CoDesk-Request-ID": request_id}, method="POST")
+        started = time.monotonic()
+        if self.event_callback:
+            self.event_callback({"event": "request_start", "actor_id": actor_id,
+                                 "request_id": request_id, "request_bytes": len(body)})
+        try:
+            with urlopen(request, timeout=600) as response:
+                response_body = response.read()
+            result = json.loads(response_body)
+            if not isinstance(result, dict) or not isinstance(result.get("text"), str):
+                raise ValueError("invalid model-worker response schema")
+        except Exception as exc:
+            if self.event_callback:
+                self.event_callback({"event": "request_error", "actor_id": actor_id,
+                    "request_id": request_id, "elapsed_ms": round(
+                        (time.monotonic() - started) * 1000, 2),
+                    "error_type": type(exc).__name__})
+            raise
+        if self.event_callback:
+            self.event_callback({"event": "response", "actor_id": actor_id,
+                "request_id": request_id, "elapsed_ms": round(
+                    (time.monotonic() - started) * 1000, 2),
+                "response_bytes": len(response_body), "response_chars": len(result["text"])})
         return result["text"]
 
 
@@ -191,6 +220,23 @@ def flat_calc() -> bytes:
     return render_calc_fods(CALC_DRAFT)
 
 
+def seed_shared_backend(host_dir: Path) -> dict[str, dict[str, Any]]:
+    """Seed only the fresh run-owned shared workspace before Guest mounts it."""
+    if not host_dir.is_dir() or any(host_dir.iterdir()):
+        raise SetupReadinessError("shared backend is missing or not empty before seeding",
+                                  {"backend_path": str(host_dir)})
+    manifest: dict[str, dict[str, Any]] = {}
+    for filename, data in (("document.fodt", flat_writer()),
+                           ("table.fods", flat_calc())):
+        destination = host_dir / filename
+        with destination.open("xb") as stream:
+            stream.write(data)
+        destination.chmod(0o666)
+        manifest[filename] = {"sha256": hashlib.sha256(data).hexdigest(),
+                              "size_bytes": len(data), "mode": "0666"}
+    return manifest
+
+
 class EpisodeBindings(dict[str, tuple[OSWorldSharedEpisode, DesktopEnv]]):
     """Host-side handles for all desktops participating in one task episode."""
 
@@ -248,7 +294,7 @@ def make_desktop(binding: str, log: EventLog, out: Path,
         episode.reset(task_config=None)
         wait_for_guest_desktop(episode, desktop, timeout=300, retry_interval=5)
         if workspace_backend_host_dir is not None:
-            guest_command(desktop, ["bash", "-lc", guest_mount_command()], timeout=60)
+            guest_command(desktop, ["bash", "-lc", guest_mount_command(sudo_password=desktop.client_password)], timeout=60)
             episode.log.record(
                 "environment", "workspace_mount", "writer_calc.shared_backend_mount",
                 {"mounted": False}, {"mounted": True},
@@ -322,6 +368,10 @@ def _document_title_matches(title: str | None, app: str, path: str) -> bool:
     return expected_name in normalized and app_name in normalized
 
 
+def _document_is_read_only(title: str | None) -> bool:
+    return bool(title and "read-only" in title.casefold())
+
+
 def _setup_capture(episode: OSWorldSharedEpisode, out: Path, label: str,
                    persist: bool = False) -> dict[str, Any]:
     observation = episode.observation if isinstance(episode.observation, dict) else {}
@@ -355,6 +405,13 @@ def wait_for_app_document(episode: OSWorldSharedEpisode, desktop: DesktopEnv,
             last_capture = _setup_capture(episode, out,
                                           f"{app}-window-attempt-{attempts:02d}")
             if _document_title_matches(last_capture["active_window_title"], app, path):
+                if _document_is_read_only(last_capture["active_window_title"]):
+                    _setup_capture(episode, out, f"{app}-read-only-window", persist=True)
+                    raise SetupReadinessError(
+                        f"{app} opened {Path(path).name!r} read-only; task setup is not writable",
+                        {"app": app, "expected_document": Path(path).name,
+                         "active_window_title": last_capture["active_window_title"],
+                         "attempt": attempts})
                 _setup_capture(episode, out, f"{app}-window-ready", persist=True)
                 result = {"app": app, "expected_document": Path(path).name,
                           "active_window_title": last_capture["active_window_title"],
@@ -390,7 +447,8 @@ def wait_for_app_document(episode: OSWorldSharedEpisode, desktop: DesktopEnv,
 
 def seed_and_open(episode: OSWorldSharedEpisode, desktop: DesktopEnv,
                   open_apps: list[str], out: Path,
-                  initialize_workspace: bool = True) -> dict[str, Any]:
+                  initialize_workspace: bool = True,
+                  shared_backend: bool = False) -> dict[str, Any]:
     if initialize_workspace:
         writer_b64 = base64.b64encode(flat_writer()).decode("ascii")
         calc_b64 = base64.b64encode(flat_calc()).decode("ascii")
@@ -406,6 +464,28 @@ def seed_and_open(episode: OSWorldSharedEpisode, desktop: DesktopEnv,
     initial_expected = {"writer_text": WRITER_DRAFT, "calc_cells": CALC_DRAFT,
                         "calc_sheet_names": ["Sheet1"]}
     initial_state = read_seeded_state(episode, desktop)
+    shared_file_access = None
+    if shared_backend:
+        probe_code = (
+            "import json,os,stat,tempfile; from pathlib import Path; "
+            f"p=Path('{WRITER_PATH}'); d=p.parent; "
+            "st=p.stat(); t=d/'.codesk-write-probe'; u=d/'.codesk-write-probe-renamed'; "
+            "t.write_text('probe'); os.replace(t,u); u.unlink(); "
+            "print(json.dumps({'uid':os.getuid(),'gid':os.getgid(),"
+            "'target_mode':stat.S_IMODE(st.st_mode),'target_uid':st.st_uid,"
+            "'target_gid':st.st_gid,'target_write_access':os.access(p,os.W_OK),"
+            "'directory_mode':stat.S_IMODE(d.stat().st_mode),"
+            "'atomic_create_rename_delete':'pass'}))")
+        try:
+            shared_file_access = json.loads(guest_command(
+                desktop, ["python3", "-c", probe_code]))
+        except Exception as exc:
+            raise SetupReadinessError("Guest could not create/rename/delete in shared backend",
+                                      {"shared_backend_probe_error":
+                                       f"{type(exc).__name__}: {exc}"}) from exc
+        if not shared_file_access.get("target_write_access"):
+            raise SetupReadinessError("shared backend task document is not writable in Guest",
+                                      {"shared_backend_probe": shared_file_access})
     if initial_state != initial_expected:
         raise SetupReadinessError("seeded Flat ODF state does not match the task initial state",
                                   {"expected_initial_state": initial_expected,
@@ -444,6 +524,7 @@ def seed_and_open(episode: OSWorldSharedEpisode, desktop: DesktopEnv,
                 f"{app} no-op GUI save changed or lost the seeded document state",
                 {"app_ready": app_ready, "probe": probe_capture,
                  "after_save": after_save_capture,
+                 "shared_backend_access": shared_file_access,
                  "expected_initial_state": initial_expected,
                  "actual_persisted_state": persisted_state})
         opened.append({"app": app, "document": Path(path).name,
@@ -459,6 +540,7 @@ def seed_and_open(episode: OSWorldSharedEpisode, desktop: DesktopEnv,
                                                f"{app}-after-noop-save.png"]})
     return {"libreoffice_version": availability.strip(),
             "initial_state_verified": True, "opened_documents": opened,
+            "shared_backend_access": shared_file_access,
             "ready": len(opened) == len(open_apps)}
 
 
@@ -550,7 +632,8 @@ def run_actors(condition: str, environments: EpisodeBindings,
                 action_space="pyautogui", observation_type="screenshot",
                 coordinate_type="relative")
             # Keep the official OSWorld planner, grounding, action schema and parser.
-            agent.call_llm = qwen_client.complete
+            agent.call_llm = lambda payload, model, client=qwen_client, aid=actor_id: \
+                client.complete(payload, model, actor_id=aid)
             artifact_directory = out / "model-actors" / actor_id
             actors[actor_id] = OSWorldAgentActor(
                 agent, prompts[actor_id], actor_id=actor_id,
@@ -808,6 +891,13 @@ def main() -> int:
             schedule = MODEL_INTERLEAVED_SCHEDULE.copy()
         report["schedule"] = schedule
         report["actor_bindings"] = actor_bindings
+        if workspace_backend_host_dir is not None:
+            seed_manifest = seed_shared_backend(workspace_backend_host_dir)
+            report["workspace_topology"]["seed_manifest"] = seed_manifest
+            log.record("task_setup", "backend_seed", "writer_calc.seed_shared_backend",
+                       {"backend_empty": True}, seed_manifest,
+                       details={"backend_id": workspace_backend_id,
+                                "permissions": "task ODF files mode 0666"})
         for setup_index, (binding, apps) in enumerate(apps_by_binding.items()):
             episode, desktop = make_desktop(
                 binding, log, out, workspace_backend_host_dir, workspace_backend_id)
@@ -815,16 +905,24 @@ def main() -> int:
             current_stage = "application_setup"
             setup_result = seed_and_open(
                 episode, desktop, apps, out,
-                initialize_workspace=(workspace_backend_host_dir is None or setup_index == 0))
+                initialize_workspace=(workspace_backend_host_dir is None),
+                shared_backend=(workspace_backend_host_dir is not None))
             report.setdefault("guest_app_versions", {})[binding] = setup_result[
                 "libreoffice_version"]
             report["setup_validation"]["apps"][binding] = setup_result
+            if setup_result.get("shared_backend_access"):
+                report["setup_validation"]["shared_backend_guest_access"] = setup_result[
+                    "shared_backend_access"]
         report["setup_validation"].update({"ready": True,
             "initial_state": initial_states(actor_bindings),
             "checks": ["named Writer/Calc active-window title",
+                       "document is not opened read-only",
                        "GUI keyboard input accepted",
                        "Calc Sheet1/B2 navigation probe",
-                       "no-op save preserved exact seeded Flat ODF state"]})
+                       "no-op save preserved exact seeded Flat ODF state"],
+            "shared_backend_guest_access": report.get("shared_backend_guest_access"),
+            "shared_backend_initial_files": report["workspace_topology"].get(
+                "seed_manifest")})
         initial_guest_ids = {binding: episode.snapshot().get("guest_container_id")
                              for binding, (episode, _desktop) in environments.items()}
         distinct_guest_ids = {guest_id for guest_id in initial_guest_ids.values() if guest_id}
@@ -860,8 +958,35 @@ def main() -> int:
 
         if args.actor_implementation == "qwen3vl":
             current_stage = "model_startup"
-            model_worker, qwen_client, model_metadata = start_local_qwen_worker(out)
-            report["model"] = model_metadata
+            remote_url = os.environ.get("SWCUB_QWEN_INFERENCE_URL", "").strip()
+            if remote_url:
+                from urllib.parse import urlsplit
+                parsed = urlsplit(remote_url)
+                if (parsed.scheme != "http" or parsed.hostname not in {"127.0.0.1", "localhost"}
+                        or not parsed.port or parsed.path not in {"", "/"}):
+                    raise ValueError("remote Qwen URL must be an SSH-forwarded HTTP loopback endpoint")
+                with urlopen(remote_url.rstrip("/") + "/health", timeout=10) as response:
+                    model_metadata = json.loads(response.read())
+                if (not model_metadata.get("ready")
+                        or model_metadata.get("model") != "Qwen3-VL-30B-A3B-Instruct"):
+                    raise RuntimeError("remote health did not identify the expected Qwen3-VL-30B-A3B model")
+                inference_events_path = out / "remote_inference_events.jsonl"
+                def record_remote_event(event: dict[str, Any]) -> None:
+                    record = {"logged_unix_ns": time.time_ns(),
+                              "client_host": socket.gethostname(), **event}
+                    with inference_events_path.open("a", encoding="utf-8") as stream:
+                        stream.write(json.dumps(record, ensure_ascii=False) + "\n")
+                qwen_client = LocalQwenInferenceClient(
+                    endpoint=remote_url, event_callback=record_remote_event)
+                report["model"] = {**model_metadata,
+                    "inference_host": os.environ.get("SWCUB_QWEN_INFERENCE_HOST", "4090"),
+                    "inference_transport": "SSH port forward to inference loopback",
+                    "worker_sharing": "one remote inference process shared by two independent actor objects",
+                    "worker_instance_id": model_metadata.get("worker_instance_id"),
+                    "model_serving": "remote existing Qwen service"}
+            else:
+                model_worker, qwen_client, model_metadata = start_local_qwen_worker(out)
+                report["model"] = model_metadata
         current_stage = "actor_execution"
         actors = run_actors(args.condition, environments, actor_bindings, schedule, log,
                             actor_implementation=args.actor_implementation,
@@ -1035,7 +1160,7 @@ def main() -> int:
             episode.reset(task_config=None)
             wait_for_guest_desktop(episode, desktop, timeout=300, retry_interval=5)
             if reset_backend_host_dir is not None:
-                guest_command(desktop, ["bash", "-lc", guest_mount_command()], timeout=60)
+                guest_command(desktop, ["bash", "-lc", guest_mount_command(sudo_password=desktop.client_password)], timeout=60)
             clean = guest_command(desktop, ["bash", "-lc",
                 f"test ! -e {WRITER_PATH} && test ! -e {CALC_PATH} && echo reset-clean"])
             fresh_id = episode.snapshot().get("guest_container_id")

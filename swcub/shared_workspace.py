@@ -67,6 +67,12 @@ def write_backend_marker(root: Path, *, backend_id: str, run_id: str,
     if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{7,80}", run_id):
         raise WorkspaceTopologyError("run id has an invalid format")
     root.mkdir(parents=True, exist_ok=False)
+    # QEMU exports this run-scoped directory with 9p security_model=none,
+    # which preserves the Guest UID. The Guest's stock user UID differs from
+    # the host account; allow Guest actors to write only inside this fresh
+    # export. Its parent run directory is private (0750), so this does not
+    # expose the backend to other host users.
+    root.chmod(0o777)
     marker = root.parent / f".{root.name}.ownership.json"
     marker.write_text(json.dumps({
         "project": "CoDesk",
@@ -92,15 +98,30 @@ def qemu_virtfs_device(host_container_path: str = HOST_MOUNT_PATH,
 
 
 def guest_mount_command(tag: str = SHARED_WORKSPACE_TAG,
-                        mountpoint: str = GUEST_WORKSPACE_MOUNT) -> str:
-    """Return a safely quoted Guest-side 9p mount command."""
+                        mountpoint: str = GUEST_WORKSPACE_MOUNT,
+                        sudo_password: str | None = None) -> str:
+    """Return a safely quoted Guest-side 9p mount command.
+
+    OSWorld's stock Guest does not grant passwordless sudo. The optional password
+    must come from that DesktopEnv instance's configured client_password and is
+    passed only to the short-lived Guest command; callers must not log the command.
+    """
     if not tag or not re.fullmatch(r"[A-Za-z0-9_.-]+", tag):
         raise WorkspaceTopologyError("invalid 9p mount tag")
     if not mountpoint.startswith("/") or "\n" in mountpoint:
         raise WorkspaceTopologyError("Guest mountpoint must be an absolute path")
     q_mount = shlex.quote(mountpoint)
     q_tag = shlex.quote(tag)
+    mount = (f"mount -t 9p -o trans=virtio,version=9p2000.L,access=any "
+             f"{q_tag} {q_mount}")
+    if sudo_password is None:
+        privileged_mount = f"sudo -n {mount}"
+    else:
+        if "\n" in sudo_password or "\x00" in sudo_password:
+            raise WorkspaceTopologyError("Guest sudo password must be a single line")
+        printf_format = "%s" + chr(92) + "n"
+        privileged_mount = (f"printf '{printf_format}' {shlex.quote(sudo_password)} | "
+                            f"sudo -S -p '' {mount}")
     return (f"mkdir -p {q_mount} && "
             f"if ! mountpoint -q {q_mount}; then "
-            f"sudo -n mount -t 9p -o trans=virtio,version=9p2000.L,access=any "
-            f"{q_tag} {q_mount}; fi && mountpoint -q {q_mount}")
+            f"{privileged_mount}; fi && mountpoint -q {q_mount}")
