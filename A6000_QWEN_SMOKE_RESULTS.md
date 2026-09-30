@@ -45,3 +45,11 @@ A third A6000 card (`nvidia-smi` index 2) was free, but one 48 GiB card cannot h
 - New timing-only logging in `scripts/local_qwen_worker.py` records request phases, durations, token counts, and mapped device IDs. It does not log prompt text, screenshots, or model response. Prompt, model weights/config, Qwen3VLAgent, task, and evaluator were unchanged.
 
 Evidence: R03 artifacts at `/home1/mjh/Projects/CoDesk-V0-A6000/artifacts/model-smoke/a6000-qwen-writer-calc-solo-20260930-r03-stage-timing/`; R04 at `/home1/mjh/Projects/CoDesk-V0-A6000/artifacts/model-smoke/a6000-qwen-writer-calc-solo-20260930-r04-stage-timing/`; startup logs under `snapshots/a6000-validation/`. Always source `scripts/a6000_env.sh` before starting the A6000 runner and set `CODESK_CUDA_VISIBLE_DEVICES=0,2` only after confirming those GPUs are free.
+
+
+## vLLM alternate-serving feasibility probe
+
+- Upstream vLLM currently lists `Qwen3VLMoeForConditionalGeneration` / `Qwen3-VL-30B-A3B-Instruct` as supported, but explicitly notes Qwen-VL image preprocessing differs from the Hugging Face path. Treat a vLLM trial as a separately recorded serving variant, not as an identical inference-runtime comparison.
+- A6000 driver reports CUDA 13.0; Python 3.12 and glibc 2.39 satisfy the current documented platform bounds. An isolated empty environment was created at `/home1/mjh/Projects/CoDesk-V0-A6000/envs/vllm-qwen-0.30.0`; no vLLM package was installed.
+- Official vLLM 0.30.0 cu129 GitHub wheel request returned HTTP 403. A bounded 180-second PyPI dependency dry-run reached the PyTorch cu129 index but timed out reading it. Logs: `snapshots/a6000-validation/vllm-qwen-0.30.0-install.log` and `snapshots/a6000-validation/vllm-pypi-dry-run.log`. No GPU was used and the existing Qwen environment was not modified.
+- Next serving investigation must use an accessible, pinned official wheel source or improve the existing Transformers generation path; do not switch the benchmark’s model/agent/prompt/evaluator or mislabel a vLLM result as fixed-backend baseline.

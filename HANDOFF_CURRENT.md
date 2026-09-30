@@ -117,3 +117,11 @@ Task hierarchy is **family → workflow template → fixed task instance → run
 - **Latest invalid attempt:** R03 omitted the A6000 environment script, mounted a directory as `/System.qcow2`, and failed before loading the model. It remains preserved separately.
 - **Serving constraints:** the 4090 host has no observed active Qwen service. At the time of the check, only physical GPU index 2 was entirely free; other GPUs had allocations, so no new service was started there. Do not claim the 4090 route is available without a dedicated allocation or a confirmed service.
 - **Next:** preserve the pinned Agent and benchmark. Diagnose/replace only the inference serving path with an explicit record of any processor/runtime differences; first verify one response on the exact saved Guest screenshot, then rerun the Guest episode. Do not repeatedly extend the timeout.
+
+
+## vLLM alternate-serving feasibility probe
+
+- Upstream vLLM currently lists `Qwen3VLMoeForConditionalGeneration` / `Qwen3-VL-30B-A3B-Instruct` as supported, but explicitly notes Qwen-VL image preprocessing differs from the Hugging Face path. Treat a vLLM trial as a separately recorded serving variant, not as an identical inference-runtime comparison.
+- A6000 driver reports CUDA 13.0; Python 3.12 and glibc 2.39 satisfy the current documented platform bounds. An isolated empty environment was created at `/home1/mjh/Projects/CoDesk-V0-A6000/envs/vllm-qwen-0.30.0`; no vLLM package was installed.
+- Official vLLM 0.30.0 cu129 GitHub wheel request returned HTTP 403. A bounded 180-second PyPI dependency dry-run reached the PyTorch cu129 index but timed out reading it. Logs: `snapshots/a6000-validation/vllm-qwen-0.30.0-install.log` and `snapshots/a6000-validation/vllm-pypi-dry-run.log`. No GPU was used and the existing Qwen environment was not modified.
+- Next serving investigation must use an accessible, pinned official wheel source or improve the existing Transformers generation path; do not switch the benchmark’s model/agent/prompt/evaluator or mislabel a vLLM result as fixed-backend baseline.
