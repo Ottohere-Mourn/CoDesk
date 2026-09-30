@@ -40,10 +40,11 @@ from swcub.osworld_readiness import wait_for_guest_desktop
 from swcub.comparison_metrics import summarize_focus_events
 from swcub.provenance import source_path_label
 from swcub.resource_safety import PROJECT_NAME, ResourceLedger, ensure_resource_identity
+from swcub.nfs_gateway import NfsGateway
 from swcub.task_factory import render_calc_fods, render_writer_fodt
 from swcub.shared_workspace import (GUEST_WORKSPACE_MOUNT, SHARED_WORKSPACE_TAG,
-                                    guest_mount_command, validate_condition_topology,
-                                    write_backend_marker)
+                                    guest_mount_command, guest_mount_nfs_command,
+                                    validate_condition_topology, write_backend_marker)
 
 
 TASK_ID = "CODESK-TA-OFFICE-001"
@@ -212,6 +213,27 @@ def git_source_state() -> dict[str, Any]:
             "dirty_paths": (git("status", "--porcelain") or "").splitlines()}
 
 
+def shared_backend_filesystem_probe(desktop: DesktopEnv) -> dict[str, Any]:
+    """Exercise LO-relevant metadata and durability operations in Guest space."""
+    probe_name = f".codesk-fs-probe-{uuid.uuid4().hex}"
+    code = (
+        "import fcntl,json,os,stat; from pathlib import Path; "
+        f"d=Path('{GUEST_WORKSPACE_MOUNT}'); name='{probe_name}'; "
+        "a=d/(name+'.0600'); b=d/(name+'.replace'); c=d/(name+'.atomic'); "
+        "fd=os.open(a,os.O_CREAT|os.O_EXCL|os.O_WRONLY,0o600); os.write(fd,b'alpha'); os.fsync(fd); os.close(fd); "
+        "fd=os.open(a,os.O_RDONLY); reopened=os.read(fd,16).decode(); os.close(fd); "
+        "os.chmod(a,0o640); mode=stat.S_IMODE(a.stat().st_mode); "
+        "fd=os.open(a,os.O_RDONLY); fcntl.flock(fd,fcntl.LOCK_EX|fcntl.LOCK_NB); fcntl.flock(fd,fcntl.LOCK_UN); os.close(fd); "
+        "b.write_text('replacement'); os.replace(b,c); atomic=c.read_text(); "
+        "entries=sorted(x.name for x in d.iterdir() if x.name.startswith(name)); c.unlink(); a.unlink(); "
+        "print(json.dumps({'guest_uid':os.getuid(),'guest_gid':os.getgid(),"
+        "'close_reopen_0600':reopened=='alpha','mode_after_chmod':mode,"
+        "'fsync':True,'advisory_lock':True,'atomic_replace':atomic=='replacement',"
+        "'directory_listing':bool(entries),'unlink':not a.exists() and not c.exists(),"
+        "'owner_uid':os.stat(d).st_uid,'owner_gid':os.stat(d).st_gid,"
+        "'directory_mode':stat.S_IMODE(os.stat(d).st_mode)}))")
+    return json.loads(guest_command(desktop, ["python3", "-c", code], timeout=30))
+
 def flat_writer() -> bytes:
     return render_writer_fodt([WRITER_DRAFT])
 
@@ -263,13 +285,19 @@ def guest_command(desktop: DesktopEnv, argv: list[str], timeout: int = 45) -> st
 
 def make_desktop(binding: str, log: EventLog, out: Path,
                  workspace_backend_host_dir: Path | None = None,
-                 workspace_backend_id: str | None = None) -> tuple[OSWorldSharedEpisode, DesktopEnv]:
+                 workspace_backend_id: str | None = None,
+                 workspace_transport: str = "9p",
+                 nfs_server_ip: str | None = None,
+                 nfs_server_port: int = 12049,
+                 nfs_export: str = "/task") -> tuple[OSWorldSharedEpisode, DesktopEnv]:
     guest_image = Path(os.environ.get(
         "SWCUB_OSWORLD_GUEST_IMAGE",
         OSWORLD_V2_DIR / "docker_vm_data/osworld-v2-ubuntu-x86.qcow2")).resolve()
     workspace_env_key = "SWCUB_OSWORLD_SHARED_WORKSPACE_HOST_DIR"
     prior_workspace_env = os.environ.get(workspace_env_key)
-    if workspace_backend_host_dir is None:
+    if workspace_backend_host_dir is None or workspace_transport != "9p":
+        # NFS has its own run-scoped service. Never let the provider implicitly
+        # add the old QEMU 9p device when the selected transport is NFS.
         os.environ.pop(workspace_env_key, None)
     else:
         if not workspace_backend_host_dir.is_dir():
@@ -294,13 +322,30 @@ def make_desktop(binding: str, log: EventLog, out: Path,
         episode.reset(task_config=None)
         wait_for_guest_desktop(episode, desktop, timeout=300, retry_interval=5)
         if workspace_backend_host_dir is not None:
-            guest_command(desktop, ["bash", "-lc", guest_mount_command(sudo_password=desktop.client_password)], timeout=60)
+            if workspace_transport == "9p":
+                mount_command = guest_mount_command(
+                    sudo_password=desktop.client_password)
+                transport_details = {"transport": "qemu-9p",
+                                     "mount_tag": SHARED_WORKSPACE_TAG}
+            elif workspace_transport == "nfs4":
+                if not nfs_server_ip:
+                    raise SetupReadinessError("NFS shared backend endpoint is missing")
+                mount_command = guest_mount_nfs_command(
+                    nfs_server_ip, nfs_server_port, nfs_export,
+                    sudo_password=desktop.client_password)
+                transport_details = {"transport": "nfs4",
+                                     "server_ip": nfs_server_ip,
+                                     "server_port": nfs_server_port,
+                                     "export": nfs_export}
+            else:
+                raise SetupReadinessError(
+                    f"unsupported shared backend transport: {workspace_transport}")
+            guest_command(desktop, ["bash", "-lc", mount_command], timeout=60)
             episode.log.record(
                 "environment", "workspace_mount", "writer_calc.shared_backend_mount",
                 {"mounted": False}, {"mounted": True},
                 details={"backend_id": workspace_backend_id,
-                         "transport": "qemu-9p",
-                         "mount_tag": SHARED_WORKSPACE_TAG,
+                         **transport_details,
                          "guest_mountpoint": GUEST_WORKSPACE_MOUNT,
                          "desktop_binding": binding})
     except BaseException as exc:
@@ -510,6 +555,21 @@ def seed_and_open(episode: OSWorldSharedEpisode, desktop: DesktopEnv,
         if not shared_file_access.get("target_write_access"):
             raise SetupReadinessError("shared backend task document is not writable in Guest",
                                       {"shared_backend_probe": shared_file_access})
+        try:
+            filesystem_probe = shared_backend_filesystem_probe(desktop)
+        except Exception as exc:
+            raise SetupReadinessError("shared backend filesystem semantics probe failed",
+                                      {"filesystem_probe_error":
+                                       f"{type(exc).__name__}: {exc}",
+                                       "shared_backend_probe": shared_file_access}) from exc
+        required_probe_fields = {"close_reopen_0600": True, "fsync": True,
+                                 "advisory_lock": True, "atomic_replace": True,
+                                 "directory_listing": True, "unlink": True}
+        if any(filesystem_probe.get(key) != expected
+               for key, expected in required_probe_fields.items()):
+            raise SetupReadinessError("shared backend filesystem semantics did not match",
+                                      {"filesystem_probe": filesystem_probe})
+        shared_file_access["filesystem_semantics"] = filesystem_probe
     if initial_state != initial_expected:
         raise SetupReadinessError("seeded Flat ODF state does not match the task initial state",
                                   {"expected_initial_state": initial_expected,
@@ -882,6 +942,8 @@ def main() -> int:
                         choices=("legacy_per_actor_clone", "same_workspace"),
                         default=os.environ.get("SWCUB_BACKEND_TOPOLOGY",
                                                "legacy_per_actor_clone"))
+    parser.add_argument("--shared-backend-transport", choices=("9p", "nfs4"),
+                        default=os.environ.get("SWCUB_SHARED_BACKEND_TRANSPORT", "9p"))
     args = parser.parse_args()
     out = args.artifact_parent.expanduser().resolve() / args.run_id
     out.mkdir(parents=True, exist_ok=False)
@@ -890,13 +952,26 @@ def main() -> int:
         args.backend_topology == "same_workspace"
         and args.condition in {"ma_id", "ma_sd"})
     workspace_backend_id = f"backend-{uuid.uuid4().hex[:16]}" if same_workspace_backend else None
-    workspace_backend_host_dir = (out / "workspace-backend-task"
-                                  if same_workspace_backend else None)
+    nfs_export_root = (out / "workspace-backend-nfs" if
+                       same_workspace_backend and args.shared_backend_transport == "nfs4"
+                       else None)
+    workspace_backend_host_dir = (
+        nfs_export_root / "task" if nfs_export_root is not None else
+        out / "workspace-backend-task" if same_workspace_backend else None)
+    reset_backend_id = (f"backend-{uuid.uuid4().hex[:16]}"
+                        if nfs_export_root is not None else None)
+    reset_backend_host_dir = (nfs_export_root / "reset"
+                              if nfs_export_root is not None else None)
     owner = secrets.token_hex(32)
     if workspace_backend_host_dir is not None:
         write_backend_marker(workspace_backend_host_dir,
                              backend_id=workspace_backend_id or "",
                              run_id=args.run_id, condition=args.condition)
+    if reset_backend_host_dir is not None:
+        write_backend_marker(reset_backend_host_dir,
+                             backend_id=reset_backend_id or "",
+                             run_id=args.run_id, condition=args.condition,
+                             generation="reset")
     ledger_path = out / "resource-events.jsonl"
     os.environ.update({"SWCUB_RUN_ID": args.run_id, "SWCUB_OWNER_TOKEN": owner,
                        "SWCUB_RESOURCE_LEDGER": str(ledger_path),
@@ -913,6 +988,7 @@ def main() -> int:
     environments = EpisodeBindings()
     model_worker: subprocess.Popen[bytes] | None = None
     qwen_client: LocalQwenInferenceClient | None = None
+    nfs_gateway: NfsGateway | None = None
     report: dict[str, Any] = {"task_id": TASK_ID, "task_version": TASK_VERSION,
         "instance_id": "writer-calc-independent-edits-v1-seed0", "condition": args.condition,
         "repeat": args.repeat, "started_utc": started, "model": None,
@@ -925,7 +1001,7 @@ def main() -> int:
             "backend_id": workspace_backend_id,
             "host_backend_path": (str(workspace_backend_host_dir)
                                   if workspace_backend_host_dir else None),
-            "mount_transport": "qemu-9p" if workspace_backend_host_dir else None,
+            "mount_transport": args.shared_backend_transport if workspace_backend_host_dir else None,
             "guest_mountpoint": GUEST_WORKSPACE_MOUNT if workspace_backend_host_dir else None},
         "setup_validation": {"ready": False,
             "apps": {}, "initial_state": None}}
@@ -943,9 +1019,31 @@ def main() -> int:
                        {"backend_empty": True}, seed_manifest,
                        details={"backend_id": workspace_backend_id,
                                 "permissions": "task ODF files mode 0666"})
+            if args.shared_backend_transport == "nfs4":
+                if nfs_export_root is None or reset_backend_host_dir is None:
+                    raise RuntimeError("NFS export paths were not initialized")
+                nfs_gateway = NfsGateway.start(
+                    export_root=str(nfs_export_root), identity=identity,
+                    host_uid=os.getuid(), host_gid=os.getgid())
+                report["workspace_topology"].update({
+                    "nfs_gateway_container_id": nfs_gateway.container.id,
+                    "nfs_server_ip": nfs_gateway.server_ip,
+                    "nfs_server_port": nfs_gateway.port,
+                    "task_export": "/task", "reset_export": "/reset",
+                    "host_uid_gid_mapping": {"nfs_anonymous_uid": os.getuid(),
+                                              "nfs_anonymous_gid": os.getgid()}})
+                log.record("environment", "nfs_gateway", "writer_calc.nfs_gateway_start",
+                           {"running": False}, {"running": True},
+                           details={"container_id": nfs_gateway.container.id,
+                                    "server_ip": nfs_gateway.server_ip,
+                                    "server_port": nfs_gateway.port,
+                                    "backend_id": workspace_backend_id})
         for setup_index, (binding, apps) in enumerate(apps_by_binding.items()):
             episode, desktop = make_desktop(
-                binding, log, out, workspace_backend_host_dir, workspace_backend_id)
+                binding, log, out, workspace_backend_host_dir, workspace_backend_id,
+                workspace_transport=args.shared_backend_transport,
+                nfs_server_ip=nfs_gateway.server_ip if nfs_gateway else None,
+                nfs_server_port=nfs_gateway.port if nfs_gateway else 12049)
             environments[binding] = (episode, desktop)
             current_stage = "application_setup"
             setup_result = seed_and_open(
@@ -1192,20 +1290,32 @@ def main() -> int:
         workspace_env_key = "SWCUB_OSWORLD_SHARED_WORKSPACE_HOST_DIR"
         prior_workspace_env = os.environ.get(workspace_env_key)
         if workspace_backend_host_dir is not None:
-            reset_backend_host_dir = out / "workspace-backend-reset"
-            reset_backend_id = f"backend-{uuid.uuid4().hex[:16]}"
-            write_backend_marker(reset_backend_host_dir, backend_id=reset_backend_id,
-                                 run_id=args.run_id, condition=args.condition,
-                                 generation="reset")
-            os.environ[workspace_env_key] = str(reset_backend_host_dir.resolve())
-            report["workspace_topology"]["reset_backend_id"] = reset_backend_id
+            if args.shared_backend_transport == "nfs4":
+                if reset_backend_host_dir is None or reset_backend_id is None:
+                    raise RuntimeError("NFS reset export was not initialized")
+                report["workspace_topology"]["reset_backend_id"] = reset_backend_id
+            else:
+                reset_backend_host_dir = out / "workspace-backend-reset"
+                reset_backend_id = f"backend-{uuid.uuid4().hex[:16]}"
+                write_backend_marker(reset_backend_host_dir, backend_id=reset_backend_id,
+                                     run_id=args.run_id, condition=args.condition,
+                                     generation="reset")
+                os.environ[workspace_env_key] = str(reset_backend_host_dir.resolve())
+                report["workspace_topology"]["reset_backend_id"] = reset_backend_id
         for binding, (episode, desktop) in environments.items():
             before = episode.snapshot()
             old_id = before.get("guest_container_id")
             episode.reset(task_config=None)
             wait_for_guest_desktop(episode, desktop, timeout=300, retry_interval=5)
             if reset_backend_host_dir is not None:
-                guest_command(desktop, ["bash", "-lc", guest_mount_command(sudo_password=desktop.client_password)], timeout=60)
+                if args.shared_backend_transport == "nfs4":
+                    reset_mount = guest_mount_nfs_command(
+                        nfs_gateway.server_ip, nfs_gateway.port, "/reset",
+                        sudo_password=desktop.client_password, remount=True)
+                else:
+                    reset_mount = guest_mount_command(
+                        sudo_password=desktop.client_password)
+                guest_command(desktop, ["bash", "-lc", reset_mount], timeout=60)
             clean = guest_command(desktop, ["bash", "-lc",
                 f"test ! -e {WRITER_PATH} && test ! -e {CALC_PATH} && echo reset-clean"])
             fresh_id = episode.snapshot().get("guest_container_id")
@@ -1230,6 +1340,8 @@ def main() -> int:
         for binding, (episode, _) in environments.items():
             episode.close()
         environments.clear()
+        if nfs_gateway is not None:
+            nfs_gateway.close(reason="episode_resource_finalization")
         report["resource_lifecycle"] = verify_ledger(ledger_path)
         report["finished_utc"] = utc_now()
         report["elapsed_seconds"] = round((datetime.fromisoformat(report["finished_utc"])
@@ -1318,6 +1430,12 @@ def main() -> int:
             except Exception:
                 pass
         environments.clear()
+        if nfs_gateway is not None:
+            try:
+                nfs_gateway.close(reason="episode_exception_finalization")
+            except Exception as gateway_close_error:
+                report.setdefault("cleanup_errors", []).append(
+                    f"NFS gateway: {type(gateway_close_error).__name__}: {gateway_close_error}")
         try:
             report["resource_lifecycle"] = verify_ledger(ledger_path)
         except Exception as ledger_error:
@@ -1340,6 +1458,11 @@ def main() -> int:
         for episode, _desktop in environments.values():
             try:
                 episode.close()
+            except Exception:
+                pass
+        if nfs_gateway is not None:
+            try:
+                nfs_gateway.close(reason="episode_finally")
             except Exception:
                 pass
 

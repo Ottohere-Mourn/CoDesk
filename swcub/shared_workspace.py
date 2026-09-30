@@ -67,11 +67,9 @@ def write_backend_marker(root: Path, *, backend_id: str, run_id: str,
     if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{7,80}", run_id):
         raise WorkspaceTopologyError("run id has an invalid format")
     root.mkdir(parents=True, exist_ok=False)
-    # QEMU exports this run-scoped directory with 9p security_model=none,
-    # which preserves the Guest UID. The Guest's stock user UID differs from
-    # the host account; allow Guest actors to write only inside this fresh
-    # export. Its parent run directory is private (0750), so this does not
-    # expose the backend to other host users.
+    # This fresh run-scoped export is writable only inside its private parent.
+    # Backend servers may map Guest identities to the owning host UID/GID; the
+    # marker remains outside the export so it is never exposed to Guest actors.
     root.chmod(0o777)
     marker = root.parent / f".{root.name}.ownership.json"
     marker.write_text(json.dumps({
@@ -80,7 +78,7 @@ def write_backend_marker(root: Path, *, backend_id: str, run_id: str,
         "backend_id": backend_id,
         "condition": condition,
         "generation": generation,
-        "purpose": "shared 9p workspace for one benchmark episode"
+        "purpose": "shared workspace for one benchmark episode"
     }, indent=2) + "\n", encoding="utf-8")
     return marker
 
@@ -125,3 +123,42 @@ def guest_mount_command(tag: str = SHARED_WORKSPACE_TAG,
     return (f"mkdir -p {q_mount} && "
             f"if ! mountpoint -q {q_mount}; then "
             f"{privileged_mount}; fi && mountpoint -q {q_mount}")
+
+
+def guest_mount_nfs_command(server_ip: str, port: int, export: str = "/task",
+                            mountpoint: str = GUEST_WORKSPACE_MOUNT,
+                            sudo_password: str | None = None,
+                            *, remount: bool = False) -> str:
+    """Mount the run-scoped NFSv4 export in the Guest without changing 9p config."""
+    import ipaddress
+    try:
+        ipaddress.ip_address(server_ip)
+    except ValueError as exc:
+        raise WorkspaceTopologyError("NFS server must be a numeric IP address") from exc
+    if not 1024 <= port <= 65535:
+        raise WorkspaceTopologyError("NFS port must be in the non-privileged range")
+    if export not in {"/task", "/reset"}:
+        raise WorkspaceTopologyError("NFS export must be /task or /reset")
+    if not mountpoint.startswith("/") or "\n" in mountpoint:
+        raise WorkspaceTopologyError("Guest mountpoint must be an absolute path")
+    q_mount = shlex.quote(mountpoint)
+    q_source = shlex.quote(f"{server_ip}:{export}")
+    mount = (f"mount -i -t nfs4 -o vers=4.1,proto=tcp,port={port},hard,timeo=600,retrans=2 "
+             f"{q_source} {q_mount}")
+    if sudo_password is None:
+        privileged_mount = f"sudo -n {mount}"
+        privileged_umount = f"sudo -n umount {q_mount}"
+    else:
+        if "\n" in sudo_password or "\x00" in sudo_password:
+            raise WorkspaceTopologyError("Guest sudo password must be a single line")
+        printf_format = "%s" + chr(92) + "n"
+        privileged_mount = (f"printf '{printf_format}' {shlex.quote(sudo_password)} | "
+                            f"sudo -S -p '' {mount}")
+        privileged_umount = (f"printf '{printf_format}' {shlex.quote(sudo_password)} | "
+                             f"sudo -S -p '' umount {q_mount}")
+    if remount:
+        action = (f"if mountpoint -q {q_mount}; then {privileged_umount}; fi && "
+                  f"{privileged_mount}")
+    else:
+        action = (f"if ! mountpoint -q {q_mount}; then {privileged_mount}; fi")
+    return f"mkdir -p {q_mount} && {action} && mountpoint -q {q_mount}"

@@ -1,0 +1,59 @@
+NFS_CORE_PARAM {
+    Protocols = 4;
+    NFS_Port = 12049;
+    Bind_addr = 0.0.0.0;
+    Enable_UDP = false;
+    Enable_NLM = false;
+    heartbeat_freq = 0;
+}
+
+NFS_KRB5 {
+    Active_krb5 = false;
+}
+
+NFSv4 {
+    Minor_Versions = 1;
+    DomainName = "localdomain";
+}
+
+EXPORT_DEFAULTS {
+    Access_Type = RW;
+    Protocols = 4;
+    Squash = All;
+    Anonymous_uid = __ANON_UID__;
+    Anonymous_gid = __ANON_GID__;
+    SecType = sys;
+}
+
+EXPORT {
+    Export_Id = 301;
+    Path = "/exports/task";
+    Pseudo = "/task";
+    Access_Type = RW;
+    Squash = All;
+    Anonymous_uid = __ANON_UID__;
+    Anonymous_gid = __ANON_GID__;
+    SecType = sys;
+    FSAL { Name = VFS; }
+}
+
+EXPORT {
+    Export_Id = 302;
+    Path = "/exports/reset";
+    Pseudo = "/reset";
+    Access_Type = RW;
+    Squash = All;
+    Anonymous_uid = __ANON_UID__;
+    Anonymous_gid = __ANON_GID__;
+    SecType = sys;
+    FSAL { Name = VFS; }
+}
+
+LOG {
+    Default_Log_Level = EVENT;
+    Facility {
+        name = FILE;
+        destination = "/dev/stderr";
+        enable = active;
+    }
+}

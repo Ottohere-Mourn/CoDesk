@@ -6,6 +6,7 @@ from swcub.shared_workspace import (
     ActorSession,
     WorkspaceTopologyError,
     guest_mount_command,
+    guest_mount_nfs_command,
     qemu_virtfs_device,
     validate_condition_topology,
     write_backend_marker,
@@ -60,6 +61,22 @@ def test_qemu_and_guest_mount_args_are_deterministic():
     with pytest.raises(WorkspaceTopologyError, match="single line"):
         guest_mount_command(sudo_password="bad\npassword")
 
+
+
+def test_nfs_mount_command_uses_nfs4_and_validates_endpoint():
+    command = guest_mount_nfs_command("172.17.0.1", 12049, "/task")
+    assert "mount -i -t nfs4" in command
+    assert "vers=4.1,proto=tcp,port=12049,hard" in command
+    assert "172.17.0.1:/task /tmp/swcub_office" in command
+    reset = guest_mount_nfs_command("172.17.0.1", 12049, "/reset", remount=True)
+    assert "umount /tmp/swcub_office" in reset
+    assert "172.17.0.1:/reset" in reset
+    with pytest.raises(WorkspaceTopologyError, match="numeric IP"):
+        guest_mount_nfs_command("nfs.invalid", 12049)
+    with pytest.raises(WorkspaceTopologyError, match="non-privileged"):
+        guest_mount_nfs_command("172.17.0.1", 1023)
+    with pytest.raises(WorkspaceTopologyError, match="/task or /reset"):
+        guest_mount_nfs_command("172.17.0.1", 12049, "/other")
 
 def test_backend_marker_requires_fresh_path_and_records_run_ownership(tmp_path: Path):
     root = tmp_path / "backend"
