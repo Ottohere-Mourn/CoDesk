@@ -107,3 +107,13 @@ Task hierarchy is **family → workflow template → fixed task instance → run
 - Do not promote Clipboard/Modal/App Context without the specified real instrumentation and reset evidence.
 - Do not expand seed counts, start multi-worker runs, or launch shared conditions before P0 and both Solo gates pass.
 - Do not perform unowned cleanup, touch other users' resources, or push to a remote.
+
+
+## Addendum — 2026-09-30 continuation
+
+- **Card availability:** A6000 index 2 (third physical card) is idle, but alone is too small for the 58 GiB BF16 Qwen checkpoint. The new true-Agent retry used the free A6000 indices 0+2, so this card was tested as part of the usable pair.
+- **Guest path correction:** use `source scripts/a6000_env.sh`; it sets `SWCUB_OSWORLD_GUEST_IMAGE` to the verified regular file under `assets/osworld-v2.1/guest/`. A run without that setup is invalid and must not be counted.
+- **Latest valid execution attempt:** R04 reached two ready real Guests and delivered a real screenshot to the pinned Qwen3VLAgent. The request then spent >600 s inside `model.generate()` after preprocessing completed in under 0.2 s; zero actions were returned. Evaluator failure is infrastructure/service failure, reset passed, and all provenance hashes matched. This narrows the blocker to Transformers generation latency on two A6000s; it does not show a model task failure.
+- **Latest invalid attempt:** R03 omitted the A6000 environment script, mounted a directory as `/System.qcow2`, and failed before loading the model. It remains preserved separately.
+- **Serving constraints:** the 4090 host has no observed active Qwen service. At the time of the check, only physical GPU index 2 was entirely free; other GPUs had allocations, so no new service was started there. Do not claim the 4090 route is available without a dedicated allocation or a confirmed service.
+- **Next:** preserve the pinned Agent and benchmark. Diagnose/replace only the inference serving path with an explicit record of any processor/runtime differences; first verify one response on the exact saved Guest screenshot, then rerun the Guest episode. Do not repeatedly extend the timeout.

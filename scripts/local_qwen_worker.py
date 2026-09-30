@@ -9,10 +9,18 @@ import io
 import json
 import os
 from pathlib import Path
+import time
+import uuid
+
+
+def _log(event: str, **fields: object) -> None:
+    """Emit timing metadata only; never log prompts, images, or model output."""
+    print(json.dumps({"event": event, "monotonic_s": round(time.monotonic(), 3), **fields}), flush=True)
 
 
 class LocalQwenRuntime:
     def __init__(self, model_path: Path, device: str):
+        load_started = time.perf_counter()
         os.environ["HF_HUB_OFFLINE"] = "1"
         os.environ["TRANSFORMERS_OFFLINE"] = "1"
         os.environ["HF_HUB_DISABLE_TELEMETRY"] = "1"
@@ -26,6 +34,7 @@ class LocalQwenRuntime:
             raise RuntimeError("CUDA unavailable; local model inference is required")
         self.model_path = str(model_path)
         self.device = device
+        _log("model.load_start", model=Path(self.model_path).name, device=device)
         config = AutoConfig.from_pretrained(self.model_path, local_files_only=True)
         if config.model_type == "qwen3_vl":
             model_class = Qwen3VLForConditionalGeneration
@@ -45,6 +54,11 @@ class LocalQwenRuntime:
         self.model.eval()
         self.torch = torch
         self.process_vision_info = process_vision_info
+        device_map = getattr(self.model, "hf_device_map", {})
+        mapped_devices = sorted({str(value) for value in device_map.values()}) if device_map else []
+        _log("model.load_ready", model=Path(self.model_path).name,
+             elapsed_s=round(time.perf_counter() - load_started, 3),
+             mapped_devices=mapped_devices)
 
     @staticmethod
     def _messages_with_images(messages: list[dict[str, object]]) -> list[dict[str, object]]:
@@ -78,18 +92,47 @@ class LocalQwenRuntime:
             converted.append({"role": message.get("role", "user"), "content": parts})
         return converted
 
-    def infer(self, messages: list[dict[str, object]], max_new_tokens: int) -> dict[str, object]:
+    def infer(self, messages: list[dict[str, object]], max_new_tokens: int,
+              request_id: str) -> dict[str, object]:
+        started = time.perf_counter()
+        image_count = sum(
+            1 for message in messages
+            if isinstance(message.get("content"), list)
+            for part in message["content"]
+            if isinstance(part, dict) and part.get("type") == "image_url"
+        )
+        _log("infer.start", request_id=request_id, message_count=len(messages),
+             image_count=image_count, max_new_tokens=max_new_tokens)
+        stage = time.perf_counter()
         converted = self._messages_with_images(messages)
+        _log("infer.images_decoded", request_id=request_id,
+             elapsed_s=round(time.perf_counter() - stage, 3))
+        stage = time.perf_counter()
         rendered = self.processor.apply_chat_template(
             converted, tokenize=False, add_generation_prompt=True)
         image_inputs, video_inputs = self.process_vision_info(converted)
+        _log("infer.template_ready", request_id=request_id,
+             elapsed_s=round(time.perf_counter() - stage, 3))
+        stage = time.perf_counter()
         inputs = self.processor(text=[rendered], images=image_inputs, videos=video_inputs,
                                 padding=True, return_tensors="pt").to(self.model.device)
+        _log("infer.inputs_ready", request_id=request_id,
+             elapsed_s=round(time.perf_counter() - stage, 3),
+             input_tokens=int(inputs.input_ids.shape[1]))
         generation = {"max_new_tokens": max_new_tokens, "do_sample": False}
+        stage = time.perf_counter()
+        _log("infer.generate_start", request_id=request_id)
         with self.torch.inference_mode():
             generated = self.model.generate(**inputs, **generation)
+        _log("infer.generate_done", request_id=request_id,
+             elapsed_s=round(time.perf_counter() - stage, 3),
+             output_tokens=int(generated.shape[1] - inputs.input_ids.shape[1]))
+        stage = time.perf_counter()
         text = self.processor.batch_decode(
             generated[:, inputs.input_ids.shape[1]:], skip_special_tokens=True)[0]
+        _log("infer.done", request_id=request_id,
+             decode_s=round(time.perf_counter() - stage, 3),
+             total_s=round(time.perf_counter() - started, 3))
         return {"text": text, "model": Path(self.model_path).name, "device": self.device}
 
 
@@ -135,8 +178,13 @@ def main() -> int:
                 max_new_tokens = int(payload.get("max_new_tokens", 512))
                 if not 1 <= max_new_tokens <= 1536:
                     raise ValueError("max_new_tokens must be between 1 and 1536")
-                self.send_json(200, runtime.infer(messages, max_new_tokens))
+                request_id = uuid.uuid4().hex[:10]
+                _log("http.request_start", request_id=request_id, bytes=size)
+                result = runtime.infer(messages, max_new_tokens, request_id)
+                self.send_json(200, result)
+                _log("http.request_done", request_id=request_id)
             except Exception as exc:
+                _log("http.request_error", error_type=type(exc).__name__)
                 self.send_json(400, {"error": f"{type(exc).__name__}: {exc}"})
 
     server = ThreadingHTTPServer(("127.0.0.1", args.port), Handler)
