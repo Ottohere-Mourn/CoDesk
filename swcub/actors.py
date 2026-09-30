@@ -355,7 +355,7 @@ class ScriptedClipboardActor:
 
         if self.turn == 0:
             context.press_key("ctrl+home")
-            context.press_key("ctrl+shift+right")
+            context.press_key("shift+end")
             context.press_key("ctrl+c")
             self.turn = 1
             return False
@@ -365,7 +365,7 @@ class ScriptedClipboardActor:
             context.press_key("alt+tab")
         if self.recopy_on_resume:
             context.press_key("ctrl+home")
-            context.press_key("ctrl+shift+right")
+            context.press_key("shift+end")
             context.press_key("ctrl+c")
         context.press_key("ctrl+end")
         context.press_key("ctrl+v")

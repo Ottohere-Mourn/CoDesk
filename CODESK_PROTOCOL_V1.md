@@ -10,7 +10,7 @@ V1 is a compact mechanism benchmark. Its primary claim is limited to whether sha
 
 **When independently goal-directed Computer-Use Agents use the same live desktop session, how does shared control of GUI resources affect each actor's goal completion, joint state integrity and recovery, compared with the same actors using independent desktop sessions?**
 
-The primary unit is a matched task episode block: same task instance, actor goals, model/runtime, initial application state, shared backend, schedule and evaluator, with desktop topology changed between MA-ID and MA-SD.
+The primary unit is a matched task episode block: same task instance, actor goals, model/runtime, task-relevant initial workspace and application state, schedule and evaluator, with desktop topology changed between MA-ID and MA-SD. Workspace equivalence is semantic and task-scoped; it does not require physical filesystem identity when actors do not need to observe each other’s persistent file changes.
 
 ## 3. Scope
 
@@ -31,18 +31,19 @@ Run each actor separately from the same task version and initial fixture, with n
 
 - Each GUI actor controls its own independent desktop session, with independent window focus, keyboard, pointer and session clipboard.
 - Actors execute the same declared schedule and goals as in MA-SD.
-- If the task includes shared files or application state, both sessions connect to the same authoritative backend/resource. This shared backend is held constant between MA-ID and MA-SD.
-- The condition isolates multi-agent execution and shared-backend effects while removing a common GUI control surface.
+- Both sessions start from equivalent task fixtures and preserve the same task-relevant workspace state. Separate per-Guest local filesystems are allowed when cross-Actor file visibility is not part of either goal.
+- If a task requires one Actor to observe another Actor’s persistent update, use the same authoritative backend in MA-ID and MA-SD; never vary backend topology with desktop topology.
+- This condition removes a common GUI control surface while preserving the task’s declared workspace semantics.
 
 ### MA-SD: Multi-Agent Shared Desktop
 
 - All GUI actors act through the same live desktop session, Guest, active-window state, keyboard and pointer. Session-global resources such as clipboard are shared.
 - Each actor retains its own task instruction and actor identity but receives observations from the current shared session on its scheduled turn.
-- All actors and the evaluator use the same task fixture and backend. The Guest/session identity is recorded once and shared by the actor roster.
+- Actors and evaluator use the same task fixture and task-relevant state. In one Guest they naturally share its local filesystem and application processes; record this topology explicitly. A direct MA-ID comparison is eligible only when the relevant initial workspace and goal semantics match.
 
 ### Matched controls
 
-MA-ID and MA-SD use the same task instance, actor-to-goal mapping, model checkpoint and settings, application versions, backend state, action budget, schedule, trigger and evaluator. Only the desktop-session topology changes. No condition forces an actor to make an invalid action. Scheduler or recovery actions are attributed separately from actor actions.
+MA-ID and MA-SD use the same task instance, actor-to-goal mapping, model checkpoint and settings, application versions, semantically equivalent task-relevant workspace/state, action budget, schedule, trigger and evaluator. The desktop-session topology changes. For tasks requiring cross-Actor persistence, the authoritative backend must also be identical; for independent per-Actor artifacts, equivalent seeded local filesystems are permitted and claims are limited to the shared GUI control effect. No condition forces an actor to make an invalid action. Scheduler or recovery actions are attributed separately from actor actions.
 
 ## 5. Task tracks
 

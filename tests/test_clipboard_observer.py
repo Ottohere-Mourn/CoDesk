@@ -204,23 +204,57 @@ def test_scripted_joint_schedule_uses_normal_copy_paste_and_has_recopy_control()
     actions = [e.details["source_action"] for e in episode.log.events
                if e.kind == "gui" and e.action == "osworld.step"]
     assert actions.count({"op": "key", "key": "ctrl+c"}) == 3
+    assert actions.count({"op": "key", "key": "shift+end"}) == 2
+    assert actions.count({"op": "key", "key": "ctrl+shift+right"}) == 0
     assert actions.count({"op": "key", "key": "ctrl+v"}) == 2
     assert {"op": "key", "key": "alt+tab"} in actions
 
 
-def test_clipboard_topology_rejects_old_ma_id_separate_backend_layout():
+def test_clipboard_topology_allows_equivalent_local_workspace_in_ma_id():
+    digest = hashlib.sha256(b"identical initial Writer+Calc fixture").hexdigest()
     distinct = {"writer_actor": {"workspace_backend_id": "backend-A",
                                  "desktop_session_id": "desktop-A",
-                                 "clipboard_session_id": "clipboard-A"},
+                                 "clipboard_session_id": "clipboard-A",
+                                 "workspace_fixture_sha256": digest},
                 "calc_actor": {"workspace_backend_id": "backend-B",
                                "desktop_session_id": "desktop-B",
-                               "clipboard_session_id": "clipboard-B"}}
-    with pytest.raises(ValueError, match="topology violates"):
+                               "clipboard_session_id": "clipboard-B",
+                               "workspace_fixture_sha256": digest}}
+    result = validate_topology("ma_id", distinct)
+    assert result["valid"] is True
+    assert result["workspace_backend_shared"] is False
+    assert result["workspace_fixture_equivalent"] is True
+    distinct["calc_actor"]["workspace_fixture_sha256"] = "0" * 64
+    with pytest.raises(ValueError, match="fixture_matches=False"):
         validate_topology("ma_id", distinct)
-    shared_backend = {"writer_actor": {"workspace_backend_id": "backend",
-                                       "desktop_session_id": "desktop-A",
-                                       "clipboard_session_id": "clipboard-A"},
-                     "calc_actor": {"workspace_backend_id": "backend",
-                                    "desktop_session_id": "desktop-B",
-                                    "clipboard_session_id": "clipboard-B"}}
-    assert validate_topology("ma_id", shared_backend)["valid"] is True
+
+
+def test_clipboard_topology_ma_sd_shares_backend_desktop_clipboard_and_fixture():
+    digest = hashlib.sha256(b"identical initial Writer+Calc fixture").hexdigest()
+    shared = {"writer_actor": {"workspace_backend_id": "backend",
+                               "desktop_session_id": "desktop",
+                               "clipboard_session_id": "clipboard",
+                               "workspace_fixture_sha256": digest},
+              "calc_actor": {"workspace_backend_id": "backend",
+                             "desktop_session_id": "desktop",
+                             "clipboard_session_id": "clipboard",
+                             "workspace_fixture_sha256": digest}}
+    assert validate_topology("ma_sd", shared)["valid"] is True
+
+
+def test_guest_probe_treats_ownerless_clipboard_as_valid_empty_state(monkeypatch, tmp_path):
+    from scripts import guest_clipboard_probe
+    owners = iter((None, None))
+    monkeypatch.setattr(guest_clipboard_probe, "x11_owner", lambda: next(owners))
+    def no_selection_commands(argv, timeout=1.5):
+        if argv[0] == "xdotool":
+            raise FileNotFoundError("xdotool is not installed in this unit-test host")
+        raise AssertionError(f"empty clipboard should not invoke {argv!r}")
+    monkeypatch.setattr(guest_clipboard_probe, "run", no_selection_commands)
+    result = guest_clipboard_probe.sample(tmp_path / "clipboard-state.json")
+    assert result["status"] == "ok"
+    assert result["owner_xid"] is None
+    assert result["payload_sha256"] is None
+    assert result["targets"] == []
+    assert result["payload_read"] is False
+    assert result["generation"] == 0

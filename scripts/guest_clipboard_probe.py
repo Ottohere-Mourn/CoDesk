@@ -64,20 +64,23 @@ def window_info() -> dict[str, str | None]:
 def sample(state_path: Path) -> dict[str, object]:
     started = time.monotonic_ns()
     owner = x11_owner()
-    target_output = run(["xclip", "-selection", "clipboard", "-o", "-t", "TARGETS"])
-    targets = sorted({line.strip().decode("ascii", "replace") for line in
-                      target_output.splitlines() if line.strip()})
+    targets: list[str] = []
     payload = None
-    for target in ("UTF8_STRING", "text/plain;charset=utf-8", "STRING"):
-        if target not in targets:
-            continue
-        try:
-            payload = run(["xclip", "-selection", "clipboard", "-o", "-t", target])
-            break
-        except subprocess.SubprocessError:
-            continue
-    # Avoid recording an impossible mixed snapshot if ownership changed while
-    # TARGETS/text were being requested. Bounded retry is handled by the caller.
+    if owner is not None:
+        target_output = run(["xclip", "-selection", "clipboard", "-o", "-t", "TARGETS"])
+        targets = sorted({line.strip().decode("ascii", "replace") for line in
+                          target_output.splitlines() if line.strip()})
+        for target in ("UTF8_STRING", "text/plain;charset=utf-8", "STRING"):
+            if target not in targets:
+                continue
+            try:
+                payload = run(["xclip", "-selection", "clipboard", "-o", "-t", target])
+                break
+            except subprocess.SubprocessError:
+                continue
+    # An empty selection is a valid desktop state, not an observer failure.
+    # Avoid an impossible mixed snapshot if ownership changed while selection
+    # targets or text were being requested.
     owner_after = x11_owner()
     if owner_after != owner:
         raise RuntimeError("clipboard owner changed during sampling")

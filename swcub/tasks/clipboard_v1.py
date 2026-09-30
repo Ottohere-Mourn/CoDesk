@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import re
 from typing import Any, Callable
 
 from ..evaluator import GuestLibreOfficeBindingEvaluator
@@ -149,14 +150,22 @@ def validate_topology(condition: str,
     for actor, row in actor_bindings.items():
         if any(not isinstance(row.get(field), str) or not row[field] for field in fields):
             raise ValueError(f"{actor} needs explicit backend, desktop, and clipboard identities")
+        digest = row.get("workspace_fixture_sha256")
+        if not isinstance(digest, str) or not re.fullmatch(r"[0-9a-f]{64}", digest):
+            raise ValueError(f"{actor} needs the digest of the initial task workspace fixture")
     same = {field: actor_bindings["writer_actor"][field]
             == actor_bindings["calc_actor"][field] for field in fields}
-    valid = (same["workspace_backend_id"] and not same["desktop_session_id"]
-             and not same["clipboard_session_id"] if condition == "ma_id" else all(same.values()))
+    fixture_matches = (actor_bindings["writer_actor"]["workspace_fixture_sha256"]
+                       == actor_bindings["calc_actor"]["workspace_fixture_sha256"])
+    valid = (fixture_matches and not same["desktop_session_id"]
+             and not same["clipboard_session_id"] if condition == "ma_id"
+             else fixture_matches and all(same.values()))
     if not valid:
-        raise ValueError(f"{condition} topology violates the frozen backend/control-plane contract: {same}")
+        raise ValueError(f"{condition} topology violates task-state/control-plane contract: "
+                         f"{same}, fixture_matches={fixture_matches}")
     return {"valid": True, "condition": condition,
             "workspace_backend_shared": same["workspace_backend_id"],
+            "workspace_fixture_equivalent": fixture_matches,
             "desktop_shared": same["desktop_session_id"],
             "clipboard_shared": same["clipboard_session_id"]}
 
@@ -171,13 +180,13 @@ def task_specification() -> dict[str, Any]:
                                  "source": "Writer paragraph 1", "destination": "Writer paragraph 2"},
                 "calc_actor": {"goal": "copy BATCH-204 in Calc A1 into A2",
                                "source": "Calc Sheet1.A1", "destination": "Calc Sheet1.A2"}},
-            "shared_resources": ["workspace_backend", "desktop_control", "X11 CLIPBOARD selection"],
+            "shared_resources": ["equivalent seeded task files", "desktop_control", "X11 CLIPBOARD selection"],
             "protocol": {"ma_sd_order": ["writer.copy", "calc.copy_paste_save",
                                           "writer.observe_or_recopy_paste_save"],
                          "forced_wrong_paste": False,
                          "recovery_control": "writer re-copies its stable source before paste"},
             "conditions": {"solo": "one actor; clean fixture and clipboard",
-                           "ma_id": "same backend identity; separate desktop and clipboard identities",
+                           "ma_id": "same workspace fixture digest; independent local backends, desktops, and clipboards are allowed because goals do not require cross-Actor file visibility",
                            "ma_sd": "same backend, desktop, and clipboard identities"},
             "evaluation": "exact saved FODT/FODS state plus private event evidence",
             "status": "implementation_partial_real_guest_unvalidated"}
