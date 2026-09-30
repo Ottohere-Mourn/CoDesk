@@ -16,7 +16,23 @@ ram="${RAM_SIZE:-4G}"
 cpus="${CPU_CORES:-4}"
 qemu-img create -q -f qcow2 -F qcow2 -b "$base_image" "$overlay"
 
+qemu_extra=()
+shared_workspace="${SWCUB_VM_SHARED_WORKSPACE:-}"
+shared_tag="${SWCUB_VM_SHARED_WORKSPACE_TAG:-codesk_workspace}"
+if [[ -n "$shared_workspace" ]]; then
+  if [[ ! -d "$shared_workspace" ]]; then
+    echo "Shared workspace export is not a directory: $shared_workspace" >&2
+    exit 3
+  fi
+  if [[ ! "$shared_tag" =~ ^[A-Za-z0-9_.-]+$ ]]; then
+    echo "Invalid shared workspace mount tag" >&2
+    exit 3
+  fi
+  qemu_extra=(-virtfs "local,path=${shared_workspace},mount_tag=${shared_tag},security_model=none,id=${shared_tag}")
+fi
+
 exec qemu-system-x86_64 \
+  "${qemu_extra[@]}" \
   -machine pc,accel=kvm \
   -cpu host \
   -m "$ram" \

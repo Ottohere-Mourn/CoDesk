@@ -41,6 +41,9 @@ from swcub.comparison_metrics import summarize_focus_events
 from swcub.provenance import source_path_label
 from swcub.resource_safety import PROJECT_NAME, ResourceLedger, ensure_resource_identity
 from swcub.task_factory import render_calc_fods, render_writer_fodt
+from swcub.shared_workspace import (GUEST_WORKSPACE_MOUNT, SHARED_WORKSPACE_TAG,
+                                    guest_mount_command, validate_condition_topology,
+                                    write_backend_marker)
 
 
 TASK_ID = "CODESK-TA-OFFICE-001"
@@ -211,21 +214,48 @@ def guest_command(desktop: DesktopEnv, argv: list[str], timeout: int = 45) -> st
     return str(payload.get("output", ""))
 
 
-def make_desktop(binding: str, log: EventLog, out: Path) -> tuple[OSWorldSharedEpisode, DesktopEnv]:
+def make_desktop(binding: str, log: EventLog, out: Path,
+                 workspace_backend_host_dir: Path | None = None,
+                 workspace_backend_id: str | None = None) -> tuple[OSWorldSharedEpisode, DesktopEnv]:
     guest_image = Path(os.environ.get(
         "SWCUB_OSWORLD_GUEST_IMAGE",
         OSWORLD_V2_DIR / "docker_vm_data/osworld-v2-ubuntu-x86.qcow2")).resolve()
-    desktop = DesktopEnv(provider_name="docker", path_to_vm=str(guest_image),
-                         cache_dir=os.environ.get(
-                             "SWCUB_OSWORLD_CACHE_DIR",
-                             str(OSWORLD_V2_DIR / "task-cache")),
-                         os_type="Ubuntu", action_space="pyautogui")
+    workspace_env_key = "SWCUB_OSWORLD_SHARED_WORKSPACE_HOST_DIR"
+    prior_workspace_env = os.environ.get(workspace_env_key)
+    if workspace_backend_host_dir is None:
+        os.environ.pop(workspace_env_key, None)
+    else:
+        if not workspace_backend_host_dir.is_dir():
+            raise SetupReadinessError("shared backend directory is missing",
+                                      {"backend_id": workspace_backend_id})
+        os.environ[workspace_env_key] = str(workspace_backend_host_dir.resolve())
+    try:
+        desktop = DesktopEnv(provider_name="docker", path_to_vm=str(guest_image),
+                             cache_dir=os.environ.get(
+                                 "SWCUB_OSWORLD_CACHE_DIR",
+                                 str(OSWORLD_V2_DIR / "task-cache")),
+                             os_type="Ubuntu", action_space="pyautogui")
+    finally:
+        if prior_workspace_env is None:
+            os.environ.pop(workspace_env_key, None)
+        else:
+            os.environ[workspace_env_key] = prior_workspace_env
     episode = OSWorldSharedEpisode(
         desktop, cli_executor=lambda raw, desktop=desktop: guest_command(desktop, shlex.split(raw)))
     episode.log = log
     try:
         episode.reset(task_config=None)
         wait_for_guest_desktop(episode, desktop, timeout=300, retry_interval=5)
+        if workspace_backend_host_dir is not None:
+            guest_command(desktop, ["bash", "-lc", guest_mount_command()], timeout=60)
+            episode.log.record(
+                "environment", "workspace_mount", "writer_calc.shared_backend_mount",
+                {"mounted": False}, {"mounted": True},
+                details={"backend_id": workspace_backend_id,
+                         "transport": "qemu-9p",
+                         "mount_tag": SHARED_WORKSPACE_TAG,
+                         "guest_mountpoint": GUEST_WORKSPACE_MOUNT,
+                         "desktop_binding": binding})
     except BaseException as exc:
         before = episode.snapshot()
         episode.log.record("environment", "startup_error", "guest.startup_abort",
@@ -358,14 +388,16 @@ def wait_for_app_document(episode: OSWorldSharedEpisode, desktop: DesktopEnv,
 
 
 def seed_and_open(episode: OSWorldSharedEpisode, desktop: DesktopEnv,
-                  open_apps: list[str], out: Path) -> dict[str, Any]:
-    writer_b64 = base64.b64encode(flat_writer()).decode("ascii")
-    calc_b64 = base64.b64encode(flat_calc()).decode("ascii")
-    seed_code = (
-        "from pathlib import Path; import base64; p=Path('/tmp/swcub_office'); p.mkdir(exist_ok=True); "
-        f"Path('{WRITER_PATH}').write_bytes(base64.b64decode('{writer_b64}')); "
-        f"Path('{CALC_PATH}').write_bytes(base64.b64decode('{calc_b64}'))")
-    episode.cli_action("task_setup", "python3 -c " + shlex.quote(seed_code))
+                  open_apps: list[str], out: Path,
+                  initialize_workspace: bool = True) -> dict[str, Any]:
+    if initialize_workspace:
+        writer_b64 = base64.b64encode(flat_writer()).decode("ascii")
+        calc_b64 = base64.b64encode(flat_calc()).decode("ascii")
+        seed_code = (
+            "from pathlib import Path; import base64; p=Path('/tmp/swcub_office'); p.mkdir(exist_ok=True); "
+            f"Path('{WRITER_PATH}').write_bytes(base64.b64decode('{writer_b64}')); "
+            f"Path('{CALC_PATH}').write_bytes(base64.b64decode('{calc_b64}'))")
+        episode.cli_action("task_setup", "python3 -c " + shlex.quote(seed_code))
     availability = guest_command(desktop, ["bash", "-lc", "soffice --version 2>&1"])
     if "LibreOffice" not in availability:
         raise SetupReadinessError(f"unexpected LibreOffice version response: {availability!r}",
@@ -696,7 +728,8 @@ def write_provenance(out: Path, report: dict[str, Any]) -> None:
                                              "swcub/osworld-v2.1-qemu-runtime:local"),
             "runtime_image_id": runtime_id,
             "release_manifest_sha256": sha256_file(manifest_path) if manifest_path.is_file() else None,
-            "desktop_bindings": report["desktop_bindings"], "overlay_files": overlays},
+            "desktop_bindings": report["desktop_bindings"], "overlay_files": overlays,
+            "workspace_topology": report.get("workspace_topology")},
         "resources": {"run_id": os.environ["SWCUB_RUN_ID"],
                        "owner_labels": {"org.swcub.project": PROJECT_NAME,
                            "org.swcub.run-id": os.environ["SWCUB_RUN_ID"],
@@ -716,11 +749,25 @@ def main() -> int:
     parser.add_argument("--artifact-parent", type=Path, required=True)
     parser.add_argument("--actor-implementation", choices=("scripted", "qwen3vl"),
                         default="scripted")
+    parser.add_argument("--backend-topology",
+                        choices=("legacy_per_actor_clone", "same_workspace"),
+                        default=os.environ.get("SWCUB_BACKEND_TOPOLOGY",
+                                               "legacy_per_actor_clone"))
     args = parser.parse_args()
     out = args.artifact_parent.expanduser().resolve() / args.run_id
     out.mkdir(parents=True, exist_ok=False)
     (out / "overlays").mkdir()
+    same_workspace_backend = (
+        args.backend_topology == "same_workspace"
+        and args.condition in {"ma_id", "ma_sd"})
+    workspace_backend_id = f"backend-{uuid.uuid4().hex[:16]}" if same_workspace_backend else None
+    workspace_backend_host_dir = (out / "workspace-backend-task"
+                                  if same_workspace_backend else None)
     owner = secrets.token_hex(32)
+    if workspace_backend_host_dir is not None:
+        write_backend_marker(workspace_backend_host_dir,
+                             backend_id=workspace_backend_id or "",
+                             run_id=args.run_id, condition=args.condition)
     ledger_path = out / "resource-events.jsonl"
     os.environ.update({"SWCUB_RUN_ID": args.run_id, "SWCUB_OWNER_TOKEN": owner,
                        "SWCUB_RESOURCE_LEDGER": str(ledger_path),
@@ -744,7 +791,14 @@ def main() -> int:
         "artifact_directory": str(out),
         "run_id": args.run_id, "resource_run_id": identity.run_id,
         "resource_ledger": str(ledger_path), "schedule": [], "actors": {},
-        "desktop_bindings": {}, "setup_validation": {"ready": False,
+        "desktop_bindings": {},
+        "workspace_topology": {"mode": args.backend_topology,
+            "backend_id": workspace_backend_id,
+            "host_backend_path": (str(workspace_backend_host_dir)
+                                  if workspace_backend_host_dir else None),
+            "mount_transport": "qemu-9p" if workspace_backend_host_dir else None,
+            "guest_mountpoint": GUEST_WORKSPACE_MOUNT if workspace_backend_host_dir else None},
+        "setup_validation": {"ready": False,
             "apps": {}, "initial_state": None}}
     current_stage = "guest_startup"
     try:
@@ -753,11 +807,14 @@ def main() -> int:
             schedule = MODEL_INTERLEAVED_SCHEDULE.copy()
         report["schedule"] = schedule
         report["actor_bindings"] = actor_bindings
-        for binding, apps in apps_by_binding.items():
-            episode, desktop = make_desktop(binding, log, out)
+        for setup_index, (binding, apps) in enumerate(apps_by_binding.items()):
+            episode, desktop = make_desktop(
+                binding, log, out, workspace_backend_host_dir, workspace_backend_id)
             environments[binding] = (episode, desktop)
             current_stage = "application_setup"
-            setup_result = seed_and_open(episode, desktop, apps, out)
+            setup_result = seed_and_open(
+                episode, desktop, apps, out,
+                initialize_workspace=(workspace_backend_host_dir is None or setup_index == 0))
             report.setdefault("guest_app_versions", {})[binding] = setup_result[
                 "libreoffice_version"]
             report["setup_validation"]["apps"][binding] = setup_result
@@ -777,6 +834,23 @@ def main() -> int:
                            else "separate Guest desktops")}
         if not isolation_valid:
             raise RuntimeError(f"desktop binding contract violated: {initial_guest_ids!r}")
+        if workspace_backend_host_dir is not None:
+            actor_sessions = {}
+            for actor_id, binding in actor_bindings.items():
+                episode = environments[binding][0]
+                actor_sessions[actor_id] = {
+                    "actor_id": actor_id,
+                    "backend_id": workspace_backend_id,
+                    "desktop_session_id": episode.environment_id}
+            topology = validate_condition_topology(args.condition, {
+                actor_id: __import__("swcub.shared_workspace", fromlist=["ActorSession"]).ActorSession(**values)
+                for actor_id, values in actor_sessions.items()})
+            report["workspace_topology"]["identity_check"] = topology
+            report["workspace_topology"]["actor_bindings"] = actor_sessions
+            log.record("coordinator", "topology_check", "writer_calc.same_backend_topology",
+                       {"valid": False}, topology, details={
+                           "backend_id": workspace_backend_id,
+                           "condition": args.condition})
         if args.condition in {"solo", "ma_id"}:
             # Both clean independent desktops begin with their assigned app focused.
             # They share neither window state nor input; schedule order is deterministic.
@@ -942,11 +1016,25 @@ def main() -> int:
 
         reset_rows = {}
         reset_success = True
+        reset_backend_host_dir = None
+        reset_backend_id = None
+        workspace_env_key = "SWCUB_OSWORLD_SHARED_WORKSPACE_HOST_DIR"
+        prior_workspace_env = os.environ.get(workspace_env_key)
+        if workspace_backend_host_dir is not None:
+            reset_backend_host_dir = out / "workspace-backend-reset"
+            reset_backend_id = f"backend-{uuid.uuid4().hex[:16]}"
+            write_backend_marker(reset_backend_host_dir, backend_id=reset_backend_id,
+                                 run_id=args.run_id, condition=args.condition,
+                                 generation="reset")
+            os.environ[workspace_env_key] = str(reset_backend_host_dir.resolve())
+            report["workspace_topology"]["reset_backend_id"] = reset_backend_id
         for binding, (episode, desktop) in environments.items():
             before = episode.snapshot()
             old_id = before.get("guest_container_id")
             episode.reset(task_config=None)
             wait_for_guest_desktop(episode, desktop, timeout=300, retry_interval=5)
+            if reset_backend_host_dir is not None:
+                guest_command(desktop, ["bash", "-lc", guest_mount_command()], timeout=60)
             clean = guest_command(desktop, ["bash", "-lc",
                 f"test ! -e {WRITER_PATH} && test ! -e {CALC_PATH} && echo reset-clean"])
             fresh_id = episode.snapshot().get("guest_container_id")
@@ -962,6 +1050,10 @@ def main() -> int:
                                    "new_guest_container_id": fresh_id}
             episode.copy_artifacts(out / "reset-check" / binding)
         report["reset_check"] = {"success": reset_success, "desktops": reset_rows}
+        if prior_workspace_env is None:
+            os.environ.pop(workspace_env_key, None)
+        else:
+            os.environ[workspace_env_key] = prior_workspace_env
 
         current_stage = "resource_finalization"
         for binding, (episode, _) in environments.items():

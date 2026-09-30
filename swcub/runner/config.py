@@ -35,6 +35,11 @@ def validate_config(data: Any) -> None:
         raise ValueError(f"task_family must be one of {sorted(FAMILIES)}")
     if data.get("task_version") != "1.0.0":
         raise ValueError(f"{family} requires frozen task_version 1.0.0")
+    backend_topology = data.get("backend_topology", "legacy_per_actor_clone")
+    if backend_topology not in {"legacy_per_actor_clone", "same_workspace"}:
+        raise ValueError("backend_topology must be legacy_per_actor_clone or same_workspace")
+    if backend_topology == "same_workspace" and family != "writer_calc_v1":
+        raise ValueError("same_workspace topology is currently supported only for writer_calc_v1")
     episodes = data.get("episodes")
     if not isinstance(episodes, list) or not episodes:
         raise ValueError("episodes must be a nonempty list")

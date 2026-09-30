@@ -72,6 +72,8 @@ def make_specs(config: dict[str, Any], root: Path) -> list[dict[str, Any]]:
         specs.append({"queue_index": index, "job_id": job_id,
                       "task_family": config["task_family"], "task_id": task_id,
                       "task_version": task_version, "condition": condition,
+                      "backend_topology": config.get(
+                          "backend_topology", "legacy_per_actor_clone"),
                       "selector": selector, "repeat": repeat, "run_id": run_id,
                       "guest_slots": guest_slots(item, config["task_family"]),
                       "artifact_parent": str(root / "episodes" / job_id),
@@ -88,6 +90,8 @@ def worker(spec: dict[str, Any]) -> dict[str, Any]:
     for name in ("SWCUB_RUN_ID", "SWCUB_OWNER_TOKEN", "SWCUB_RESOURCE_LEDGER",
                  "SWCUB_RESOURCE_IDENTITY_INITIALIZED"):
         env.pop(name, None)
+    if spec["task_family"] == "writer_calc_v1":
+        env["SWCUB_BACKEND_TOPOLOGY"] = spec["backend_topology"]
     if spec["task_family"] == "track_a_v1":
         env["CODESK_TRACK_A_ARTIFACT_PARENT"] = str(artifact_parent)
         command = ["bash", str(TRACK_A_RUNNER), "--run-id", spec["run_id"],
