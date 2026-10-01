@@ -89,3 +89,18 @@ The worker changes in `scripts/local_qwen_worker.py` expose the memory and atten
 - No-Guest output and parse evidence: `artifacts/qwen-inference-diagnostic/a6000-single-gpu-offload-eager-r01/`
 - Interrupted C-01 attempt: `../artifacts/qwen-family-pilot/c01-soloa-a6000-bf16-cpuoffload-eager-r02-20261002/`
 - Historical two-GPU stall: `../artifacts/model-smoke/a6000-qwen-writer-calc-solo-20260930-r04-stage-timing/`
+
+## Follow-up deployment hardening (2026-10-02)
+
+The current resource snapshot showed all three A6000s already had active allocations, so no new generation was started on those devices. In particular, the available memory on any one card was below the previous single-card offload run's observed peak; borrowing the remaining GPU capacity would contend with other active workloads.
+
+To make the next available window actionable without changing model/task/evaluator behavior:
+
+- `scripts/local_qwen_worker.py` now applies `--max-memory-gpu` to every visible card (rather than only logical GPU 0), and can require an exact visible GPU count plus reject CPU/disk placement. Defaults remain compatible when these guards are omitted.
+- `scripts/start_a6000_qwen_worker.sh` requires two explicit physical GPU indices, refuses either card if it has over 1 GiB allocated or over 5% utilization, launches BF16/no-quantization/eager with 45 GiB per card and a 1 GiB CPU placement cap, then verifies the health topology. It stops its own worker on failed health or timeout and preserves its service log/owner record.
+- `scripts/stop_a6000_qwen_worker.sh` signals only a PID whose saved service owner record and live command line match this repository's worker.
+- `scripts/smoke_a6000_qwen_endpoint.py` sends the archived real screenshot request through `/infer`, checks the pinned model/config health, runs the unmodified OSWorld Qwen3VLAgent action parser, and records the response without executing it.
+
+These launch/smoke scripts passed syntax and CLI checks only. No two-card endpoint smoke or C-01/A-01 experiment was run in this follow-up because no safe two-GPU allocation was available. Current deployment status remains **not yet stable/verified as an endpoint**; the single-GPU direct-generation diagnostic remains the only successful A6000 generation evidence.
+
+The fail-closed launcher was exercised against the current allocation snapshot with physical GPUs `0,1`; it refused GPU 0 at 27,497 MiB allocated / 99% utilization and started no worker. This is an intentional resource guard, not an inference failure.

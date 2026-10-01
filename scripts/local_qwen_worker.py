@@ -20,9 +20,33 @@ def _log(event: str, **fields: object) -> None:
     print(json.dumps({"event": event, "monotonic_s": round(time.monotonic(), 3), **fields}), flush=True)
 
 
+def validate_device_map(device_map: dict[object, object], *, expected_gpu_count: int | None = None,
+                        require_no_offload: bool = False) -> dict[str, object]:
+    """Summarize placement and fail closed when an explicitly requested topology is not met."""
+    values = {str(value).lower() for value in device_map.values()}
+    cuda_ids: set[int] = set()
+    offload = set()
+    for value in values:
+        candidate = value.removeprefix("cuda:")
+        if candidate.isdigit():
+            cuda_ids.add(int(candidate))
+        else:
+            offload.add(value)
+    expected = set(range(expected_gpu_count)) if expected_gpu_count is not None else None
+    if expected_gpu_count is not None and cuda_ids != expected:
+        raise RuntimeError(f"device map uses logical CUDA devices {sorted(cuda_ids)}, expected {sorted(expected)}")
+    if require_no_offload and offload:
+        raise RuntimeError(f"device map contains non-GPU placement: {sorted(offload)}")
+    return {"cuda_device_ids": sorted(cuda_ids), "non_gpu_devices": sorted(offload),
+            "module_count_by_device": {device: sum(1 for value in device_map.values()
+                                                   if str(value).lower() == device)
+                                       for device in sorted(values)}}
+
+
 class LocalQwenRuntime:
     def __init__(self, model_path: Path, device: str, *, max_memory_gpu: str | None = None,
-                 max_memory_cpu: str | None = None, attention_backend: str | None = None):
+                 max_memory_cpu: str | None = None, attention_backend: str | None = None,
+                 expected_gpu_count: int | None = None, require_no_offload: bool = False):
         load_started = time.perf_counter()
         os.environ["HF_HUB_OFFLINE"] = "1"
         os.environ["TRANSFORMERS_OFFLINE"] = "1"
@@ -35,6 +59,11 @@ class LocalQwenRuntime:
 
         if not torch.cuda.is_available():
             raise RuntimeError("CUDA unavailable; local model inference is required")
+        visible_gpu_count = torch.cuda.device_count()
+        if expected_gpu_count is not None and visible_gpu_count != expected_gpu_count:
+            raise RuntimeError(f"expected {expected_gpu_count} visible GPUs, found {visible_gpu_count}")
+        self.expected_gpu_count = expected_gpu_count
+        self.require_no_offload = require_no_offload
         self.model_path = str(model_path)
         self.device = device
         _log("model.load_start", model=Path(self.model_path).name, device=device,
@@ -54,7 +83,10 @@ class LocalQwenRuntime:
         if max_memory_gpu:
             if device != "auto":
                 raise ValueError("max_memory limits require --device auto")
-            extra["max_memory"] = {0: max_memory_gpu, "cpu": max_memory_cpu or "80GiB"}
+            # Apply the cap to every visible GPU. A single key silently leaves the other
+            # cards at their default limits and makes the placement policy asymmetric.
+            extra["max_memory"] = {index: max_memory_gpu for index in range(visible_gpu_count)}
+            extra["max_memory"]["cpu"] = max_memory_cpu or "80GiB"
         if device == "auto":
             self.model = model_class.from_pretrained(
                 self.model_path, torch_dtype=torch.bfloat16, device_map="auto",
@@ -67,6 +99,11 @@ class LocalQwenRuntime:
         self.torch = torch
         self.process_vision_info = process_vision_info
         device_map = getattr(self.model, "hf_device_map", {})
+        placement = validate_device_map(device_map, expected_gpu_count=expected_gpu_count,
+                                        require_no_offload=require_no_offload)
+        self.cuda_device_ids = placement["cuda_device_ids"]
+        self.non_gpu_devices = placement["non_gpu_devices"]
+        self.module_count_by_device = placement["module_count_by_device"]
         self.mapped_devices = sorted({str(value) for value in device_map.values()}) if device_map else []
         self.config_sha256 = hashlib.sha256(
             (Path(self.model_path) / "config.json").read_bytes()).hexdigest()
@@ -78,8 +115,9 @@ class LocalQwenRuntime:
         _log("model.load_ready", model=Path(self.model_path).name,
              elapsed_s=round(time.perf_counter() - load_started, 3),
              mapped_devices=self.mapped_devices,
-             module_count_by_device={device: sum(1 for value in device_map.values() if str(value) == device)
-                                     for device in sorted({str(value) for value in device_map.values()})},
+             module_count_by_device=self.module_count_by_device,
+             expected_gpu_count=self.expected_gpu_count, require_no_offload=self.require_no_offload,
+             non_gpu_devices=self.non_gpu_devices,
              dtype=self.dtype, quantization=self.quantization,
              attention_backend=self.attention_backend, max_memory=self.max_memory,
              gpu_memory_allocated=[int(torch.cuda.memory_allocated(i)) for i in range(torch.cuda.device_count())],
@@ -172,10 +210,16 @@ def main() -> int:
                         help="optional CPU offload budget used with --max-memory-gpu")
     parser.add_argument("--attn-implementation", choices=("eager", "sdpa", "flash_attention_2"),
                         default=None, help="optional Transformers attention backend")
+    parser.add_argument("--expected-gpu-count", type=int, default=None,
+                        help="fail unless this many GPUs are visible and all are used")
+    parser.add_argument("--require-no-offload", action="store_true",
+                        help="fail if the loaded device map contains CPU or disk placement")
     args = parser.parse_args()
     runtime = LocalQwenRuntime(args.model, args.device, max_memory_gpu=args.max_memory_gpu,
                                max_memory_cpu=args.max_memory_cpu,
-                               attention_backend=args.attn_implementation)
+                               attention_backend=args.attn_implementation,
+                               expected_gpu_count=args.expected_gpu_count,
+                               require_no_offload=args.require_no_offload)
 
     class Handler(BaseHTTPRequestHandler):
         def log_message(self, _format: str, *_args: object) -> None:
@@ -201,8 +245,11 @@ def main() -> int:
                                  "dtype": runtime.dtype, "quantization": runtime.quantization,
                                  "attention_backend": runtime.attention_backend,
                                  "max_memory": runtime.max_memory,
-                                 "module_count_by_device": {device: sum(1 for value in runtime.module_device_map.values() if value == device)
-                                     for device in sorted(set(runtime.module_device_map.values()))},
+                                 "module_count_by_device": runtime.module_count_by_device,
+                                 "cuda_device_ids": runtime.cuda_device_ids,
+                                 "non_gpu_devices": runtime.non_gpu_devices,
+                                 "expected_gpu_count": runtime.expected_gpu_count,
+                                 "require_no_offload": runtime.require_no_offload,
                                  "host": socket.gethostname(),
                                  "pid": os.getpid(),
                                  "cuda_visible_devices": os.environ.get("CUDA_VISIBLE_DEVICES"),
