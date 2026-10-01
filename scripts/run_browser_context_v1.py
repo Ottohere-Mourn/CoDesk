@@ -215,7 +215,8 @@ def _run(args: argparse.Namespace) -> int:
                        "joint_success": evaluation["joint_success"],
                        "observed_interference": ("wrong_tab_action_supported" if
                            evaluation["wrong_page_action_supported"] else "unknown_or_absent"),
-                       "autonomous_recovery": evaluation["recovery_supported"],
+                       "scripted_recovery_observed": evaluation["recovery_supported"],
+                       "autonomous_recovery": False,
                        "status": "completed"})
         for binding, episode in envs.items():
             target = out / binding
