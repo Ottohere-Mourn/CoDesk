@@ -2,7 +2,7 @@
 
 **CoDesk** is the current project name. Its full name is **Collaborative Desktop Use Benchmark**. The project was previously called **Shared-Workspace Computer-Use Benchmark**; that name remains in historical reports, task IDs, artifact paths, and provenance records so existing evidence remains traceable.
 
-CoDesk evaluates Computer-Use Agents under shared, non-exclusive desktop environments: independent actors pursue their own goals while sharing a live desktop, application context, and sometimes backend state. The current prototype provides a scripted two-actor framework and a pinned OSWorld V2.1 QEMU Guest path. Verified paths include Docker/Xvfb cases and real Guest applications; interface-only tests use explicit stubs and are labeled separately. Existing small model smoke results are diagnostic, not benchmark-wide performance claims.
+CoDesk evaluates independent Computer-Use Agents under shared, non-exclusive desktop environments, focusing on hidden-state contention in focus/input routing, clipboard ownership, application context and modal/window ownership. A physically shared filesystem is not required: MA-ID and MA-SD need equivalent task-relevant initial state, and a shared authoritative backend only when task goals require cross-actor visibility. The pinned OSWorld V2.1 Guest path supports real applications. Round-1 has exploratory Qwen Focus evidence and scripted Guest feasibility for Clipboard, Modal and Application Context; these are not benchmark-wide performance results.
 
 ## Quick start
 
@@ -61,7 +61,7 @@ The project has an additional real OSWorld Guest adapter path. Follow [ENV_SETUP
 
 To run the deliberate lost-update control, pass `--scenario stale-overwrite` to the same launcher. A successful control result means the evaluator caught the missing CLI row and reset still cleared the Guest; see [ENV_SETUP.md](ENV_SETUP.md) for the command and evidence files.
 
-The novelty claim remains a hypothesis. The prototype demonstrates controlled shared-file and focus interactions and small diagnostic model smoke results; it supports no broad model-performance or paper-level conclusion.
+CoDesk's core question is shared desktop hidden-state contention. GUI+CLI persistent shared-state consistency is an auxiliary comparison, not the shared-desktop definition. Existing experiments are small, exploratory evidence and support no broad model-performance or paper-level conclusion.
 
 ## Real application episodes
 

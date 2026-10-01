@@ -18,15 +18,18 @@ The unit of analysis is an episode with multiple actors, individually meaningful
 
 ## Scope
 
-CoDesk focuses on interactions that arise because actors share computer-use resources:
+CoDesk evaluates hidden-state contention when independent Computer-Use actors use a shared, non-exclusive desktop. The primary contention is session-level GUI state:
 
-- One live graphical desktop session, including active window, keyboard, pointer and application context.
-- Shared application objects and backend state where multiple interfaces can observe or change them.
-- Independently goal-directed GUI agents, with GUI+GUI as the central track and GUI+CLI and GUI+Human Replay as complementary tracks.
-- Solo controls and shared conditions that distinguish actor capability from interaction effects.
-- Programmatic evaluation of each actor's goal, joint completion, unintended changes, interaction traces and recovery.
+- Focus and input routing across windows and applications.
+- Session clipboard ownership and generation.
+- Application-internal context such as the active browser tab or document.
+- Optional native modal/window ownership where dialog state can intercept or block otherwise valid actions.
 
-The current prototype has validated focus/input routing and GUI/CLI stale-state conflict mechanisms on the OSWorld V2.1 Guest. These are early mechanism validations, not a complete benchmark or a claim that every interaction category is already implemented.
+The task-relevant workspace is the initialized set of application state and artifacts needed for the goals. It does not require a physically shared filesystem. MA-ID may use separate Guest-local filesystems initialized from equivalent fixtures when neither actor needs to observe the other's persistent changes. For a task requiring cross-actor visibility, the authoritative backend topology must be held constant between MA-ID and MA-SD.
+
+GUI+GUI is the central track. GUI+CLI shared persistent-state consistency is an auxiliary control, not the definition of shared-desktop interaction. GUI+Human Replay is a complementary actor composition and cannot substitute for the two-agent comparison.
+
+Round-1 evidence is exploratory: Focus has real Qwen Solo/MA-ID/MA-SD episodes; Clipboard has scripted real-Guest Solo/MA-ID/MA-SD, observer and recovery feasibility; Modal and Application Context have scripted mechanism-level probes only. These are not broad benchmark performance results and do not mean each candidate is a validated task family.
 
 ## Non-goals
 
@@ -40,9 +43,9 @@ The current prototype has validated focus/input routing and GUI/CLI stale-state 
 
 ## Difference from multi-agent collaboration benchmarks
 
-Many multi-agent benchmarks ask whether agents can coordinate, communicate, delegate or jointly solve a shared objective. CoDesk asks how agents behave when they each have their own valid objective but contend for a shared computer-use surface and shared application state. Coordination may help, but interference can occur without any communication failure: another actor can change focus, replace clipboard contents, switch an application object, invalidate an observation or commit a conflicting update.
+Many multi-agent benchmarks ask whether agents can coordinate, communicate, delegate or jointly solve a shared objective. CoDesk asks how agents behave when they each have their own valid objective but contend for hidden state in a shared computer-use environment. Coordination may help, but interference can occur without any communication failure: another actor can change focus, replace clipboard contents, switch a tab or document, or open a modal dialog that changes input ownership. Persistent shared-backend updates remain an auxiliary comparison.
 
-Accordingly, CoDesk measures per-actor goal success and joint state integrity under Solo, Sequential, Naive Shared and declared recovery/coordination conditions. It treats a shared desktop session as part of the experimental condition, rather than assuming agents have separate desktops and only share files or messages.
+Accordingly, CoDesk measures per-actor goal success and joint state integrity under Solo, Sequential, Naive Shared and declared recovery/coordination conditions. It treats a shared desktop session as the experimental condition. A shared filesystem is not required unless a task's goals require live cross-actor persistence; when required, backend topology is matched across MA-ID and MA-SD.
 
 ## Positioning guardrail
 

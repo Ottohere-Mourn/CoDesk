@@ -1,7 +1,7 @@
 # CoDesk Mechanism Validation - Round 1
 
 Canonical node: A6000, 2026-10-01. Code at experiment start: ad7b7374fd2ed11272749e6ebf82151695de27b8.
-This is a short feasibility screen, not a success-rate study. Focus results use real Qwen3VLAgent traces. Clipboard results use scripted actors. No model result is claimed for Clipboard, Modal, or Application Context.
+This is a short feasibility screen, not a success-rate study. Focus results use real Qwen3VLAgent traces. Clipboard, Modal, and Application Context results use scripted diagnostics. No model result is claimed for those three.
 
 Evidence labels: VERIFIED = checked against artifacts/source; SCRIPTED ONLY = real Guest/app with deterministic actors; MODEL = real Qwen3VLAgent trace; INVALID_SETUP = no valid actor trial; DESIGN ONLY = no live mechanism evidence; UNKNOWN = attribution unsupported.
 
@@ -11,10 +11,10 @@ Evidence labels: VERIFIED = checked against artifacts/source; SCRIPTED ONLY = re
 |---|---|---|
 | Focus / input routing | KEEP - anchor | MODEL: Solo Writer+Calc paired run, two successful MA-ID repeats, two MA-SD repeats. Both MA-SD joint outcomes failed; Writer actions were submitted while Calc was foreground. Exploratory n only. |
 | Clipboard ownership | KEEP - scripted mechanism | SCRIPTED ONLY: real-Guest Solo Writer/Calc, MA-ID, MA-SD naive, observer-off and recopy recovery. Naive paste put Calc's copied value into Writer; recopy restored both goals. No Qwen Clipboard trial. The naive trace's logical Calc-owner attribution remains UNKNOWN due to the pre-fix digest map. |
-| Window / modal competition | BLOCKED | Save-dialog prototype only; no native dialog ownership/routing/two-Actor recovery trace. |
-| Application internal context | BLOCKED | Chromium two-tab prototype only; no evidence of unchanged top-level X11 window ID with changed active tab/page identity. |
+| Window / modal competition | KEEP - optional candidate | Repeated native Writer Save dialogs expose transient parent, GtkFileChooserDialog role, modal state, screenshot and accessibility; no two-Actor outcome trial. |
+| Application internal context | KEEP - optional candidate | Scripted Guest probe held Chrome top-level X11 ID constant while Page A changed to Page B; a stale Actor action entered Page B. |
 
-Recommendation: CONTINUE MECHANISM VALIDATION, limited to one bounded feasibility check each for Modal and Application Context. Do not begin large instance generation yet.
+Recommendation: BEGIN TASK EXPANSION from Focus and Clipboard. Modal and Application Context now have mechanism-level feasibility evidence, but remain optional until independent Solo / MA-ID / MA-SD task controls are built and checked.
 
 ## Experimental contract
 
@@ -55,13 +55,17 @@ MA-ID r01, clipboard-maid-scripted-observer-on-r01-20261001, is INVALID_SETUP an
 
 Observer diagnostic r01 failed because empty X11 selection was marked unavailable; code now recognizes valid empty state. Diagnostic r02 copied only REF; exact evaluator correctly failed. Selection was fixed to select the line; formal Solo Writer r02 passed. All diagnostic artifacts remain. Observer-on/off outcomes match once; this is not proof of general behavior-neutrality.
 
-## Modal - BLOCKED
+## Modal / window ownership - KEEP, OPTIONAL CANDIDATE
 
-writer_calc_save_dialog_v1 describes independent Writer/Calc goals involving Save As dialogs. This round has no real Guest evidence for dialog XID, owner app, foreground routing, actor target or recovery. It may be a distinct blocked-input mechanism or a focus/window-switch subtype; evidence is insufficient for KEEP, MERGE or DROP. Next: one bounded native-dialog probe, then a non-forced two-actor feasibility check only if dialog ownership/target are observable.
+Two real Guest probes opened Writer's native Save chooser twice each. Each invocation created a separate active X11 window titled Save with WM_WINDOW_ROLE GtkFileChooserDialog, WM_TRANSIENT_FOR pointing to the Writer window, and _NET_WM_STATE_MODAL. Screenshots and accessibility trees were available; Escape closed the dialog and restored Writer focus. This establishes controllable, observable native-modal feasibility, not a two-Actor result.
 
-## Application Context - BLOCKED
+Candidate task: Actor A saves a Writer document to an exact path while Actor B independently edits/saves a Calc cell. Solo checks both artifacts. MA-ID uses equivalent seeded local state on independent desktops; MA-SD shares one desktop while A's Save dialog is open. The oracle checks both outputs, path, dialog closure and contamination. Promote only if joint feasibility and non-forced MA-SD interaction are demonstrated.
 
-chromium_two_tab_context_v1 remains DESIGN ONLY. Required signature: stable top-level X11 window ID while active tab/page identity changes, with independent Actor goals and verifiable page state. No such Guest trace was collected. If tab changes also switch top-level windows, merge into Focus only if evidence confirms that.
+## Application Context - KEEP, OPTIONAL CANDIDATE
+
+A real Guest scripted probe demonstrated the defining signature without an OS-window change. Actor A observed Page A. Actor B opened Page B in the same Chrome window and entered B-note. The active X11 window ID remained 12582916 while its title changed from CoDesk Page A to CoDesk Page B; the pages had distinct CDP target IDs. Actor A then submitted its pending GUI action without re-observing: Page B's URL became file:///tmp/codesk-context-probe/b.html#B-noteA-note while Page A remained unchanged. This supports an application-context error distinct from OS focus routing.
+
+This is scripted feasibility evidence, not a registered task or model result; Solo and MA-ID controls were not run. Candidate task: independent forms in two tabs with exact per-tab state checking; MA-ID uses equivalent independent browser fixtures and MA-SD shares one browser window. Keep model recovery autonomous and log page/tab identity privately.
 
 ## Invalid attempts, integrity and implementation
 
@@ -70,13 +74,15 @@ chromium_two_tab_context_v1 remains DESIGN ONLY. Required signature: stable top-
 - Valid Focus/Clipboard reports include provenance and resource ledgers. All run-created Guests record destruction with this run's ownership labels. No unrelated resources were operated on.
 - CODESK_PROTOCOL_V1.md now separates equivalent initial task state from physical backend identity. Added scripts/run_clipboard_v1_round1.py reuses OSWorld adapter, event log, ActorContext, actor, evaluator, provenance and reset. Updated guest_clipboard_probe.py, Clipboard topology validation and scripted selection in swcub/tasks/clipboard_v1.py and swcub/actors.py.
 - Offline regression: 32 passed across tests/test_clipboard_observer.py, tests/test_prototype_tasks_v1.py, tests/test_task_factory_v1.py.
-- No task goal/evaluator semantics changed. No model added; no Qwen Clipboard trial. 9p/virtiofs/NFS work remains frozen.
+- No task goal/evaluator semantics changed. No model added; no Qwen Clipboard trial. Modal/Application Context evidence comes from scripted diagnostics, not benchmark episodes. 9p/virtiofs/NFS work remains frozen.
 
 ## Next actions
 
-1. One bounded real-Guest native dialog identity/owner probe; decide whether Modal is distinct or remains blocked.
-2. One bounded Browser probe joining X11 window ID to tab/page identity before and after tab switch. If evidence is unavailable, keep blocked; merge into Focus only with evidence.
-3. Stop if the mechanism cannot be observed; do not add tasks just to fill taxonomy.
-4. Expand only genuinely different workflows after evidence-based decisions. Seeds/text/layout do not create templates.
+1. Begin workflow expansion from Focus and Clipboard; keep Modal and Application Context as optional candidates until their Solo/MA-ID/MA-SD task controls are executable.
+2. Draft 10-15 genuinely different workflows, distinguishing operation path and oracle; text, seed, Case ID and coordinates do not create templates.
+3. Freeze equivalent task-relevant initial state, actor goals, exposure trigger, evaluator, budgets and recovery opportunity before model comparison.
+4. Run Qwen Clipboard only after scripted task controls pass; do not infer model effect from scripted mechanisms.
 
-Recommended state: CONTINUE MECHANISM VALIDATION, limited to Modal and Application Context. Clipboard needs a future real-agent trial before any model-effect claim.
+Recommended state: BEGIN TASK EXPANSION.
+
+Additional diagnostic artifacts: /home1/mjh/Projects/CoDesk-V0-A6000/CoDesk/artifacts/mechanism-validation-round1/modal-context/modal-context-feasibility-r01-20261001 and modal-context-feasibility-r02-20261001. r01 is valid Modal evidence but invalid for Application Context because Writer remained foreground when Page A was sampled. r02 corrected the browser setup and supports the constant-window/page-switch finding. Both run ledgers record destruction.

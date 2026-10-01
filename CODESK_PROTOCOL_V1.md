@@ -2,7 +2,7 @@
 
 ## 1. Protocol status
 
-This document freezes the V1 experimental design for CoDesk, the Collaborative Desktop Use Benchmark. It defines the research question, condition topology, task tracks, score definitions, failure attribution and initial experiment matrix. It does not add tasks or change the existing task version `2.0.0` evaluators. Existing benchmark results remain historical evidence and are not re-scored under this protocol.
+This document freezes the V1 experimental design for CoDesk, the Collaborative Desktop Use Benchmark. It defines the research question, condition topology, task tracks, score definitions, failure attribution and initial experiment matrix. It does not change existing evaluator semantics. Existing results remain historical evidence and are not re-scored under this protocol.
 
 V1 is a compact mechanism benchmark. Its primary claim is limited to whether sharing one live desktop session causes additional interaction failures beyond multi-agent execution on independent desktops. It is not a broad leaderboard or a claim about all computer-use agents.
 
@@ -16,8 +16,8 @@ The primary unit is a matched task episode block: same task instance, actor goal
 
 CoDesk V1 evaluates two or more actors with independent, individually solvable goals. At least one actor must interact through a GUI. V1 separates:
 
-- **Desktop-session interaction:** focus, keyboard, pointer, clipboard and active application context.
-- **Shared application-state interaction:** cached observations, concurrent updates, revisions and durable final state.
+- **Primary hidden-state contention:** focus/input routing, session clipboard, application-internal context (tab/page/document), and optional native modal/window ownership.
+- **Auxiliary persistent-state consistency:** cached observations, concurrent updates, revisions and durable final state. This does not define the shared-desktop core.
 
 GUI+GUI is the primary modality for desktop-session mechanisms. GUI+CLI is a supporting cross-interface track for shared-state consistency. A primary GUI+GUI claim requires two independently run GUI Agents with separate goals. Scripted actors may validate mechanics; GUI+Human Replay evidence remains a separately labeled actor composition and does not substitute for the two-Agent comparison.
 
@@ -50,12 +50,14 @@ MA-ID and MA-SD use the same task instance, actor-to-goal mapping, model checkpo
 | Track | Status in V1 | Purpose |
 |---|---|---|
 | A. GUI Control Contention | **Core** | Test whether actors' valid focus/window actions misroute another actor's GUI input on one shared desktop. Existing focus-routing task is the validated anchor. |
-| B. Desktop Resource Ownership | **Extension** | Test session-global transient resources such as clipboard or selection while focus remains correct. Design candidate only; not yet a validated task. |
-| C. Shared State Consistency | **Core supporting control** | Test GUI/CLI access to one authoritative backend and distinguish backend lost-update failures from desktop-session contention. Existing stale-merge task is the validated anchor. |
+| B. Desktop Resource Ownership | **Extension candidate** | Clipboard has scripted real-Guest Solo/MA-ID/MA-SD, observer-on/off and recovery evidence; no model run. |
+| C. Shared State Consistency | **Auxiliary control** | GUI/CLI access to one authoritative backend; distinguishes backend conflicts from desktop-session contention. Not the desktop-sharing core. |
+| D. Application Context | **Optional candidate** | Scripted Guest showed tab/page change and wrong-context action with constant X11 window ID; task controls and model evidence remain. |
+| E. Window / Modal Ownership | **Optional candidate** | Scripted Guest showed repeatable native modal dialog and observable owner/state; no multi-Actor outcome run yet. |
 
-The detailed scope and lifecycle gates are in [`TASK_TRACK_SPEC.md`](TASK_TRACK_SPEC.md). Application/object context, observation invalidation isolated from lost writes, human interruption/resumption, and asynchronous durability are **future work**, not V1 core results.
+The detailed scope and lifecycle gates are in [`TASK_TRACK_SPEC.md`](TASK_TRACK_SPEC.md). Tracks D and E remain optional candidates, not validated task families. Observation invalidation isolated from lost writes, human interruption/resumption, and asynchronous durability remain future work.
 
-The existing `SWCUB-FOCUS-ROUTING-001` GUI+Human Replay case is prior mechanism evidence only. V1's primary Track A claim remains untested until a two-GUI-Agent comparison is specified and passes its inclusion gates.
+Exploratory real-Qwen Writer/Calc Solo, MA-ID and MA-SD episodes now exist for the Focus anchor. They are small mechanism evidence, not benchmark-level statistics. The scripted Clipboard, Modal and Application Context probes do not establish model susceptibility.
 
 ## 6. Evaluation metrics
 
@@ -99,13 +101,15 @@ Classify a failure as an interaction effect only when the partner action precede
 |---|---|---|---|---|
 | A. GUI Control Contention (Core) | GUI Agent A solo; GUI Agent B solo | Both pursue independent goals on separate desktops | Same goals/schedule on one desktop | Joint-success penalty, wrong-window input, cross-window contamination and recovery |
 | B. Desktop Resource Ownership (Extension) | Each GUI actor solo with its own clipboard/selection | Independent session resources; shared task backend only if needed | One session clipboard/selection | Resource substitution, goal/integrity violations and recovery; run only after a task is specified and scripted controls validate |
-| C. Shared State Consistency (Core supporting control) | GUI actor solo; CLI actor solo | Separate desktops/processes, same authoritative backend | GUI and CLI share the same Guest/session backend | Field-level consistency and whether backend conflict changes with desktop topology |
+| C. Shared State Consistency (Auxiliary) | GUI actor solo; CLI actor solo | Separate desktops/processes, same authoritative backend | GUI and CLI share the declared backend route | Field-level consistency; interpret as backend effect unless desktop topology alone is isolated |
+| D. Application Context (Optional) | Each actor completes its own tab/page goal | Equivalent independent browser fixtures | One browser window with shared tabs/context | Wrong-page action while X11 window ID stays constant; recovery |
+| E. Window / Modal Ownership (Optional) | Each actor completes its own app goal | Equivalent independent desktop/dialog state | One shared desktop with an owned modal dialog | Dialog owner/state, routing/blocking, goal outcome and recovery |
 
 ### Execution order and repetition
 
 1. For each task, validate initial state, each actor's Solo goal, joint feasibility, evaluator negative-state detection and reset using scripted actors.
 2. Run matched MA-ID/MA-SD episodes with counterbalanced actor order and actor-to-goal assignment. Use paired task seeds/schedules; freeze all non-topology variables.
-3. The initial model comparison uses the existing fixed OSWorld V2.1 `Qwen3VLAgent` pipeline only after both actors pass Solo. Begin with five matched repeats per task-condition as a diagnostic pilot. These counts do not support a benchmark-wide or statistical-performance claim; preserve outcomes and uncertainty and determine any larger confirmatory sample before interpreting results.
+3. The initial model comparison uses the existing fixed OSWorld V2.1 `Qwen3VLAgent` pipeline only after both actors pass Solo. Use two matched exploratory repeats per task-condition by default; stop when evidence is consistent, and add repeats only to resolve a concrete conflict. This is not a statistical-performance claim.
 4. Keep recovery behavior autonomous in the primary three-condition matrix. A separately defined recovery-aware scheduler condition is a later ablation and must not be merged into MA-ID or MA-SD.
 
 ### Evidence required per episode
@@ -114,6 +118,6 @@ Record task/version/seed, actor IDs/roles/goals, condition and desktop/backend i
 
 ## 9. Interpretation and claim boundary
 
-The primary evidence for an independent shared-desktop dimension is a task-specific MA-ID versus MA-SD difference that is accompanied by the predicted interaction trace. Strong construct evidence is a mechanism-by-topology pattern: focus and session-resource tasks degrade specifically in MA-SD, while the shared-backend consistency task may fail in both multi-agent topologies.
+The primary evidence for an independent shared-desktop dimension is a task-specific MA-ID versus MA-SD difference accompanied by the predicted hidden-state interaction trace. Focus, clipboard and same-window application-context probes now show distinct mechanism signatures in scripted/model evidence at their stated levels. Modal ownership is observable but still lacks a two-Actor outcome. The shared-backend consistency task remains an auxiliary control.
 
 If every task degrades similarly, investigate generic scheduling or execution differences. If no MA-ID/MA-SD difference is observed, report that result; do not infer a shared-desktop effect from scripted negative controls alone. V1 is a compact mechanism demonstration, not a broad claim about all agents, applications or human behavior.

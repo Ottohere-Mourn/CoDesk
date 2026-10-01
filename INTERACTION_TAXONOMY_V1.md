@@ -4,7 +4,7 @@
 
 This taxonomy organizes failure mechanisms in a non-exclusive computer-use environment: multiple actors can observe and change one desktop, application context, or backend during the same episode. Categories describe causal mechanisms, not merely applications or actor pairings.
 
-Evidence already observed with the fixed Qwen3VLAgent smoke is limited to focus/input routing and stale shared application state. In the 18-episode Phase 4 smoke, Naive Shared reproduced the focus failure 3/3 and GUI+CLI stale overwrite 3/3; focus recovery passed 3/3, while refresh-aware GUI+CLI passed 1/3 because two Qwen edits were text-selection failures. These small counts are diagnostic only. All other categories below are hypotheses for task design, not measured benchmark results.
+Round-1 adds real-Qwen Focus episodes and scripted Guest feasibility evidence for clipboard ownership, native modal ownership, and same-window browser-tab context. The sample is exploratory. Persistent GUI/CLI stale-state consistency remains an auxiliary mechanism, not the shared-desktop core. None of these small counts is a benchmark-wide performance result.
 
 ## Taxonomy
 
@@ -32,7 +32,7 @@ Evidence already observed with the fixed Qwen3VLAgent smoke is limited to focus/
 - **Evaluator idea:** Compare each field and revision against the authoritative final state; check both independent goals and integrity constraints. Log read/write revisions and classify which update was lost or duplicated.
 - **Relation:** `SWCUB-STALE-MERGE-001` validates stale whole-record overwrite. New tasks should add a different consistency primitive (for example, same-field conflict resolution), not rename the same lost-update mechanism.
 
-### T4. Ephemeral shared-resource ownership — candidate, not yet evaluated
+### T4. Ephemeral shared-resource ownership — scripted Guest feasibility
 
 - **Motivation:** Some resources are global to a desktop session but are not represented by the focused application's persistent state.
 - **Failure mechanism:** Shared clipboard contents, current text selection, drag payload, file-picker target, or an in-progress cut/copy operation is replaced by another actor between preparation and use.
@@ -40,7 +40,7 @@ Evidence already observed with the fixed Qwen3VLAgent smoke is limited to focus/
 - **Evaluator idea:** Check exact destination content and source/destination integrity; log clipboard/selection ownership and generation in a private evaluator trace. Do not score based only on the visible clipboard UI.
 - **Relation:** Related to input routing (T1), but focus can remain correct while the shared clipboard/selection is overwritten. Distinguish resource collision from stale persistent state (T3).
 
-### T5. Application and object-context ownership — candidate, distinct from window focus
+### T5. Application and object-context ownership — scripted Guest feasibility, distinct from window focus
 
 - **Motivation:** The correct app can be focused while the actor is in the wrong document, browser tab, account, record, folder, or modal workflow.
 - **Failure mechanism:** Another actor switches the active document/tab or changes the current record; an action lands in the wrong context despite apparently correct application focus. A modal dialog can also change shortcut semantics.
@@ -56,7 +56,7 @@ Evidence already observed with the fixed Qwen3VLAgent smoke is limited to focus/
 - **Evaluator idea:** Check preservation of the human goal, completion of the agent goal, absence of duplicate/rolled-back changes, and event order. Record interruption detection and number of actions from resume to a safe state.
 - **Relation:** T1 is a focus handoff; T6 is a task/transaction handoff that may occur without a focus change. Human Replay should have an independent goal, not act as a noise injector.
 
-### T7. Temporal synchronization and durability — candidate, distinct from stale observation
+### T7. Temporal synchronization and durability — future candidate, distinct from stale observation
 
 - **Motivation:** GUI state may be optimistic or locally buffered while saves, autosync, export, and backend propagation complete asynchronously.
 - **Failure mechanism:** Actor B reads before A's save is durable; delayed writes arrive out of order; a save indicator is mistaken for commit; retries create duplicates.
@@ -71,4 +71,12 @@ Evidence already observed with the fixed Qwen3VLAgent smoke is limited to focus/
 - Recovery must be a declared operation available through the public environment/UI. Do not make the scripted actor inject an invalid action to force a failure.
 - Keep evaluator, task version, initial state, model, and environment fixed across Solo/Naive/Recovery comparisons.
 - Distinguish actor capability, grounding, interaction conflict, scheduler failure, and environment instability from the event timeline; do not let an LLM judge decide success.
-- T4–T7 are prospective categories. Do not describe them as validated until real Guest episodes and task artifacts exist.
+- T4/T5 currently have mechanism-level scripted Guest evidence only; their benchmark tasks and model behavior are unvalidated. T6/T7 remain prospective.
+
+## Round-1 additional evidence: native modal ownership
+
+LibreOffice Writer opened a separate active Save dialog twice per probe Guest. The dialog X11 window exposed GtkFileChooserDialog role, a transient parent pointing to Writer, and _NET_WM_STATE_MODAL; screenshots/accessibility trees were available and Escape returned to Writer. This supports a Window/Modal Ownership candidate separate from simple focus. It does not establish a two-Actor task outcome.
+
+## Round-1 additional evidence: application context
+
+Chrome held one active X11 window ID (12582916) while its title changed from Page A to Page B. CDP showed separate page target IDs. After Actor B entered B-note on Page B, Actor A's stale action appended A-note to Page B; Page A remained unchanged. This mechanism-level probe is distinct from OS focus routing, but remains SCRIPTED ONLY and lacks Solo/MA-ID task controls.

@@ -6,7 +6,7 @@ This document defines the three V1 tracks under [`CODESK_PROTOCOL_V1.md`](CODESK
 - **Extension:** belongs to the benchmark scope, but requires a new task specification and scripted validation before inclusion in a model matrix.
 - **Future work:** not part of V1; retain as a candidate only if it adds a distinct mechanism and evaluator predicate.
 
-No new task is implemented or registered by this specification.
+No new benchmark task is implemented or registered by this specification. Round-1 contains separate scripted feasibility probes, which do not count as validated benchmark tasks.
 
 ## Track A — GUI Control Contention
 
@@ -31,7 +31,7 @@ Measure failures caused by multiple goal-directed GUI actors sharing one desktop
 
 ### Existing anchor and status boundary
 
-`SWCUB-FOCUS-ROUTING-001` is the existing focus/input-routing anchor with GUI and Human Replay goals. It is real-Guest validated and its V2.0.0 semantics are frozen. Use it as prior mechanism evidence, but do not count it as the primary two-Agent comparison or silently relabel Human Replay as a model agent. A GUI+GUI version would require a new task instance/version and is not created here.
+`SWCUB-FOCUS-ROUTING-001` is the existing focus/input-routing anchor with GUI and Human Replay goals. It is real-Guest validated and its V2.0.0 semantics are frozen. Use it as prior mechanism evidence, but do not count it as the primary two-Agent comparison or silently relabel Human Replay as a model agent. A GUI+GUI version would require a new task instance/version and is not created here. Round-1's separate Writer/Calc Qwen episodes are reported in MECHANISM_VALIDATION_ROUND1.md; they are exploratory mechanism evidence and do not rewrite SWCUB-FOCUS-ROUTING-001.
 
 ### V1 inclusion gate
 
@@ -60,7 +60,7 @@ Measure ownership conflicts over temporary, session-global resources that can be
 
 ### V1 entry gate
 
-This track is not yet task-validated. Before it enters the V1 model matrix, define a new versioned task, pass each actor's Solo control, demonstrate a jointly valid schedule, reproduce the expected negative evaluator state under a public deterministic trigger, validate recovery and reset, and show the failure is not reducible to focus routing or persistent-state overwrite.
+Clipboard 001 now has SCRIPTED ONLY real-Guest feasibility evidence: both Solo goals, MA-ID, MA-SD overwrite, observer on/off, recopy recovery, exact state evaluation and reset passed in the recorded runs. It is not a model result or a registered model-evaluation task. Before model comparison, freeze the task version and run a genuine agent after both Solo controls; show the failure/recovery can be attributed without exposing observer state to the actor.
 
 ## Track C — Shared State Consistency
 
@@ -87,10 +87,21 @@ Measure whether independent actors using different interfaces preserve jointly r
 
 `SWCUB-STALE-MERGE-001` is the existing GUI+CLI stale whole-record overwrite anchor. It is real-Guest validated and its V2.0.0 task/evaluator are frozen. A failure in both MA-ID and MA-SD indicates shared-backend inconsistency; by itself it is not evidence that a common desktop caused the failure.
 
-## Future work outside the three V1 tracks
+## Optional candidate — Application Context
+
+**Round-1 status: KEEP candidate, SCRIPTED ONLY.** A Guest probe kept one Chrome X11 window ID constant while the active page changed from A to B. Actor A then submitted an action based on its Page A observation; the saved URL state showed that action entered Page B. This is a distinct signature from OS focus routing, but no registered task or Solo/MA-ID/MA-SD controls exist yet.
+
+A task should give each Actor an independent page/form goal, keep the top-level browser window constant in MA-SD, and evaluate exact per-tab state plus contamination. MA-ID should use equivalent independent browser fixtures. Do not call it validated until task goals, controls, reset, and oracle pass.
+
+## Optional candidate — Window / Modal Ownership
+
+**Round-1 status: KEEP candidate, SCRIPTED ONLY.** The pinned LibreOffice Guest repeatedly opened a native Save chooser with a separate X11 window, GtkFileChooserDialog role, transient parent identifying Writer, and _NET_WM_STATE_MODAL. Screenshot/accessibility observation and Escape dismissal worked. No two-Actor outcome has been measured.
+
+A candidate pairs Writer Save As with an independent Calc edit. Solo checks each goal; MA-ID uses equivalent separate desktops; MA-SD opens the Writer modal while Calc's actor continues with its own valid goal. Evaluate both files, exact destination, dialog state and contamination. Promote only after joint feasibility and non-forced MA-SD interaction are demonstrated.
+
+## Future work outside current tracks
 
 - Observation invalidation isolated from lost-write consistency.
-- Application-object identity (document/tab/record) isolated from OS focus.
 - Human interruption and safe resumption with a genuine independent human goal.
 - Asynchronous commit, autosave and durability ordering.
 
