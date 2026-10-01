@@ -21,7 +21,8 @@ def _log(event: str, **fields: object) -> None:
 
 
 class LocalQwenRuntime:
-    def __init__(self, model_path: Path, device: str):
+    def __init__(self, model_path: Path, device: str, *, max_memory_gpu: str | None = None,
+                 max_memory_cpu: str | None = None, attention_backend: str | None = None):
         load_started = time.perf_counter()
         os.environ["HF_HUB_OFFLINE"] = "1"
         os.environ["TRANSFORMERS_OFFLINE"] = "1"
@@ -36,7 +37,9 @@ class LocalQwenRuntime:
             raise RuntimeError("CUDA unavailable; local model inference is required")
         self.model_path = str(model_path)
         self.device = device
-        _log("model.load_start", model=Path(self.model_path).name, device=device)
+        _log("model.load_start", model=Path(self.model_path).name, device=device,
+             dtype="bfloat16", quantization=None, max_memory_gpu=max_memory_gpu,
+             max_memory_cpu=max_memory_cpu, attention_backend=attention_backend)
         config = AutoConfig.from_pretrained(self.model_path, local_files_only=True)
         if config.model_type == "qwen3_vl":
             model_class = Qwen3VLForConditionalGeneration
@@ -45,14 +48,21 @@ class LocalQwenRuntime:
         else:
             raise ValueError(f"unsupported Qwen3-VL architecture: {config.model_type}")
         self.processor = AutoProcessor.from_pretrained(self.model_path, local_files_only=True)
+        extra = {}
+        if attention_backend:
+            extra["attn_implementation"] = attention_backend
+        if max_memory_gpu:
+            if device != "auto":
+                raise ValueError("max_memory limits require --device auto")
+            extra["max_memory"] = {0: max_memory_gpu, "cpu": max_memory_cpu or "80GiB"}
         if device == "auto":
             self.model = model_class.from_pretrained(
                 self.model_path, torch_dtype=torch.bfloat16, device_map="auto",
-                local_files_only=True, low_cpu_mem_usage=True)
+                local_files_only=True, low_cpu_mem_usage=True, **extra)
         else:
             self.model = model_class.from_pretrained(
                 self.model_path, torch_dtype=torch.bfloat16, device_map={"": device},
-                local_files_only=True, low_cpu_mem_usage=True)
+                local_files_only=True, low_cpu_mem_usage=True, **extra)
         self.model.eval()
         self.torch = torch
         self.process_vision_info = process_vision_info
@@ -60,9 +70,20 @@ class LocalQwenRuntime:
         self.mapped_devices = sorted({str(value) for value in device_map.values()}) if device_map else []
         self.config_sha256 = hashlib.sha256(
             (Path(self.model_path) / "config.json").read_bytes()).hexdigest()
+        self.max_memory = {str(k): str(v) for k, v in extra.get("max_memory", {}).items()}
+        self.attention_backend = attention_backend or "transformers-default"
+        self.dtype = "bfloat16"
+        self.quantization = None
+        self.module_device_map = {str(k): str(v) for k, v in device_map.items()}
         _log("model.load_ready", model=Path(self.model_path).name,
              elapsed_s=round(time.perf_counter() - load_started, 3),
-             mapped_devices=self.mapped_devices)
+             mapped_devices=self.mapped_devices,
+             module_count_by_device={device: sum(1 for value in device_map.values() if str(value) == device)
+                                     for device in sorted({str(value) for value in device_map.values()})},
+             dtype=self.dtype, quantization=self.quantization,
+             attention_backend=self.attention_backend, max_memory=self.max_memory,
+             gpu_memory_allocated=[int(torch.cuda.memory_allocated(i)) for i in range(torch.cuda.device_count())],
+             gpu_memory_reserved=[int(torch.cuda.memory_reserved(i)) for i in range(torch.cuda.device_count())])
 
     @staticmethod
     def _messages_with_images(messages: list[dict[str, object]]) -> list[dict[str, object]]:
@@ -145,8 +166,16 @@ def main() -> int:
     parser.add_argument("--model", type=Path, required=True)
     parser.add_argument("--device", default="cuda:0")
     parser.add_argument("--port", type=int, required=True)
+    parser.add_argument("--max-memory-gpu", default=None,
+                        help="optional per-visible-GPU max for auto device mapping, e.g. 40GiB")
+    parser.add_argument("--max-memory-cpu", default=None,
+                        help="optional CPU offload budget used with --max-memory-gpu")
+    parser.add_argument("--attn-implementation", choices=("eager", "sdpa", "flash_attention_2"),
+                        default=None, help="optional Transformers attention backend")
     args = parser.parse_args()
-    runtime = LocalQwenRuntime(args.model, args.device)
+    runtime = LocalQwenRuntime(args.model, args.device, max_memory_gpu=args.max_memory_gpu,
+                               max_memory_cpu=args.max_memory_cpu,
+                               attention_backend=args.attn_implementation)
 
     class Handler(BaseHTTPRequestHandler):
         def log_message(self, _format: str, *_args: object) -> None:
@@ -169,6 +198,11 @@ def main() -> int:
                                  "config_sha256": runtime.config_sha256,
                                  "device": runtime.device,
                                  "mapped_devices": runtime.mapped_devices,
+                                 "dtype": runtime.dtype, "quantization": runtime.quantization,
+                                 "attention_backend": runtime.attention_backend,
+                                 "max_memory": runtime.max_memory,
+                                 "module_count_by_device": {device: sum(1 for value in runtime.module_device_map.values() if value == device)
+                                     for device in sorted(set(runtime.module_device_map.values()))},
                                  "host": socket.gethostname(),
                                  "pid": os.getpid(),
                                  "cuda_visible_devices": os.environ.get("CUDA_VISIBLE_DEVICES"),
