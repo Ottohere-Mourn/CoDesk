@@ -1,6 +1,7 @@
 # CoDesk Workflow Implementation V1
 
 Status: bounded implementation and validation, 2026-10-01. This report covers the **workflow** subtask. The A6000 repository is canonical. The fixed Task Factory hierarchy is family → workflow template → fixed instance → run; this change adds two fixed prototype templates and generates no seed series. It does not modify existing task/evaluator semantics or historical artifacts.
+> Current status: historical screening plan; C-02 and F-02 were implemented and bounded-validated after this snapshot. See WORKFLOW_SUITE_V1.md. Keep the original rationale below as history.
 
 ## Decision table
 

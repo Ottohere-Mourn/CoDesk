@@ -1,6 +1,7 @@
 # CoDesk Workflow Suite V2
 
 Status: implementation plan, 2026-10-01. A6000 is the canonical repository and Guest node. Frozen families: Focus/Input Routing and Clipboard State (core), Application Context (candidate). Modal is paused. This plan does not promote candidates to validated tasks.
+> Current status: historical design snapshot; fixed inventory and C-02/F-02 evidence are superseded by WORKFLOW_SUITE_V1.md. Other entries below remain candidates/design-only.
 
 ## Counting and protocol
 
