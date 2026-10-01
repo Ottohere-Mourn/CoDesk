@@ -9,12 +9,12 @@ Status: bounded implementation and validation, 2026-10-01. This report covers th
 | F-01 Writer + Calc single-cell focus anchor | Reuse | Existing `scripts/run_writer_calc_v1.py`, `swcub/actors.py` and `GuestLibreOfficeBindingEvaluator` remain unchanged. Historical Qwen focus evidence is in `MECHANISM_VALIDATION_ROUND1.md`; this round did not rerun it. |
 | F-02 Browser form + Writer comment | Defer | Browser form backend can be made exact, but the existing Writer setup/evaluator has no reliable comment anchor extraction or deterministic GUI comment path. A text substitution would change the workflow into F-01. Gate: confirm Writer comment creation through GUI and exact ODF annotation anchor/text oracle before registration. |
 | F-03 Two Writer windows, comment + heading | Defer | It requires two distinct Writer document windows with stable path/window attribution and the same comment oracle. Two plain paragraph replacements would be another F-01 input-routing variant; this proposal remains uncounted until separate-document identity is observed in Guest. |
-| F-04 Calc block + Writer | **Implemented fixed prototype** | Calc actor enters a 2×2 value block in B2:C3 via four GUI cell visits; Writer actor replaces its paragraph. Exact full-sheet oracle detects incomplete block, spill to guarded neighbors and Writer contamination. Offline tests passed; one scripted Guest Solo A smoke passed. Solo B, MA-ID, MA-SD remain unverified. |
+| F-04 Calc block + Writer | **Implemented fixed prototype** | Calc actor enters a 2×2 value block in B2:C3 via four GUI cell visits; Writer actor replaces its paragraph. Exact full-sheet oracle detects incomplete block, spill to guarded neighbors and Writer contamination. Offline tests and scripted Guest Solo A/B, MA-ID, MA-SD negative, and refocus recovery passed for this fixed template. No new model trial. |
 | C-01 Writer/Calc plain transfer anchor | Reuse | Existing `scripts/run_clipboard_v1_round1.py`, `swcub/tasks/clipboard_v1.py` and observer remain unchanged. Historical scripted Guest evidence is in `MECHANISM_VALIDATION_ROUND1.md`; no Qwen clipboard evidence is claimed. |
-| C-03 Calc rectangle transfer + Writer | **Implemented fixed prototype (v0.1.1)** | Calc actor selects A1:B2 with GUI keys, copies it and pastes at A4:B5; Writer actor independently copies a paragraph. Exact full-sheet oracle rejects a flattened, shifted or overwritten rectangle and checks guard cells. Offline tests passed. Guest evidence listed below. |
+| C-03 Calc rectangle transfer + Writer | **Implemented fixed prototype (v0.1.1)** | Calc actor selects A1:B2 with GUI keys, copies it and pastes at A4:B5; Writer actor independently copies a paragraph. Exact full-sheet oracle rejects a flattened, shifted or overwritten rectangle and checks guard cells. Offline tests and scripted Guest Solo A/B, MA-ID, MA-SD negative, and recopy recovery passed for v0.1.1. Guest evidence and one setup-invalid MA-ID attempt are recorded below. |
 | C-05 Writer cut/move transaction | Defer | A complete oracle needs both final uniqueness and event evidence for transient source removal, clipboard overwrite, and recovery after possible data loss. Existing observer identifies clipboard changes but the current Writer task does not observe a stable cut/undo transaction. A naive final-text oracle would conflate this with C-01. Gate: demonstrate a deterministic two-phase GUI cut/paste plus independent B goal and source-to-destination recovery. |
 
-Only F-04 and C-03 have new code. A single Solo A Guest smoke does **not** establish joint feasibility in real applications, MA-ID/MA-SD control validity or a mechanism failure rate.
+Only F-04 and C-03 have new code. The original Solo A smoke alone did not establish joint feasibility. The closure runs below now establish scripted paired feasibility, interference and recovery for these fixed instances. They do not establish a model failure rate.
 
 ## Fixed prototype contracts
 
@@ -63,9 +63,9 @@ Supported conditions are `solo_a`, `solo_b`, `ma_id`, `ma_sd`. `--recovery` acti
 | Solo A/B and joint **oracle** positive/negative controls | OFFLINE PASS | OFFLINE PASS |
 | Scripted GUI action sequence inspection | OFFLINE PASS | OFFLINE PASS |
 | Solo A real Guest goal/readiness/reset/provenance | PASS: `workflow-f04-soloa-20261001-01` | v0.1.0 FAIL: `workflow-c03-soloa-20261001-01`; v0.1.1 PASS: `workflow-c03-soloa-20261001-02` |
-| Solo B real Guest | UNVERIFIED | UNVERIFIED |
-| MA-ID real Guest | UNVERIFIED | UNVERIFIED |
-| MA-SD real Guest interference/recovery | UNVERIFIED | UNVERIFIED |
+| Solo B real Guest | PASS: `workflow-f04-solob-20261001-r01` | PASS: `workflow-c03-solob-20261001-r01` |
+| MA-ID real Guest | PASS: `workflow-f04-maid-20261001-r01` | r01 setup-invalid; PASS: `workflow-c03-maid-20261001-r02` |
+| MA-SD real Guest interference/recovery | Naive joint FAIL with 4 wrong-app content actions; refocus joint PASS | Naive joint FAIL with clipboard overwrite; recopy joint PASS |
 | Qwen actor | UNVERIFIED | UNVERIFIED |
 
 C-03 v0.1.0 failed artifact: `/home1/mjh/Projects/CoDesk-V0-A6000/artifacts/workflow-v1/workflow-c03-soloa-20261001-01`. The run completed with `actor_a=false`, reset true, 26 healthy observer samples and two destroyed run-owned containers. Its screenshot shows a native Calc overwrite confirmation because the destination cells were encoded as empty string-valued cells. The scripted Actor did not confirm the modal and saved no target changes. This is a **fixture defect / scripted task failure**, not evidence of clipboard interference. The run remains unmodified. C-03 v0.1.1 alters only the initial blank-cell XML representation and gets a new fixture digest; the target goal and exact evaluator remain the same. Run `workflow-c03-soloa-20261001-02` is the one bounded retry. It passed: saved Calc A4:B5 matches the source rectangle exactly, Writer and guards remain initial, `status=completed`, Solo A goal=true, `reset_success=true`, 26 healthy observer samples, 50 events, 5 screenshots, wall time 322.898 s, and both run-owned container IDs have matching destroyed ledger rows. Observer trace has Calc copy digest equal to the payload at Calc paste, no wrong-app content action, and no overwrite at paste. This is evidence of a successful Solo transfer; it does not exercise clipboard contention between Actors.
@@ -74,5 +74,24 @@ F-04 Solo A artifact: `/home1/mjh/Projects/CoDesk-V0-A6000/artifacts/workflow-v1
 
 ## Next promotion gate
 
-1. Validate Solo B for both templates. Then one scripted MA-ID and MA-SD per template, checking both goals, reset and provenance. Add recovery control only after naive evidence is cleanly attributed.
-2. Promote F-04 or C-03 to an accepted executable workflow only after the joint Guest controls pass. If C-03 reduces to scalar clipboard transfer, merge with C-01. Keep F-02/F-03/C-05 deferred until their stated oracles and GUI paths are tested.
+1. The fixed F-04 and C-03 instances have passed the scripted paired gate. Keep their evidence label SCRIPTED VALIDATED; a model result would need fresh Solo controls and independent actors.
+2. Audit C-03 against C-01 for distinct matrix/shape oracle before accepting additional instances. Keep F-02/F-03/C-05 deferred until their stated oracles and GUI paths are tested.
+
+## Scripted closure addendum (2026-10-01)
+
+These runs use the same fixed goals, fixture digest per template, A→B→A schedule and private evaluator. All completed runs saved screenshots, final ODF, event log and provenance, passed reset, and had destruction records for all run-owned containers. No Qwen actor participated.
+
+| Template | Condition / run | Actor A | Actor B | Exposure, observed interference, recovery |
+|---|---|---:|---:|---|
+| F-04 | Solo B `workflow-f04-solob-20261001-r01` | n/a | PASS | Writer final exact; Calc initial. |
+| F-04 | MA-ID `workflow-f04-maid-20261001-r01` | PASS | PASS | Equal fixture hashes, independent desktops, joint PASS. |
+| F-04 | MA-SD `workflow-f04-masd-20261001-r01` | FAIL | FAIL | Scheduled focus exposure; 4 A content actions reached foreground Writer. Calc stayed initial; Writer gained `11/21/12/22` contamination. Joint FAIL. |
+| F-04 | MA-SD recovery `workflow-f04-masd-recovery-20261001-r01` | PASS | PASS | A switched back to Calc and reobserved; 0 wrong-app content actions; joint PASS. |
+| C-03 | Solo B `workflow-c03-solob-20261001-r01` | n/a | PASS | Writer source/destination exact; Calc initial; observer 18 samples/0 failures. |
+| C-03 | MA-ID `workflow-c03-maid-20261001-r02` | PASS | PASS | Equal fixture hashes, separate clipboards, joint PASS; observer 26+18 samples/0 failures. |
+| C-03 | MA-SD `workflow-c03-masd-20261001-r01` | FAIL | PASS | B copy changed payload digest between A copy and A paste; A pasted `NOTE-571` into Calc A4. Correct target app, 0 wrong-app content actions; joint FAIL. |
+| C-03 | MA-SD recovery `workflow-c03-masd-recovery-20261001-r01` | PASS | PASS | A recopied source before paste; payload matched original at paste; joint PASS, observer 54 samples/0 failures. |
+
+`workflow-c03-maid-20261001-r01` is a retained **invalid setup attempt**: Calc never opened (desktop screenshot, last active title `@!0,0;BDHF`), accessibility requests transiently disconnected, and readiness timed out at 120 s before actor action. Its run-owned container was destroyed with matching ledger. The unchanged r02 retry passed; r01 is excluded from agent/task success statistics. This failure does not support clipboard or model-interference attribution.
+
+F-04 and C-03 are now **SCRIPTED VALIDATED fixed workflows**. The `VALIDATED` label is limited to the scripted Guest protocol on these fixed instances and does not imply Qwen success or statistical stability. Scheduled exposure, measured mechanism event, final outcome and positive recovery are reported separately in each run.

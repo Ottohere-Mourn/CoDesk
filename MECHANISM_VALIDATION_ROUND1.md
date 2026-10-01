@@ -86,3 +86,13 @@ This is scripted feasibility evidence, not a registered task or model result; So
 Recommended state: BEGIN TASK EXPANSION.
 
 Additional diagnostic artifacts: /home1/mjh/Projects/CoDesk-V0-A6000/CoDesk/artifacts/mechanism-validation-round1/modal-context/modal-context-feasibility-r01-20261001 and modal-context-feasibility-r02-20261001. r01 is valid Modal evidence but invalid for Application Context because Writer remained foreground when Page A was sampled. r02 corrected the browser setup and supports the constant-window/page-switch finding. Both run ledgers record destruction.
+
+## Fixed-workflow scripted closure after Round 1 (2026-10-01)
+
+This addendum records new fixed F-04 and C-03 workflow controls without changing Round-1 raw results or model claims. Full run IDs, exact states and invalid-attempt classification are in `WORKFLOW_IMPLEMENTATION_V1.md`; artifacts are under `/home1/mjh/Projects/CoDesk-V0-A6000/artifacts/workflow-v1/`.
+
+- **F-04 Focus, SCRIPTED VALIDATED fixed instance:** Solo A and B passed; MA-ID both passed on equivalent fixtures; naive MA-SD failed both goals with four A content actions in foreground Writer and Calc unchanged; refocus/reobserve MA-SD passed both. This supports a focus/input-routing mechanism for this scripted schedule, not a model success rate.
+- **C-03 Clipboard, SCRIPTED VALIDATED fixed instance v0.1.1:** Solo A and B passed; MA-ID both passed on equivalent fixtures and independent clipboards; naive MA-SD had correct Calc target with B Writer payload pasted into A4, A failed/B passed; recopy MA-SD passed both. The observer traced A copy → B copy → A paste digest change, with no wrong-app content action. This supports clipboard overwrite distinct from focus routing for this scripted schedule.
+- **Invalid attempt:** C-03 MA-ID r01 timed out during Calc readiness before actor execution and is excluded. A separate C-03 v0.1.0 Solo A fixture defect triggered a Calc overwrite dialog; the original failed artifact is preserved, the corrected v0.1.1 fixture has a new digest, and no historical result was overwritten.
+
+Scheduled exposure, observed interference, actor outcome and scripted recovery remain separate fields. No new Qwen run was performed in this closure.
