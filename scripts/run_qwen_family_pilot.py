@@ -231,7 +231,7 @@ def main():
         goals_ok=all(bool(value) for value in report.get("actor_goal_success",{}).values())
         terminated=all(actor.terminated for actor in actors.values())
         report["status"]="completed" if not failures and goals_ok and terminated else "model_task_failure"
-        for binding,episode in envs.items(): episode.copy_artifacts(out/binding/"guest-artifacts")
+        for binding,(episode,_) in envs.items(): episode.copy_artifacts(out/binding/"guest-artifacts")
         phase="reset"
         old=list(envs)
         for episode,_ in envs.values(): episode.close()
