@@ -23,12 +23,15 @@ class OSWorldAgentActor:
     def __init__(self, agent: Any, instruction: str, *, actor_id: str = "gui_actor",
                  max_steps: int = 20,
                  event_callback: Callable[[dict[str, Any]], None] | None = None,
-                 artifact_directory: Path | None = None):
+                 artifact_directory: Path | None = None,
+                 action_boundary_callback: Callable[["OSWorldAgentActor", Any], None] | None = None):
         self.agent = agent
         self.instruction = instruction
         self.actor_id = actor_id
         self.max_steps = max_steps
         self.event_callback = event_callback
+        self.action_boundary_callback = action_boundary_callback
+        self._pending_actions: list[Any] = []
         self.artifact_directory = (Path(artifact_directory).resolve()
                                    if artifact_directory is not None else None)
         self.trace: list[dict[str, Any]] = []
@@ -56,6 +59,7 @@ class OSWorldAgentActor:
         self.paused = False
         self.yield_requested = False
         self.steps = 0
+        self._pending_actions.clear()
         self._started = True
 
     def run_step(self, context: ActorContext) -> bool:
@@ -66,6 +70,9 @@ class OSWorldAgentActor:
             return False
         if not self._started:
             self.reset()
+        if self._pending_actions:
+            pending, self._pending_actions = self._pending_actions, []
+            return self._execute_actions(context, pending)
         if self.steps >= self.max_steps:
             raise RuntimeError(f"OSWorld agent did not terminate within {self.max_steps} steps")
         try:
@@ -132,7 +139,10 @@ class OSWorldAgentActor:
             self.event_callback(record)
 
         self.yield_requested = False
-        for action in actions:
+        return self._execute_actions(context, actions)
+
+    def _execute_actions(self, context: ActorContext, actions: list[Any]) -> bool:
+        for index, action in enumerate(actions):
             if action == "DONE":
                 self.terminated = True
                 return True
@@ -142,6 +152,11 @@ class OSWorldAgentActor:
                 context.execute_gui_action(action)
             except Exception as exc:
                 raise OSWorldAgentActorError("gui_action", exc) from exc
+            if self.action_boundary_callback is not None:
+                self.action_boundary_callback(self, action)
+            if self.paused:
+                self._pending_actions = list(actions[index + 1:])
+                return False
         if self.steps >= self.max_steps:
             raise RuntimeError(f"OSWorld agent did not terminate within {self.max_steps} steps")
         return False

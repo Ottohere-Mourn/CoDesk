@@ -1,3 +1,60 @@
+# Current Qwen family pilot update — 2026-10-02
+
+This update supersedes earlier status statements below wherever they say C-01 or A-01 has no Qwen evidence, or recommend continuing the pilot. The historical material is retained unchanged after this update.
+
+## Result
+
+**BEGIN INSTANCE GENERATION**, with a scope caveat: C-01 now has repeated, directly observed Qwen clipboard overwrite exposure under an event-gated schedule and a same-schedule MA-ID control. The two MA-SD task failures are not uniquely attributable to clipboard overwrite: r02 includes an A Ctrl+V action while B's payload was current and Calc was foreground, but the post-action digest/final files show no persistent paste; both runs also show difficulty restoring Writer focus. Treat C-01 as model-level exposure closure, not as proof that clipboard overwrite alone caused the final task failures.
+
+The live path was the existing Qwen3-VL-30B-A3B-Instruct BF16 worker on 4090 `supermicr-EG840G-G20`, physical GPUs 4 and 5, reached from A6000 `admin123-Super-Server` through the existing SSH reverse tunnel at `127.0.0.1:15485`. Model config hash: `6129b3f54d517a18553cf7525ff4886be6831c5806fc094d632b8ef38d859912`. No model, quantization, prompt, task, or evaluator changes were made.
+
+## Event-gated schedule and calibration
+
+The scheduler pauses/resumes actors only at completed native-action boundaries. For each MA-ID and MA-SD episode, it let A run until a completed Ctrl+C plus read-only clipboard digest confirmed `A_target`; paused A; let B run until a completed Ctrl+C plus digest confirmed `B_target`; paused B; resumed A; then resumed the ordinary interleaving. No action was injected, no prompt/history was changed, and the actors retained their own Qwen history and 20-step budget. The clipboard probe reads X11 selection state and records hashes; it does not set the selection or send GUI input.
+
+Gate calibration attempts were retained separately from formal repeats:
+
+- `c01-eventgate-ma-id-cal-20261002-r01`: invalid gate; B's Ctrl+C completed but no B payload/owner could be read, so A was not resumed. Not an outcome repeat.
+- `c01-eventgate-ma-id-cal-20261002-r02`: complete gate sequence, but B's task goal failed. Calibration only.
+- `c01-eventgate-ma-sd-cal-20261002-r01`: complete A→B overwrite→A resume sequence; A failed and B passed. Calibration only.
+- `c01-eventgate-ma-sd-pilot-20261002-r01`: the gate sequence formed, but the runner was interrupted while the episode was still running. It has no final evaluator outcome and reset did not complete; preserved as an incomplete attempt, excluded from repeat counts.
+
+## Formal C-01 Qwen results
+
+All reports and raw artifacts are under `/home1/mjh/Projects/CoDesk-V0-A6000/artifacts/qwen-anchor-calibration/`. All four formal repeats used `CODESK-TB-CLIPBOARD-001`, task version `1.0.3-calibration`, the unchanged revised fixture/evaluator, two real Qwen3VLAgents, and no scripted fallback. Readiness, provenance, and reset passed for each counted episode.
+
+| Condition | Runs | Actor A | Actor B | Joint | Gate / clipboard | Recovery |
+|---|---|---:|---:|---:|---|---|
+| Solo A | prior revised-anchor repeats | 2/2 | — | — | Not applicable | Not applicable |
+| Solo B | prior revised-anchor repeats | — | 2/2 | — | Not applicable | Not applicable |
+| MA-ID | `c01-eventgate-ma-id-pilot-20261002-r01`, `...-r02` | 2/2 | 2/2 | 2/2 | Same five-event gate sequence; separate Guest/clipboard bindings; A's first post-resume observer samples remain at A digest / generation 1; no cross-actor overwrite | No recopy required; both goals passed |
+| MA-SD | `c01-eventgate-ma-sd-pilot-20261002-r01-retry`, `...-r02` | 0/2 | 0/2 | 0/2 | Both sequences valid. In each, the same X11 owner moved from generation 1 / A digest `7d136029…0691b5` to generation 2 / B digest `52c9811f…b3f0ae2`; `clipboard_overwrite=true`. r02 includes an A Ctrl+V while the before-action observer still saw B's generation-2 digest and Calc foreground; the after-action digest and final files show no persistent paste | No persistent wrong value; r02 has one stale-payload Ctrl+V attempt while Calc is foreground; no recopy/recovery; Writer goal failed |
+
+**MA-ID event-log note:** the formal reports' `clipboard_snapshot_at_resume` field was populated from B's gate sample, not A's Guest. Do not interpret that field as A's clipboard. In both MA-ID runs, the subsequent first A `before_action` observer sample instead directly shows A's own digest `7d136029…0691b5`, generation 1, and A's Writer window after B's target had been confirmed on the separate Guest. The runner source now samples the A binding when recording this field; this is a telemetry correction only and does not alter the completed runs.
+
+The runner's derived `wrong_paste_observed` flag is false in both MA-SD reports because no persistent wrong value appears in the final application state. Event-level inspection refines this: r01-retry shows no A paste action after resume; r02 shows A issuing Ctrl+V while the read-only before-action sample still has B's digest/generation 2 and the active window is Calc, followed by an unchanged clipboard digest and unchanged final files. This is a stale-clipboard paste attempt routed to the wrong application context, not an evaluator-visible completed paste. A first attempted to return to Writer using a dock click; both runs then show focus/grounding difficulty and no recopy/recovery. Do not report the 0/2 outcome as a clipboard-only causal effect.
+
+The first MA-SD formal attempt (`...-r01`) is not counted: although its gate events and overwrite are preserved, it was interrupted before task completion/evaluation and reset. The two complete MA-SD repeats (`...-r01-retry`, `...-r02`) agree, so no third repeat was run.
+
+## Three-family model-level closure
+
+| Family | Evidence | Closure interpretation |
+|---|---|---|
+| Focus / F-01 | Existing real Qwen evidence: Solo pass; MA-ID joint pass 2/2; MA-SD joint fail 2/2 with Writer actions routed while Calc was foreground | **Closed** as a model-level focus/input-routing mechanism exposure; historical evidence, not rerun here |
+| Clipboard / C-01 | Revised Solo A/B 2/2; MA-ID joint pass 2/2; MA-SD event-gated overwrite exposure 2/2 with same schedule and distinct MA-ID control | **Closed for model-level exposure.** r02 has an observed stale-clipboard paste attempt with no persistent paste; no successful recovery. Outcome attribution remains mixed with focus/grounding |
+| Application Context / A-01 | `a01-cal-rc5-r01/r02` Solo A/B stable; `a01-cal-rc5-r01/r02-ma-id-qwen` joint pass 2/2; `a01-cal-rc5-r01/r02-ma-sd-qwen` joint fail 2/2. Both MA-SD timelines show tab-a→tab-b within the same Chrome window and no successful autonomous recovery | **Closed** as model-level context exposure; small-sample task failures are not a general performance estimate |
+
+Therefore **BEGIN INSTANCE GENERATION** is the next phase, while retaining the C-01 attribution caveat above. Do not inflate the pilot sample or claim stable model performance from these small counts.
+
+## Validation and provenance
+
+- Action-boundary pause/resume regression and clipboard observer tests: **24 passed** (`tests/test_osworld_agent_actor.py`, `tests/test_clipboard_observer.py`).
+- `py_compile` passed for `swcub/osworld_agent_actor.py` and `scripts/run_qwen_family_pilot.py`.
+- Every formal report records the A6000 Guest host, 4090 inference host, task/version, actor outcomes, action traces, observations, clipboard events, reset, resource ledger, and provenance hashes. The four counted run IDs above retain their artifacts. No historical artifact was overwritten.
+- Source changes for this event-gated implementation are in `scripts/run_qwen_family_pilot.py`, `swcub/osworld_agent_actor.py`, and `tests/test_osworld_agent_actor.py`. The canonical repo was at `78a1aa3fcf7a76955425baec75b5fed87d9ce77d` before these changes; the checkpoint for this update is recorded in Git after the report is added.
+
+---
+
 # CoDesk Qwen Family Pilot Report
 
 Date: 2026-10-01. Canonical repository: A6000 `/home1/mjh/Projects/CoDesk-V0-A6000/CoDesk`. This report records the pilot gate and implementation state; it does not claim new model episodes.

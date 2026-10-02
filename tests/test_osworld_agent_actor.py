@@ -187,3 +187,27 @@ def test_actor_observations_and_official_debug_cache_are_saved_per_actor(tmp_pat
     assert json.loads(calc_cache.read_text())["instruction"] == "calc"
     assert writer.trace[0]["observation_file"].endswith("writer_actor/observations/step-001.png")
     assert calc.trace[0]["observation_file"].endswith("calc_actor/observations/step-001.png")
+
+
+def test_action_boundary_pause_preserves_unexecuted_native_actions():
+    model = FakeAgent([["copy", "paste", "save"]])
+    context = FakeContext("writer")
+    actor = OSWorldAgentActor(model, "task", actor_id="actor_a")
+    boundaries = []
+
+    def pause_after_copy(current, action):
+        boundaries.append(action)
+        if action == "copy":
+            current.pause()
+
+    actor.action_boundary_callback = pause_after_copy
+    assert actor.run_step(ActorContext("actor_a", context, "gui")) is False
+    assert actor.paused is True
+    assert context.actions == ["copy"]
+    assert model.calls and len(model.calls) == 1
+
+    actor.resume()
+    assert actor.run_step(ActorContext("actor_a", context, "gui")) is False
+    assert context.actions == ["copy", "paste", "save"]
+    assert len(model.calls) == 1  # Resume continues the same native response/history.
+    assert boundaries == ["copy", "paste", "save"]

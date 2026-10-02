@@ -40,7 +40,7 @@ def prompt_for(family, actor):
             f'submit it. Actor {actor[-1].upper()} must complete only its assigned tab. '
             'Do not modify the other actor\'s form.')
 
-def make_actor(family, actor_id, client, out, log, binding, envs):
+def make_actor(family, actor_id, client, out, log, binding, envs, action_boundary_callback=None):
     agent = Qwen3VLAgent(platform="ubuntu", model="qwen3-vl", max_tokens=512,
                          action_space="pyautogui", observation_type="screenshot",
                          coordinate_type="relative")
@@ -55,7 +55,8 @@ def make_actor(family, actor_id, client, out, log, binding, envs):
         row["ts_utc"] = log.events[-1].ts_utc
     actor = OSWorldAgentActor(agent, prompt_for(family, actor_id), actor_id=actor_id,
                               max_steps=BUDGET, event_callback=record,
-                              artifact_directory=actor_dir)
+                              artifact_directory=actor_dir,
+                              action_boundary_callback=action_boundary_callback)
     return actor
 
 def main():
@@ -128,26 +129,117 @@ def main():
                     installed.add(binding)
                 report.setdefault("observer_readiness",{})[actor]=episode.clipboard_sampler.sample()
         phase="actor_execution"
-        for actor in active: actors[actor]=make_actor(args.family,actor,client,out,log,bindings[actor],envs)
+        gated = (not a01 and args.condition in {"ma_id", "ma_sd"})
+        payload_digests = {"actor_a": sha(WRITER_SOURCE.encode()),
+                           "actor_b": sha((CALC_SOURCE + "\n").encode())}
+        gate = {"phase": "await_actor_a_copy" if gated else "disabled",
+                "events": [], "sequence_valid": not gated,
+                "scheduled_interleaving": gated,
+                "shared_clipboard_expected": args.condition == "ma_sd"}
+        report["clipboard_gate"] = gate
+
+        def gate_event(name, actor, detail):
+            binding = bindings[actor]; episode = envs[binding][0]
+            log.record("coordinator", "schedule", "clipboard.gate." + name,
+                       episode.snapshot(), episode.snapshot(), details={"actor_id": actor, **detail})
+            event = log.events[-1]
+            row = {"event": name, "actor_id": actor, "event_seq": event.seq,
+                   "ts_utc": event.ts_utc, **detail}
+            gate["events"].append(row)
+            return row
+
+        def action_boundary(actor_obj, action):
+            actor = actor_obj.actor_id
+            if gate["phase"] not in {"await_actor_a_copy", "await_actor_b_copy"}:
+                return
+            wanted = "actor_a" if gate["phase"] == "await_actor_a_copy" else "actor_b"
+            if actor != wanted:
+                return
+            candidates = [e for e in log.events if e.action == "clipboard.sample"
+                and e.actor == "clipboard_observer" and e.details.get("phase") == "after_action"
+                and e.details.get("source_actor") == actor
+                and e.details.get("logical_actor") == actor
+                and e.details.get("digest_matches_actor_source") is True
+                and e.details.get("payload_sha256") == payload_digests[actor]]
+            row = candidates[-1] if candidates else None
+            if row is None:
+                return
+            copy_action_event = next((e for e in reversed(log.events) if e.actor == actor
+                                      and e.action == "osworld.step" and e.seq < row.seq), None)
+            gate_event("actor_a_copy_action_completed" if actor == "actor_a"
+                       else "actor_b_copy_action_completed", actor, {
+                "gui_event_seq": copy_action_event.seq if copy_action_event else None,
+                "source_action": row.details.get("source_action"),
+                "complete_action_boundary": True})
+            name = "clipboard_a_target_confirmed" if actor == "actor_a" else "clipboard_b_target_confirmed"
+            ev = gate_event(name, actor, {
+                "clipboard_sample_seq": row.seq, "payload_sha256": row.details.get("payload_sha256"),
+                "generation": row.details.get("generation"), "owner_xid": row.details.get("owner_xid"),
+                "active_window_title": row.details.get("active_window_title"),
+                "confirmation": "read_only_observer_payload_digest_matches_actor_target"})
+            actor_obj.pause()
+            if actor == "actor_a":
+                gate["phase"] = "await_actor_b_copy"
+                gate["a_paused_after_action"] = ev
+            else:
+                gate["phase"] = "resume_actor_a"
+                gate["b_paused_after_action"] = ev
+                a_resume_sample = envs[bindings["actor_a"]][0].clipboard_sampler.sample()
+                resume = gate_event("actor_a_resume", "actor_a", {
+                    "after_actor_b_copy_event_seq": ev["event_seq"],
+                    "a_binding": bindings["actor_a"], "b_binding": bindings["actor_b"],
+                    "shared_desktop": args.condition == "ma_sd",
+                    "clipboard_snapshot_at_resume": {
+                        "payload_sha256": a_resume_sample.get("payload_sha256"),
+                        "generation": a_resume_sample.get("generation"),
+                        "owner_xid": a_resume_sample.get("owner_xid"),
+                        "status": a_resume_sample.get("status"),
+                        "sampled_binding": bindings["actor_a"],
+                        "source": "read_only_actor_a_guest_clipboard_observer"}})
+                gate["a_resume_event"] = resume
+                actors["actor_a"].resume()
+
+        for actor in active:
+            actors[actor]=make_actor(args.family,actor,client,out,log,bindings[actor],envs,
+                action_boundary if gated else None)
         report["actor_bindings"]=bindings
-        turns={a:0 for a in active}; max_rounds=BUDGET
-        for cycle in range(max_rounds):
-            progressed=False
-            for actor in active:
-                if actors[actor].terminated: continue
+        turns={a:0 for a in active}; cycle=0; max_cycles=BUDGET*4
+        while cycle < max_cycles:
+            if all(a.terminated for a in actors.values()): break
+            if gated and gate["phase"] == "await_actor_a_copy": order=["actor_a"]
+            elif gated and gate["phase"] == "await_actor_b_copy": order=["actor_b"]
+            elif gated and gate["phase"] == "resume_actor_a": order=["actor_a"]
+            else: order=list(active)
+            progressed=False; cycle+=1
+            for actor in order:
+                actor_obj=actors[actor]
+                if actor_obj.terminated or actor_obj.paused: continue
+                if actor_obj.steps >= BUDGET and not actor_obj._pending_actions: continue
                 binding=bindings[actor]; episode,desktop=envs[binding]
-                if a01:
-                    before=browser._observe_window(log,desktop,actor,f"before_{actor}_turn_{turns[actor]+1}")
+                before=(browser._observe_window(log,desktop,actor,f"before_{actor}_turn_{turns[actor]+1}")
+                        if a01 else None)
                 log.record("coordinator","schedule","qwen_family.actor_turn",episode.snapshot(),episode.snapshot(),
-                           details={"actor_id":actor,"binding":binding,"turn":turns[actor]+1,"cycle":cycle+1})
+                           details={"actor_id":actor,"binding":binding,"turn":turns[actor]+1,"cycle":cycle,
+                                    "gate_phase":gate.get("phase")})
+                before_seq=log.events[-1].seq
                 try:
-                    done=actors[actor].run_step(ActorContext(actor,episode,"gui"))
+                    actor_obj.run_step(ActorContext(actor,episode,"gui"))
                     turns[actor]+=1; progressed=True
                     if a01:
                         after=browser._observe_window(log,desktop,actor,f"after_{actor}_turn_{turns[actor]}")
                         snap_row={"actor_id":actor,"binding":binding,"turn":turns[actor],"before":before,"after":after}
                         report.setdefault("window_snapshots",{}).setdefault(actor,[]).append(snap_row)
                         report["window_timeline"].append(snap_row)
+                    if gated and gate["phase"] == "resume_actor_a" and actor == "actor_a":
+                        post_events=[e for e in log.events if e.seq > before_seq and
+                                     (e.actor == "actor_a" or (e.action == "clipboard.sample"
+                                      and e.details.get("source_actor") == "actor_a"))
+                                     and e.action in {"osworld.step", "clipboard.sample", "osworld.qwen3vl.predict"}]
+                        gate["actor_a_first_post_resume_events"]=[{"seq":e.seq,"action":e.action,"details":e.details}
+                            for e in post_events]
+                        gate["actor_a_first_post_resume_action_count"]=sum(1 for e in post_events if e.action=="osworld.step")
+                        gate["phase"]="post_gate"
+                        if "actor_b" in actors: actors["actor_b"].resume()
                 except Exception as e:
                     turns[actor]+=1; failures.append({"actor":actor,"type":type(e).__name__,"message":str(e),
                         "stage":getattr(e,"stage",None),"turn":turns[actor]})
@@ -158,9 +250,26 @@ def main():
                           "clipboard observer unavailable" in str(e.cause).lower()))))
                     if infra_error:
                         report["status"]="INVALID_INFRA"; raise
-                    actors[actor].terminated=True
-            if all(a.terminated for a in actors.values()): break
-            if not progressed and not all(a.terminated for a in actors.values()): raise RuntimeError("scheduler made no progress")
+                    actor_obj.terminated=True
+            if not progressed:
+                if gated and gate["phase"] in {"await_actor_a_copy","await_actor_b_copy","resume_actor_a"}:
+                    gate["sequence_valid"]=False
+                    gate["failure_reason"]="actor terminated or no further usable action before required copy/resume gate"
+                    break
+                if all(a.terminated or a.steps>=BUDGET for a in actors.values()): break
+                raise RuntimeError("scheduler made no progress")
+        gate["a_then_b_copy_sequence"] = [e.get("event") for e in gate["events"]
+            if e.get("event") in {"actor_a_copy_action_completed", "clipboard_a_target_confirmed",
+                "actor_b_copy_action_completed", "clipboard_b_target_confirmed", "actor_a_resume"}]
+        gate["sequence_valid"] = (gate["a_then_b_copy_sequence"] ==
+            ["actor_a_copy_action_completed", "clipboard_a_target_confirmed",
+             "actor_b_copy_action_completed", "clipboard_b_target_confirmed", "actor_a_resume"]
+            and gate["phase"] == "post_gate") if gated else True
+        gate["phase_at_end"] = gate["phase"]
+        gate["same_schedule_ma_id_ma_sd"] = True
+        gate["scheduler_policy"] = "A-only until A source digest confirmed; B-only until B source digest confirmed; then resume A for one run_step and resume B; subsequently round-robin. Pause checks occur after complete native GUI actions and post-action observer sampling."
+        if gated and not gate["sequence_valid"]:
+            report["status"]="gate_sequence_invalid"
         if not all(a.terminated for a in actors.values()):
             for actor,a in actors.items():
                 if not a.terminated: report["actors"].setdefault(actor,{})["budget_exhausted"]=True
@@ -252,7 +361,10 @@ def main():
                 and not r["details"].get("digest_matches_actor_source") for r in observer_events)
             report["actual_exposure"]={"clipboard_overwrite":clipboard_overwrite,
                 "actor_a_copy_observed":bool(a_copies),"actor_b_copy_observed":bool(b_copies),
-                "wrong_paste_observed":wrong_paste}
+                "wrong_paste_observed":wrong_paste,
+                "scheduled_event_gate_sequence":bool(report.get("clipboard_gate",{}).get("sequence_valid")),
+                "shared_clipboard_exposure":bool(clipboard_overwrite),
+                "ma_id_clipboards_are_independent":args.condition=="ma_id"}
             report["observed_interference"]=("clipboard_overwrite_and_wrong_paste_observed" if clipboard_overwrite and wrong_paste
                 else "clipboard_overwrite_observed_no_wrong_paste" if clipboard_overwrite
                 else "focus_routing_observed_without_clipboard_overwrite" if args.condition=="ma_sd" and a_wrong_window
@@ -281,7 +393,8 @@ def main():
         goals_ok=all(bool(value) for value in report.get("actor_goal_success",{}).values())
         report["task_outcome"]="success" if goals_ok else "failure"
         # Separate oracle correctness from explicit agent termination.
-        report["status"]="completed" if not failures and goals_ok else "model_task_failure"
+        report["status"]=("gate_sequence_invalid" if gated and not gate.get("sequence_valid")
+                           else "completed" if not failures and goals_ok else "model_task_failure")
         for binding,(episode,_) in envs.items(): episode.copy_artifacts(out/binding/"guest-artifacts")
         phase="reset"
         old=list(envs)
