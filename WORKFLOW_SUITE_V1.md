@@ -1,6 +1,6 @@
 # CoDesk Workflow Suite V1
 
-Status: **scope frozen at eight fixed workflow templates; evidence is bounded scripted Guest validation, except F-01's separate historical Qwen evidence.** No Qwen episode was run for C-02 or F-02. One episode per listed control is feasibility evidence, not a reliability estimate.
+Status: **scope frozen at ten anchor workflow templates in five families** as of 2026-10-03. The original eight-template suite remains unchanged; two validated Calc anchors were added for Selection / Active Object and Undo / Redo History. Evidence remains bounded mechanism evidence, not a reliability estimate. See `FAMILY_TAXONOMY_V1.md` and `FAMILY_EXPANSION_V1_REPORT.md`.
 
 ## Protocol boundary
 
@@ -25,24 +25,27 @@ Hold task version, fixture, goals, schedule, action budget, evaluator and reset 
 | A-01 | Application context (candidate family) | One Chromium top-level window, two tabs/forms; switch page context inside same app | Submit the exact value to tab A | Submit the distinct exact value to tab B | Per-tab private submission/revision and tab-target event stream; stable top-level X11 window ID | Re-select own tab, observe, submit | **Scripted Guest validated**: Solo A/B, MA-ID, naive MA-SD and tab-recovery evidence in `MECHANISM_VALIDATION_ROUND1.md` / `WORKFLOW_SUITE_V2.md`; no Qwen evidence. Keep only as distinct from Focus while same-window/tab evidence remains reproducible. |
 | A-02 | Application context (candidate family) | One Chromium tab and URL; select in-page record → edit → commit | Change record A only | Change record B only | Per-record values/revisions, selected-record events; stable X11 window/tab/URL | Reselect own record, observe, commit | **Scripted Guest validated**: five bounded Guest runs (Solo A/B, MA-ID, naive MA-SD, recovery), with same window/tab/URL and a misapplied commit to B; see `WORKFLOW_SUITE_V2.md` A-02 report section. No Qwen evidence. |
 
+| S-01 | Selection / Active Object | LibreOffice Calc, one sheet/document/window | Set B2 to `A-7319` | Set C3 to `B-2042` | Exact full-grid ODF oracle plus read-only UNO current-selection observation; preserve guard cells | Reobserve and explicitly reselect the intended cell, then finish | **Scripted and Qwen validated:** scripted Solo A/B and MA-ID pass, MA-SD exposure/failure, recovery pass; Qwen Solo A/B 2/2, MA-ID 2/2, MA-SD exposure 3/3 (1 joint failure, 2 recovered). See `FAMILY_EXPANSION_V1_REPORT.md`. |
+| U-01 | Undo / Redo History | LibreOffice Calc, one sheet/document/window and document undo stack | Enter temporary `A-TEMP` in B2, then Undo once to restore `B2 seed` | Set C3 to `B-2042` | Exact full-grid ODF oracle; hidden observer snapshots B2/C3, window ID and clipboard digest around undo | Detect the reverted peer edit, reapply B goal, and restore A goal; verify both final cells | **Scripted and Qwen validated:** Solo A/B pass; MA-ID pass; MA-SD shared Undo exposure and failure; scripted recovery pass. Qwen Solo A/B 2/2, MA-ID 2/2 valid, MA-SD exposure/interference 2/2 with no recovery. See `FAMILY_EXPANSION_V1_REPORT.md`. |
+
 ### Counts and evidence boundary
 
-- Frozen inventory: **8 fixed templates** across 3 families (Focus 3, Clipboard 3, Application Context 2).
+- Frozen inventory: **10 anchor templates** across 5 families (Focus 3, Clipboard 3, Application Context 2, Selection / Active Object 1, Undo / Redo History 1).
 - Fresh real-Guest C-02/F-02 controls this phase: 11 episode attempts, including one invalid C-02 MA-ID startup attempt. Ten valid runs completed with reset and provenance; C-02 MA-ID r02 is valid, r01 is retained as infrastructure invalid. All outcome counts above are per single episode, not aggregate performance claims.
-- Scripted tasks are not model-agent evidence. Only F-01 has historical Qwen paired evidence among these templates; it predates the current harmonized runner and is labeled legacy.
+- Scripted outcomes remain separate from model outcomes. Qwen family-level mechanism evidence now exists for F-01, C-01, A-01, S-01 and U-01; only F-01 is legacy evidence. The new families have model evidence only for their one Calc anchor each.
 - Modal remains paused. No shared filesystem/backend mechanism is in V1 core. MA-ID and MA-SD task-relevant fixtures are equivalent; physical filesystem sharing is not a requirement.
 
 ## Task instance expansion gate
 
-Use `TASK_INSTANCE_GENERATION_PLAN.md`. An instance must freeze meaningfully different task content, target objects, initial state and oracle under the same operation graph. Seed, filename, text token, layout, coordinates, schedule and repeats alone do not count. Generate only after a template's setup, Solo A/B, MA-ID, naive MA-SD, explicit recovery, reset and provenance controls pass. Start with three reviewed fixed instances per template and oracle positive/negative tests; then decide whether the remaining 25/template expansion is justified. The target 200–300 fixed instances is a plan: **zero generated under that plan so far**.
+Use `TASK_INSTANCE_GENERATION_PLAN.md`. An instance must freeze meaningfully different task content, target objects, initial state and oracle under the same operation graph. Seed, filename, text token, layout, coordinates, schedule and repeats alone do not count. Generate only after a template's setup, Solo A/B, MA-ID, naive MA-SD, explicit recovery, reset and provenance controls pass. Start with three reviewed fixed instances per template and oracle positive/negative tests; then decide whether the remaining 25/template expansion is justified. The target 200–300 fixed instances remains a production plan; the bulk production batch has not been generated. Existing Task Factory candidates and anchor artifacts are not counted as hundreds of diverse workflows.
 
 ## Qwen pilot
 
-`QWEN_PILOT_PLAN.md` remains **design only**. Keep the first pilot to existing representatives F-01, C-01 and A-01. Use OSWorld Qwen3VLAgent + Qwen3-VL-30B-A3B without changing prompts, parser, model, goal or evaluator; A6000 Guest, 4090 inference. Run each Actor Solo first, then MA-ID and MA-SD under matched fixture/schedule/budget. Permit autonomous observation and recovery. Stop shared conditions if either Solo is infeasible. Save action/screenshot trajectory, focus/tab/clipboard evidence, final oracle, reset and provenance. Current phase ran no Qwen experiment.
+The bounded family pilot results and limitations are recorded in `QWEN_FAMILY_PILOT_REPORT.md` (original three families) and `FAMILY_EXPANSION_V1_REPORT.md` (Selection and Undo History). Qwen3VLAgent + Qwen3-VL-30B-A3B remained fixed; A6000 hosted Guest/coordinator and the existing 4090 BF16 service handled inference. Per-condition repeats are small mechanism probes, not stable performance estimates.
 
 ## Reproduction and artifact index
 
-Canonical code: `/home1/mjh/Projects/CoDesk-V0-A6000/CoDesk` on branch `v0`. A6000 run artifacts: `/home1/mjh/Projects/CoDesk-V0-A6000/artifacts/workflow-expansion-v1/`. Each episode has `report.json`, `events.jsonl`, `provenance.json`, `resource-events.jsonl`, screenshots, saved final state and reset result. C-02/F-02 command form:
+Canonical code: `/home1/mjh/Projects/CoDesk-V0-A6000/CoDesk` on branch `v0`. A6000 original C-02/F-02 artifacts: `/home1/mjh/Projects/CoDesk-V0-A6000/artifacts/workflow-expansion-v1/`. Family-expansion artifacts: `artifacts/family-expansion/{selection,selection-qwen,undo-history,undo-history-qwen}/`. Each episode has `report.json`, `events.jsonl`, `provenance.json`, `resource-events.jsonl`, screenshots, saved final state and reset result. C-02/F-02 command form:
 
 ```bash
 cd /home1/mjh/Projects/CoDesk-V0-A6000/CoDesk
