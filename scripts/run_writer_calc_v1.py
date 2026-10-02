@@ -28,6 +28,17 @@ OSWORLD_V2_DIR = Path(os.environ.get(
     "OSWORLD_V2_DIR", ROOT.parent / "_deps/OSWorld-V2-osworld-v2.1")).resolve()
 sys.path.insert(0, str(OSWORLD_V2_DIR))
 
+
+def resolve_guest_image_path() -> Path:
+    configured = os.environ.get("SWCUB_OSWORLD_GUEST_IMAGE")
+    if configured:
+        return Path(configured).expanduser().resolve()
+    candidates = (
+        OSWORLD_V2_DIR / "docker_vm_data/osworld-v2-ubuntu-x86.qcow2",
+        ROOT.parent / "assets/osworld-v2.1/guest/osworld-v2-ubuntu-x86.qcow2",
+    )
+    return next((path.resolve() for path in candidates if path.is_file()), candidates[0].resolve())
+
 from desktop_env.desktop_env import DesktopEnv
 from mm_agents.qwen3vl_agent import Qwen3VLAgent
 from swcub.actors import ScriptedCalcActor, ScriptedWriterActor
@@ -290,9 +301,7 @@ def make_desktop(binding: str, log: EventLog, out: Path,
                  nfs_server_ip: str | None = None,
                  nfs_server_port: int = 12049,
                  nfs_export: str = "/task") -> tuple[OSWorldSharedEpisode, DesktopEnv]:
-    guest_image = Path(os.environ.get(
-        "SWCUB_OSWORLD_GUEST_IMAGE",
-        OSWORLD_V2_DIR / "docker_vm_data/osworld-v2-ubuntu-x86.qcow2")).resolve()
+    guest_image = resolve_guest_image_path()
     workspace_env_key = "SWCUB_OSWORLD_SHARED_WORKSPACE_HOST_DIR"
     prior_workspace_env = os.environ.get(workspace_env_key)
     if workspace_backend_host_dir is None or workspace_transport != "9p":
@@ -911,8 +920,7 @@ def write_provenance(out: Path, report: dict[str, Any]) -> None:
         "actors": report["actors"],
         "evaluator": {"class": "GuestLibreOfficeBindingEvaluator",
                        "hidden_state_access": "post_episode_only"},
-        "environment": {"release": "osworld-v2.1", "guest_image": str(Path(os.environ.get(
-            "SWCUB_OSWORLD_GUEST_IMAGE", OSWORLD_V2_DIR / "docker_vm_data/osworld-v2-ubuntu-x86.qcow2")).resolve()),
+        "environment": {"release": "osworld-v2.1", "guest_image": str(resolve_guest_image_path()),
             "runtime_image": os.environ.get("SWCUB_OSWORLD_DOCKER_RUNTIME_IMAGE",
                                              "swcub/osworld-v2.1-qemu-runtime:local"),
             "runtime_image_id": runtime_id,

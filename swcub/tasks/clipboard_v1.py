@@ -9,14 +9,14 @@ from ..evaluator import GuestLibreOfficeBindingEvaluator
 
 
 TASK_ID = "CODESK-TB-CLIPBOARD-001"
-TASK_VERSION = "1.0.0-proposed"
+TASK_VERSION = "1.0.3-calibration"
 WRITER_SOURCE = "REF-7319"
 CALC_SOURCE = "BATCH-204"
 WRITER_PATH = "/tmp/swcub_clipboard/writer.fodt"
 CALC_PATH = "/tmp/swcub_clipboard/calc.fods"
 
 INITIAL_STATE = {
-    "writer_text": f"{WRITER_SOURCE}\n",
+    "writer_text": f"{WRITER_SOURCE}\nINSERT COPIED VALUE",
     "calc_cells": [[CALC_SOURCE], [""]],
 }
 FINAL_STATE = {
@@ -26,12 +26,12 @@ FINAL_STATE = {
 
 
 def writer_seed_odf(source: str = WRITER_SOURCE) -> bytes:
-    """Flat ODF with one source paragraph and one empty paste destination."""
+    """Flat ODF with a visible, unambiguous second-paragraph paste anchor."""
     return f'''<?xml version="1.0" encoding="UTF-8"?>
 <office:document xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0"
  xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0"
  office:version="1.2" office:mimetype="application/vnd.oasis.opendocument.text">
- <office:body><office:text><text:p>{source}</text:p><text:p/></office:text></office:body>
+ <office:body><office:text><text:p>{source}</text:p><text:p>INSERT COPIED VALUE</text:p></office:text></office:body>
 </office:document>'''.encode("utf-8")
 
 
@@ -68,7 +68,7 @@ class ClipboardTaskEvaluator:
         if not self.required_actors or not set(self.required_actors) <= {
                 "writer_actor", "calc_actor"}:
             raise ValueError("required_actors must be a nonempty subset of task actors")
-        initial = {"writer_text": f"{self.writer_source}\n",
+        initial = {"writer_text": f"{self.writer_source}\nINSERT COPIED VALUE",
                    "calc_cells": [[self.calc_source], [""]]}
         final = {"writer_text": f"{self.writer_source}\n{self.writer_source}",
                  "calc_cells": [[self.calc_source], [self.calc_source]]}
@@ -121,13 +121,13 @@ def readiness_state(read_file: Callable[[str], str], *,
     writer = GuestLibreOfficeBindingEvaluator._parse_writer(read_file(WRITER_PATH))
     calc = GuestLibreOfficeBindingEvaluator._parse_calc(read_file(CALC_PATH))
     actual = {"writer_text": writer, "calc_cells": calc}
-    expected = {"writer_text": f"{writer_source}\n",
+    expected = {"writer_text": f"{writer_source}\nINSERT COPIED VALUE",
                 "calc_cells": [[calc_source], [""]]}
     return {"ready": actual == expected, "expected": expected,
             "actual": actual, "identity": {"writer_path": WRITER_PATH,
                                            "calc_path": CALC_PATH,
                                            "calc_sheet": "Sheet1",
-                                           "writer_destination": "second paragraph",
+                                           "writer_destination": "replace the INSERT COPIED VALUE placeholder line in the second paragraph",
                                            "calc_destination": "A2"}}
 
 
@@ -176,7 +176,7 @@ def task_specification() -> dict[str, Any]:
             "applications": ["LibreOffice Writer", "LibreOffice Calc"],
             "initial_state": INITIAL_STATE, "expected_final_state": FINAL_STATE,
             "actors": {
-                "writer_actor": {"goal": "copy REF-7319 in Writer into the blank second paragraph",
+                "writer_actor": {"goal": "copy REF-7319 in Writer and replace the INSERT COPIED VALUE placeholder with the copied text",
                                  "source": "Writer paragraph 1", "destination": "Writer paragraph 2"},
                 "calc_actor": {"goal": "copy BATCH-204 in Calc A1 into A2",
                                "source": "Calc Sheet1.A1", "destination": "Calc Sheet1.A2"}},

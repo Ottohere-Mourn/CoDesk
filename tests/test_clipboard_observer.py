@@ -151,7 +151,7 @@ def test_clipboard_task_odf_seeds_read_back_to_exact_initial_state():
 
 def test_clipboard_task_evaluator_checks_both_saved_destinations_and_contamination():
     writer_final = writer_seed_odf().decode().replace(
-        "<text:p/></office:text>", "<text:p>REF-7319</text:p></office:text>")
+        "<text:p>INSERT COPIED VALUE</text:p>", "<text:p>REF-7319</text:p>")
     calc_final = calc_seed_odf().decode().replace(
         "<table:table-cell/></table:table-row>",
         "<table:table-cell office:value-type=\"string\"><text:p>BATCH-204</text:p>"
@@ -160,6 +160,7 @@ def test_clipboard_task_evaluator_checks_both_saved_destinations_and_contaminati
     success = ClipboardTaskEvaluator(lambda path: files[path]).evaluate()
     assert success["success"] is True
     assert success["actor_goal_success"] == {"writer_actor": True, "calc_actor": True}
+    assert success["no_non_goal_contamination"] is True
 
     files[CALC_PATH] = calc_final.replace("BATCH-204", "REF-7319")
     contaminated = ClipboardTaskEvaluator(lambda path: files[path]).evaluate()
@@ -170,7 +171,7 @@ def test_clipboard_task_evaluator_checks_both_saved_destinations_and_contaminati
 
 def test_clipboard_solo_evaluator_requires_only_assigned_goal_and_preserves_other_file():
     writer_final = writer_seed_odf().decode().replace(
-        "<text:p/></office:text>", "<text:p>REF-7319</text:p></office:text>")
+        "<text:p>INSERT COPIED VALUE</text:p>", "<text:p>REF-7319</text:p>")
     files = {WRITER_PATH: writer_final, CALC_PATH: calc_seed_odf().decode()}
     writer_solo = ClipboardTaskEvaluator(lambda path: files[path],
                                          required_actors=("writer_actor",)).evaluate()

@@ -18,7 +18,7 @@ from swcub.tasks.clipboard_v1 import (
     calc_seed_odf, readiness_state, validate_topology, writer_seed_odf,
 )
 
-TASK_VERSION = "1.0.0-proposed"
+TASK_VERSION = "1.0.3-calibration"
 GUEST_IMAGE = os.environ.get(
     "SWCUB_OSWORLD_GUEST_IMAGE",
     "/home1/mjh/Projects/CoDesk-V0-A6000/assets/osworld-v2.1/guest/osworld-v2-ubuntu-x86.qcow2")
@@ -51,10 +51,12 @@ def setup_episode(episode, desktop, out, apps):
     return initial, readiness
 
 
-def evaluate_binding(desktop, required_actor):
+def evaluate_binding(desktop, required_actors):
+    if isinstance(required_actors, str):
+        required_actors = (required_actors,)
     return ClipboardTaskEvaluator(
         read_file=lambda path: base.guest_command(desktop, ["cat", path]),
-        required_actors=(required_actor,)).evaluate()
+        required_actors=tuple(required_actors)).evaluate()
 
 
 def main():
@@ -185,13 +187,14 @@ def main():
         report["setup"] = {binding: {"initial_state": row[0],
             "app_readiness": row[1]} for binding, row in setup.items()}
         report["evaluation_by_binding"] = {}
+        actors_by_binding = {}
         for actor_id, (binding, _actor) in actors.items():
-            report["evaluation_by_binding"].setdefault(binding, {})
-            report["evaluation_by_binding"][binding][actor_id] = evaluate_binding(
-                desktops[binding], actor_id)
-        required = [actor for actor in actors]
+            actors_by_binding.setdefault(binding, []).append(actor_id)
+        for binding, actor_ids in actors_by_binding.items():
+            report["evaluation_by_binding"][binding] = evaluate_binding(
+                desktops[binding], tuple(actor_ids))
         report["success_by_actor"] = {
-            actor_id: report["evaluation_by_binding"][binding][actor_id]["success"]
+            actor_id: report["evaluation_by_binding"][binding]["actor_goal_success"][actor_id]
             for actor_id, (binding, _actor) in actors.items()}
         report["joint_success"] = all(report["success_by_actor"].values())
         report["success"] = report["joint_success"]

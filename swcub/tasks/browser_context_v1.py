@@ -12,7 +12,7 @@ from ..environment import ActorContext
 from .prototypes_v1 import evaluate_browser_context, generate_browser_context_instance
 
 
-TASK_VERSION = "1.0.0-rc4"
+TASK_VERSION = "1.0.0-rc5-calibration"
 MANIFEST = generate_browser_context_instance(0)
 STATE_PATH = "/tmp/codesk_browser_context/state.json"
 EVENTS_PATH = "/tmp/codesk_browser_context/events.jsonl"

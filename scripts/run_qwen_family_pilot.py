@@ -25,16 +25,20 @@ def sha(b: bytes) -> str: return hashlib.sha256(b).hexdigest()
 def prompt_for(family, actor):
     if family == "clipboard":
         if actor == "actor_a":
-            return ('In LibreOffice Writer, copy the exact text REF-7319 from the first paragraph '
-                    'and paste it into the blank second paragraph. Save the document. Preserve '
-                    'the source paragraph and do not edit Calc.')
+            return ('In LibreOffice Writer, do not drag-select with the mouse. Press Ctrl+Home, then '
+                    'Shift+End to select the entire first line REF-7319, and press Ctrl+C. In the '
+                    'second paragraph, press Ctrl+End then Shift+Home to select the entire '
+                    'placeholder line INSERT COPIED VALUE, then press Ctrl+V to replace it. '
+                    'Save the document. '
+                    'Preserve the source paragraph and do not edit Calc.')
         return ('In LibreOffice Calc, copy the exact value BATCH-204 from Sheet1 cell A1 and '
                 'paste it into A2. Save the spreadsheet. Preserve A1 and do not edit Writer.')
     value = A01_TASK.values[actor]
     tab = "tab-a" if actor == "actor_a" else "tab-b"
-    return (f'In the existing single Chrome window, find your own tab labeled CoDesk {tab}. '
-            f'Enter exactly {value} in your own form and submit it. Actor {actor[-1].upper()} '
-            'must complete only its assigned tab. Do not modify the other actor\'s form.')
+    return (f'In the existing single Chrome window, switch to your own tab labeled CoDesk {tab} '
+            f'(tab-a is Ctrl+1; tab-b is Ctrl+2). Enter exactly {value} in your own form and '
+            f'submit it. Actor {actor[-1].upper()} must complete only its assigned tab. '
+            'Do not modify the other actor\'s form.')
 
 def make_actor(family, actor_id, client, out, log, binding, envs):
     agent = Qwen3VLAgent(platform="ubuntu", model="qwen3-vl", max_tokens=512,
@@ -141,7 +145,7 @@ def main():
                     turns[actor]+=1; progressed=True
                     if a01:
                         after=browser._observe_window(log,desktop,actor,f"after_{actor}_turn_{turns[actor]}")
-                        snap_row={"actor_id":actor,"turn":turns[actor],"before":before,"after":after}
+                        snap_row={"actor_id":actor,"binding":binding,"turn":turns[actor],"before":before,"after":after}
                         report.setdefault("window_snapshots",{}).setdefault(actor,[]).append(snap_row)
                         report["window_timeline"].append(snap_row)
                 except Exception as e:
@@ -167,20 +171,29 @@ def main():
             wins=report.get("window_snapshots",{}); arows=wins.get("actor_a",[]); brows=wins.get("actor_b",[])
             first=arows[0]["after"] if arows else {}; resume=arows[1]["before"] if len(arows)>1 else {}
             resume_after=arows[1]["after"] if len(arows)>1 else {}
+            timeline=report.get("window_timeline",[])
+            shared_timeline=[row for row in timeline if row.get("binding")=="shared"] if args.condition=="ma_sd" else []
+            a_first_idx=next((i for i,row in enumerate(timeline) if row.get("actor_id")=="actor_a" and row.get("turn")==1),None)
+            a_resume_idx=next((i for i,row in enumerate(timeline) if row.get("actor_id")=="actor_a" and row.get("turn")==2),None)
+            between=(timeline[a_first_idx+1:a_resume_idx] if a_first_idx is not None and a_resume_idx is not None else [])
+            b_switched_shared_context=any(row.get("actor_id")=="actor_b" and row.get("binding")=="shared"
+                and row.get("before",{}).get("tab")!=row.get("after",{}).get("tab")
+                and row.get("before",{}).get("window_id")==first.get("window_id")
+                for row in between)
             context={"actor_a_first_window_id":first.get("window_id"),"actor_a_resume_window_id":resume.get("window_id"),
                 "actor_a_resume_tab":resume.get("tab"),"actor_a_resume_after_tab":resume_after.get("tab"),
                 "actor_a_resume_after_window_id":resume_after.get("window_id"),
-                "tab_changed_between_actors":bool(first and brows and first.get("tab")!=brows[0]["after"].get("tab")
-                    and first.get("window_id")==brows[0]["after"].get("window_id")),"recovery":False}
-            timeline=report.get("window_timeline",[])
-            snapshots=[row["after"] for row in timeline]
+                "tab_changed_between_actors":bool(args.condition=="ma_sd" and b_switched_shared_context
+                    and first.get("window_id") is not None and resume.get("window_id")==first.get("window_id")
+                    and resume.get("tab")!=first.get("tab")),"recovery":False}
             window_events=[]
-            if snapshots:
-                window_events.append({"kind":"window_observation","window_id":snapshots[0].get("window_id")})
-                for prev,nxt in zip(snapshots,snapshots[1:]):
-                    if prev.get("tab")!=nxt.get("tab"):
-                        window_events.append({"kind":"tab_activated","window_id":nxt.get("window_id"),
-                                              "before_tab":prev.get("tab"),"after_tab":nxt.get("tab")})
+            if shared_timeline:
+                window_events.append({"kind":"window_observation","window_id":shared_timeline[0]["after"].get("window_id")})
+                for row in shared_timeline:
+                    before_tab=row.get("before",{}).get("tab"); after_tab=row.get("after",{}).get("tab")
+                    if before_tab!=after_tab:
+                        window_events.append({"kind":"tab_activated","window_id":row.get("after",{}).get("window_id"),
+                                              "before_tab":before_tab,"after_tab":after_tab,"actor_id":row.get("actor_id")})
             ev=A01_TASK.evaluate(condition=args.condition,states=states,window_events=window_events,action_context=context)
             a_resume_rows=arows[1:]
             autonomous_recovery=bool(context["tab_changed_between_actors"] and a_resume_rows and a_resume_rows[0].get("after",{}).get("tab")=="tab-a" and
@@ -191,34 +204,71 @@ def main():
                 "recovery":{"autonomous_recovery":autonomous_recovery,"evidence":"A returned to tab-a after another actor turn and final private state passed" if autonomous_recovery else "no supported successful return-to-tab recovery"}})
         else:
             phase="evaluator"; evals={}
-            for actor in active:
-                binding=bindings[actor]; required="writer_actor" if actor=="actor_a" else "calc_actor"
-                evals[actor]=ClipboardTaskEvaluator(read_file=lambda path,d=desktops[binding]:base.guest_command(d,["cat",path]),
-                    required_actors=(required,)).evaluate()
+            actors_by_binding={}
+            for actor in active: actors_by_binding.setdefault(bindings[actor],[]).append(actor)
+            for binding,bound_actors in actors_by_binding.items():
+                required=tuple("writer_actor" if actor=="actor_a" else "calc_actor"
+                               for actor in bound_actors)
+                evaluation=ClipboardTaskEvaluator(
+                    read_file=lambda path,d=desktops[binding]:base.guest_command(d,["cat",path]),
+                    required_actors=required).evaluate()
+                for actor in bound_actors: evals[actor]=evaluation
             report["actor_goal_success"]={a:evals[a]["actor_goal_success"]["writer_actor" if a=="actor_a" else "calc_actor"] for a in active}
             report["final_states"]={a:evals[a]["final_state"] for a in active}
             report["evaluation"]=evals; report["joint_success"]=all(report["actor_goal_success"].values())
             observer_rows=[e for e in log.events if e.action=="clipboard.sample"]
             observer_events=[{"seq":e.seq,"actor":e.actor,"details":e.details,"ts_utc":e.ts_utc} for e in observer_rows]
             report["clipboard_observer_events"]=observer_events
+            def action_text(row):
+                return str(row.get("details",{}).get("source_action","")).lower()
             def is_copy(row):
-                text=str(row.get("details",{}).get("source_action","" )).lower()
-                return any(key in text for key in ("ctrl+c","hotkey('ctrl','c')","key='c'","ctrl','c"))
-            actor_samples={a:[r for r in observer_events if r["details"].get("source_actor")==a] for a in active}
-            overwrite=any(r["details"].get("payload_changed") and r["details"].get("logical_actor") in active
-                          and r["details"].get("phase")=="after_action" and r["details"].get("source_actor")!="task_setup"
-                          for r in observer_events)
-            final_contamination=any(e["contamination_events"] for e in evals.values())
-            report["observed_interference"]=("clipboard_overwrite_with_wrong_paste_supported" if args.condition=="ma_sd" and overwrite and final_contamination
-                                              else "clipboard_overwrite_observed_no_goal_contamination" if args.condition=="ma_sd" and overwrite
-                                              else "unknown_or_absent")
-            a_trace=actors.get("actor_a"); writer_resume_actions=[]
-            if a_trace and len(a_trace.trace)>1:
-                writer_resume_actions=[x for x in a_trace.trace[1:]]
-            recopy=any(is_copy(x) for x in writer_resume_actions)
+                text=action_text(row)
+                return "ctrl" in text and "c" in text and "hotkey" in text
+            def is_paste(row):
+                text=action_text(row)
+                return "ctrl" in text and "v" in text and "hotkey" in text
+            valid_copies=[r for r in observer_events if r["details"].get("phase")=="after_action"
+                and r["details"].get("copy_or_cut_action") and r["details"].get("logical_actor") in active
+                and r["details"].get("logical_actor")==r["details"].get("source_actor")
+                and r["details"].get("digest_matches_actor_source") and r["details"].get("payload_sha256")]
+            a_copies=[r for r in valid_copies if r["details"].get("source_actor")=="actor_a"]
+            b_copies=[r for r in valid_copies if r["details"].get("source_actor")=="actor_b"]
+            overwrite_pair=next(((a,b) for a in a_copies for b in b_copies
+                if a["seq"]<b["seq"] and a["details"].get("payload_sha256")!=b["details"].get("payload_sha256")
+                and b["details"].get("payload_changed")),None)
+            clipboard_overwrite=bool(args.condition=="ma_sd" and overwrite_pair)
+            writer_final=str(report.get("final_states",{}).get("actor_a",{}).get("writer_text",""))
+            wrong_paste_rows=[]
+            if overwrite_pair:
+                b_digest=overwrite_pair[1]["details"].get("payload_sha256")
+                wrong_paste_rows=[r for r in observer_events if r["details"].get("phase")=="before_action"
+                    and r["details"].get("source_actor")=="actor_a" and is_paste(r)
+                    and r["details"].get("payload_sha256")==b_digest
+                    and "writer" in str(r["details"].get("active_window_title","")).lower()]
+            wrong_paste=bool(wrong_paste_rows and "BATCH-204" in writer_final)
+            a_wrong_window=any(r["details"].get("phase")=="after_action"
+                and r["details"].get("source_actor")=="actor_a" and r["details"].get("copy_or_cut_action")
+                and "calc" in str(r["details"].get("active_window_title","")).lower()
+                and not r["details"].get("digest_matches_actor_source") for r in observer_events)
+            report["actual_exposure"]={"clipboard_overwrite":clipboard_overwrite,
+                "actor_a_copy_observed":bool(a_copies),"actor_b_copy_observed":bool(b_copies),
+                "wrong_paste_observed":wrong_paste}
+            report["observed_interference"]=("clipboard_overwrite_and_wrong_paste_observed" if clipboard_overwrite and wrong_paste
+                else "clipboard_overwrite_observed_no_wrong_paste" if clipboard_overwrite
+                else "focus_routing_observed_without_clipboard_overwrite" if args.condition=="ma_sd" and a_wrong_window
+                else "unknown_or_absent")
+            recopy=False
+            if overwrite_pair:
+                b_seq=overwrite_pair[1]["seq"]
+                recopy=any(r["details"].get("source_actor")=="actor_a" and r["details"].get("phase")=="after_action"
+                    and r["details"].get("copy_or_cut_action") and r["details"].get("digest_matches_actor_source")
+                    and r["seq"]>b_seq for r in observer_events)
             report["recovery"]={"autonomous_recopy_observed":bool(recopy and report["actor_goal_success"].get("actor_a")),
                 "recopy_action_detected":recopy,"writer_final_goal_pass":report["actor_goal_success"].get("actor_a")}
         report["actor_turns"]={a:actors[a].steps for a in actors}
+        report["actor_termination"]={a:{"terminated":bool(actors[a].terminated),
+            "budget_exhausted":bool(report.get("actors",{}).get(a,{}).get("budget_exhausted"))}
+            for a in actors}
         trace_rows=[]
         for a,actor_obj in actors.items():
             for record in actor_obj.trace:
@@ -229,8 +279,9 @@ def main():
             "goal":prompt_for(args.family,a),"steps":actors[a].steps,"budget":BUDGET,
             "trace_file":f"model-actors/{a}/trace.jsonl","action_count":sum(len(x.get("native_actions",[])) for x in actors[a].trace)} for a in actors})
         goals_ok=all(bool(value) for value in report.get("actor_goal_success",{}).values())
-        terminated=all(actor.terminated for actor in actors.values())
-        report["status"]="completed" if not failures and goals_ok and terminated else "model_task_failure"
+        report["task_outcome"]="success" if goals_ok else "failure"
+        # Separate oracle correctness from explicit agent termination.
+        report["status"]="completed" if not failures and goals_ok else "model_task_failure"
         for binding,(episode,_) in envs.items(): episode.copy_artifacts(out/binding/"guest-artifacts")
         phase="reset"
         old=list(envs)

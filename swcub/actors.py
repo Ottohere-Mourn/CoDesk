@@ -368,6 +368,7 @@ class ScriptedClipboardActor:
             context.press_key("shift+end")
             context.press_key("ctrl+c")
         context.press_key("ctrl+end")
+        context.press_key("shift+home")
         context.press_key("ctrl+v")
         context.press_key("ctrl+s")
         self.turn = 2
