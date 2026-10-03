@@ -5,6 +5,7 @@ from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 from swcub.production_v1 import (workflow_registry,build_instance,_profile_catalog,generate_workflow,
   evaluate_oracle,_positive_state,_negative_state,read_manifest,audit_records,make_run_plan,sha256)
+from swcub.runtime_v1 import compile_suite
 
 with tempfile.TemporaryDirectory(prefix="codesk-v1-offline-") as tmp:
  root=Path(tmp);allrows=[]
@@ -45,6 +46,11 @@ with tempfile.TemporaryDirectory(prefix="codesk-v1-offline-") as tmp:
  summary=json.loads((agg/"summary.json").read_text());assert summary["invalid_infra_count"]==1
  assert summary["groups"][0]["episodes"]==1 and summary["groups"][0]["actual_exposure"]==0
  assert summary["groups"][0]["invalid_infra_count"]==1
+ suite=Path(__file__).resolve().parents[1]/"benchmarks/codesk_v1"
+ runtime_compiled=None
+ if (suite/"manifest.jsonl").is_file():
+  runtime_compiled=compile_suite(suite/"manifest.jsonl",suite,root/"runtime-plans.jsonl")
+  assert runtime_compiled["compiled"]==600 and runtime_compiled["failed"]==0
  print(json.dumps({"status":"PASS","workflows":len(workflow_registry()),"instances":len(allrows),
    "positive_oracles":45,"negative_oracles":45,"plan_rows_for_one_instance":len(plan),
-   "aggregator_test":"PASS (synthetic test rows only)","audit":audit},indent=2))
+   "aggregator_test":"PASS (synthetic test rows only)","runtime_suite_compile":runtime_compiled,"audit":audit},indent=2))
