@@ -39,9 +39,9 @@ def generate(output:Path,seed:int):
                     spec=build_instance(wid,domain,profile,layout,seed,ROOT)
                     row=materialize(spec,stage)
                     ev=json.loads((stage/row['evaluator_path']).read_text())
-                    if not evaluate_oracle({'evaluator':ev},_positive_state(spec))['joint_success']:
+                    if not evaluate_oracle({'workflow_id':wid,'evaluator':ev},_positive_state(spec))['joint_success']:
                         raise RuntimeError(f"positive evaluator gate failed: {wid}/{row['instance_id']}")
-                    if evaluate_oracle({'evaluator':ev},_negative_state(spec))['joint_success']:
+                    if evaluate_oracle({'workflow_id':wid,'evaluator':ev},_negative_state(spec))['joint_success']:
                         raise RuntimeError(f"negative evaluator gate failed: {wid}/{row['instance_id']}")
                     for asset in row['fixture_files']:
                         if sha256((stage/asset['path']).read_bytes())!=asset['sha256']:
