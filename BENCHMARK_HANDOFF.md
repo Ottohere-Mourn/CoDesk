@@ -8,7 +8,14 @@ Read this file first. Canonical checkout is A6000: `/home1/mjh/Projects/CoDesk-V
 - Five added workflows are included with truthful levels: F-N1 `guest_solo` (Solo A/B only, one each); C-N1/A-N1/S-N1/U-N1 `offline`. Their full Solo/MA-ID/MA-SD/recovery runtime gate is incomplete.
 - 45 validation samples passed offline generation/hash/positive-negative oracle checks. This does not verify application readiness or GUI action feasibility.
 - The fixed suite has 600 rows (15 × 40); it is 15 workflow templates with fixed semantic instances, not 600 workflows or 600 independently Guest-validated tasks.
-- Live batch `--execute` is intentionally blocked until parameterized per-workflow runtime adapters are implemented. Thus the current remaining work is **runtime adapters and their validation, then model runs**, not model runs alone.
+- The registry now compiles all fixed instances into runtime plans. Existing Guest runners still use static fixtures; a concrete manifest-driven OSWorld Guest backend/scheduler is not yet registered. Without an executor plugin, `--execute` records per-run `BLOCKED_RUNTIME_BACKEND` and does not launch a Guest. The current remaining work is **Guest backend integration and real smoke, then model runs**, not model runs alone.
+
+## Handoff gates
+
+- **OFFLINE_HANDOFF_READY:** all 15 workflow plan adapters are registered, all 600 instances compile, and runtime/runner/aggregator/offline tests pass. This authorizes offline preparation and review only.
+- **FULL_HANDOFF_READY:** additionally requires the five-family `smoke_suite.jsonl` to pass as real Guest runs through a concrete backend, with reset, ownership ledger, provenance and artifacts verified.
+
+**Current gate state:** OFFLINE_HANDOFF_READY is met: 15 registered plan adapters, 600/600 compiled plans, 45 positive and 45 negative offline oracle controls, runner resume/retry and aggregator self-tests pass. FULL_HANDOFF_READY is not met: the A6000 OSWorld Guest backend/scheduler is not registered and no Guest smoke ran in this phase.
 
 ## Environment check
 
@@ -20,13 +27,12 @@ On 4090, the previously verified inference arrangement was Qwen3-VL-30B-A3B-Inst
 
 1. Verify clean repository state and offline self-test; preserve artifacts and old results.
 2. Review `benchmarks/codesk_v1/manifest.jsonl`, `metadata/diversity-audit.json`, and `validation_45/`. Verify hashes.
-3. Choose one representative smoke row per family from `benchmarks/codesk_v1/smoke_suite.jsonl`.
-4. Implement one manifest-driven adapter at a time, starting with an already evidenced workflow. Adapter must materialize exact fixture, set up the application, expose only GUI observations to actors, use its instance-bound private oracle, reset and prove reset, and log run ownership/provenance.
-5. Only after the first adapter passes scripted Solo A/B, MA-ID and MA-SD controls plus reset, enable it in a registry; never route generated IDs through a static fixture runner.
-6. Run the five-row `SMOKE_SUITE` across all enabled adapters. `run_benchmark.py --execute` remains blocked until adapters are explicitly registered.
-7. After smoke readiness, connect the existing remote Qwen inference path. Start with one Solo run per actor; then run topology comparisons using fixed goals, schedule, budgets and evaluator.
-8. Resume from run artifacts, not by overwriting old results. Retry only `INVALID_INFRA`, within the configured cap.
-9. Aggregate with `scripts/aggregate_benchmark_results.py`; review exposure, interference, outcome and recovery as separate measurements.
+3. Review `benchmarks/codesk_v1/runtime_plans.jsonl` and `RUNTIME_ADAPTER_AUDIT.md`; compilation is not Guest validation.
+4. Implement/register the concrete A6000 OSWorld `GuestBackend` and turn scheduler. Verify exact fixture materialization, GUI readiness, private evaluator, reset, resource ownership and artifacts.
+5. Run `scripts/run_smoke_suite.py --execute` only after backend readiness, with one representative per family. Verify reset/provenance before marking FULL_HANDOFF_READY.
+6. After smoke readiness, connect the existing remote Qwen inference path. Start with one Solo run per actor; then run topology comparisons using fixed goals, schedule, budgets and evaluator.
+7. Resume from run artifacts, not by overwriting old results. Retry only `INVALID_INFRA`, within the configured cap.
+8. Aggregate with `scripts/aggregate_benchmark_results.py`; review exposure, interference, outcome and recovery as separate measurements.
 
 ## Existing command entrypoints
 
@@ -36,6 +42,7 @@ Offline generation:
 cd /home1/mjh/Projects/CoDesk-V0-A6000/CoDesk
 source scripts/a6000_env.sh
 "$CODESK_PYTHON" scripts/offline_self_test.py
+"$CODESK_PYTHON" scripts/compile_runtime_suite.py
 "$CODESK_PYTHON" scripts/generate_suite.py --quota-per-workflow 40 --seed 2026 --output /tmp/codesk-v1-check
 ```
 
@@ -48,7 +55,7 @@ Planner-only dry run:
   --model qwen3vl --repeats 1 --dry-run --plan /tmp/f01-plan.jsonl
 ```
 
-Live execution is currently unavailable and must fail closed. Do not describe the handoff as “models only remain.”
+Without an explicit `SWCUB_RUNTIME_EXECUTOR_FACTORY=module:factory`, `--execute` marks each selected run `BLOCKED_RUNTIME_BACKEND` and does not start a Guest. Do not describe the handoff as “models only remain.”
 
 ## Result interpretation
 
