@@ -2,7 +2,7 @@
 
 Date: 2026-10-03  
 Canonical repo: A6000 /home1/mjh/Projects/CoDesk-V0-A6000/CoDesk, branch v0.  
-Status: offline design only. No task code, instance generator, Guest, Qwen, or experiment was changed or run.
+Status: matrix and scaling plan remain design material. A P1 prototype addendum records the five new workflow contracts and the one real Guest Solo A smoke; see `MATRIX_WORKFLOW_IMPLEMENTATION_V1.md`.
 
 ## 1. Task-domain axes
 
@@ -240,7 +240,7 @@ Higher diversity workflows receive 35–40; narrow anchors receive 20–25. Redu
 4. Each must have independent Solo A/B, an exact oracle and reset contract, then scripted MA-ID/MA-SD and recovery controls. Model pilot comes later.
 5. Only after that define typed semantic parameters and produce three reviewed instances per workflow with regeneration/hash and evaluator positive/negative checks.
 
-**Next stage: IMPLEMENT MATRIX WORKFLOWS**, starting with those five additions and the A-02 category decision. Do not implement all 20 at once or generate 650 tasks.
+**Implementation status:** the five matrix workflows now have code contracts; see `MATRIX_WORKFLOW_IMPLEMENTATION_V1.md`. A-02 is reclassified under Selection / Active Object without rewriting old evidence. Do not implement all 20 at once or generate the planning-only 650 tasks.
 
 ## Evidence sources
 
@@ -248,3 +248,10 @@ Environment: ENV_SETUP.md, README.md, pinned OSWorld V2.1 setup scripts and exis
 Workflow code: swcub/tasks/workflows_v1.py, browser_writer_workflows_v1.py, clipboard_v1.py, browser_context_v1.py, browser_record_context_v1.py; scripts/run_writer_calc_v1.py, run_clipboard_v1_round1.py, run_browser_writer_workflows_v1.py, probe_selection_active_object_v1.py, probe_undo_history_v1.py.  
 Reports: WORKFLOW_SUITE_V1.md, WORKFLOW_IMPLEMENTATION_V1.md, QWEN_FAMILY_PILOT_REPORT.md, FAMILY_EXPANSION_V1_REPORT.md.  
 This round used repo sources/reports only. No private external project was inspected. No Guest, Docker, or Qwen resource was started or modified.
+
+
+## 11. P1 minimal-suite realization status (2026-10-03)
+
+The domain matrix remains the feasibility map; implementation is tracked separately. The frozen five-family count stays unchanged. A-02 is now mapped under Selection / Active Object while its original workflow ID, code, runs and historical evidence are preserved. The five proposed additions are F-N1 (W×W), C-N1 (Browser rich payload→Writer), A-N1 (Browser SPA route), S-N1 (Writer range), and U-N1 (Writer history).
+
+Only F-N1 Solo A and Solo B have completed real Guest episodes in this round, including Writer readiness, saved target state, evaluator, ownership ledger, and fresh-Guest reset. It is one successful side of one condition, not workflow validation. Offline evaluator tests passed; C-N1 rich clipboard MIME, other Solo sides, MA-ID, MA-SD and recovery remain unverified. Qwen was not run because the 4090 inference host SSH connection timed out and A6000 inference is frozen. See the implementation report for all condition states and resource evidence. The 15-workflow count remains a target, not 15 validated workflows.
