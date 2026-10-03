@@ -1,6 +1,8 @@
 # CoDesk Task Instance Generation Plan
 
-Status: generation plan for the frozen eight-template inventory in `WORKFLOW_SUITE_V1.md`; fixed-instance generation has **not** started. The eight workflows have real Guest feasibility evidence, but F-01 is legacy/model evidence and the remaining controls are scripted. C-02/F-02 each completed one bounded episode for Solo A/B, MA-ID, naive MA-SD and explicit recovery; one provider misconfiguration attempt is invalid infrastructure and retained. This is not a reliability estimate. Current production count under this plan: **0 fixed instances generated**.
+> **Superseded status (2026-10-03):** the eight-template / three-family quotas below are historical and must not be used for current production. The frozen inventory is now five families and ten named anchors; see CURRENT_WORKFLOW_INVENTORY.md for deduplication, generation-space review, and provisional 570 / 675 quotas. The audit recommends at most two additional workflows before batch production. No current fixed instances have been generated.
+
+Status: historical generation plan for the original eight-template inventory. Its workflow-specific rows and 200/288 arithmetic are preserved as history, not current instructions.
 
 ## Hierarchy
 
