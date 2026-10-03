@@ -73,4 +73,6 @@ The first 15 historical workflow evidence is retained as-is. No first-wave task 
 
 - Runtime/template checkpoint: `2fc3a8e1e6bfbaf84868acdc839f6254e0d3652e`
 - Generator oracle gate fix: `1036de483efe0040e9fb6ba0452c0cd968c1984b`
-- Final suite path metadata and deterministic provenance checkpoints are in the repository history after those commits.
+- Runtime plan path metadata: `95ae92237347b76ce56004e04f03abca35ccf8cd`
+- Pinned deterministic provenance: `ff2c2511b6159834351fdd95bf7f15f48d206b3a`
+- Final suite artifact commit: `95c905caa5d9de4473f27e743873676f48ef1fdf`
