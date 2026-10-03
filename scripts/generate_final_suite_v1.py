@@ -58,6 +58,7 @@ def generate(output:Path,seed:int):
             validation.extend([r for r in records if r['workflow_id']==wid][:3])
         (stage/'metadata'/'validation_manifest.jsonl').write_text(''.join(json.dumps({'workflow_id':r['workflow_id'],'instance_id':r['instance_id'],'semantic_signature':r['signatures']['semantic'],'fixture_signature':r['signatures']['fixture']},sort_keys=True)+'\n' for r in validation))
         compile_result=compile_suite(stage/'manifest.jsonl',stage,stage/'runtime_plans.jsonl')
+        compile_result['plans_path']=str(output.relative_to(ROOT)/'runtime_plans.jsonl') if ROOT in output.parents else str(output/'runtime_plans.jsonl')
         if compile_result.get('failed') or compile_result.get('compiled')!=len(records):
             raise RuntimeError(f"runtime plan compilation incomplete: {compile_result}")
         missing=[];binding_registry=build_runtime_binding_registry()
