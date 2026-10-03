@@ -41,3 +41,22 @@ Run `scripts/compile_backend_preflight.py`. It compiles one backend configuratio
 - Full pytest excluding the Docker-backed `tests/test_real_workspace.py`: 176 passed, 1 failed. The failure is `tests/test_task_factory_v1.py::test_clipboard_template_uses_common_manifest_contract_but_stays_unvalidated`, where the test expects a Writer seed document to contain only the source token but the unchanged `writer_seed_odf()` fixture also contains `INSERT COPIED VALUE`. This task-factory/test pair was not changed in this phase.
 
 No Guest/Docker tests were run. The unrelated failing offline test is retained as a failure; no historical test or evaluator was modified to make it pass.
+
+## Runtime code gate decision
+
+The 600 rows compile into backend configuration records, but all 600 are status `MISSING_IMPLEMENTATION` because their workflow setup and exact observer hooks are not registered; 400 rows (the ten historical anchor workflows × 40 instances) additionally lack the required anchor-equivalence adapter. Thus `600/600 backend preflight compile` is a structural compile pass, **not** a runtime-ready pass. `RUNTIME_CODE_READY` is not reached.
+
+## Future smoke command shape
+
+Once all workflow hooks are registered and the A6000/4090 resources are independently checked, the entrypoint is:
+
+```bash
+source scripts/a6000_env.sh
+SWCUB_RUNTIME_BINDING_FACTORY=package.module:factory \
+  "$CODESK_PYTHON" scripts/run_smoke_suite.py \
+  --backend a6000 --execute --model qwen3vl \
+  --model-endpoint http://127.0.0.1:15485 \
+  --topology solo --topology ma_id --topology ma_sd
+```
+
+At this checkpoint that command is **not** a real smoke: the plugin will record `BLOCKED_RUNTIME_BACKEND` for unresolved workflow hooks and start no Guest. The binding factory value above is a required future component, not an existing configuration.
