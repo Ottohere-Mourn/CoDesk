@@ -14,6 +14,9 @@ from swcub.runtime_bindings_v1 import build_runtime_binding_registry
 ROOT=Path(__file__).resolve().parents[1]
 DEFAULT_OUT=ROOT/'benchmarks/codesk_v1_final'
 OLD_ROOT=ROOT/'benchmarks/codesk_v1'
+# Pin the semantic generator checkpoint used for this frozen suite. Bump only
+# when workflow semantics or fixture/oracle generation changes.
+GENERATION_SOURCE_COMMIT='1036de483efe0040e9fb6ba0452c0cd968c1984b'
 
 def generate(output:Path,seed:int):
     output=output.resolve()
@@ -37,6 +40,7 @@ def generate(output:Path,seed:int):
             for domain in DOMAINS:
                 for profile in profiles:
                     spec=build_instance(wid,domain,profile,layout,seed,ROOT)
+                    spec.provenance['source_commit']=GENERATION_SOURCE_COMMIT
                     row=materialize(spec,stage)
                     ev=json.loads((stage/row['evaluator_path']).read_text())
                     if not evaluate_oracle({'workflow_id':wid,'evaluator':ev},_positive_state(spec))['joint_success']:
@@ -77,7 +81,7 @@ def generate(output:Path,seed:int):
         (stage/'metadata'/'prototype_snapshot.json').write_text(json.dumps(snapshot,indent=2,sort_keys=True)+'\n')
         metadata={'benchmark_version':'codesk-v1.1-offline-final','status':'OFFLINE_FINAL_SUITE_READY','guest_or_qwen_run':False,
           'generation_seed':seed,'workflow_count':len(by_id),'family_count':len(families),'instance_count':len(records),
-          'quota_by_workflow':per,'family_workflow_counts':families,'source_commit':git_commit(ROOT),
+          'quota_by_workflow':per,'family_workflow_counts':families,'source_commit':GENERATION_SOURCE_COMMIT,
           'manifest_sha256':hashlib.sha256((stage/'manifest.jsonl').read_bytes()).hexdigest(),
           'runtime_plan_compile':compile_result,'runtime_preflight_ready':len(records),'runtime_preflight_total':len(records),
           'missing_implementation':0,'exact_duplicate_rejected':audit['exact_duplicate_rejected'],
