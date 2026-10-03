@@ -64,3 +64,15 @@ Keep these independent: scheduled exposure, actual exposure, observed interferen
 ## Ownership / no-go actions
 
 Read `RESOURCE_SAFETY.md`. Never stop another user's process, remove unknown resources, prune Docker, push without explicit authorization, change historical scores, or overwrite artifacts. If access/readiness fails, preserve exact logs and classify infrastructure invalid; continue independent offline work.
+
+## Runtime code readiness update (2026-10-03)
+
+Offline executor work is in progress. `swcub/runtime_execution_v1.py` now provides a common episode lifecycle and Solo/MA-ID/MA-SD scheduler; `swcub/osworld_guest_backend_v1.py` provides a lazy A6000 OSWorld backend implementation; `swcub/fake_runtime_backend_v1.py` exercises orchestration only. The A6000 plugin fails closed if workflow binding gaps remain.
+
+Current gates:
+
+- **OFFLINE_HANDOFF_READY:** retained from the previous plan-compilation milestone.
+- **RUNTIME_CODE_READY:** **not met**. Fake lifecycle tests pass for all 15 workflow IDs and 600 backend configuration rows compile, but exact task-specific setup and state observers are missing. The legacy ten Guest runners remain static (0/10 parameterized/equivalence-tested). This is implementation debt, not a resource requirement.
+- **FULL_HANDOFF_READY:** not met; requires RUNTIME_CODE_READY plus the real five-family Guest smoke with reset, provenance, ownership, evaluator, and artifact verification.
+
+Do not proceed directly to real smoke just because Docker/KVM is available. First complete the missing workflow setup/evaluator bindings and anchor-equivalence tests listed in `REAL_BACKEND_PREFLIGHT.md`.

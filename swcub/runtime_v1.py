@@ -180,6 +180,9 @@ class WorkflowRuntimeAdapter:
              "generator_source_sha256":instance["provenance"]["source_code_sha256"],
              "runtime_adapter_source_sha256":_sha_file(Path(__file__).resolve()),
              "runtime_adapter_commit":_runtime_commit()}}
+        from .runtime_bindings_v1 import compile_workflow_binding
+        plan["runtime_execution_binding"]=compile_workflow_binding(
+            plan,Path(__file__).resolve().parents[1])
         plan["plan_sha256"]=sha256(canonical_bytes(plan))
         return plan
 
@@ -187,13 +190,21 @@ class WorkflowRuntimeAdapter:
         guests=[]
         if topology not in plan["topologies"]: raise RuntimeCompileError(f"topology not compiled: {topology}")
         guest_slots=plan["topologies"][topology]["variants"][0]["guest_slots"]
-        for slot in guest_slots:
-            guest=backend.create_owned_guest(plan["run_id"],slot,plan["ownership"]);guests.append(guest)
-            backend.clone_workspace(plan,guest,plan["instance_id"])
-            for asset in plan["fixture_assets"]:
-                backend.copy_fixture(guest,Path(asset["host_path"]),asset["guest_path"],asset["sha256"])
-            self.launch(plan,backend,guest)
-        return guests
+        try:
+            for slot in guest_slots:
+                guest=backend.create_owned_guest(plan["run_id"],slot,plan["ownership"]);guests.append(guest)
+                backend.clone_workspace(plan,guest,plan["instance_id"])
+                for asset in plan["fixture_assets"]:
+                    backend.copy_fixture(guest,Path(asset["host_path"]),asset["guest_path"],asset["sha256"])
+                self.launch(plan,backend,guest)
+            return guests
+        except BaseException as exc:
+            cleanup_errors=[]
+            for guest in reversed(guests):
+                try: backend.cleanup_owned_guest(guest,plan["ownership"])
+                except Exception as cleanup_exc: cleanup_errors.append(f"{type(cleanup_exc).__name__}: {cleanup_exc}")
+            suffix=("; owned Guest cleanup failed and resources were preserved: "+" | ".join(cleanup_errors)) if cleanup_errors else "; created run-owned Guests cleaned"
+            raise RuntimeBackendUnavailable(f"prepare failed: {type(exc).__name__}: {exc}{suffix}") from exc
 
     def launch(self, plan: dict[str, Any], backend: GuestBackend, guest: Any) -> dict[str, Any]:
         readiness={}
@@ -208,6 +219,8 @@ class WorkflowRuntimeAdapter:
                 readiness[key]=backend.wait_application_ready(guest,app,target)
                 if not readiness[key].get("ready"):
                     raise RuntimeBackendUnavailable(f"{app} readiness failed: {readiness[key]}")
+        prepare_workflow=getattr(backend,"prepare_workflow",None)
+        if callable(prepare_workflow): prepare_workflow(plan,guest)
         observed=backend.observe_initial_state(guest,plan)
         verification=backend.verify_initial_state(guest,plan,observed)
         if not verification.get("verified"):
@@ -227,7 +240,11 @@ class WorkflowRuntimeAdapter:
                  active_actor_ids: Sequence[str] | None=None) -> dict[str, Any]:
         from .production_v1 import evaluate_oracle
         actual=backend.collect_hidden_state(guests,plan)
-        return evaluate_oracle(json.loads(Path(plan["evaluator_binding"]["host_path"]).read_text()),actual,
+        evaluator=json.loads(Path(plan["evaluator_binding"]["host_path"]).read_text())
+        # Private evaluator files store the evaluator body; evaluate_oracle consumes
+        # a manifest-shaped record with that body under the `evaluator` key.
+        spec=evaluator if "evaluator" in evaluator else {"evaluator":evaluator}
+        return evaluate_oracle(spec,actual,
              tuple(active_actor_ids or [x["actor_id"] for x in plan["actors"]]))
 
     def collect_artifacts(self, plan: dict[str, Any], backend: GuestBackend, guests: Sequence[Any], output: Path) -> dict[str, Any]:

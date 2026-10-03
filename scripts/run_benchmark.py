@@ -14,6 +14,7 @@ def main() -> int:
  p.add_argument("--results",type=Path,default=Path("runs"));p.add_argument("--plan",type=Path,required=True)
  p.add_argument("--resume",action="store_true");p.add_argument("--max-infra-retries",type=int,default=1)
  p.add_argument("--dry-run",action="store_true");p.add_argument("--execute",action="store_true")
+ p.add_argument("--backend",choices=["a6000","fake"],help="a6000 fails closed on missing workflow bindings; fake is orchestration-only")
  p.add_argument("--family");p.add_argument("--workflow");p.add_argument("--instance",action="append")
  p.add_argument("--suite-root",type=Path);p.add_argument("--offset",type=int,default=0);p.add_argument("--limit",type=int)
  a=p.parse_args()
@@ -33,7 +34,7 @@ def main() -> int:
    try:
     result=json.loads(f.read_text());base=result.get("base_run_id",result.get("run_id"))
     if result.get("status")=="INVALID_INFRA":infra_attempts[base]+=1
-    elif result.get("status") in ("PASS","TASK_FAILURE","MODEL_FAILURE"):done.add(base)
+    elif result.get("status") in ("PASS","SUCCESS","TASK_FAILURE","MODEL_FAILURE","TIMEOUT","EVALUATOR_FAILURE"):done.add(base)
    except Exception:pass
  plan=make_run_plan(rows,a.topology,a.model,a.repeats,done,infra_attempts,a.max_infra_retries)
  registry=build_runtime_registry();compiled={};errors={}
@@ -55,6 +56,8 @@ def main() -> int:
   "skipped_completed":len(done),"invalid_infra_retries_seen":sum(infra_attempts.values()),"plan":str(a.plan),"guest_started":False}
  if a.execute:
   factory_path=os.environ.get("SWCUB_RUNTIME_EXECUTOR_FACTORY")
+  if not factory_path and a.backend=="fake":factory_path="swcub.runtime_plugin_v1:build_fake_executor"
+  if not factory_path and a.backend=="a6000":factory_path="swcub.runtime_plugin_v1:build_a6000_executor"
   if not factory_path:
    blocked=0;missing=0
    for run in plan:
@@ -69,17 +72,19 @@ def main() -> int:
    summary.update({"execution_status":"per_run_blocked","adapter_missing_runs":missing,"runtime_backend_missing_runs":blocked})
   else:
    module,attr=factory_path.split(":",1);executor=getattr(importlib.import_module(module),attr)()
-   completed=0;failed=0
+   completed=0;failed=0;result_statuses=defaultdict(int);guest_started=False
    for run in plan:
-    if run["instance_id"] in errors:failed+=1;continue
+    if run["instance_id"] in errors:failed+=1;result_statuses["ADAPTER_MISSING"]+=1;continue
     try:
-     executor.execute_run(registry.get(run["workflow_id"]),bound_runs[run["run_id"]],run,a.results/run["run_id"])
-     completed+=1
+     result=executor.execute_run(registry.get(run["workflow_id"]),bound_runs[run["run_id"]],run,a.results/run["run_id"])
+     completed+=1;result_statuses[str(result.get("status","UNKNOWN"))]+=1
+     guest_started=guest_started or bool(result.get("guest_started",False))
     except Exception as exc:
-     failed+=1;out=a.results/run["run_id"];out.mkdir(parents=True,exist_ok=True)
+     failed+=1;result_statuses["INVALID_INFRA"]+=1;out=a.results/run["run_id"];out.mkdir(parents=True,exist_ok=True)
      (out/"result.json").write_text(json.dumps({"run_id":run["run_id"],"base_run_id":run["base_run_id"],
-       "status":"INVALID_INFRA","failure_reason":"runtime_executor_exception","error":repr(exc)},indent=2)+"\n")
-   summary.update({"execution_status":"executor_plugin_used","completed_calls":completed,"adapter_compile_errors":failed})
+       "status":"INVALID_INFRA","failure_reason":"runtime_executor_exception","guest_started":False,"error":repr(exc)},indent=2)+"\n")
+   summary.update({"execution_status":"executor_plugin_used","completed_calls":completed,
+     "adapter_compile_errors":failed,"result_status_counts":dict(result_statuses),"guest_started":guest_started})
  elif not a.dry_run:raise SystemExit("Choose --dry-run or --execute explicitly.")
  print(json.dumps(summary,indent=2));return 0
 
