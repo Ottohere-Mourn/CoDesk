@@ -65,3 +65,9 @@ Condition choices: `solo_a`, `solo_b`, `ma_id`, `ma_sd`; add `--recovery` only f
 ## P1 prototype gate status
 
 `MATRIX_WORKFLOW_IMPLEMENTATION_V1.md` is the source of truth for the 5 P1 additions. Offline evaluator positive/negative controls and Python compilation passed. The single real Guest F-N1 Solo A result is valid but does not satisfy Solo A/B + MA-ID + MA-SD + recovery. A6000 host CPU pressure rose during the smoke, so additional Guest runs were paused. No Qwen smoke was run: 4090 SSH timed out; A6000 Qwen remains frozen. Therefore `MINIMAL_15_WORKFLOW_SUITE_READY` is **not established**.
+
+## Benchmark production status (2026-10-03)
+
+The V1 production candidate suite is materialized at `benchmarks/codesk_v1/`: 15 workflow templates × 40 fixed semantic profiles = 600 manifest rows; a separate `validation_45/` contains three offline hand-check instances per workflow, and `smoke_suite.jsonl` selects five representative rows. Generated rows preserve each workflow's current evidence level. F-N1 remains Guest Solo-only; C-N1/A-N1/S-N1/U-N1 remain offline/runtime-incomplete.
+
+`INSTANCE_SCHEMA_V1.md`, `INSTANCE_GENERATION_V1.md`, and `INSTANCE_DIVERSITY_AUDIT.md` define the production contract. This does not retroactively satisfy the old full scripted validation gates. The generated evaluator is a normalized offline state oracle; Guest-specific app adapters are not registered. Consequently `run_benchmark.py --execute` fails closed: runtime adapters/reset/provenance validation remain before batch model execution. See `BATCH_RUNNER_V1.md` and `BENCHMARK_HANDOFF.md`.

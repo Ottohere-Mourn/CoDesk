@@ -255,3 +255,9 @@ This round used repo sources/reports only. No private external project was inspe
 The domain matrix remains the feasibility map; implementation is tracked separately. The frozen five-family count stays unchanged. A-02 is now mapped under Selection / Active Object while its original workflow ID, code, runs and historical evidence are preserved. The five proposed additions are F-N1 (W×W), C-N1 (Browser rich payload→Writer), A-N1 (Browser SPA route), S-N1 (Writer range), and U-N1 (Writer history).
 
 Only F-N1 Solo A and Solo B have completed real Guest episodes in this round, including Writer readiness, saved target state, evaluator, ownership ledger, and fresh-Guest reset. It is one successful side of one condition, not workflow validation. Offline evaluator tests passed; C-N1 rich clipboard MIME, other Solo sides, MA-ID, MA-SD and recovery remain unverified. Qwen was not run because the 4090 inference host SSH connection timed out and A6000 inference is frozen. See the implementation report for all condition states and resource evidence. The 15-workflow count remains a target, not 15 validated workflows.
+
+## Production instance catalog (2026-10-03)
+
+The frozen matrix now has a deterministic semantic profile catalog for all 15 mapped workflow IDs. Each workflow has 4 domain schemas × 5 operation-specific object/target profiles × 2 target/guard layouts. The production suite contains 600 fixed candidates; these axes change domain, target object/schema, operation-specific shape/record/route, or guard placement rather than seed or text ID alone. See `benchmarks/codesk_v1/workflows/*.json` for per-workflow schemas and `metadata/diversity-audit.json` for the computed audit.
+
+**Evidence boundary:** parameterized fixtures and offline exact-state oracle controls are not Guest validation. Five P1 workflow prototypes retain their earlier status. Production `--execute` remains blocked pending manifest-driven runtime adapters; see `BATCH_RUNNER_V1.md`.
