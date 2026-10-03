@@ -68,7 +68,7 @@ A-02 is mapped to **Selection / Active Object** in current taxonomy. Its histori
 
 | Workflow | Decision this round | Reason |
 |---|---|---|
-| F-N1 | KEEP provisionally | Distinct Writer document identities and actual Solo A save/evaluator/reset passed. Full Solo B / MA-ID / MA-SD / recovery gate remains outstanding. |
+| F-N1 | KEEP provisionally | Distinct Writer document identities; Solo A and Solo B each passed save/evaluator/fresh-Guest reset once. MA-ID / MA-SD / recovery remain outstanding. |
 | C-N1 | DEFER | Design/oracle preserve actual table structure, but whether Chromium selection yields stable rich MIME and Writer retains it is untested. |
 | A-N1 | DEFER | Deterministic SPA contract and route-keyed oracle exist; route/window evidence awaits Guest execution. |
 | S-N1 | DEFER | Separate text-range mechanism is specified; UNO selection and formatting must be proven in real Writer. |
@@ -78,10 +78,18 @@ None is rejected on evidence in this round. None is fully validated either. Thus
 
 ## Next actions
 
-1. When A6000 CPU PSI/load returns to the pre-run safe band, finish F-N1 MA-ID, MA-SD, then recovery; preserve each attempt.
+1. When A6000 CPU PSI/load returns to the pre-run safe band, run F-N1 MA-ID, MA-SD, then recovery; preserve each attempt.
 2. Run C-N1 Solo A/B first. Inspect saved clipboard target MIME and ODF table structure before starting MA-ID/MA-SD. Reject if the paste becomes only plain text.
 3. For A-N1, verify same Chromium XID/tab while the route event changes A→B; then test Solo A/B before shared turns.
 4. For S-N1, calibrate the UNO observer and exact ranges in Solo A/B; require same XID and unchanged document text before shared turns.
 5. For U-N1, first verify Writer's saved undo grouping in Solo A and the independent B edit in Solo B; only then run shared history and explicit recovery.
 6. Qwen feasibility remains blocked until the previously approved 4090 endpoint becomes reachable. Use only that existing 2×4090 BF16 path; do not switch inference to A6000.
 7. After each workflow meets Solo A/B, MA-ID, MA-SD exposure, recovery, evaluator, reset and provenance gates, decide KEEP/REJECT. Begin instance-schema design only after the 15-workflow claim is supported or the suite is explicitly revised to a smaller validated count.
+
+## Resource gate recheck — 2026-10-03 13:51 +08:00
+
+No scripted Guest run was started in this recheck. Read-only host state: 144 logical CPUs; load average 154.42 / 151.17 / 151.69; CPU PSI some avg10 32.38%, avg60 24.54%, avg300 23.73%; vmstat showed runnable queue 232 and about 90% user CPU during the sample. RAM available was about 205 GiB. Swap use was 6.5/8 GiB; swap in/out was transient (first sample 1/10 KiB/s, then 0/0).
+
+No CoDesk-labeled Docker Guest and no QEMU Guest process were active. Process-level load summary showed four jiaodian Python processes at approximately 2180–2650% CPU and one daiyang Python process at approximately 465% CPU. No command-line arguments, working directories, or private project files were inspected.
+
+Decision: **BLOCKED_RESOURCE**. Do not start MA-ID or MA-SD under this pressure. No Qwen request was attempted. Existing valid evidence remains F-N1 Solo A and Solo B (one each); all other new workflow Guest gates remain outstanding. The formal validated-workflow count remains the historical 10; the 15-workflow mapping is not ready. Recheck after load falls below 144 and CPU PSI some avg10 returns near the prior pre-run band, with no unowned Guest/QEMU activity.
