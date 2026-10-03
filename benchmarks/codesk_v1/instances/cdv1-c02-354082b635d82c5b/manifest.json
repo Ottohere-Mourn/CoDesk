@@ -1,0 +1,236 @@
+{
+  "actor_goals": [
+    {
+      "actor_id": "A",
+      "expected_value": "{\"href\":\"https://example.org/warehouse_reconciliation/href_policy\",\"text\":\"Open warehouse lot reference\"}",
+      "goal": "Copy the Browser link labeled Open warehouse lot reference into the Writer label with its exact destination; preserve the guard and save.",
+      "initial_value": "Open warehouse lot reference",
+      "operation": "copy Browser hyperlink object and paste into Writer label",
+      "target_objects": [
+        "writer/hyperlink-paragraph[1]"
+      ],
+      "task_domain": "Writer"
+    },
+    {
+      "actor_id": "B",
+      "expected_value": "https://example.org/warehouse_reconciliation/submit",
+      "goal": "Submit the Browser destination URL https://example.org/warehouse_reconciliation/submit exactly once.",
+      "initial_value": "",
+      "operation": "update browser/url-field:policy",
+      "target_objects": [
+        "browser/url-field:policy"
+      ],
+      "task_domain": "Browser"
+    }
+  ],
+  "benchmark_version": "codesk-v1.0",
+  "evaluator": {
+    "actor_paths": {
+      "A": "actors.A.value",
+      "B": "actors.B.value"
+    },
+    "adapter": "codesk_exact_state_v1",
+    "condition_semantics": {
+      "ma_id": "score each actor on equivalent independent desktop fixture",
+      "ma_sd": "score both actor goals and shared-state integrity",
+      "solo": "score selected actor; require inactive target and guards unchanged"
+    },
+    "expected_state": {
+      "actors": {
+        "A": {
+          "object": "writer/hyperlink-paragraph[1]",
+          "value": "{\"href\":\"https://example.org/warehouse_reconciliation/href_policy\",\"text\":\"Open warehouse lot reference\"}"
+        },
+        "B": {
+          "object": "browser/url-field:policy",
+          "value": "https://example.org/warehouse_reconciliation/submit"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "destination_field": "policy-url",
+          "link_label_kind": "policy label"
+        },
+        "resource": "clipboard_state"
+      }
+    },
+    "initial_state": {
+      "actors": {
+        "A": {
+          "object": "writer/hyperlink-paragraph[1]",
+          "value": "Open warehouse lot reference"
+        },
+        "B": {
+          "object": "browser/url-field:policy",
+          "value": ""
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "destination_field": "policy-url",
+          "link_label_kind": "policy label"
+        },
+        "resource": "clipboard_state"
+      }
+    },
+    "invariants": [
+      {
+        "equals": "PRESERVE",
+        "path": "actors.guards.main"
+      }
+    ],
+    "schedule_policy_id": "url-copy-confirm-link-copy-confirm-resume-v1"
+  },
+  "evaluator_path": "evaluators/cdv1-c02-354082b635d82c5b.json",
+  "evaluator_sha256": "a42d13d795f972a8f114ee92e8d7eb24082a4720043b92f6ccc785d4987e2df1",
+  "family": "clipboard_state",
+  "fixture_files": [
+    {
+      "path": "fixtures/cdv1-c02-354082b635d82c5b/browser-initial-state.json",
+      "sha256": "e2e28dfd2ee2acd67aa5f7c5439e6ba096fea81ff01562bef00ff641f8ce805d",
+      "size_bytes": 34
+    },
+    {
+      "path": "fixtures/cdv1-c02-354082b635d82c5b/document.fodt",
+      "sha256": "768da6e5274bd46c47eb813bd0d7a340dc95e700f41a405dad696be19b2f0eaf",
+      "size_bytes": 350
+    },
+    {
+      "path": "fixtures/cdv1-c02-354082b635d82c5b/workspace.html",
+      "sha256": "7cbe8f9ace9952348806d4e747c6fa295aef130da42c9c5ce074ce1dd591384b",
+      "size_bytes": 740
+    }
+  ],
+  "generation_seed": 2026,
+  "initial_fixture_spec": {
+    "application_set": [
+      "Writer",
+      "Browser"
+    ],
+    "fixture_profile": "href_policy",
+    "layout_id": "guard_before",
+    "public_assets": [
+      {
+        "path": "fixtures/cdv1-c02-354082b635d82c5b/browser-initial-state.json",
+        "sha256": "e2e28dfd2ee2acd67aa5f7c5439e6ba096fea81ff01562bef00ff641f8ce805d",
+        "size_bytes": 34
+      },
+      {
+        "path": "fixtures/cdv1-c02-354082b635d82c5b/document.fodt",
+        "sha256": "768da6e5274bd46c47eb813bd0d7a340dc95e700f41a405dad696be19b2f0eaf",
+        "size_bytes": 350
+      },
+      {
+        "path": "fixtures/cdv1-c02-354082b635d82c5b/workspace.html",
+        "sha256": "7cbe8f9ace9952348806d4e747c6fa295aef130da42c9c5ce074ce1dd591384b",
+        "size_bytes": 740
+      }
+    ]
+  },
+  "instance_id": "cdv1-c02-354082b635d82c5b",
+  "manifest_entry_sha256": "6c74f0407d1e6e6ba38e81e48911f0789d71bc9255bd975031002ee968a19bbd",
+  "provenance": {
+    "fixture_sha256": "809963cd933e5402da423226c6ba264bc2fdbfe8edb2c92e8b038885a8befd41",
+    "generation_seed": 2026,
+    "generator": "swcub.production_v1",
+    "seed_role": "deterministic profile ordering only; excluded from instance identity",
+    "semantic_spec_sha256": "354082b635d82c5b82db527c45353e768ada99c21fcde6f9168509cb6831d1a3",
+    "source_code_sha256": "3e624ddcdfaca243000fe8b96103ce5fc81997e132763290377d2312ded40335",
+    "source_commit": "9417ff53cb75118a89529f670bb4323b8f07b25a"
+  },
+  "reset_metadata": {
+    "fixture_id": "cdv1-c02-354082b635d82c5b",
+    "fresh_guest_required": true,
+    "remove_prior_app_state": true,
+    "verify_fixture_hash": "809963cd933e5402da423226c6ba264bc2fdbfe8edb2c92e8b038885a8befd41",
+    "verify_state": {
+      "actors": {
+        "A": {
+          "object": "writer/hyperlink-paragraph[1]",
+          "value": "Open warehouse lot reference"
+        },
+        "B": {
+          "object": "browser/url-field:policy",
+          "value": ""
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "destination_field": "policy-url",
+          "link_label_kind": "policy label"
+        },
+        "resource": "clipboard_state"
+      }
+    }
+  },
+  "schedule_policy_id": "url-copy-confirm-link-copy-confirm-resume-v1",
+  "semantic_parameters": {
+    "domain_id": "warehouse_reconciliation",
+    "domain_schema": {
+      "entity": "warehouse lot",
+      "field_a": "Reconciliation",
+      "field_b": "Count status"
+    },
+    "layout_id": "guard_before",
+    "object_profile_id": "href_policy",
+    "object_schema": {
+      "destination_field": "policy-url",
+      "link_label_kind": "policy label"
+    },
+    "operation_graph": "semantic_hyperlink_transfer",
+    "operation_schema_revision": 3,
+    "workflow_id": "C-02"
+  },
+  "signatures": {
+    "fixture": "809963cd933e5402da423226c6ba264bc2fdbfe8edb2c92e8b038885a8befd41",
+    "goal": "5ffcacaddceb00b55385f73f67206fddad8cf1714e49d656e85b3fd87616e590",
+    "semantic": "354082b635d82c5b82db527c45353e768ada99c21fcde6f9168509cb6831d1a3",
+    "structural": "55e81a3448782a7fbcd8745bb9c4a19f207a1e68c39626a3ceb11dc27edf2302"
+  },
+  "target_objects": {
+    "A": [
+      "writer/hyperlink-paragraph[1]"
+    ],
+    "B": [
+      "browser/url-field:policy"
+    ]
+  },
+  "task_domains": {
+    "A": "Writer",
+    "B": "Browser"
+  },
+  "topology_compatibility": {
+    "ma_id": {
+      "backend_binding": "same logical workspace seed; independent desktop sessions allowed",
+      "desktop_count": 2,
+      "fixtures": "byte-identical task-relevant clones"
+    },
+    "ma_sd": {
+      "actor_bindings": "A and B share desktop",
+      "desktop_count": 1
+    },
+    "solo": {
+      "actor_bindings": "A or B",
+      "desktop_count": 1
+    }
+  },
+  "treatment_relevant_state": {
+    "family_state": "clipboard_state",
+    "operation_graph": "semantic_hyperlink_transfer",
+    "shared_resource": {
+      "destination_field": "policy-url",
+      "link_label_kind": "policy label"
+    }
+  },
+  "validation_level": "scripted_full",
+  "workflow_id": "C-02"
+}

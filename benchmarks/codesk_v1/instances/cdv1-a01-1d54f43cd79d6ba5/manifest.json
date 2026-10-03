@@ -1,0 +1,261 @@
+{
+  "actor_goals": [
+    {
+      "actor_id": "A",
+      "expected_value": "Reconciled-SKU-7316",
+      "goal": "Submit Reconciled-SKU-7316 in Browser tab A (/actor-a).",
+      "initial_value": "",
+      "operation": "submit exact goal in active tab A",
+      "target_objects": [
+        "browser/tab-a/inspection-form"
+      ],
+      "task_domain": "Browser"
+    },
+    {
+      "actor_id": "B",
+      "expected_value": "Counted-SKU-7316",
+      "goal": "Submit Counted-SKU-7316 in Browser tab B (/actor-b).",
+      "initial_value": "",
+      "operation": "update browser/tab-b/incident-form",
+      "target_objects": [
+        "browser/tab-b/incident-form"
+      ],
+      "task_domain": "Browser"
+    }
+  ],
+  "benchmark_version": "codesk-v1.0",
+  "evaluator": {
+    "actor_paths": {
+      "A": "actors.A.value",
+      "B": "actors.B.value"
+    },
+    "adapter": "codesk_exact_state_v1",
+    "condition_semantics": {
+      "ma_id": "score each actor on equivalent independent desktop fixture",
+      "ma_sd": "score both actor goals and shared-state integrity",
+      "solo": "score selected actor; require inactive target and guards unchanged"
+    },
+    "expected_state": {
+      "actors": {
+        "A": {
+          "object": "browser/tab-a/inspection-form",
+          "value": "Reconciled-SKU-7316"
+        },
+        "B": {
+          "object": "browser/tab-b/incident-form",
+          "value": "Counted-SKU-7316"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "context_kind": "tab-specific safety records",
+          "fields": [
+            "inspection",
+            "incident"
+          ]
+        },
+        "resource": "application_context"
+      }
+    },
+    "initial_state": {
+      "actors": {
+        "A": {
+          "object": "browser/tab-a/inspection-form",
+          "value": ""
+        },
+        "B": {
+          "object": "browser/tab-b/incident-form",
+          "value": ""
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "context_kind": "tab-specific safety records",
+          "fields": [
+            "inspection",
+            "incident"
+          ]
+        },
+        "resource": "application_context"
+      }
+    },
+    "invariants": [
+      {
+        "equals": "PRESERVE",
+        "path": "actors.guards.main"
+      }
+    ],
+    "schedule_policy_id": "observe-a-context-change-b-resume-a-v1"
+  },
+  "evaluator_path": "evaluators/cdv1-a01-1d54f43cd79d6ba5.json",
+  "evaluator_sha256": "914c6fb538be42b20fca258d82006c520d9c4b520d87422abfc6d147e868fe18",
+  "family": "application_context",
+  "fixture_files": [
+    {
+      "path": "fixtures/cdv1-a01-1d54f43cd79d6ba5/browser-events.jsonl",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size_bytes": 0
+    },
+    {
+      "path": "fixtures/cdv1-a01-1d54f43cd79d6ba5/browser-initial-state.json",
+      "sha256": "76178f3af15858b8b4a1db37f3acbe697bc68c3f12d54be759627be34896e819",
+      "size_bytes": 167
+    },
+    {
+      "path": "fixtures/cdv1-a01-1d54f43cd79d6ba5/browser-server.py",
+      "sha256": "1437cee7cac71d0d3404447665300f32f76cdde8c22348b98e2fdfdead08e798",
+      "size_bytes": 3243
+    },
+    {
+      "path": "fixtures/cdv1-a01-1d54f43cd79d6ba5/workspace.html",
+      "sha256": "2f1a2a38404320918d95b534af53e1243527b0dadd16d567975640d6f146bd0a",
+      "size_bytes": 229
+    }
+  ],
+  "generation_seed": 2026,
+  "initial_fixture_spec": {
+    "application_set": [
+      "Browser",
+      "Browser"
+    ],
+    "fixture_profile": "tabs_safety",
+    "layout_id": "guard_after",
+    "public_assets": [
+      {
+        "path": "fixtures/cdv1-a01-1d54f43cd79d6ba5/browser-events.jsonl",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size_bytes": 0
+      },
+      {
+        "path": "fixtures/cdv1-a01-1d54f43cd79d6ba5/browser-initial-state.json",
+        "sha256": "76178f3af15858b8b4a1db37f3acbe697bc68c3f12d54be759627be34896e819",
+        "size_bytes": 167
+      },
+      {
+        "path": "fixtures/cdv1-a01-1d54f43cd79d6ba5/browser-server.py",
+        "sha256": "1437cee7cac71d0d3404447665300f32f76cdde8c22348b98e2fdfdead08e798",
+        "size_bytes": 3243
+      },
+      {
+        "path": "fixtures/cdv1-a01-1d54f43cd79d6ba5/workspace.html",
+        "sha256": "2f1a2a38404320918d95b534af53e1243527b0dadd16d567975640d6f146bd0a",
+        "size_bytes": 229
+      }
+    ]
+  },
+  "instance_id": "cdv1-a01-1d54f43cd79d6ba5",
+  "manifest_entry_sha256": "85ef7a58ad31c5c8b5d59b2b6a74f55b6d7226108fca86195e9922276502dd11",
+  "provenance": {
+    "fixture_sha256": "36bc39a64006e932af2b02cdb2ca03efde33f1b8687c735410d4de3bc64172dd",
+    "generation_seed": 2026,
+    "generator": "swcub.production_v1",
+    "seed_role": "deterministic profile ordering only; excluded from instance identity",
+    "semantic_spec_sha256": "1d54f43cd79d6ba594e8569f6802366dc465d425a57645bc11b8943ce79ece1a",
+    "source_code_sha256": "abaf2fd32b70bf456dc7b4672199745df8a1968aab95f9cb043ee3501c5158dd",
+    "source_commit": "9417ff53cb75118a89529f670bb4323b8f07b25a"
+  },
+  "reset_metadata": {
+    "fixture_id": "cdv1-a01-1d54f43cd79d6ba5",
+    "fresh_guest_required": true,
+    "remove_prior_app_state": true,
+    "verify_fixture_hash": "36bc39a64006e932af2b02cdb2ca03efde33f1b8687c735410d4de3bc64172dd",
+    "verify_state": {
+      "actors": {
+        "A": {
+          "object": "browser/tab-a/inspection-form",
+          "value": ""
+        },
+        "B": {
+          "object": "browser/tab-b/incident-form",
+          "value": ""
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "context_kind": "tab-specific safety records",
+          "fields": [
+            "inspection",
+            "incident"
+          ]
+        },
+        "resource": "application_context"
+      }
+    }
+  },
+  "schedule_policy_id": "observe-a-context-change-b-resume-a-v1",
+  "semantic_parameters": {
+    "domain_id": "warehouse_reconciliation",
+    "domain_schema": {
+      "entity": "warehouse lot",
+      "field_a": "Reconciliation",
+      "field_b": "Count status"
+    },
+    "layout_id": "guard_after",
+    "object_profile_id": "tabs_safety",
+    "object_schema": {
+      "context_kind": "tab-specific safety records",
+      "fields": [
+        "inspection",
+        "incident"
+      ]
+    },
+    "operation_graph": "two_tab_context",
+    "operation_schema_revision": 2,
+    "workflow_id": "A-01"
+  },
+  "signatures": {
+    "fixture": "36bc39a64006e932af2b02cdb2ca03efde33f1b8687c735410d4de3bc64172dd",
+    "goal": "6bfa319cc15117b535aa087db28bd3b5bc604a28aa40b03d9d150ea87d53afa2",
+    "semantic": "1d54f43cd79d6ba594e8569f6802366dc465d425a57645bc11b8943ce79ece1a",
+    "structural": "ad349ea31c944fa79b1b516efed42107abc29e4be08461e89f6cb2a1ee82e9e0"
+  },
+  "target_objects": {
+    "A": [
+      "browser/tab-a/inspection-form"
+    ],
+    "B": [
+      "browser/tab-b/incident-form"
+    ]
+  },
+  "task_domains": {
+    "A": "Browser",
+    "B": "Browser"
+  },
+  "topology_compatibility": {
+    "ma_id": {
+      "backend_binding": "same logical workspace seed; independent desktop sessions allowed",
+      "desktop_count": 2,
+      "fixtures": "byte-identical task-relevant clones"
+    },
+    "ma_sd": {
+      "actor_bindings": "A and B share desktop",
+      "desktop_count": 1
+    },
+    "solo": {
+      "actor_bindings": "A or B",
+      "desktop_count": 1
+    }
+  },
+  "treatment_relevant_state": {
+    "family_state": "application_context",
+    "operation_graph": "two_tab_context",
+    "shared_resource": {
+      "context_kind": "tab-specific safety records",
+      "fields": [
+        "inspection",
+        "incident"
+      ]
+    }
+  },
+  "validation_level": "qwen_mechanism_evidence",
+  "workflow_id": "A-01"
+}

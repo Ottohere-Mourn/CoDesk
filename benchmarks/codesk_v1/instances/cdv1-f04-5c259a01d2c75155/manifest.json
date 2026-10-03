@@ -1,0 +1,256 @@
+{
+  "actor_goals": [
+    {
+      "actor_id": "A",
+      "expected_value": "[[\"Cleared-11\",\"Cleared-12\"],[\"Cleared-21\",\"Cleared-22\"]]",
+      "goal": "Fill Calc range B3:C4 row-wise with [[\"Cleared-11\",\"Cleared-12\"],[\"Cleared-21\",\"Cleared-22\"]] and save.",
+      "initial_value": "__EMPTY_RANGE__",
+      "operation": "fill calc/B3:C4 row-wise",
+      "target_objects": [
+        "calc/B3:C4"
+      ],
+      "task_domain": "Calc"
+    },
+    {
+      "actor_id": "B",
+      "expected_value": "Inspected: inspection item (object)",
+      "goal": "Replace the assigned Writer paragraph.",
+      "initial_value": "Pending: inspection item",
+      "operation": "update writer/document-content",
+      "target_objects": [
+        "writer/document-content"
+      ],
+      "task_domain": "Writer"
+    }
+  ],
+  "benchmark_version": "codesk-v1.0",
+  "evaluator": {
+    "actor_paths": {
+      "A": "actors.A.value",
+      "B": "actors.B.value"
+    },
+    "adapter": "codesk_exact_state_v1",
+    "condition_semantics": {
+      "ma_id": "score each actor on equivalent independent desktop fixture",
+      "ma_sd": "score both actor goals and shared-state integrity",
+      "solo": "score selected actor; require inactive target and guards unchanged"
+    },
+    "expected_state": {
+      "actors": {
+        "A": {
+          "object": "calc/B3:C4",
+          "value": "[[\"Cleared-11\",\"Cleared-12\"],[\"Cleared-21\",\"Cleared-22\"]]"
+        },
+        "B": {
+          "object": "writer/document-content",
+          "value": "Inspected: inspection item (object)"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "range": [
+            "B3",
+            "C4"
+          ],
+          "shape": [
+            2,
+            2
+          ]
+        },
+        "resource": "focus_input_routing"
+      }
+    },
+    "initial_state": {
+      "actors": {
+        "A": {
+          "object": "calc/B3:C4",
+          "value": "__EMPTY_RANGE__"
+        },
+        "B": {
+          "object": "writer/document-content",
+          "value": "Pending: inspection item"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "range": [
+            "B3",
+            "C4"
+          ],
+          "shape": [
+            2,
+            2
+          ]
+        },
+        "resource": "focus_input_routing"
+      }
+    },
+    "invariants": [
+      {
+        "equals": "PRESERVE",
+        "path": "actors.guards.main"
+      }
+    ],
+    "schedule_policy_id": "action-boundary-round-robin-ab-v1"
+  },
+  "evaluator_path": "evaluators/cdv1-f04-5c259a01d2c75155.json",
+  "evaluator_sha256": "ab97ecce92cee73776911cd79d2475e9e5eab066e8cc97ba50edbf6a41c00cd5",
+  "family": "focus_input_routing",
+  "fixture_files": [
+    {
+      "path": "fixtures/cdv1-f04-5c259a01d2c75155/document.fodt",
+      "sha256": "6375226a639a35c9a7d4e4b56b57b1ff10d4eaa6253b83682ca44c3b9deda5e9",
+      "size_bytes": 314
+    },
+    {
+      "path": "fixtures/cdv1-f04-5c259a01d2c75155/workbook.fods",
+      "sha256": "c098ab21e244ac0a5701c3a98025dcb4459814c91e7d93a0d5e3c2ca86950152",
+      "size_bytes": 1618
+    }
+  ],
+  "generation_seed": 2026,
+  "initial_fixture_spec": {
+    "application_set": [
+      "Calc",
+      "Writer"
+    ],
+    "fixture_profile": "range_b3_c4",
+    "layout_id": "guard_before",
+    "public_assets": [
+      {
+        "path": "fixtures/cdv1-f04-5c259a01d2c75155/document.fodt",
+        "sha256": "6375226a639a35c9a7d4e4b56b57b1ff10d4eaa6253b83682ca44c3b9deda5e9",
+        "size_bytes": 314
+      },
+      {
+        "path": "fixtures/cdv1-f04-5c259a01d2c75155/workbook.fods",
+        "sha256": "c098ab21e244ac0a5701c3a98025dcb4459814c91e7d93a0d5e3c2ca86950152",
+        "size_bytes": 1618
+      }
+    ]
+  },
+  "instance_id": "cdv1-f04-5c259a01d2c75155",
+  "manifest_entry_sha256": "425a6108662a1774511ef5c09089d7e1da3f0a56463ccd62ef5afc0f8f684890",
+  "provenance": {
+    "fixture_sha256": "d8d377d03f9e63aeb4998f6a368241ec7d65428b917229a8e2b56881b218f67a",
+    "generation_seed": 2026,
+    "generator": "swcub.production_v1",
+    "seed_role": "deterministic profile ordering only; excluded from instance identity",
+    "semantic_spec_sha256": "5c259a01d2c75155d643281b9727c838cc376a2d0d690cfcbdc73cac296cedbe",
+    "source_code_sha256": "f5a6ce546ff9c6d6f6c590363015445a5d2302ecd825588c6eeffccbe6233fd7",
+    "source_commit": "9417ff53cb75118a89529f670bb4323b8f07b25a"
+  },
+  "reset_metadata": {
+    "fixture_id": "cdv1-f04-5c259a01d2c75155",
+    "fresh_guest_required": true,
+    "remove_prior_app_state": true,
+    "verify_fixture_hash": "d8d377d03f9e63aeb4998f6a368241ec7d65428b917229a8e2b56881b218f67a",
+    "verify_state": {
+      "actors": {
+        "A": {
+          "object": "calc/B3:C4",
+          "value": "__EMPTY_RANGE__"
+        },
+        "B": {
+          "object": "writer/document-content",
+          "value": "Pending: inspection item"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "range": [
+            "B3",
+            "C4"
+          ],
+          "shape": [
+            2,
+            2
+          ]
+        },
+        "resource": "focus_input_routing"
+      }
+    }
+  },
+  "schedule_policy_id": "action-boundary-round-robin-ab-v1",
+  "semantic_parameters": {
+    "domain_id": "safety_inspection",
+    "domain_schema": {
+      "entity": "inspection item",
+      "field_a": "Clearance",
+      "field_b": "Inspection state"
+    },
+    "layout_id": "guard_before",
+    "object_profile_id": "range_b3_c4",
+    "object_schema": {
+      "range": [
+        "B3",
+        "C4"
+      ],
+      "shape": [
+        2,
+        2
+      ]
+    },
+    "operation_graph": "calc_range_vs_writer_document",
+    "operation_schema_revision": 4,
+    "workflow_id": "F-04"
+  },
+  "signatures": {
+    "fixture": "d8d377d03f9e63aeb4998f6a368241ec7d65428b917229a8e2b56881b218f67a",
+    "goal": "b3588b8c38dbdee62fb6c759bdfb4dfadbcb3e9c1f93b894e0bc3d777c45bc92",
+    "semantic": "5c259a01d2c75155d643281b9727c838cc376a2d0d690cfcbdc73cac296cedbe",
+    "structural": "1584cc759779387c30d4c9363f8afb84c342a718a73a06aa8e85673be2bf28e9"
+  },
+  "target_objects": {
+    "A": [
+      "calc/B3:C4"
+    ],
+    "B": [
+      "writer/document-content"
+    ]
+  },
+  "task_domains": {
+    "A": "Calc",
+    "B": "Writer"
+  },
+  "topology_compatibility": {
+    "ma_id": {
+      "backend_binding": "same logical workspace seed; independent desktop sessions allowed",
+      "desktop_count": 2,
+      "fixtures": "byte-identical task-relevant clones"
+    },
+    "ma_sd": {
+      "actor_bindings": "A and B share desktop",
+      "desktop_count": 1
+    },
+    "solo": {
+      "actor_bindings": "A or B",
+      "desktop_count": 1
+    }
+  },
+  "treatment_relevant_state": {
+    "family_state": "focus_input_routing",
+    "operation_graph": "calc_range_vs_writer_document",
+    "shared_resource": {
+      "range": [
+        "B3",
+        "C4"
+      ],
+      "shape": [
+        2,
+        2
+      ]
+    }
+  },
+  "validation_level": "scripted_full",
+  "workflow_id": "F-04"
+}

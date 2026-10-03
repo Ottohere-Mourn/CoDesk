@@ -1,0 +1,236 @@
+{
+  "actor_goals": [
+    {
+      "actor_id": "A",
+      "expected_value": "{\"href\":\"https://example.org/safety_inspection/href_source\",\"text\":\"Open inspection item reference\"}",
+      "goal": "Copy the Browser link labeled Open inspection item reference into the Writer label with its exact destination; preserve the guard and save.",
+      "initial_value": "Open inspection item reference",
+      "operation": "copy Browser hyperlink object and paste into Writer label",
+      "target_objects": [
+        "writer/hyperlink-paragraph[1]"
+      ],
+      "task_domain": "Writer"
+    },
+    {
+      "actor_id": "B",
+      "expected_value": "https://example.org/safety_inspection/submit",
+      "goal": "Submit the Browser destination URL https://example.org/safety_inspection/submit exactly once.",
+      "initial_value": "",
+      "operation": "update browser/url-field:supplier",
+      "target_objects": [
+        "browser/url-field:supplier"
+      ],
+      "task_domain": "Browser"
+    }
+  ],
+  "benchmark_version": "codesk-v1.0",
+  "evaluator": {
+    "actor_paths": {
+      "A": "actors.A.value",
+      "B": "actors.B.value"
+    },
+    "adapter": "codesk_exact_state_v1",
+    "condition_semantics": {
+      "ma_id": "score each actor on equivalent independent desktop fixture",
+      "ma_sd": "score both actor goals and shared-state integrity",
+      "solo": "score selected actor; require inactive target and guards unchanged"
+    },
+    "expected_state": {
+      "actors": {
+        "A": {
+          "object": "writer/hyperlink-paragraph[1]",
+          "value": "{\"href\":\"https://example.org/safety_inspection/href_source\",\"text\":\"Open inspection item reference\"}"
+        },
+        "B": {
+          "object": "browser/url-field:supplier",
+          "value": "https://example.org/safety_inspection/submit"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "destination_field": "supplier-url",
+          "link_label_kind": "source label"
+        },
+        "resource": "clipboard_state"
+      }
+    },
+    "initial_state": {
+      "actors": {
+        "A": {
+          "object": "writer/hyperlink-paragraph[1]",
+          "value": "Open inspection item reference"
+        },
+        "B": {
+          "object": "browser/url-field:supplier",
+          "value": ""
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "destination_field": "supplier-url",
+          "link_label_kind": "source label"
+        },
+        "resource": "clipboard_state"
+      }
+    },
+    "invariants": [
+      {
+        "equals": "PRESERVE",
+        "path": "actors.guards.main"
+      }
+    ],
+    "schedule_policy_id": "url-copy-confirm-link-copy-confirm-resume-v1"
+  },
+  "evaluator_path": "evaluators/cdv1-c02-a62a3417dfb8a80d.json",
+  "evaluator_sha256": "af38907895eb7bab6151b73bab7239b17ccc2a01e217803f70d0195204af3ce2",
+  "family": "clipboard_state",
+  "fixture_files": [
+    {
+      "path": "fixtures/cdv1-c02-a62a3417dfb8a80d/browser-initial-state.json",
+      "sha256": "e2e28dfd2ee2acd67aa5f7c5439e6ba096fea81ff01562bef00ff641f8ce805d",
+      "size_bytes": 34
+    },
+    {
+      "path": "fixtures/cdv1-c02-a62a3417dfb8a80d/document.fodt",
+      "sha256": "471bfe9df2e40ba153d311d1189b9adfd3b5161114e642d85b7f2dd4ac8485cf",
+      "size_bytes": 352
+    },
+    {
+      "path": "fixtures/cdv1-c02-a62a3417dfb8a80d/workspace.html",
+      "sha256": "413ef64124d6029f305780068d7e2c3bdef6442719557d6cb86e4c3432a1443e",
+      "size_bytes": 728
+    }
+  ],
+  "generation_seed": 2026,
+  "initial_fixture_spec": {
+    "application_set": [
+      "Writer",
+      "Browser"
+    ],
+    "fixture_profile": "href_source",
+    "layout_id": "guard_before",
+    "public_assets": [
+      {
+        "path": "fixtures/cdv1-c02-a62a3417dfb8a80d/browser-initial-state.json",
+        "sha256": "e2e28dfd2ee2acd67aa5f7c5439e6ba096fea81ff01562bef00ff641f8ce805d",
+        "size_bytes": 34
+      },
+      {
+        "path": "fixtures/cdv1-c02-a62a3417dfb8a80d/document.fodt",
+        "sha256": "471bfe9df2e40ba153d311d1189b9adfd3b5161114e642d85b7f2dd4ac8485cf",
+        "size_bytes": 352
+      },
+      {
+        "path": "fixtures/cdv1-c02-a62a3417dfb8a80d/workspace.html",
+        "sha256": "413ef64124d6029f305780068d7e2c3bdef6442719557d6cb86e4c3432a1443e",
+        "size_bytes": 728
+      }
+    ]
+  },
+  "instance_id": "cdv1-c02-a62a3417dfb8a80d",
+  "manifest_entry_sha256": "5909009e25e3cdfa096b450b59098a63933f2d46c6030cea0ac968ec4707af27",
+  "provenance": {
+    "fixture_sha256": "539f21a04b08d4bc067d1c1cba5438e50a7ca929a739601fa20d31c4559a9804",
+    "generation_seed": 2026,
+    "generator": "swcub.production_v1",
+    "seed_role": "deterministic profile ordering only; excluded from instance identity",
+    "semantic_spec_sha256": "a62a3417dfb8a80d16931c06ed120982b065061862124fe91a5c907cc36d9176",
+    "source_code_sha256": "3e624ddcdfaca243000fe8b96103ce5fc81997e132763290377d2312ded40335",
+    "source_commit": "9417ff53cb75118a89529f670bb4323b8f07b25a"
+  },
+  "reset_metadata": {
+    "fixture_id": "cdv1-c02-a62a3417dfb8a80d",
+    "fresh_guest_required": true,
+    "remove_prior_app_state": true,
+    "verify_fixture_hash": "539f21a04b08d4bc067d1c1cba5438e50a7ca929a739601fa20d31c4559a9804",
+    "verify_state": {
+      "actors": {
+        "A": {
+          "object": "writer/hyperlink-paragraph[1]",
+          "value": "Open inspection item reference"
+        },
+        "B": {
+          "object": "browser/url-field:supplier",
+          "value": ""
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "destination_field": "supplier-url",
+          "link_label_kind": "source label"
+        },
+        "resource": "clipboard_state"
+      }
+    }
+  },
+  "schedule_policy_id": "url-copy-confirm-link-copy-confirm-resume-v1",
+  "semantic_parameters": {
+    "domain_id": "safety_inspection",
+    "domain_schema": {
+      "entity": "inspection item",
+      "field_a": "Clearance",
+      "field_b": "Inspection state"
+    },
+    "layout_id": "guard_before",
+    "object_profile_id": "href_source",
+    "object_schema": {
+      "destination_field": "supplier-url",
+      "link_label_kind": "source label"
+    },
+    "operation_graph": "semantic_hyperlink_transfer",
+    "operation_schema_revision": 3,
+    "workflow_id": "C-02"
+  },
+  "signatures": {
+    "fixture": "539f21a04b08d4bc067d1c1cba5438e50a7ca929a739601fa20d31c4559a9804",
+    "goal": "a8faf24ae9aff5b9f7115e8b7ed50490f020648bf14a44525908a2d307b64c5f",
+    "semantic": "a62a3417dfb8a80d16931c06ed120982b065061862124fe91a5c907cc36d9176",
+    "structural": "d43bbef0679ec2e79175ba122802f66dce6a90afda41db7cd32bf21f82a1143d"
+  },
+  "target_objects": {
+    "A": [
+      "writer/hyperlink-paragraph[1]"
+    ],
+    "B": [
+      "browser/url-field:supplier"
+    ]
+  },
+  "task_domains": {
+    "A": "Writer",
+    "B": "Browser"
+  },
+  "topology_compatibility": {
+    "ma_id": {
+      "backend_binding": "same logical workspace seed; independent desktop sessions allowed",
+      "desktop_count": 2,
+      "fixtures": "byte-identical task-relevant clones"
+    },
+    "ma_sd": {
+      "actor_bindings": "A and B share desktop",
+      "desktop_count": 1
+    },
+    "solo": {
+      "actor_bindings": "A or B",
+      "desktop_count": 1
+    }
+  },
+  "treatment_relevant_state": {
+    "family_state": "clipboard_state",
+    "operation_graph": "semantic_hyperlink_transfer",
+    "shared_resource": {
+      "destination_field": "supplier-url",
+      "link_label_kind": "source label"
+    }
+  },
+  "validation_level": "scripted_full",
+  "workflow_id": "C-02"
+}

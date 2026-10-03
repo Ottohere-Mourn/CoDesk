@@ -1,36 +1,73 @@
 # Workflow Runtime Migration Status
 
-当前仓库：`v0`。此表描述 runtime 代码迁移，不代表 Guest 或模型验证。仅当 InstanceSpec 已贯通 setup/readiness/observer/evaluator/reset/cleanup 且有等价测试时，状态才可为 `IMPLEMENTED`。
+**Scope:** Offline workflow-to-runtime migration only. No Guest, Qwen, Docker, or benchmark episode was started for this migration pass.
 
-| Workflow | Historical runner/probe | Fixture/setup | App readiness | Required observer | Actor goals | Evaluator | Reset / cleanup | InstanceSpec parameterized | Runtime binding | Anchor equivalence test | Status |
-|---|---|---|---|---|---|---|---|---|---|---|---|
-| F-01 | `scripts/run_writer_calc_v1.py` | Static Writer/Calc fixture | Existing static Writer/Calc gates | Focus + saved ODF/Calc state | Static prompts/constants | Static `GuestLibreOfficeBindingEvaluator` | Existing runner lifecycle | No | No | No | IN_PROGRESS |
-| F-04 | `scripts/run_workflows_v1.py` | `tasks/workflows_v1.py` fixed F04 fixture | Existing static LO readiness | Foreground + Calc range + ODF | Fixed range/text | `Workflow.evaluate` | Existing runner lifecycle | No | No | No | IN_PROGRESS |
-| F-02 | `scripts/run_browser_writer_workflows_v1.py` | Static Browser/Writer setup | Static app checks | Focus + form + Writer comment | Static actor prompts | Static workflow evaluator | Existing runner lifecycle | No | No | No | IN_PROGRESS |
-| C-01 | `scripts/run_clipboard_v1_round1.py` | Static Writer/Calc clipboard fixture | Static app checks | X11 clipboard + foreground target | Static source/destination | Static ODF + event evaluator | Existing runner lifecycle | No | No | No | IN_PROGRESS |
-| C-03 | `scripts/run_workflows_v1.py` | Fixed Calc-to-Calc / Writer fixture | Existing static LO readiness | Clipboard formats + target state | Historical actor graph differs from generated C-03 range-to-Writer graph | Historical `Workflow.evaluate` | Existing runner lifecycle | No | No | No | BLOCKED_SPEC |
-| C-02 | `scripts/run_browser_writer_workflows_v1.py` | Static hyperlink/Browser fixture | Static app checks | Clipboard + href + Browser submit state | Static goals | Static evaluator | Existing runner lifecycle | No | No | No | IN_PROGRESS |
-| A-01 | `scripts/run_browser_context_v1.py` | Static two-tab web app | Runner-local server/readiness | Top-level window + active tab + server state | Static tab forms | `BrowserContextTask.evaluate` | Existing runner lifecycle | No | No | No | IN_PROGRESS |
-| A-02 | `scripts/run_browser_record_context_v1.py` | Static record app | Runner-local server/readiness | Window + record + revision | Static record goals | Static record evaluator | Existing runner lifecycle | No | No | No | IN_PROGRESS |
-| S-01 | `scripts/probe_selection_active_object_v1.py` | Fixed Calc grid/targets | Calc + UNO readiness | UNO selected range + active window | Fixed B2/C3 goals | Fixed exact-grid evaluator | Existing runner lifecycle | No | No | No | IN_PROGRESS |
-| U-01 | `scripts/probe_undo_history_v1.py` | Fixed Calc undo fixture | Calc + UNO readiness | Undo timeline + exact grid | Fixed edit/undo sequence | Fixed grid/history evaluator | Existing runner lifecycle | No | No | No | IN_PROGRESS |
-| F-N1 | `scripts/run_matrix_workflow_v1.py` | `tasks/matrix_workflows_v1.py` fixed doc pair | Static Writer readiness | Foreground + document identity | Fixed document text | `matrix_workflows_v1.evaluate` | Existing runner lifecycle | No | No | N/A | IN_PROGRESS |
-| C-N1 | `scripts/run_matrix_workflow_v1.py` | Fixed Browser HTML + Writer table | Static Browser/Writer readiness | Clipboard owner/generation/MIME + ODF table | Fixed HTML table/URL goals | Matrix evaluator | Existing runner lifecycle | No | No | N/A | IN_PROGRESS |
-| A-N1 | `scripts/run_matrix_workflow_v1.py` | Fixed SPA route server | Static route readiness | Same-tab route/revision endpoint | Fixed route values | Matrix evaluator | Existing runner lifecycle | No | No | N/A | IN_PROGRESS |
-| S-N1 | `scripts/run_matrix_workflow_v1.py` | Fixed Writer text ranges | Static Writer readiness | UNO selection + ODF spans/styles | Fixed ALPHA/BETA spans | Matrix evaluator | Existing runner lifecycle | No | No | N/A | IN_PROGRESS |
-| U-N1 | `scripts/run_matrix_workflow_v1.py` | Fixed Writer edit/undo sequence | Static Writer readiness | Undo events + paragraph state | Fixed paragraph values | Matrix evaluator | Existing runner lifecycle | No | No | N/A | IN_PROGRESS |
+## Status summary
 
-## Findings
+- Legacy workflows parameterized with a canonical manifest InstanceSpec and offline historical-equivalence coverage: **10/10**.
+- New workflows bound to generated InstanceSpec rows with a concrete runtime binding and self-test: **5/5**.
+- Concrete setup + initial-state verifier + observer/evaluator + event gate registry entries: **15/15**.
+- Concrete observer/evaluator/reset/cleanup references: **15/15**.
+- Manifest rows compiled by the backend preflight: **600/600 CODE_READY**, **0 MISSING_IMPLEMENTATION**, **0 compile failures**.
+- Runtime plan compilation: **600/600 compiled** for Solo, MA-ID, and MA-SD.
+- **RUNTIME_CODE_READY: YES (offline code/preflight meaning only).**
+- **GUEST_VALIDATED: NO for this migration pass.** CODE_READY is not evidence that a Guest launched, an application was ready, or a task passed.
 
-- The 10 legacy runners/probes contain their own task constants and are not parameterized by `InstanceSpecV1`.
-- The new five have concrete prototype setup/evaluator code in `tasks/matrix_workflows_v1.py` and `scripts/run_matrix_workflow_v1.py`, but those constants are not yet consumed from the 600-row manifest.
-- C-03 is `BLOCKED_SPEC`: `production_v1` describes Calc rectangular content transferred into a Writer target, while the historical C-03 runner describes Calc range relocation plus a separate Writer paragraph copy. Reusing the historical evaluator would silently score a different action graph. Resolve the frozen task/evaluator contract before wiring it.
-- The A6000 checkout used in this pass has no OSWorld source checkout at its configured external path. Offline tests that import static helper code should not require that checkout; Guest execution still must.
+## Workflow bindings
 
-## Current counts
+All evaluators flow through `swcub.production_v1.evaluate_oracle`; workflow-specific observer classes provide the measured state. Reset and cleanup use the ownership-checked A6000 Guest backend entry points.
 
-- Legacy anchors parameterized: **0/10**.
-- New workflows with manifest-driven runtime binding: **0/5**.
-- Workflow-specific observer/evaluator/reset bindings in `A6000OSWorldBackend`: **0/15**.
-- 600-instance backend compile: **600 compiled, 600 `MISSING_IMPLEMENTATION`**; missing components are setup (600), exact observer (600), and legacy anchor equivalence adapter (400).
-- This checkpoint is **not** `RUNTIME_CODE_READY`.
+| Workflow | Setup | Observer / task evidence | Evaluator | Reset | Cleanup | Offline binding |
+|---|---|---|---|---|---|---|
+| F-01 | `_setup_f01` | `F01RuntimeObserver` (foreground document + Writer/Calc state) | `evaluate_oracle` | `A6000OSWorldBackend.reset_guest` | `cleanup_owned_guest` | CODE_READY + legacy equivalence |
+| F-04 | `_setup_f04` | `F04RuntimeObserver` (Calc range + Writer target) | same | same | same | CODE_READY + legacy equivalence |
+| F-02 | `_setup_f02` | `F02RuntimeObserver` (Browser form + Writer comment/focus) | same | same | same | CODE_READY + legacy equivalence |
+| C-01 | `_setup_c01` | `C01RuntimeObserver` (clipboard + Writer/Calc targets) | same | same | same | CODE_READY + legacy equivalence |
+| C-02 | `_setup_c02` | `C02RuntimeObserver` (hyperlink target + Browser submission) | same | same | same | CODE_READY + legacy equivalence |
+| C-03 | `_setup_c03` | `C03RuntimeObserver` (Calc range + Writer paragraph) | same | same | same | CODE_READY + restored historical graph |
+| A-01 | `_setup_a01` | `A01RuntimeObserver` (top-level window + active tab) | same | same | same | CODE_READY + legacy equivalence |
+| A-02 | `_setup_a02` | `A02RuntimeObserver` (same-page record/revision) | same | same | same | CODE_READY + legacy equivalence |
+| S-01 | `_setup_s01` | `S01RuntimeObserver` (UNO active cell + exact grid) | same | same | same | CODE_READY + legacy equivalence |
+| U-01 | `_setup_u01` | `U01RuntimeObserver` (Calc state + coordinator action history) | same | same | same | CODE_READY + legacy equivalence |
+| F-N1 | `_setup_f_n1` | `F_N1RuntimeObserver` (two Writer documents/windows) | same | same | same | CODE_READY + generated-instance self-test |
+| C-N1 | `_setup_cn1` | `CN1RuntimeObserver` (HTML table structure, URL submit, clipboard snapshots) | same | same | same | CODE_READY + generated-instance self-test |
+| A-N1 | `_setup_an1` | `AN1RuntimeObserver` (single-window route/revision) | same | same | same | CODE_READY + generated-instance self-test |
+| S-N1 | `_setup_sn1` | `SN1RuntimeObserver` (Writer range/ODF style) | same | same | same | CODE_READY + generated-instance self-test |
+| U-N1 | `_setup_un1` | `UN1RuntimeObserver` (Writer final ODF + ordered actor action events) | same | same | same | CODE_READY + generated-instance self-test |
+
+The registry audit checked every manifest workflow ID against the concrete binding registry and the setup/observer/evaluator/reset/cleanup reference map: **15 IDs, no missing or non-callable entries**.
+
+## C-03 conflict resolution
+
+The canonical historical workflow in `swcub/tasks/workflows_v1.py::C03` is preserved:
+
+- Actor A copies Calc `A1:B2` to `A4:B5`, preserving the source and guards.
+- Actor B copies Writer paragraph 1 into blank paragraph 2.
+- The exact final Calc matrix and Writer paragraphs are checked by the oracle.
+
+The generated C-03 schema and its 40 active manifest rows were corrected to encode that operation graph, source/destination ranges, blank Writer destination, goals, and fixture. Only C-03 active rows/assets were regenerated for the correction; the previous generated C-03 state was retained under `benchmarks/codesk_v1/metadata/archive-c03-runtime-schema-v3/`. An offline equivalence test checks initial state, both goals, final state, evaluator, and reset.
+
+## Evidence limits
+
+- The test suite exercises generated specs, fake Guests, observer logic, positive/negative evaluator cases, and reset/readiness binding. It is not a real application run.
+- **C-N1:** the generated Browser server source is syntax-compiled in the test. Rich table structure is checked in ODF and clipboard MIME targets are represented by the observer interface, but this pass did not verify real Guest HTML clipboard transfer or MIME preservation.
+- **U-N1:** temporal Undo evidence is derived from coordinator-recorded actor action order plus final ODF state. It does not inspect LibreOffice internal UndoManager.
+- Historical Guest/scripted/Qwen evidence remains historical evidence; this pass neither reran nor replaced it.
+- No historical result or `artifacts/` directory was modified by the migration validation commands. Workflow-specific pre-regeneration records remain archived.
+
+## Reproduction
+
+From the A6000 CoDesk checkout:
+
+```bash
+.venv/bin/pytest -q tests/test_runtime_binding_odf_v1.py tests/test_runtime_binding_f_n1.py tests/test_runtime_binding_browser_selection_v1.py tests/test_runtime_execution_v1.py tests/test_production_v1.py
+.venv/bin/python scripts/compile_backend_preflight.py
+.venv/bin/python scripts/compile_runtime_suite.py
+```
+
+Latest results:
+
+- Focused tests: **31 passed**.
+- Backend preflight: **600 compiled, 0 failures, 600 CODE_READY, 0 MISSING_IMPLEMENTATION**.
+- Runtime suite: **600 compiled, 0 failed**; Solo / MA-ID / MA-SD plans compiled.
+- Both compilers report that no Guest or model was started.

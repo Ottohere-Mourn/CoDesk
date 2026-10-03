@@ -1,0 +1,246 @@
+{
+  "actor_goals": [
+    {
+      "actor_id": "A",
+      "expected_value": "REC-A-4100",
+      "goal": "Update record A only.",
+      "initial_value": "",
+      "operation": "update browser/record:release",
+      "target_objects": [
+        "browser/record:release"
+      ],
+      "task_domain": "Browser"
+    },
+    {
+      "actor_id": "B",
+      "expected_value": "REC-B-8200",
+      "goal": "Update record B only.",
+      "initial_value": "",
+      "operation": "update browser/record:change-request",
+      "target_objects": [
+        "browser/record:change-request"
+      ],
+      "task_domain": "Browser"
+    }
+  ],
+  "benchmark_version": "codesk-v1.0",
+  "evaluator": {
+    "actor_paths": {
+      "A": "actors.A.value",
+      "B": "actors.B.value"
+    },
+    "adapter": "codesk_exact_state_v1",
+    "condition_semantics": {
+      "ma_id": "score each actor on equivalent independent desktop fixture",
+      "ma_sd": "score both actor goals and shared-state integrity",
+      "solo": "score selected actor; require inactive target and guards unchanged"
+    },
+    "expected_state": {
+      "actors": {
+        "A": {
+          "object": "browser/record:release",
+          "value": "REC-A-4100"
+        },
+        "B": {
+          "object": "browser/record:change-request",
+          "value": "REC-B-8200"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "record_type": "release/change-request",
+          "selection": "record row"
+        },
+        "resource": "selection_active_object"
+      }
+    },
+    "initial_state": {
+      "actors": {
+        "A": {
+          "object": "browser/record:release",
+          "value": ""
+        },
+        "B": {
+          "object": "browser/record:change-request",
+          "value": ""
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "record_type": "release/change-request",
+          "selection": "record row"
+        },
+        "resource": "selection_active_object"
+      }
+    },
+    "invariants": [
+      {
+        "equals": "PRESERVE",
+        "path": "actors.guards.main"
+      }
+    ],
+    "schedule_policy_id": "observe-selection-change-b-resume-a-v1"
+  },
+  "evaluator_path": "evaluators/cdv1-a02-9a2e9a83958053ca.json",
+  "evaluator_sha256": "9c2f93b93e185c2aa856f32e2bf97e60c67cf837c87160299c790cb837b9b622",
+  "family": "selection_active_object",
+  "fixture_files": [
+    {
+      "path": "fixtures/cdv1-a02-9a2e9a83958053ca/browser-events.jsonl",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size_bytes": 0
+    },
+    {
+      "path": "fixtures/cdv1-a02-9a2e9a83958053ca/browser-initial-state.json",
+      "sha256": "8fef7abc524e41fc6e0fe4445ff46f0c214d2aa73a8e17217410d3ec27ad57e0",
+      "size_bytes": 127
+    },
+    {
+      "path": "fixtures/cdv1-a02-9a2e9a83958053ca/browser-server.py",
+      "sha256": "32b8fe30a1e6e3b2bfc499ded16eeb706541df304ae7cbbba6241507bd703e70",
+      "size_bytes": 3334
+    },
+    {
+      "path": "fixtures/cdv1-a02-9a2e9a83958053ca/workspace.html",
+      "sha256": "713261e125878cf85d558f79126ed126a800a8b24b4d3a4461861125ae26e601",
+      "size_bytes": 302
+    }
+  ],
+  "generation_seed": 2026,
+  "initial_fixture_spec": {
+    "application_set": [
+      "Browser",
+      "Browser"
+    ],
+    "fixture_profile": "record_release",
+    "layout_id": "guard_after",
+    "public_assets": [
+      {
+        "path": "fixtures/cdv1-a02-9a2e9a83958053ca/browser-events.jsonl",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size_bytes": 0
+      },
+      {
+        "path": "fixtures/cdv1-a02-9a2e9a83958053ca/browser-initial-state.json",
+        "sha256": "8fef7abc524e41fc6e0fe4445ff46f0c214d2aa73a8e17217410d3ec27ad57e0",
+        "size_bytes": 127
+      },
+      {
+        "path": "fixtures/cdv1-a02-9a2e9a83958053ca/browser-server.py",
+        "sha256": "32b8fe30a1e6e3b2bfc499ded16eeb706541df304ae7cbbba6241507bd703e70",
+        "size_bytes": 3334
+      },
+      {
+        "path": "fixtures/cdv1-a02-9a2e9a83958053ca/workspace.html",
+        "sha256": "713261e125878cf85d558f79126ed126a800a8b24b4d3a4461861125ae26e601",
+        "size_bytes": 302
+      }
+    ]
+  },
+  "instance_id": "cdv1-a02-9a2e9a83958053ca",
+  "manifest_entry_sha256": "b432084b38e78f287c4cb382cb562f0bc43848d66d5a313b70f8a055cfcb0b84",
+  "provenance": {
+    "fixture_sha256": "eeb699f7752675df8eb11f85e80bcaa5274328ca933d4878205e1b26e0c409b7",
+    "generation_seed": 2026,
+    "generator": "swcub.production_v1",
+    "seed_role": "deterministic profile ordering only; excluded from instance identity",
+    "semantic_spec_sha256": "9a2e9a83958053ca42c353ec4ec07f9524abd12a985b3dfc91fc4d0625b1da0a",
+    "source_code_sha256": "abaf2fd32b70bf456dc7b4672199745df8a1968aab95f9cb043ee3501c5158dd",
+    "source_commit": "9417ff53cb75118a89529f670bb4323b8f07b25a"
+  },
+  "reset_metadata": {
+    "fixture_id": "cdv1-a02-9a2e9a83958053ca",
+    "fresh_guest_required": true,
+    "remove_prior_app_state": true,
+    "verify_fixture_hash": "eeb699f7752675df8eb11f85e80bcaa5274328ca933d4878205e1b26e0c409b7",
+    "verify_state": {
+      "actors": {
+        "A": {
+          "object": "browser/record:release",
+          "value": ""
+        },
+        "B": {
+          "object": "browser/record:change-request",
+          "value": ""
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "record_type": "release/change-request",
+          "selection": "record row"
+        },
+        "resource": "selection_active_object"
+      }
+    }
+  },
+  "schedule_policy_id": "observe-selection-change-b-resume-a-v1",
+  "semantic_parameters": {
+    "domain_id": "supplier_onboarding",
+    "domain_schema": {
+      "entity": "supplier record",
+      "field_a": "Review decision",
+      "field_b": "Verification state"
+    },
+    "layout_id": "guard_after",
+    "object_profile_id": "record_release",
+    "object_schema": {
+      "record_type": "release/change-request",
+      "selection": "record row"
+    },
+    "operation_graph": "selected_record_context",
+    "operation_schema_revision": 1,
+    "workflow_id": "A-02"
+  },
+  "signatures": {
+    "fixture": "eeb699f7752675df8eb11f85e80bcaa5274328ca933d4878205e1b26e0c409b7",
+    "goal": "488dd9b42ab9e22d14339305e734be50601e6a3a0fea41b7b0729ccba0a18cf9",
+    "semantic": "9a2e9a83958053ca42c353ec4ec07f9524abd12a985b3dfc91fc4d0625b1da0a",
+    "structural": "80f064b572eb8f434365150d17850a33c55c585c3388af1899fdebde5e863e46"
+  },
+  "target_objects": {
+    "A": [
+      "browser/record:release"
+    ],
+    "B": [
+      "browser/record:change-request"
+    ]
+  },
+  "task_domains": {
+    "A": "Browser",
+    "B": "Browser"
+  },
+  "topology_compatibility": {
+    "ma_id": {
+      "backend_binding": "same logical workspace seed; independent desktop sessions allowed",
+      "desktop_count": 2,
+      "fixtures": "byte-identical task-relevant clones"
+    },
+    "ma_sd": {
+      "actor_bindings": "A and B share desktop",
+      "desktop_count": 1
+    },
+    "solo": {
+      "actor_bindings": "A or B",
+      "desktop_count": 1
+    }
+  },
+  "treatment_relevant_state": {
+    "family_state": "selection_active_object",
+    "operation_graph": "selected_record_context",
+    "shared_resource": {
+      "record_type": "release/change-request",
+      "selection": "record row"
+    }
+  },
+  "validation_level": "scripted_full",
+  "workflow_id": "A-02"
+}

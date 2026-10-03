@@ -1,0 +1,246 @@
+{
+  "actor_goals": [
+    {
+      "actor_id": "A",
+      "expected_value": "REC-A-4100",
+      "goal": "Update record A only.",
+      "initial_value": "",
+      "operation": "update browser/record:supplier",
+      "target_objects": [
+        "browser/record:supplier"
+      ],
+      "task_domain": "Browser"
+    },
+    {
+      "actor_id": "B",
+      "expected_value": "REC-B-8200",
+      "goal": "Update record B only.",
+      "initial_value": "",
+      "operation": "update browser/record:invoice",
+      "target_objects": [
+        "browser/record:invoice"
+      ],
+      "task_domain": "Browser"
+    }
+  ],
+  "benchmark_version": "codesk-v1.0",
+  "evaluator": {
+    "actor_paths": {
+      "A": "actors.A.value",
+      "B": "actors.B.value"
+    },
+    "adapter": "codesk_exact_state_v1",
+    "condition_semantics": {
+      "ma_id": "score each actor on equivalent independent desktop fixture",
+      "ma_sd": "score both actor goals and shared-state integrity",
+      "solo": "score selected actor; require inactive target and guards unchanged"
+    },
+    "expected_state": {
+      "actors": {
+        "A": {
+          "object": "browser/record:supplier",
+          "value": "REC-A-4100"
+        },
+        "B": {
+          "object": "browser/record:invoice",
+          "value": "REC-B-8200"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "record_type": "supplier/invoice",
+          "selection": "record row"
+        },
+        "resource": "selection_active_object"
+      }
+    },
+    "initial_state": {
+      "actors": {
+        "A": {
+          "object": "browser/record:supplier",
+          "value": ""
+        },
+        "B": {
+          "object": "browser/record:invoice",
+          "value": ""
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "record_type": "supplier/invoice",
+          "selection": "record row"
+        },
+        "resource": "selection_active_object"
+      }
+    },
+    "invariants": [
+      {
+        "equals": "PRESERVE",
+        "path": "actors.guards.main"
+      }
+    ],
+    "schedule_policy_id": "observe-selection-change-b-resume-a-v1"
+  },
+  "evaluator_path": "evaluators/cdv1-a02-9eb4767033417074.json",
+  "evaluator_sha256": "483cae52fcdc35aeb5457fcb7cc07c7235b2d55e2e69ba319349822a218205bd",
+  "family": "selection_active_object",
+  "fixture_files": [
+    {
+      "path": "fixtures/cdv1-a02-9eb4767033417074/browser-events.jsonl",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size_bytes": 0
+    },
+    {
+      "path": "fixtures/cdv1-a02-9eb4767033417074/browser-initial-state.json",
+      "sha256": "8fef7abc524e41fc6e0fe4445ff46f0c214d2aa73a8e17217410d3ec27ad57e0",
+      "size_bytes": 127
+    },
+    {
+      "path": "fixtures/cdv1-a02-9eb4767033417074/browser-server.py",
+      "sha256": "464f303f06bb9c197fd31f5b0cec983a9a7dcf84cc42f78bb824c1b8a6f27a43",
+      "size_bytes": 3334
+    },
+    {
+      "path": "fixtures/cdv1-a02-9eb4767033417074/workspace.html",
+      "sha256": "5ccea47d0c2dcc3f175808e94950a12c0a8fa1f3b87f65891dfa28b9498e859e",
+      "size_bytes": 300
+    }
+  ],
+  "generation_seed": 2026,
+  "initial_fixture_spec": {
+    "application_set": [
+      "Browser",
+      "Browser"
+    ],
+    "fixture_profile": "record_supplier",
+    "layout_id": "guard_before",
+    "public_assets": [
+      {
+        "path": "fixtures/cdv1-a02-9eb4767033417074/browser-events.jsonl",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size_bytes": 0
+      },
+      {
+        "path": "fixtures/cdv1-a02-9eb4767033417074/browser-initial-state.json",
+        "sha256": "8fef7abc524e41fc6e0fe4445ff46f0c214d2aa73a8e17217410d3ec27ad57e0",
+        "size_bytes": 127
+      },
+      {
+        "path": "fixtures/cdv1-a02-9eb4767033417074/browser-server.py",
+        "sha256": "464f303f06bb9c197fd31f5b0cec983a9a7dcf84cc42f78bb824c1b8a6f27a43",
+        "size_bytes": 3334
+      },
+      {
+        "path": "fixtures/cdv1-a02-9eb4767033417074/workspace.html",
+        "sha256": "5ccea47d0c2dcc3f175808e94950a12c0a8fa1f3b87f65891dfa28b9498e859e",
+        "size_bytes": 300
+      }
+    ]
+  },
+  "instance_id": "cdv1-a02-9eb4767033417074",
+  "manifest_entry_sha256": "c355515262be6f76ac93d1fc2b0fa1f051e840ca67c288fdaa3f74e996527d7b",
+  "provenance": {
+    "fixture_sha256": "9270d96c9a4e8de70787cad312f58a78877e9d3f7d9c749d1208f0f170139e72",
+    "generation_seed": 2026,
+    "generator": "swcub.production_v1",
+    "seed_role": "deterministic profile ordering only; excluded from instance identity",
+    "semantic_spec_sha256": "9eb47670334170742d21bf2e6a3b00ec4b81cc8cad761a344a0c5504339ea3ff",
+    "source_code_sha256": "abaf2fd32b70bf456dc7b4672199745df8a1968aab95f9cb043ee3501c5158dd",
+    "source_commit": "9417ff53cb75118a89529f670bb4323b8f07b25a"
+  },
+  "reset_metadata": {
+    "fixture_id": "cdv1-a02-9eb4767033417074",
+    "fresh_guest_required": true,
+    "remove_prior_app_state": true,
+    "verify_fixture_hash": "9270d96c9a4e8de70787cad312f58a78877e9d3f7d9c749d1208f0f170139e72",
+    "verify_state": {
+      "actors": {
+        "A": {
+          "object": "browser/record:supplier",
+          "value": ""
+        },
+        "B": {
+          "object": "browser/record:invoice",
+          "value": ""
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "record_type": "supplier/invoice",
+          "selection": "record row"
+        },
+        "resource": "selection_active_object"
+      }
+    }
+  },
+  "schedule_policy_id": "observe-selection-change-b-resume-a-v1",
+  "semantic_parameters": {
+    "domain_id": "capital_allocation",
+    "domain_schema": {
+      "entity": "capital request",
+      "field_a": "Decision",
+      "field_b": "Ledger state"
+    },
+    "layout_id": "guard_before",
+    "object_profile_id": "record_supplier",
+    "object_schema": {
+      "record_type": "supplier/invoice",
+      "selection": "record row"
+    },
+    "operation_graph": "selected_record_context",
+    "operation_schema_revision": 1,
+    "workflow_id": "A-02"
+  },
+  "signatures": {
+    "fixture": "9270d96c9a4e8de70787cad312f58a78877e9d3f7d9c749d1208f0f170139e72",
+    "goal": "227cbbce0564742ef74badcee125114bfb71c4b3d99c640f8ddd741002b4115b",
+    "semantic": "9eb47670334170742d21bf2e6a3b00ec4b81cc8cad761a344a0c5504339ea3ff",
+    "structural": "94aa899b3bcdc9032344dd1b69e5e4b742f8afe21e335ffa3edb5718801262e5"
+  },
+  "target_objects": {
+    "A": [
+      "browser/record:supplier"
+    ],
+    "B": [
+      "browser/record:invoice"
+    ]
+  },
+  "task_domains": {
+    "A": "Browser",
+    "B": "Browser"
+  },
+  "topology_compatibility": {
+    "ma_id": {
+      "backend_binding": "same logical workspace seed; independent desktop sessions allowed",
+      "desktop_count": 2,
+      "fixtures": "byte-identical task-relevant clones"
+    },
+    "ma_sd": {
+      "actor_bindings": "A and B share desktop",
+      "desktop_count": 1
+    },
+    "solo": {
+      "actor_bindings": "A or B",
+      "desktop_count": 1
+    }
+  },
+  "treatment_relevant_state": {
+    "family_state": "selection_active_object",
+    "operation_graph": "selected_record_context",
+    "shared_resource": {
+      "record_type": "supplier/invoice",
+      "selection": "record row"
+    }
+  },
+  "validation_level": "scripted_full",
+  "workflow_id": "A-02"
+}

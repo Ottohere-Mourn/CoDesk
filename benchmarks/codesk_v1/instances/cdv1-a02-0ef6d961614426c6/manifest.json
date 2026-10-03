@@ -1,0 +1,246 @@
+{
+  "actor_goals": [
+    {
+      "actor_id": "A",
+      "expected_value": "REC-A-4100",
+      "goal": "Update record A only.",
+      "initial_value": "",
+      "operation": "update browser/record:allocation",
+      "target_objects": [
+        "browser/record:allocation"
+      ],
+      "task_domain": "Browser"
+    },
+    {
+      "actor_id": "B",
+      "expected_value": "REC-B-8200",
+      "goal": "Update record B only.",
+      "initial_value": "",
+      "operation": "update browser/record:reimbursement",
+      "target_objects": [
+        "browser/record:reimbursement"
+      ],
+      "task_domain": "Browser"
+    }
+  ],
+  "benchmark_version": "codesk-v1.0",
+  "evaluator": {
+    "actor_paths": {
+      "A": "actors.A.value",
+      "B": "actors.B.value"
+    },
+    "adapter": "codesk_exact_state_v1",
+    "condition_semantics": {
+      "ma_id": "score each actor on equivalent independent desktop fixture",
+      "ma_sd": "score both actor goals and shared-state integrity",
+      "solo": "score selected actor; require inactive target and guards unchanged"
+    },
+    "expected_state": {
+      "actors": {
+        "A": {
+          "object": "browser/record:allocation",
+          "value": "REC-A-4100"
+        },
+        "B": {
+          "object": "browser/record:reimbursement",
+          "value": "REC-B-8200"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "record_type": "allocation/reimbursement",
+          "selection": "record row"
+        },
+        "resource": "selection_active_object"
+      }
+    },
+    "initial_state": {
+      "actors": {
+        "A": {
+          "object": "browser/record:allocation",
+          "value": ""
+        },
+        "B": {
+          "object": "browser/record:reimbursement",
+          "value": ""
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "record_type": "allocation/reimbursement",
+          "selection": "record row"
+        },
+        "resource": "selection_active_object"
+      }
+    },
+    "invariants": [
+      {
+        "equals": "PRESERVE",
+        "path": "actors.guards.main"
+      }
+    ],
+    "schedule_policy_id": "observe-selection-change-b-resume-a-v1"
+  },
+  "evaluator_path": "evaluators/cdv1-a02-0ef6d961614426c6.json",
+  "evaluator_sha256": "be8742709a538e3d98cc837a6776ea08aa73bbed01d7b957ab016d299f16edb4",
+  "family": "selection_active_object",
+  "fixture_files": [
+    {
+      "path": "fixtures/cdv1-a02-0ef6d961614426c6/browser-events.jsonl",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size_bytes": 0
+    },
+    {
+      "path": "fixtures/cdv1-a02-0ef6d961614426c6/browser-initial-state.json",
+      "sha256": "8fef7abc524e41fc6e0fe4445ff46f0c214d2aa73a8e17217410d3ec27ad57e0",
+      "size_bytes": 127
+    },
+    {
+      "path": "fixtures/cdv1-a02-0ef6d961614426c6/browser-server.py",
+      "sha256": "0229eab2376aaf625ae912c296a43b0c2e2205e61f99275cfe940d0685453de7",
+      "size_bytes": 3334
+    },
+    {
+      "path": "fixtures/cdv1-a02-0ef6d961614426c6/workspace.html",
+      "sha256": "204972efa076b118cdc251fbb7207ae1bf6712cef76a784d5e63e983b32e9273",
+      "size_bytes": 298
+    }
+  ],
+  "generation_seed": 2026,
+  "initial_fixture_spec": {
+    "application_set": [
+      "Browser",
+      "Browser"
+    ],
+    "fixture_profile": "record_budget",
+    "layout_id": "guard_before",
+    "public_assets": [
+      {
+        "path": "fixtures/cdv1-a02-0ef6d961614426c6/browser-events.jsonl",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size_bytes": 0
+      },
+      {
+        "path": "fixtures/cdv1-a02-0ef6d961614426c6/browser-initial-state.json",
+        "sha256": "8fef7abc524e41fc6e0fe4445ff46f0c214d2aa73a8e17217410d3ec27ad57e0",
+        "size_bytes": 127
+      },
+      {
+        "path": "fixtures/cdv1-a02-0ef6d961614426c6/browser-server.py",
+        "sha256": "0229eab2376aaf625ae912c296a43b0c2e2205e61f99275cfe940d0685453de7",
+        "size_bytes": 3334
+      },
+      {
+        "path": "fixtures/cdv1-a02-0ef6d961614426c6/workspace.html",
+        "sha256": "204972efa076b118cdc251fbb7207ae1bf6712cef76a784d5e63e983b32e9273",
+        "size_bytes": 298
+      }
+    ]
+  },
+  "instance_id": "cdv1-a02-0ef6d961614426c6",
+  "manifest_entry_sha256": "214b47abe4e5bc40ec29fbff1c7ce7b9c1378b398fd5fd39ed513d5c182c5c19",
+  "provenance": {
+    "fixture_sha256": "14579ea93bd315008cade5fc8151eaece970d8b7cc84074bd4cef8cbef32c6e1",
+    "generation_seed": 2026,
+    "generator": "swcub.production_v1",
+    "seed_role": "deterministic profile ordering only; excluded from instance identity",
+    "semantic_spec_sha256": "0ef6d961614426c67336dda8cada058259153799988879b2aa386facb8862dc2",
+    "source_code_sha256": "abaf2fd32b70bf456dc7b4672199745df8a1968aab95f9cb043ee3501c5158dd",
+    "source_commit": "9417ff53cb75118a89529f670bb4323b8f07b25a"
+  },
+  "reset_metadata": {
+    "fixture_id": "cdv1-a02-0ef6d961614426c6",
+    "fresh_guest_required": true,
+    "remove_prior_app_state": true,
+    "verify_fixture_hash": "14579ea93bd315008cade5fc8151eaece970d8b7cc84074bd4cef8cbef32c6e1",
+    "verify_state": {
+      "actors": {
+        "A": {
+          "object": "browser/record:allocation",
+          "value": ""
+        },
+        "B": {
+          "object": "browser/record:reimbursement",
+          "value": ""
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "record_type": "allocation/reimbursement",
+          "selection": "record row"
+        },
+        "resource": "selection_active_object"
+      }
+    }
+  },
+  "schedule_policy_id": "observe-selection-change-b-resume-a-v1",
+  "semantic_parameters": {
+    "domain_id": "warehouse_reconciliation",
+    "domain_schema": {
+      "entity": "warehouse lot",
+      "field_a": "Reconciliation",
+      "field_b": "Count status"
+    },
+    "layout_id": "guard_before",
+    "object_profile_id": "record_budget",
+    "object_schema": {
+      "record_type": "allocation/reimbursement",
+      "selection": "record row"
+    },
+    "operation_graph": "selected_record_context",
+    "operation_schema_revision": 1,
+    "workflow_id": "A-02"
+  },
+  "signatures": {
+    "fixture": "14579ea93bd315008cade5fc8151eaece970d8b7cc84074bd4cef8cbef32c6e1",
+    "goal": "7fe273bdbf79ba3b53b74a071ca50095b3eb720d93d77e4df82ed5e192fb0774",
+    "semantic": "0ef6d961614426c67336dda8cada058259153799988879b2aa386facb8862dc2",
+    "structural": "d089f26a0a18c4c5be428b0d76cf286fe41269b7fe9fb114b2e2386fcea5f832"
+  },
+  "target_objects": {
+    "A": [
+      "browser/record:allocation"
+    ],
+    "B": [
+      "browser/record:reimbursement"
+    ]
+  },
+  "task_domains": {
+    "A": "Browser",
+    "B": "Browser"
+  },
+  "topology_compatibility": {
+    "ma_id": {
+      "backend_binding": "same logical workspace seed; independent desktop sessions allowed",
+      "desktop_count": 2,
+      "fixtures": "byte-identical task-relevant clones"
+    },
+    "ma_sd": {
+      "actor_bindings": "A and B share desktop",
+      "desktop_count": 1
+    },
+    "solo": {
+      "actor_bindings": "A or B",
+      "desktop_count": 1
+    }
+  },
+  "treatment_relevant_state": {
+    "family_state": "selection_active_object",
+    "operation_graph": "selected_record_context",
+    "shared_resource": {
+      "record_type": "allocation/reimbursement",
+      "selection": "record row"
+    }
+  },
+  "validation_level": "scripted_full",
+  "workflow_id": "A-02"
+}

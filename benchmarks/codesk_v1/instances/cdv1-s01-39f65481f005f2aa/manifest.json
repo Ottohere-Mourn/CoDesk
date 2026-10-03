@@ -1,0 +1,216 @@
+{
+  "actor_goals": [
+    {
+      "actor_id": "A",
+      "expected_value": "A-7316",
+      "goal": "Set the selected cell A target.",
+      "initial_value": "cell seed A",
+      "operation": "set value calc/B3",
+      "target_objects": [
+        "calc/B3"
+      ],
+      "task_domain": "Calc"
+    },
+    {
+      "actor_id": "B",
+      "expected_value": "B-7316",
+      "goal": "Set the selected cell B target.",
+      "initial_value": "cell seed B",
+      "operation": "set value calc/D2",
+      "target_objects": [
+        "calc/D2"
+      ],
+      "task_domain": "Calc"
+    }
+  ],
+  "benchmark_version": "codesk-v1.0",
+  "evaluator": {
+    "actor_paths": {
+      "A": "actors.A.value",
+      "B": "actors.B.value"
+    },
+    "adapter": "codesk_exact_state_v1",
+    "condition_semantics": {
+      "ma_id": "score each actor on equivalent independent desktop fixture",
+      "ma_sd": "score both actor goals and shared-state integrity",
+      "solo": "score selected actor; require inactive target and guards unchanged"
+    },
+    "expected_state": {
+      "actors": {
+        "A": {
+          "object": "calc/B3",
+          "value": "A-7316"
+        },
+        "B": {
+          "object": "calc/D2",
+          "value": "B-7316"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "action": "set value",
+          "object_type": "cell"
+        },
+        "resource": "selection_active_object"
+      }
+    },
+    "initial_state": {
+      "actors": {
+        "A": {
+          "object": "calc/B3",
+          "value": "cell seed A"
+        },
+        "B": {
+          "object": "calc/D2",
+          "value": "cell seed B"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "action": "set value",
+          "object_type": "cell"
+        },
+        "resource": "selection_active_object"
+      }
+    },
+    "invariants": [
+      {
+        "equals": "PRESERVE",
+        "path": "actors.guards.main"
+      }
+    ],
+    "schedule_policy_id": "select-a-select-b-resume-a-v1"
+  },
+  "evaluator_path": "evaluators/cdv1-s01-39f65481f005f2aa.json",
+  "evaluator_sha256": "ec3209ebee98ba2e8fa9f9e516b43bd57883aee2299a1cc7f101effe2b6e0afd",
+  "family": "selection_active_object",
+  "fixture_files": [
+    {
+      "path": "fixtures/cdv1-s01-39f65481f005f2aa/workbook.fods",
+      "sha256": "ba0b1b12db0db55b4aa995c896720abc81b7f9fa33709d84e315c374d42d19f7",
+      "size_bytes": 1659
+    }
+  ],
+  "generation_seed": 2026,
+  "initial_fixture_spec": {
+    "application_set": [
+      "Calc",
+      "Calc"
+    ],
+    "fixture_profile": "cells_b3_d2",
+    "layout_id": "guard_before",
+    "public_assets": [
+      {
+        "path": "fixtures/cdv1-s01-39f65481f005f2aa/workbook.fods",
+        "sha256": "ba0b1b12db0db55b4aa995c896720abc81b7f9fa33709d84e315c374d42d19f7",
+        "size_bytes": 1659
+      }
+    ]
+  },
+  "instance_id": "cdv1-s01-39f65481f005f2aa",
+  "manifest_entry_sha256": "6aae128c226ead8f4ea6a8749da80509134be11b1922ec0433f6c602bbc1db72",
+  "provenance": {
+    "fixture_sha256": "dc697bc5652b1b969d5c5510ae6ff27693126da3c9c3602cf4ab078b0b00d930",
+    "generation_seed": 2026,
+    "generator": "swcub.production_v1",
+    "seed_role": "deterministic profile ordering only; excluded from instance identity",
+    "semantic_spec_sha256": "39f65481f005f2aa25d59df283b5937f462e6f3d07bdd1f67ea20fec74f383a7",
+    "source_code_sha256": "abaf2fd32b70bf456dc7b4672199745df8a1968aab95f9cb043ee3501c5158dd",
+    "source_commit": "9417ff53cb75118a89529f670bb4323b8f07b25a"
+  },
+  "reset_metadata": {
+    "fixture_id": "cdv1-s01-39f65481f005f2aa",
+    "fresh_guest_required": true,
+    "remove_prior_app_state": true,
+    "verify_fixture_hash": "dc697bc5652b1b969d5c5510ae6ff27693126da3c9c3602cf4ab078b0b00d930",
+    "verify_state": {
+      "actors": {
+        "A": {
+          "object": "calc/B3",
+          "value": "cell seed A"
+        },
+        "B": {
+          "object": "calc/D2",
+          "value": "cell seed B"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "action": "set value",
+          "object_type": "cell"
+        },
+        "resource": "selection_active_object"
+      }
+    }
+  },
+  "schedule_policy_id": "select-a-select-b-resume-a-v1",
+  "semantic_parameters": {
+    "domain_id": "warehouse_reconciliation",
+    "domain_schema": {
+      "entity": "warehouse lot",
+      "field_a": "Reconciliation",
+      "field_b": "Count status"
+    },
+    "layout_id": "guard_before",
+    "object_profile_id": "cells_b3_d2",
+    "object_schema": {
+      "action": "set value",
+      "object_type": "cell"
+    },
+    "operation_graph": "active_cell_selection",
+    "operation_schema_revision": 1,
+    "workflow_id": "S-01"
+  },
+  "signatures": {
+    "fixture": "dc697bc5652b1b969d5c5510ae6ff27693126da3c9c3602cf4ab078b0b00d930",
+    "goal": "e713cf9b2a20ea5cbb1f80bb21ac205dfafa7cc7ce3313ab856d73321dd46a54",
+    "semantic": "39f65481f005f2aa25d59df283b5937f462e6f3d07bdd1f67ea20fec74f383a7",
+    "structural": "1d588c3e07eda47742d017a9dbf6b142cc8e312d7e9bdaecd7e12ef202c3a964"
+  },
+  "target_objects": {
+    "A": [
+      "calc/B3"
+    ],
+    "B": [
+      "calc/D2"
+    ]
+  },
+  "task_domains": {
+    "A": "Calc",
+    "B": "Calc"
+  },
+  "topology_compatibility": {
+    "ma_id": {
+      "backend_binding": "same logical workspace seed; independent desktop sessions allowed",
+      "desktop_count": 2,
+      "fixtures": "byte-identical task-relevant clones"
+    },
+    "ma_sd": {
+      "actor_bindings": "A and B share desktop",
+      "desktop_count": 1
+    },
+    "solo": {
+      "actor_bindings": "A or B",
+      "desktop_count": 1
+    }
+  },
+  "treatment_relevant_state": {
+    "family_state": "selection_active_object",
+    "operation_graph": "active_cell_selection",
+    "shared_resource": {
+      "action": "set value",
+      "object_type": "cell"
+    }
+  },
+  "validation_level": "qwen_smoke",
+  "workflow_id": "S-01"
+}

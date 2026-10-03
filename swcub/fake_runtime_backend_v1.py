@@ -82,14 +82,23 @@ class FakeGuestBackend:
         guest.cleaned=True; self.events.append({"event":"cleaned","slot":guest.slot}); return {"ownership_verified":True,"fake":True}
 
 class FakeActor:
-    def __init__(self,spec,callback): self.spec=spec; self.callback=callback; self.terminated=False; self.paused=False; self.done=False
-    def reset(self): self.terminated=False; self.paused=False; self.done=False
+    def __init__(self,spec,callback):
+        self.spec=spec;self.callback=callback;self.terminated=False;self.paused=False;self.done=False;self.phase=0
+        self.history_workflow=(spec.actor_id=="A" and "temporary" in spec.operation.lower() and "undo" in spec.operation.lower())
+    def reset(self): self.terminated=False;self.paused=False;self.done=False;self.phase=0
     def pause(self): self.paused=True
     def resume(self): self.paused=False
     def run_step(self,context):
-        if self.done: self.terminated=True; return True
-        context.execute_gui_action(self.spec.expected_value); self.callback("FAKE_ACTION_COMPLETE")
-        self.done=True; self.terminated=True; return True
+        if self.history_workflow and self.phase==0:
+            context.execute_gui_action(self.spec.expected_value);self.callback(f"type_text('{self.spec.expected_value}')")
+            self.phase=1;return False
+        if self.history_workflow and self.phase==1:
+            context.execute_gui_action("Undo ctrl+z")
+            context.guest.state["actors"][self.spec.actor_id]["value"]=self.spec.initial_value
+            self.callback("hotkey('ctrl','z')");self.phase=2;self.done=True;self.terminated=True;return True
+        if self.done:self.terminated=True;return True
+        context.execute_gui_action(self.spec.expected_value);self.callback(f"type_text('{self.spec.expected_value}')")
+        self.done=True;self.terminated=True;return True
 
 def fake_actor_factory(spec,artifact_dir,action_boundary):
     artifact_dir.mkdir(parents=True,exist_ok=True); return FakeActor(spec,action_boundary)

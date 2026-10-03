@@ -1,0 +1,256 @@
+{
+  "actor_goals": [
+    {
+      "actor_id": "A",
+      "expected_value": "[[\"Cleared-11\",\"Cleared-12\"],[\"Cleared-21\",\"Cleared-22\"]]",
+      "goal": "Copy Calc source range A1:B2 into A4:B5 and save; preserve the source and guards.",
+      "initial_value": "__EMPTY_RANGE__",
+      "operation": "copy Calc source range A1:B2 and paste into the assigned destination range",
+      "target_objects": [
+        "calc/A4:B5"
+      ],
+      "task_domain": "Calc"
+    },
+    {
+      "actor_id": "B",
+      "expected_value": "NOTE-1193",
+      "goal": "Copy Writer paragraph 1 into the blank Writer paragraph 2 and save.",
+      "initial_value": "",
+      "operation": "copy Writer paragraph 1 and paste into blank paragraph 2",
+      "target_objects": [
+        "writer/paragraph[1]"
+      ],
+      "task_domain": "Writer"
+    }
+  ],
+  "benchmark_version": "codesk-v1.0",
+  "evaluator": {
+    "actor_paths": {
+      "A": "actors.A.value",
+      "B": "actors.B.value"
+    },
+    "adapter": "codesk_exact_state_v1",
+    "condition_semantics": {
+      "ma_id": "score each actor on equivalent independent desktop fixture",
+      "ma_sd": "score both actor goals and shared-state integrity",
+      "solo": "score selected actor; require inactive target and guards unchanged"
+    },
+    "expected_state": {
+      "actors": {
+        "A": {
+          "object": "calc/A4:B5",
+          "value": "[[\"Cleared-11\",\"Cleared-12\"],[\"Cleared-21\",\"Cleared-22\"]]"
+        },
+        "B": {
+          "object": "writer/paragraph[1]",
+          "value": "NOTE-1193"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "destination_range": "A4:B5",
+          "paste_target": "calc_range",
+          "shape": [
+            2,
+            2
+          ],
+          "source_range": "A1:B2",
+          "writer_target": "paragraph[1]"
+        },
+        "resource": "clipboard_state"
+      }
+    },
+    "initial_state": {
+      "actors": {
+        "A": {
+          "object": "calc/A4:B5",
+          "value": "__EMPTY_RANGE__"
+        },
+        "B": {
+          "object": "writer/paragraph[1]",
+          "value": ""
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "destination_range": "A4:B5",
+          "paste_target": "calc_range",
+          "shape": [
+            2,
+            2
+          ],
+          "source_range": "A1:B2",
+          "writer_target": "paragraph[1]"
+        },
+        "resource": "clipboard_state"
+      }
+    },
+    "invariants": [
+      {
+        "equals": "PRESERVE",
+        "path": "actors.guards.main"
+      }
+    ],
+    "schedule_policy_id": "range-copy-confirm-paragraph-copy-confirm-resume-v1"
+  },
+  "evaluator_path": "evaluators/cdv1-c03-db3ea6e33c0ad9b2.json",
+  "evaluator_sha256": "b82d6bbbe05a1592ba6382eda7ff42dfe14ae3c3bd7dd0a65b7c3f1de612971c",
+  "family": "clipboard_state",
+  "fixture_files": [
+    {
+      "path": "fixtures/cdv1-c03-db3ea6e33c0ad9b2/document.fodt",
+      "sha256": "f274118fc10c516c2f60c85047e5c86fa854c2acf47aebd4fa7f84ecd5c4bedc",
+      "size_bytes": 390
+    },
+    {
+      "path": "fixtures/cdv1-c03-db3ea6e33c0ad9b2/workbook.fods",
+      "sha256": "689d38762e5f43e32c5f0f7e73ed8d26fa86cd6df6c501100b4db25240b4b3a5",
+      "size_bytes": 1422
+    }
+  ],
+  "generation_seed": 2026,
+  "initial_fixture_spec": {
+    "application_set": [
+      "Calc",
+      "Writer"
+    ],
+    "fixture_profile": "matrix_2x2",
+    "layout_id": "guard_before",
+    "public_assets": [
+      {
+        "path": "fixtures/cdv1-c03-db3ea6e33c0ad9b2/document.fodt",
+        "sha256": "f274118fc10c516c2f60c85047e5c86fa854c2acf47aebd4fa7f84ecd5c4bedc",
+        "size_bytes": 390
+      },
+      {
+        "path": "fixtures/cdv1-c03-db3ea6e33c0ad9b2/workbook.fods",
+        "sha256": "689d38762e5f43e32c5f0f7e73ed8d26fa86cd6df6c501100b4db25240b4b3a5",
+        "size_bytes": 1422
+      }
+    ]
+  },
+  "instance_id": "cdv1-c03-db3ea6e33c0ad9b2",
+  "manifest_entry_sha256": "b18b20f28e7f66c9edb07d88e7117ec15aa1c01de3ad5b28eb8f93b11019fc0f",
+  "provenance": {
+    "fixture_sha256": "b6c0c15cf6a71d2f971faa6686e49c8df36698ee70bcfd2a80c7e2bfd67944d4",
+    "generation_seed": 2026,
+    "generator": "swcub.production_v1",
+    "seed_role": "deterministic profile ordering only; excluded from instance identity",
+    "semantic_spec_sha256": "db3ea6e33c0ad9b2f0821d935ea09582da1a48f13362b0310e3c6f8169fbf05e",
+    "source_code_sha256": "374ade22ae8e4f8d5375b2bab926caeb18ddb7c1aaf3124b109d398fc98d06cf",
+    "source_commit": "9417ff53cb75118a89529f670bb4323b8f07b25a"
+  },
+  "reset_metadata": {
+    "fixture_id": "cdv1-c03-db3ea6e33c0ad9b2",
+    "fresh_guest_required": true,
+    "remove_prior_app_state": true,
+    "verify_fixture_hash": "b6c0c15cf6a71d2f971faa6686e49c8df36698ee70bcfd2a80c7e2bfd67944d4",
+    "verify_state": {
+      "actors": {
+        "A": {
+          "object": "calc/A4:B5",
+          "value": "__EMPTY_RANGE__"
+        },
+        "B": {
+          "object": "writer/paragraph[1]",
+          "value": ""
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "destination_range": "A4:B5",
+          "paste_target": "calc_range",
+          "shape": [
+            2,
+            2
+          ],
+          "source_range": "A1:B2",
+          "writer_target": "paragraph[1]"
+        },
+        "resource": "clipboard_state"
+      }
+    }
+  },
+  "schedule_policy_id": "range-copy-confirm-paragraph-copy-confirm-resume-v1",
+  "semantic_parameters": {
+    "domain_id": "safety_inspection",
+    "domain_schema": {
+      "entity": "inspection item",
+      "field_a": "Clearance",
+      "field_b": "Inspection state"
+    },
+    "layout_id": "guard_before",
+    "object_profile_id": "matrix_2x2",
+    "object_schema": {
+      "destination_range": "A4:B5",
+      "paste_target": "calc_range",
+      "shape": [
+        2,
+        2
+      ],
+      "source_range": "A1:B2",
+      "writer_target": "paragraph[1]"
+    },
+    "operation_graph": "calc_range_and_writer_paragraph_copy",
+    "operation_schema_revision": 3,
+    "workflow_id": "C-03"
+  },
+  "signatures": {
+    "fixture": "b6c0c15cf6a71d2f971faa6686e49c8df36698ee70bcfd2a80c7e2bfd67944d4",
+    "goal": "09daec8def28cd06926f4bc661f49647793cc1a4c9a7282eeb39a50d0c55e44e",
+    "semantic": "db3ea6e33c0ad9b2f0821d935ea09582da1a48f13362b0310e3c6f8169fbf05e",
+    "structural": "af8cec392624f5869198091d0c806c7c76fa652c940abaacb32a610948c0d077"
+  },
+  "target_objects": {
+    "A": [
+      "calc/A4:B5"
+    ],
+    "B": [
+      "writer/paragraph[1]"
+    ]
+  },
+  "task_domains": {
+    "A": "Calc",
+    "B": "Writer"
+  },
+  "topology_compatibility": {
+    "ma_id": {
+      "backend_binding": "same logical workspace seed; independent desktop sessions allowed",
+      "desktop_count": 2,
+      "fixtures": "byte-identical task-relevant clones"
+    },
+    "ma_sd": {
+      "actor_bindings": "A and B share desktop",
+      "desktop_count": 1
+    },
+    "solo": {
+      "actor_bindings": "A or B",
+      "desktop_count": 1
+    }
+  },
+  "treatment_relevant_state": {
+    "family_state": "clipboard_state",
+    "operation_graph": "calc_range_and_writer_paragraph_copy",
+    "shared_resource": {
+      "destination_range": "A4:B5",
+      "paste_target": "calc_range",
+      "shape": [
+        2,
+        2
+      ],
+      "source_range": "A1:B2",
+      "writer_target": "paragraph[1]"
+    }
+  },
+  "validation_level": "scripted_full",
+  "workflow_id": "C-03"
+}

@@ -1,0 +1,261 @@
+{
+  "actor_goals": [
+    {
+      "actor_id": "A",
+      "expected_value": "Accepted-SUP-2048",
+      "goal": "Submit Accepted-SUP-2048 in Browser tab A (/actor-a).",
+      "initial_value": "",
+      "operation": "submit exact goal in active tab A",
+      "target_objects": [
+        "browser/tab-a/release-form"
+      ],
+      "task_domain": "Browser"
+    },
+    {
+      "actor_id": "B",
+      "expected_value": "Verified-SUP-2048",
+      "goal": "Submit Verified-SUP-2048 in Browser tab B (/actor-b).",
+      "initial_value": "",
+      "operation": "update browser/tab-b/approval-form",
+      "target_objects": [
+        "browser/tab-b/approval-form"
+      ],
+      "task_domain": "Browser"
+    }
+  ],
+  "benchmark_version": "codesk-v1.0",
+  "evaluator": {
+    "actor_paths": {
+      "A": "actors.A.value",
+      "B": "actors.B.value"
+    },
+    "adapter": "codesk_exact_state_v1",
+    "condition_semantics": {
+      "ma_id": "score each actor on equivalent independent desktop fixture",
+      "ma_sd": "score both actor goals and shared-state integrity",
+      "solo": "score selected actor; require inactive target and guards unchanged"
+    },
+    "expected_state": {
+      "actors": {
+        "A": {
+          "object": "browser/tab-a/release-form",
+          "value": "Accepted-SUP-2048"
+        },
+        "B": {
+          "object": "browser/tab-b/approval-form",
+          "value": "Verified-SUP-2048"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "context_kind": "tab-specific release records",
+          "fields": [
+            "release",
+            "approval"
+          ]
+        },
+        "resource": "application_context"
+      }
+    },
+    "initial_state": {
+      "actors": {
+        "A": {
+          "object": "browser/tab-a/release-form",
+          "value": ""
+        },
+        "B": {
+          "object": "browser/tab-b/approval-form",
+          "value": ""
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "context_kind": "tab-specific release records",
+          "fields": [
+            "release",
+            "approval"
+          ]
+        },
+        "resource": "application_context"
+      }
+    },
+    "invariants": [
+      {
+        "equals": "PRESERVE",
+        "path": "actors.guards.main"
+      }
+    ],
+    "schedule_policy_id": "observe-a-context-change-b-resume-a-v1"
+  },
+  "evaluator_path": "evaluators/cdv1-a01-04e1041b26bf7500.json",
+  "evaluator_sha256": "8c3420c3d93e83ec1b8ab7fd0337ad032cc6d52078362546e214eb569593ff06",
+  "family": "application_context",
+  "fixture_files": [
+    {
+      "path": "fixtures/cdv1-a01-04e1041b26bf7500/browser-events.jsonl",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size_bytes": 0
+    },
+    {
+      "path": "fixtures/cdv1-a01-04e1041b26bf7500/browser-initial-state.json",
+      "sha256": "76178f3af15858b8b4a1db37f3acbe697bc68c3f12d54be759627be34896e819",
+      "size_bytes": 167
+    },
+    {
+      "path": "fixtures/cdv1-a01-04e1041b26bf7500/browser-server.py",
+      "sha256": "9ddc34395b253e3b49581a6609f35083a95e5f7eedb45c2c20c15fcd75a62ae4",
+      "size_bytes": 3243
+    },
+    {
+      "path": "fixtures/cdv1-a01-04e1041b26bf7500/workspace.html",
+      "sha256": "9be2860a35d2afcd91f1b0212e0e6b28c2155b84e5060a8bc02e1c23c5080f3a",
+      "size_bytes": 233
+    }
+  ],
+  "generation_seed": 2026,
+  "initial_fixture_spec": {
+    "application_set": [
+      "Browser",
+      "Browser"
+    ],
+    "fixture_profile": "tabs_release",
+    "layout_id": "guard_after",
+    "public_assets": [
+      {
+        "path": "fixtures/cdv1-a01-04e1041b26bf7500/browser-events.jsonl",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size_bytes": 0
+      },
+      {
+        "path": "fixtures/cdv1-a01-04e1041b26bf7500/browser-initial-state.json",
+        "sha256": "76178f3af15858b8b4a1db37f3acbe697bc68c3f12d54be759627be34896e819",
+        "size_bytes": 167
+      },
+      {
+        "path": "fixtures/cdv1-a01-04e1041b26bf7500/browser-server.py",
+        "sha256": "9ddc34395b253e3b49581a6609f35083a95e5f7eedb45c2c20c15fcd75a62ae4",
+        "size_bytes": 3243
+      },
+      {
+        "path": "fixtures/cdv1-a01-04e1041b26bf7500/workspace.html",
+        "sha256": "9be2860a35d2afcd91f1b0212e0e6b28c2155b84e5060a8bc02e1c23c5080f3a",
+        "size_bytes": 233
+      }
+    ]
+  },
+  "instance_id": "cdv1-a01-04e1041b26bf7500",
+  "manifest_entry_sha256": "57ce7e89d18d6022185f191d2d7408426f4f434b417bfabe51aa672177e8ddd8",
+  "provenance": {
+    "fixture_sha256": "13cd7f30ccf658663ca2d02c77154bbd0fd2d6611ecf0659f81af7c38ca83a7d",
+    "generation_seed": 2026,
+    "generator": "swcub.production_v1",
+    "seed_role": "deterministic profile ordering only; excluded from instance identity",
+    "semantic_spec_sha256": "04e1041b26bf75000ec42f32d9e97c4f52d2278bc640e1b9e2027d6b89dea06f",
+    "source_code_sha256": "abaf2fd32b70bf456dc7b4672199745df8a1968aab95f9cb043ee3501c5158dd",
+    "source_commit": "9417ff53cb75118a89529f670bb4323b8f07b25a"
+  },
+  "reset_metadata": {
+    "fixture_id": "cdv1-a01-04e1041b26bf7500",
+    "fresh_guest_required": true,
+    "remove_prior_app_state": true,
+    "verify_fixture_hash": "13cd7f30ccf658663ca2d02c77154bbd0fd2d6611ecf0659f81af7c38ca83a7d",
+    "verify_state": {
+      "actors": {
+        "A": {
+          "object": "browser/tab-a/release-form",
+          "value": ""
+        },
+        "B": {
+          "object": "browser/tab-b/approval-form",
+          "value": ""
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "context_kind": "tab-specific release records",
+          "fields": [
+            "release",
+            "approval"
+          ]
+        },
+        "resource": "application_context"
+      }
+    }
+  },
+  "schedule_policy_id": "observe-a-context-change-b-resume-a-v1",
+  "semantic_parameters": {
+    "domain_id": "supplier_onboarding",
+    "domain_schema": {
+      "entity": "supplier record",
+      "field_a": "Review decision",
+      "field_b": "Verification state"
+    },
+    "layout_id": "guard_after",
+    "object_profile_id": "tabs_release",
+    "object_schema": {
+      "context_kind": "tab-specific release records",
+      "fields": [
+        "release",
+        "approval"
+      ]
+    },
+    "operation_graph": "two_tab_context",
+    "operation_schema_revision": 2,
+    "workflow_id": "A-01"
+  },
+  "signatures": {
+    "fixture": "13cd7f30ccf658663ca2d02c77154bbd0fd2d6611ecf0659f81af7c38ca83a7d",
+    "goal": "d6824154d18821186c19c47cca73f448ee43209cfb47b8fba00d8b77d956b9f7",
+    "semantic": "04e1041b26bf75000ec42f32d9e97c4f52d2278bc640e1b9e2027d6b89dea06f",
+    "structural": "5117f199be4324726d08fd133c77f312037b487510dfb6c2564286e7063d0836"
+  },
+  "target_objects": {
+    "A": [
+      "browser/tab-a/release-form"
+    ],
+    "B": [
+      "browser/tab-b/approval-form"
+    ]
+  },
+  "task_domains": {
+    "A": "Browser",
+    "B": "Browser"
+  },
+  "topology_compatibility": {
+    "ma_id": {
+      "backend_binding": "same logical workspace seed; independent desktop sessions allowed",
+      "desktop_count": 2,
+      "fixtures": "byte-identical task-relevant clones"
+    },
+    "ma_sd": {
+      "actor_bindings": "A and B share desktop",
+      "desktop_count": 1
+    },
+    "solo": {
+      "actor_bindings": "A or B",
+      "desktop_count": 1
+    }
+  },
+  "treatment_relevant_state": {
+    "family_state": "application_context",
+    "operation_graph": "two_tab_context",
+    "shared_resource": {
+      "context_kind": "tab-specific release records",
+      "fields": [
+        "release",
+        "approval"
+      ]
+    }
+  },
+  "validation_level": "qwen_mechanism_evidence",
+  "workflow_id": "A-01"
+}

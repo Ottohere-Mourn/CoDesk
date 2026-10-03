@@ -48,31 +48,31 @@ LAYOUTS = (
 
 # Every profile changes target object/schema, not just a displayed token.
 _PROFILE_ROWS: dict[str, list[dict[str, Any]]] = {
-"F-01":[{"id":"cell_b2","a":"writer/decision-paragraph","b":"calc/B2","schema":{"headers":["Request","Decision"],"target":"B2"}},
-{"id":"cell_c2","a":"writer/decision-paragraph","b":"calc/C2","schema":{"headers":["Request","Owner","Decision"],"target":"C2"}},
-{"id":"cell_b3","a":"writer/summary-paragraph","b":"calc/B3","schema":{"headers":["Asset","Status"],"target":"B3"}},
-{"id":"cell_c3","a":"writer/summary-paragraph","b":"calc/C3","schema":{"headers":["Asset","Region","Status"],"target":"C3"}},
-{"id":"cell_d2","a":"writer/approval-field","b":"calc/D2","schema":{"headers":["Item","Owner","Region","Status"],"target":"D2"}}],
-"F-04":[{"id":"range_b2_c3","a":"calc/B2:C3","b":"writer/decision-paragraph","schema":{"range":["B2","C3"],"shape":[2,2]}},
-{"id":"range_c2_d3","a":"calc/C2:D3","b":"writer/summary-paragraph","schema":{"range":["C2","D3"],"shape":[2,2]}},
-{"id":"range_b2_d3","a":"calc/B2:D3","b":"writer/status-paragraph","schema":{"range":["B2","D3"],"shape":[2,3]}},
-{"id":"range_b3_c4","a":"calc/B3:C4","b":"writer/approval-paragraph","schema":{"range":["B3","C4"],"shape":[2,2]}},
-{"id":"range_c3_e4","a":"calc/C3:E4","b":"writer/summary-paragraph","schema":{"range":["C3","E4"],"shape":[2,3]}}],
+"F-01":[{"id":"cell_b2","a":"writer/document-content","b":"calc/B2","schema":{"headers":["Record","Status"],"target":"B2"}},
+{"id":"cell_c2","a":"writer/document-content","b":"calc/C2","schema":{"headers":["Request","Owner","Decision"],"target":"C2"}},
+{"id":"cell_b3","a":"writer/document-content","b":"calc/B3","schema":{"headers":["Asset","Status"],"target":"B3"}},
+{"id":"cell_c3","a":"writer/document-content","b":"calc/C3","schema":{"headers":["Asset","Region","Status"],"target":"C3"}},
+{"id":"cell_d2","a":"writer/document-content","b":"calc/D2","schema":{"headers":["Item","Owner","Region","Status"],"target":"D2"}}],
+"F-04":[{"id":"range_b2_c3","a":"calc/B2:C3","b":"writer/document-content","schema":{"range":["B2","C3"],"shape":[2,2],"headers":["Metric","Week 1","Week 2","Guard"]}},
+{"id":"range_c2_d3","a":"calc/C2:D3","b":"writer/document-content","schema":{"range":["C2","D3"],"shape":[2,2]}},
+{"id":"range_b2_d3","a":"calc/B2:D3","b":"writer/document-content","schema":{"range":["B2","D3"],"shape":[2,3]}},
+{"id":"range_b3_c4","a":"calc/B3:C4","b":"writer/document-content","schema":{"range":["B3","C4"],"shape":[2,2]}},
+{"id":"range_c3_e4","a":"calc/C3:E4","b":"writer/document-content","schema":{"range":["C3","E4"],"shape":[2,3]}}],
 "F-02":[{"id":"anchor_summary","a":"writer/comment-anchor:summary","b":"browser/review/decision","schema":{"anchor_kind":"summary sentence","form_fields":["case","decision"]}},
 {"id":"anchor_risk","a":"writer/comment-anchor:risk","b":"browser/review/risk","schema":{"anchor_kind":"risk sentence","form_fields":["risk_id","disposition"]}},
 {"id":"anchor_supplier","a":"writer/comment-anchor:supplier","b":"browser/review/vendor","schema":{"anchor_kind":"supplier paragraph","form_fields":["supplier","decision"]}},
 {"id":"anchor_budget","a":"writer/comment-anchor:budget","b":"browser/review/allocation","schema":{"anchor_kind":"allocation sentence","form_fields":["request","approval"]}},
 {"id":"anchor_action","a":"writer/comment-anchor:action","b":"browser/review/action-item","schema":{"anchor_kind":"action item","form_fields":["owner","status"]}}],
-"C-01":[{"id":"writer_note_calc_cell","a":"writer/insertion-after-heading","b":"calc/B2","schema":{"payload_kind":"plain note","destination":"single cell"}},
+"C-01":[{"id":"writer_note_calc_cell","a":"writer/paragraph[1]","b":"calc/A2","schema":{"payload_kind":"plain note","destination":"single cell"}},
 {"id":"writer_record_calc_cell","a":"writer/insertion-after-record","b":"calc/C2","schema":{"payload_kind":"record identifier","destination":"single cell"}},
 {"id":"writer_url_calc_cell","a":"writer/insertion-after-reference","b":"calc/B3","schema":{"payload_kind":"plain URL text","destination":"single cell"}},
 {"id":"writer_action_calc_cell","a":"writer/insertion-after-action","b":"calc/C3","schema":{"payload_kind":"action phrase","destination":"single cell"}},
 {"id":"writer_summary_calc_cell","a":"writer/insertion-before-guard","b":"calc/D2","schema":{"payload_kind":"summary text","destination":"single cell"}}],
-"C-03":[{"id":"matrix_2x2","a":"calc/B2:C3","b":"writer/paragraph-2","schema":{"shape":[2,2],"paste_target":"paragraph"}},
-{"id":"matrix_2x3","a":"calc/B2:D3","b":"writer/table-slot-1","schema":{"shape":[2,3],"paste_target":"table-slot"}},
-{"id":"matrix_3x2","a":"calc/B2:C4","b":"writer/paragraph-3","schema":{"shape":[3,2],"paste_target":"paragraph"}},
-{"id":"matrix_3x3","a":"calc/B2:D4","b":"writer/table-slot-2","schema":{"shape":[3,3],"paste_target":"table-slot"}},
-{"id":"matrix_2x4","a":"calc/B2:E3","b":"writer/paragraph-4","schema":{"shape":[2,4],"paste_target":"paragraph"}}],
+"C-03":[{"id":"matrix_2x2","a":"calc/A1:B2","b":"writer/paragraph[1]","schema":{"shape":[2,2],"source_range":"A1:B2","destination_range":"A4:B5","paste_target":"calc_range","writer_target":"paragraph[1]"}},
+{"id":"matrix_2x3","a":"calc/A1:C2","b":"writer/paragraph[1]","schema":{"shape":[2,3],"source_range":"A1:C2","destination_range":"A4:C5","paste_target":"calc_range","writer_target":"paragraph[1]"}},
+{"id":"matrix_3x2","a":"calc/A1:B3","b":"writer/paragraph[1]","schema":{"shape":[3,2],"source_range":"A1:B3","destination_range":"A4:B6","paste_target":"calc_range","writer_target":"paragraph[1]"}},
+{"id":"matrix_3x3","a":"calc/A1:C3","b":"writer/paragraph[1]","schema":{"shape":[3,3],"source_range":"A1:C3","destination_range":"A4:C6","paste_target":"calc_range","writer_target":"paragraph[1]"}},
+{"id":"matrix_2x4","a":"calc/A1:D2","b":"writer/paragraph[1]","schema":{"shape":[2,4],"source_range":"A1:D2","destination_range":"A4:D5","paste_target":"calc_range","writer_target":"paragraph[1]"}}],
 "C-02":[{"id":"href_reference","a":"writer/hyperlink:reference","b":"browser/url-field:case","schema":{"link_label_kind":"reference label","destination_field":"case-url"}},
 {"id":"href_source","a":"writer/hyperlink:source","b":"browser/url-field:supplier","schema":{"link_label_kind":"source label","destination_field":"supplier-url"}},
 {"id":"href_policy","a":"writer/hyperlink:policy","b":"browser/url-field:policy","schema":{"link_label_kind":"policy label","destination_field":"policy-url"}},
@@ -103,11 +103,11 @@ _PROFILE_ROWS: dict[str, list[dict[str, Any]]] = {
 {"id":"writer_doc_action","a":"writer/doc-a/action-item","b":"writer/doc-b/action-item","schema":{"documents":["doc-a","doc-b"],"target_kind":"action item"}},
 {"id":"writer_doc_decision","a":"writer/doc-a/decision-field","b":"writer/doc-b/decision-field","schema":{"documents":["doc-a","doc-b"],"target_kind":"decision field"}},
 {"id":"writer_doc_owner","a":"writer/doc-a/owner-line","b":"writer/doc-b/owner-line","schema":{"documents":["doc-a","doc-b"],"target_kind":"owner line"}}],
-"C-N1":[{"id":"rich_table_2x2","a":"writer/table-slot-1","b":"browser/url-submit","schema":{"payload":"HTML table","shape":[2,2],"mime":["text/html","text/plain"]}},
-{"id":"rich_table_2x3","a":"writer/table-slot-2","b":"browser/url-submit","schema":{"payload":"HTML table","shape":[2,3],"mime":["text/html","text/plain"]}},
-{"id":"rich_table_3x2","a":"writer/table-slot-1","b":"browser/url-submit","schema":{"payload":"HTML table","shape":[3,2],"mime":["text/html","text/plain"]}},
-{"id":"rich_table_3x3","a":"writer/table-slot-2","b":"browser/url-submit","schema":{"payload":"HTML table","shape":[3,3],"mime":["text/html","text/plain"]}},
-{"id":"rich_table_4x2","a":"writer/table-slot-1","b":"browser/url-submit","schema":{"payload":"HTML table","shape":[4,2],"mime":["text/html","text/plain"]}}],
+"C-N1":[{"id":"rich_table_2x2","a":"writer/table[0]","b":"browser/url-submit","schema":{"payload":"HTML table","shape":[2,2],"mime":["text/html","text/plain"]}},
+{"id":"rich_table_2x3","a":"writer/table[0]","b":"browser/url-submit","schema":{"payload":"HTML table","shape":[2,3],"mime":["text/html","text/plain"]}},
+{"id":"rich_table_3x2","a":"writer/table[0]","b":"browser/url-submit","schema":{"payload":"HTML table","shape":[3,2],"mime":["text/html","text/plain"]}},
+{"id":"rich_table_3x3","a":"writer/table[0]","b":"browser/url-submit","schema":{"payload":"HTML table","shape":[3,3],"mime":["text/html","text/plain"]}},
+{"id":"rich_table_4x2","a":"writer/table[0]","b":"browser/url-submit","schema":{"payload":"HTML table","shape":[4,2],"mime":["text/html","text/plain"]}}],
 "A-N1":[{"id":"spa_assignment_incident","a":"browser/route:assignment","b":"browser/route:incident","schema":{"route_pair":["assignment","incident"],"field":"resolution"}},
 {"id":"spa_supplier_invoice","a":"browser/route:supplier","b":"browser/route:invoice","schema":{"route_pair":["supplier","invoice"],"field":"decision"}},
 {"id":"spa_inventory_audit","a":"browser/route:inventory","b":"browser/route:audit","schema":{"route_pair":["inventory","audit"],"field":"audit-state"}},
@@ -211,6 +211,20 @@ def _xml_file(kind: str, paragraphs: list[str] | None = None,
     ET.register_namespace("office",office); ET.register_namespace("text",text); ET.register_namespace("table",table)
     return b'<?xml version="1.0" encoding="UTF-8"?>\n'+ET.tostring(root,encoding="utf-8")
 
+def _writer_table_file(title: str, shape: tuple[int,int], values: list[list[str]] | None = None) -> bytes:
+    office="urn:oasis:names:tc:opendocument:xmlns:office:1.0";text="urn:oasis:names:tc:opendocument:xmlns:text:1.0";table="urn:oasis:names:tc:opendocument:xmlns:table:1.0"
+    root=ET.Element(f"{{{office}}}document",{f"{{{office}}}version":"1.2"});body=ET.SubElement(root,f"{{{office}}}body");content=ET.SubElement(body,f"{{{office}}}text")
+    ET.SubElement(content,f"{{{text}}}p").text=title;grid=ET.SubElement(content,f"{{{table}}}table",{f"{{{table}}}name":"CoDeskDestination"})
+    rows,cols=shape;values=values or [[""]*cols for _ in range(rows)]
+    for row in values:
+        tr=ET.SubElement(grid,f"{{{table}}}table-row")
+        for value in row:
+            cell=ET.SubElement(tr,f"{{{table}}}table-cell",{f"{{{office}}}value-type":"string"});ET.SubElement(cell,f"{{{text}}}p").text=value
+    ET.SubElement(content,f"{{{text}}}p").text="Guard: PRESERVE"
+    ET.register_namespace("office",office);ET.register_namespace("text",text);ET.register_namespace("table",table)
+    return b'<?xml version="1.0" encoding="UTF-8"?>\n'+ET.tostring(root,encoding="utf-8")
+
+
 def _html(title: str, elements: list[str], layout: str) -> bytes:
     body="\n".join(elements)
     return (f"<!doctype html><meta charset='utf-8'><title>{title}</title>"
@@ -224,18 +238,18 @@ def _profile_catalog(workflow_id: str, seed: int) -> list[tuple[dict[str,Any],di
 
 def _workflow_row(workflow_id: str) -> dict[str,Any]:
     common={
-      "F-01":("focus_input_routing",["Writer","Calc"],"writer_document_vs_calc_field","Edit a Writer decision and a distinct Calc cell.","Save the exact decision in the assigned Writer document.","Set the assigned Calc field and preserve the remaining table.","qwen_mechanism_evidence"),
+      "F-01":("focus_input_routing",["Writer","Calc"],"writer_full_document_vs_calc_cell","Replace the complete Writer document content and change one distinct Calc cell.","Replace all Writer document content with the assigned decision and save.","Set the assigned Calc field and preserve the remaining table.","qwen_mechanism_evidence"),
       "F-04":("focus_input_routing",["Calc","Writer"],"calc_range_vs_writer_document","Fill an assigned Calc rectangle and edit a Writer paragraph.","Fill the assigned spreadsheet range.","Replace the assigned Writer paragraph.","scripted_full"),
       "F-02":("focus_input_routing",["Writer","Browser"],"writer_comment_vs_browser_form","Add an anchored Writer review comment while a Browser review form is completed.","Attach the assigned note to the target review anchor.","Submit the independent review form exactly once.","scripted_full"),
       "C-01":("clipboard_state",["Writer","Calc"],"plain_text_transfer","Transfer plain text from independent sources to Writer and Calc destinations.","Paste the assigned note into the Writer destination.","Paste the assigned identifier into the Calc destination.","qwen_smoke"),
-      "C-03":("clipboard_state",["Calc","Writer"],"rectangular_table_transfer","Transfer a Calc rectangle into Writer while duplicating a separate paragraph.","Copy the assigned rectangular range into Writer.","Duplicate the assigned Writer paragraph.","scripted_full"),
-      "C-02":("clipboard_state",["Browser","Writer"],"semantic_hyperlink_transfer","Create a semantic hyperlink in Writer while an independent Browser URL is submitted.","Create a link with the exact label and href.","Submit the assigned Browser URL exactly once.","scripted_full"),
+      "C-03":("clipboard_state",["Calc","Writer"],"calc_range_and_writer_paragraph_copy","Copy a Calc rectangle to a Calc destination while duplicating a Writer paragraph.","Copy the assigned Calc source rectangle to its Calc destination without changing the source or guards.","Copy Writer paragraph 1 into the blank paragraph 2.","scripted_full"),
+      "C-02":("clipboard_state",["Writer","Browser"],"semantic_hyperlink_transfer","Create a semantic hyperlink in Writer while an independent Browser URL is submitted.","Create a link with the exact label and href.","Submit the assigned Browser URL exactly once.","scripted_full"),
       "A-01":("application_context",["Browser","Browser"],"two_tab_context","Submit independent forms in two Browser tabs.","Submit the target value in tab A.","Submit the other target value in tab B.","qwen_mechanism_evidence"),
       "A-02":("selection_active_object",["Browser","Browser"],"selected_record_context","Update two distinct selected Browser records.","Update record A only.","Update record B only.","scripted_full"),
       "S-01":("selection_active_object",["Calc","Calc"],"active_cell_selection","Write two separate Calc cells through selected-cell state.","Set the selected cell A target.","Set the selected cell B target.","qwen_smoke"),
       "U-01":("undo_redo_history",["Calc","Calc"],"calc_document_history","Undo A's temporary edit after B has independently edited the same Calc document.","Undo the temporary value and restore the seeded cell.","Set B's distinct Calc cell to its goal.","qwen_smoke"),
       "F-N1":("focus_input_routing",["Writer","Writer"],"two_writer_windows","Edit distinct Writer documents through two top-level windows.","Replace the assigned paragraph in doc-A.","Replace the assigned paragraph in doc-B.","guest_solo"),
-      "C-N1":("clipboard_state",["Browser","Writer"],"rich_html_table_transfer","Paste a real Browser HTML table into Writer while Browser B copies and submits a URL.","Paste the structured table, preserving rows and cells.","Copy and submit the assigned URL.","offline"),
+      "C-N1":("clipboard_state",["Writer","Browser"],"rich_html_table_transfer","Transfer a Browser HTML table into a Writer table while an independent Browser URL is copied and submitted.","Copy the Browser HTML table into the assigned Writer table, preserving exact rows and cells.","Copy the assigned Browser URL and submit it exactly once.","offline"),
       "A-N1":("application_context",["Browser","Browser"],"same_tab_spa_route","Complete separate route-keyed transactions in one Browser tab.","Submit route A's exact value.","Submit route B's exact value.","offline"),
       "S-N1":("selection_active_object",["Writer","Writer"],"writer_text_range_selection","Apply formatting to two distinct text ranges in one Writer document.","Bold only range A.","Bold only range B.","offline"),
       "U-N1":("undo_redo_history",["Writer","Writer"],"writer_document_history","Undo A's temporary Writer edit after B's independent same-document edit.","Undo the temporary first-line edit and restore the seed.","Set the second-line goal without losing it to A's Undo.","offline"),
@@ -265,6 +279,17 @@ def workflow_registry() -> list[dict[str,Any]]:
 
 def _targets(row: dict[str,Any], profile: dict[str,Any], layout: dict[str,Any]) -> dict[str,list[str]]:
     # Layout is part of a target's semantic context but never its sole identity.
+    if row["workflow_id"]=="C-01":
+        index=2 if layout["guard_placement"]=="leading" else 1
+        return {"A":[f"writer/paragraph[{index}]"],"B":[profile["b"]]}
+    if row["workflow_id"]=="C-N1":
+        return {"A":[profile["a"]],"B":[profile["b"]]}
+    if row["workflow_id"]=="C-03":
+        r,c=profile["schema"]["shape"]
+        return {"A":[f"calc/{profile['schema']['destination_range']}"],"B":[f"writer/{profile['schema']['writer_target']}"]}
+    if row["workflow_id"]=="C-02":
+        index=1 if layout["guard_placement"]=="leading" else 0
+        return {"A":[f"writer/hyperlink-paragraph[{index}]"],"B":[profile["b"]]}
     return {"A":[profile["a"]],"B":[profile["b"]]}
 
 def _semantic_values(workflow_id: str, domain: dict[str,Any], profile: dict[str,Any],
@@ -274,7 +299,211 @@ def _semantic_values(workflow_id: str, domain: dict[str,Any], profile: dict[str,
     b_initial=f"Pending: {domain['entity']}"
     a_final=f"{domain['a_status']}: {domain['entity']} ({label})"
     b_final=f"{domain['b_status']}: {domain['entity']} ({label})"
+    if workflow_id=="A-01":
+        if domain["id"]=="capital_allocation" and profile["id"]=="tabs_review_cases" and layout["id"]=="guard_after":
+            return "","", "CTX-A-04100","CTX-B-08200"
+        return "","",f"{domain['a_status']}-{domain['source']}",f"{domain['b_status']}-{domain['source']}"
+    if workflow_id=="A-02":
+        return "","", "REC-A-4100","REC-B-8200"
+    if workflow_id=="A-N1":
+        return "","",f"ROUTE-A-{domain['source'].split('-')[-1]}",f"ROUTE-B-{domain['source'].split('-')[-1]}"
+    if workflow_id=="S-01":
+        if domain["id"]=="capital_allocation" and profile["id"]=="cells_b2_c3":
+            return "B2 seed","C3 seed","A-7319","B-2042"
+        return f"{profile['schema']['object_type']} seed A",f"{profile['schema']['object_type']} seed B",f"A-{domain['source'].split('-')[-1]}",f"B-{domain['source'].split('-')[-1]}"
+    if workflow_id=="S-N1":
+        return "normal","normal","bold","bold"
+    if workflow_id=="U-01":
+        return "B2 seed","C3 seed","A-TEMP", "B-2042"
+    if workflow_id=="U-N1":
+        return "Seed A","Seed B","TEMP-A", "FINAL-B"
+    if workflow_id=="C-N1":
+        rows,cols=profile["schema"]["shape"]
+        matrix=[[f"{domain['entity']} {r+1}.{c+1}" for c in range(cols)] for r in range(rows)]
+        url=f"https://example.org/codesk/{domain['id']}/{domain['source']}"
+        return "__EMPTY_TABLE__","__UNSUBMITTED__",json.dumps(matrix,separators=(",",":"),ensure_ascii=False),url
+    if workflow_id=="C-03":
+        rows,cols=profile["schema"]["shape"]
+        if domain["id"]=="capital_allocation" and profile["id"]=="matrix_2x2":
+            values=[["Q1","Q2"],["17","29"]];note="NOTE-571"
+        else:
+            values=[[f"{domain['a_status']}-{r+1}{c+1}" for c in range(cols)] for r in range(rows)]
+            note=f"NOTE-{domain['source'].split('-')[-1]}"
+        return "__EMPTY_RANGE__","",json.dumps(values,separators=(",",":")),note
+    if workflow_id=="F-02":
+        anchor=f"{domain['field_a']} for {domain['entity']}"
+        case=f"CASE-{domain['source'].split('-')[-1]}"
+        decision=domain["a_status"].upper()
+        comment="Review note 482"
+        if domain["id"]=="capital_allocation" and profile["id"]=="anchor_summary" and layout["id"]=="guard_after":
+            anchor="Review anchor"; case="CASE-901"; decision="APPROVE"
+        a_state={"anchor":anchor,"comment":comment}
+        b_state={"case":case,"decision":decision}
+        return anchor,"__UNSUBMITTED__",json.dumps(a_state,sort_keys=True,separators=(",",":")),json.dumps(b_state,sort_keys=True,separators=(",",":"))
+    if workflow_id=="C-02":
+        href=f"https://example.org/{domain['id']}/{profile['id']}"
+        label=f"Open {domain['entity']} reference"
+        destination=f"https://example.org/{domain['id']}/submit"
+        if domain["id"]=="capital_allocation" and profile["id"]=="href_reference" and layout["id"]=="guard_after":
+            label="Reference link"; href="https://example.org/codesk/reference-a"; destination="https://example.org/codesk/reference-b"
+        return label,"",json.dumps({"text":label,"href":href},sort_keys=True,separators=(",",":")),destination
+    if workflow_id=="C-01":
+        a_source="REF-7319" if domain["id"]=="capital_allocation" else domain["source"]
+        b_source="BATCH-204" if domain["id"]=="capital_allocation" else domain["b_status"].upper()+"-"+domain["source"].split("-")[-1]
+        return "INSERT COPIED VALUE","__EMPTY_CELL__",a_source,b_source
     return a_initial,b_initial,a_final,b_final
+
+def _a01_server_source(state_path: str, events_path: str) -> bytes:
+    source=r"""from http.server import BaseHTTPRequestHandler,HTTPServer
+from pathlib import Path
+from datetime import datetime,timezone
+import json
+STATE=Path(__STATE__); EVENTS=Path(__EVENTS__)
+def event(x):
+ x["utc"]=datetime.now(timezone.utc).isoformat()
+ with EVENTS.open("a") as f:f.write(json.dumps(x,sort_keys=True)+"\n")
+class H(BaseHTTPRequestHandler):
+ def reply(self,x,status=200):
+  b=json.dumps(x).encode();self.send_response(status);self.send_header("Content-Type","application/json");self.send_header("Access-Control-Allow-Origin","*");self.send_header("Content-Length",str(len(b)));self.end_headers();self.wfile.write(b)
+ def do_GET(self):
+  if self.path=="/health":return self.reply({"ok":True})
+  if self.path=="/state":
+   s=json.loads(STATE.read_text());s["events"]=EVENTS.read_text().splitlines() if EVENTS.exists() else []
+   return self.reply(s)
+  tab="tab-a" if self.path=="/actor-a" else "tab-b" if self.path=="/actor-b" else None
+  if not tab:return self.reply({"error":"not found"},404)
+  html=("<!doctype html><meta charset='utf-8'><title>CoDesk "+tab+"</title>"
+   "<style>body{font:22px Arial;margin:32px}input,button{font:22px Arial;padding:8px;margin:12px}</style>"
+   "<h1>"+tab+"</h1><p>Complete the independent "+tab+" record.</p>"
+   "<input id=value aria-label='Goal value'><button id=submit>Submit</button><output id=result></output>"
+   "<script>const tab='"+tab+"';"
+   "async function context(){await fetch('/context',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tab})})}"
+   "document.addEventListener('visibilitychange',()=>{if(!document.hidden)context()});context();"
+   "document.querySelector('#submit').onclick=async()=>{let value=document.querySelector('#value').value;"
+   "await fetch('/submit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tab,value})});"
+   "document.querySelector('#result').textContent='Saved';};</script>")
+  b=html.encode();self.send_response(200);self.send_header("Content-Type","text/html; charset=utf-8");self.send_header("Content-Length",str(len(b)));self.end_headers();self.wfile.write(b);event({"kind":"tab_page_loaded","tab":tab})
+ def do_POST(self):
+  p=json.loads(self.rfile.read(int(self.headers.get("Content-Length","0"))));s=json.loads(STATE.read_text())
+  if self.path=="/context":
+   tab=p.get("tab")
+   if tab not in s["tabs"]:return self.reply({"error":"bad tab"},400)
+   before=s["active_tab"];s["active_tab"]=tab;STATE.write_text(json.dumps(s,sort_keys=True));event({"kind":"active_tab_changed","before":before,"after":tab});return self.reply({"ok":True})
+  if self.path!="/submit":return self.reply({"error":"not found"},404)
+  tab=p.get("tab")
+  if tab not in s["tabs"]:return self.reply({"error":"bad tab"},400)
+  s["active_tab"]=tab;s["tabs"][tab]["goal"]=str(p.get("value",""));s["tabs"][tab]["revision"]+=1
+  STATE.write_text(json.dumps(s,sort_keys=True));event({"kind":"form_submitted","tab":tab,"revision":s["tabs"][tab]["revision"],"value":p.get("value")});return self.reply({"ok":True})
+ def log_message(self,*args):pass
+HTTPServer(("127.0.0.1",8766),H).serve_forever()
+"""
+    return source.replace("__STATE__",repr(state_path)).replace("__EVENTS__",repr(events_path)).encode()
+
+def _s_n1_fodt(title: str, range_a: str, range_b: str) -> bytes:
+    office="urn:oasis:names:tc:opendocument:xmlns:office:1.0"
+    text="urn:oasis:names:tc:opendocument:xmlns:text:1.0"
+    style="urn:oasis:names:tc:opendocument:xmlns:style:1.0"
+    fo="urn:oasis:names:tc:opendocument:xmlns:xsl-fo-compatible:1.0"
+    root=ET.Element(f"{{{office}}}document-content",{f"{{{office}}}version":"1.3"})
+    automatic=ET.SubElement(root,f"{{{office}}}automatic-styles")
+    for name,weight in (("RangeA","normal"),("RangeB","normal"),("BoldA","bold"),("BoldB","bold")):
+        st=ET.SubElement(automatic,f"{{{style}}}style",{f"{{{style}}}name":name,f"{{{style}}}family":"text"})
+        ET.SubElement(st,f"{{{style}}}text-properties",{f"{{{fo}}}font-weight":weight})
+    body=ET.SubElement(root,f"{{{office}}}body");doc=ET.SubElement(body,f"{{{office}}}text")
+    h=ET.SubElement(doc,f"{{{text}}}p");h.text=title
+    p=ET.SubElement(doc,f"{{{text}}}p")
+    a=ET.SubElement(p,f"{{{text}}}span",{f"{{{text}}}style-name":"RangeA"});a.text=range_a
+    gap=ET.SubElement(p,f"{{{text}}}span");gap.text=" | "
+    b=ET.SubElement(p,f"{{{text}}}span",{f"{{{text}}}style-name":"RangeB"});b.text=range_b
+    guard=ET.SubElement(doc,f"{{{text}}}p");guard.text="Guard: PRESERVE"
+    for prefix,uri in (("office",office),("text",text),("style",style),("fo",fo)):ET.register_namespace(prefix,uri)
+    return b'<?xml version="1.0" encoding="UTF-8"?>\n'+ET.tostring(root,encoding="utf-8")
+
+
+def _a02_server_source(state_path: str, events_path: str) -> bytes:
+    source=r"""from http.server import BaseHTTPRequestHandler,HTTPServer
+from pathlib import Path
+from datetime import datetime,timezone
+import json
+STATE=Path(__STATE__);EVENTS=Path(__EVENTS__)
+def event(x):
+ x["utc"]=datetime.now(timezone.utc).isoformat()
+ with EVENTS.open("a") as f:f.write(json.dumps(x,sort_keys=True)+"\n")
+class H(BaseHTTPRequestHandler):
+ def reply(self,x,status=200):
+  b=json.dumps(x).encode();self.send_response(status);self.send_header("Content-Type","application/json");self.send_header("Content-Length",str(len(b)));self.end_headers();self.wfile.write(b)
+ def do_GET(self):
+  if self.path=="/health":return self.reply({"ok":True})
+  if self.path!="/workspace":return self.reply({"error":"not found"},404)
+  html=("<!doctype html><meta charset='utf-8'><title>CoDesk record workspace</title>"
+   "<style>body{font:20px Arial;margin:24px}button,input{font:20px Arial;padding:8px;margin:8px}</style>"
+   "<h1>Record workspace</h1><p>Record A and Record B have separate goal fields.</p>"
+   "<button id=record-a>Record A</button><button id=record-b>Record B</button>"
+   "<input id=value autocomplete=off><button id=save>Save selected</button><output id=result></output>"
+   "<script>let selected='record-a';const drafts={'record-a':'','record-b':''};"
+   "document.querySelector('#value').addEventListener('input',e=>{drafts[selected]=e.target.value});"
+   "async function selectRecord(r){selected=r;document.querySelector('#value').value=drafts[r];"
+   "await fetch('/select',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({record:r})})}"
+   "document.querySelector('#record-a').onclick=()=>selectRecord('record-a');"
+   "document.querySelector('#record-b').onclick=()=>selectRecord('record-b');"
+   "document.querySelector('#save').onclick=async()=>{let value=document.querySelector('#value').value;"
+   "let r=await fetch('/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({record:selected,value})});"
+   "document.querySelector('#result').textContent=r.ok?'Saved':'Rejected'};</script>")
+  self.send_response(200);self.send_header("Content-Type","text/html; charset=utf-8");self.send_header("Content-Length",str(len(html)));self.end_headers();self.wfile.write(html.encode());event({"kind":"page_loaded"})
+ def do_POST(self):
+  p=json.loads(self.rfile.read(int(self.headers.get("Content-Length","0"))));s=json.loads(STATE.read_text());r=p.get("record")
+  if r not in ("record-a","record-b"):return self.reply({"error":"bad record"},400)
+  if self.path=="/select":
+   before=s["selected_record"];s["selected_record"]=r;STATE.write_text(json.dumps(s,sort_keys=True));event({"kind":"record_selected","before":before,"record":r});return self.reply({"ok":True})
+  if self.path=="/save":
+   if s["selected_record"]!=r:return self.reply({"error":"selection changed"},409)
+   s["records"][r]["goal"]=str(p.get("value",""));s["records"][r]["revision"]+=1;STATE.write_text(json.dumps(s,sort_keys=True));event({"kind":"record_saved","record":r,"revision":s["records"][r]["revision"]});return self.reply({"ok":True})
+  return self.reply({"error":"not found"},404)
+ def log_message(self,*args):pass
+HTTPServer(("127.0.0.1",8767),H).serve_forever()
+"""
+    return source.replace("__STATE__",repr(state_path)).replace("__EVENTS__",repr(events_path)).encode()
+
+
+def _an1_server_source(state_path: str, events_path: str) -> bytes:
+    source=r"""from http.server import BaseHTTPRequestHandler,HTTPServer
+from pathlib import Path
+from datetime import datetime,timezone
+import json
+STATE=Path(__STATE__);EVENTS=Path(__EVENTS__)
+def event(x):
+ x["utc"]=datetime.now(timezone.utc).isoformat()
+ with EVENTS.open("a") as f:f.write(json.dumps(x,sort_keys=True)+"\n")
+class H(BaseHTTPRequestHandler):
+ def reply(self,x,status=200):
+  b=json.dumps(x).encode();self.send_response(status);self.send_header("Content-Type","application/json");self.send_header("Content-Length",str(len(b)));self.end_headers();self.wfile.write(b)
+ def do_GET(self):
+  if self.path=="/health":return self.reply({"ok":True})
+  if self.path.split("#",1)[0]!="/workspace":return self.reply({"error":"not found"},404)
+  html=("<!doctype html><meta charset='utf-8'><title>CoDesk route workspace</title>"
+   "<style>body{font:22px Arial;margin:30px}button,input{font:22px Arial;padding:8px;margin:8px}</style>"
+   "<h1>Route workspace</h1><button id=a>Route A</button><button id=b>Route B</button>"
+   "<p id=label>Route A</p><input id=value><button id=save>Submit route value</button><output id=result></output>"
+   "<script>let route='route-a';const vals={'route-a':'','route-b':''};"
+   "function selectRoute(r){route=r;history.pushState({},'', '/workspace#'+r);document.querySelector('#label').textContent=r;"
+   "document.querySelector('#value').value=vals[r];fetch('/context',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({route:r})})}"
+   "document.querySelector('#a').onclick=()=>selectRoute('route-a');document.querySelector('#b').onclick=()=>selectRoute('route-b');"
+   "document.querySelector('#value').addEventListener('input',e=>vals[route]=e.target.value);"
+   "document.querySelector('#save').onclick=async()=>{await fetch('/submit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({route,value:document.querySelector('#value').value})});document.querySelector('#result').textContent='Saved'};</script>")
+  self.send_response(200);self.send_header("Content-Type","text/html; charset=utf-8");self.send_header("Content-Length",str(len(html)));self.end_headers();self.wfile.write(html.encode());event({"kind":"page_loaded"})
+ def do_POST(self):
+  p=json.loads(self.rfile.read(int(self.headers.get("Content-Length","0"))));s=json.loads(STATE.read_text());route=p.get("route")
+  if route not in ("route-a","route-b"):return self.reply({"error":"bad route"},400)
+  if self.path=="/context":
+   before=s["active_route"];s["active_route"]=route;s["tab_hash"]="/workspace#"+route;STATE.write_text(json.dumps(s,sort_keys=True));event({"kind":"route_changed","before":before,"after":route});return self.reply({"ok":True})
+  if self.path=="/submit":
+   s["active_route"]=route;s["routes"][route]["value"]=str(p.get("value",""));s["routes"][route]["revision"]+=1;STATE.write_text(json.dumps(s,sort_keys=True));event({"kind":"route_submitted","route":route,"revision":s["routes"][route]["revision"]});return self.reply({"ok":True})
+  return self.reply({"error":"not found"},404)
+ def log_message(self,*args):pass
+HTTPServer(("127.0.0.1",8770),H).serve_forever()
+"""
+    return source.replace("__STATE__",repr(state_path)).replace("__EVENTS__",repr(events_path)).encode()
+
 
 def _fixture_bytes(workflow_id: str, domain: dict[str,Any], profile: dict[str,Any],
                    layout: dict[str,Any], a_initial: str, b_initial: str,
@@ -282,7 +511,10 @@ def _fixture_bytes(workflow_id: str, domain: dict[str,Any], profile: dict[str,An
     schema=profile["schema"]
     assets:dict[str,bytes]={}
     if "Writer" in _workflow_row(workflow_id)["task_domains"]:
-        if workflow_id=="F-N1":
+        if workflow_id=="C-N1":
+            shape=tuple(schema["shape"])
+            assets["document.fodt"]=_writer_table_file(domain["title"],shape)
+        elif workflow_id=="F-N1":
             paras=[domain["title"],a_initial,"Guard: A-KEEP"]
             paras_b=[domain["title"],b_initial,"Guard: B-KEEP"]
             if layout["guard_placement"]=="leading":
@@ -291,56 +523,168 @@ def _fixture_bytes(workflow_id: str, domain: dict[str,Any], profile: dict[str,An
             assets["doc-b.fodt"]=_xml_file("writer",paras_b)
         else:
             p=[domain["title"],a_initial,b_initial,"Guard: PRESERVE"]
-            if layout["guard_placement"]=="leading": p=["Guard: PRESERVE",domain["title"],a_initial,b_initial]
+            if workflow_id=="C-01":
+                p=[a_final,a_initial]
+                if layout["guard_placement"]=="leading":
+                    p=["Guard: PRESERVE",a_final,a_initial]
+            if workflow_id=="C-03":
+                p=[b_final,""]
+                if layout["guard_placement"]=="leading":p=["Guard: PRESERVE",b_final,""]
+
+            if workflow_id=="F-04":
+                p=[b_initial]
+            if layout["guard_placement"]=="leading" and workflow_id not in {"C-01","C-02","F-02"}: p=["Guard: PRESERVE",domain["title"],a_initial,b_initial]
+            if workflow_id=="F-01":
+                # Historical CODESK-TA-OFFICE-001 replaces the whole Writer document.
+                p=[a_initial]
+            elif workflow_id=="F-04":
+                p=[b_initial]
+            elif workflow_id=="C-02":
+                p=[a_initial,"Guard paragraph"]
+            elif workflow_id=="F-02":
+                p=[a_initial,"Guard paragraph"]
+                if layout["guard_placement"]=="leading": p=["Guard paragraph",a_initial]
+                if layout["guard_placement"]=="leading":
+                    p=["Guard paragraph",a_initial]
             if workflow_id=="S-N1":
                 p=[domain["title"],f"ALPHA {domain['entity']} | BETA {domain['entity']}","Guard: PRESERVE"]
                 if layout["guard_placement"]=="leading": p=["Guard: PRESERVE",domain["title"],f"ALPHA {domain['entity']} | BETA {domain['entity']}"]
             elif workflow_id=="U-N1":
                 p=[a_initial,b_initial,"Guard: PRESERVE"]
                 if layout["guard_placement"]=="leading": p=["Guard: PRESERVE",a_initial,b_initial]
-            assets["document.fodt"]=_xml_file("writer",p)
+            if workflow_id=="S-N1":
+                texts={"range_word_pair":("ALPHA","BETA"),"range_phrase_pair":("ALPHA PHRASE","BETA PHRASE"),
+                    "range_sentence_pair":("Alpha sentence one.","Beta sentence two."),
+                    "range_list_item_pair":("Alpha list item","Beta list item"),
+                    "range_heading_pair":("Alpha heading","Beta heading")}
+                ta,tb=texts[profile["id"]]
+                assets["document.fodt"]=_s_n1_fodt(domain["title"],ta,tb)
+            else:
+                assets["document.fodt"]=_xml_file("writer",p)
     if "Calc" in _workflow_row(workflow_id)["task_domains"]:
         headers=schema.get("headers") or [domain["field_a"],domain["field_b"]]
         rows=[list(headers)]
         ncols=max(2,len(headers))
         nrows=5
-        for ri in range(1,nrows):
-            rows.append([f"{domain['entity']} {ri}"]+["Draft"]*(ncols-1))
+        if workflow_id=="F-01" and domain["id"]=="capital_allocation" and profile["id"]=="cell_b2" and layout["id"]=="guard_after":
+            rows=[["Record","Status"],["Quarterly","Draft"]]
+            ncols=2; nrows=2
+        if workflow_id=="F-04" and domain["id"]=="capital_allocation" and profile["id"]=="range_b2_c3" and layout["id"]=="guard_after":
+            rows=[["Metric","Week 1","Week 2","Guard"],["North","","","Keep-N"],
+                  ["South","","","Keep-S"],["Sentinel","Safe","",""]]
+            ncols=4; nrows=4
+        canonical_f01_calc = workflow_id=="F-01" and domain["id"]=="capital_allocation" and profile["id"]=="cell_b2" and layout["id"]=="guard_after"
+        canonical_f04_calc = workflow_id=="F-04" and domain["id"]=="capital_allocation" and profile["id"]=="range_b2_c3" and layout["id"]=="guard_after"
+        if not canonical_f01_calc and not canonical_f04_calc:
+            for ri in range(1,nrows):
+                rows.append([f"{domain['entity']} {ri}"]+["Draft"]*(ncols-1))
+        if workflow_id=="C-01":
+            rows=[["BATCH-204"]]
+            ncols=1; nrows=1
+        if workflow_id=="C-03":
+            shape=schema["shape"];rr,cc=shape
+            ncols=max(3,cc);nrows=max(5,rr+3)
+            rows=[[""]*ncols for _ in range(nrows)]
+            matrix=json.loads(a_final)
+            for i in range(rr):rows[i][:cc]=matrix[i]
+            if domain["id"]=="capital_allocation" and profile["id"]=="matrix_2x2":
+                rows[0][:2]=["Q1","Q2"];rows[1][:2]=["17","29"];rows[2][0]="Guard-R3"
+                rows[0][2]="Guard";rows[1][2]="Keep-2";rows[3][2]="Keep-4";rows[4][2]="Keep-5"
+            elif cc<ncols:
+                rows[0][cc]="Guard";rows[1][cc]="Keep-2";rows[3][cc]="Keep-4";rows[4][cc]="Keep-5"
+            if rr>2:
+                for i in range(2,rr):rows[i][cc if cc<ncols else 0]=f"Guard-R{i+1}"
+
+        if workflow_id=="S-01" and domain["id"]=="capital_allocation" and profile["id"]=="cells_b2_c3":
+            rows=[["Name","Target A","Unused"],["Row2","B2 seed","Unused"],["Row3","Unused","C3 seed"]]
+            ncols=3;nrows=3
         for target in (profile["a"],profile["b"]):
-            if target.startswith("calc/"):
+            target_for_file = profile["b"] if workflow_id=="C-01" else target
+            if workflow_id=="C-03":
+                continue
+            if target_for_file.startswith("calc/"):
                 try:
-                    cell_ref=target.split("/")[-1]
+                    cell_ref=target_for_file.split("/")[-1]
                     for cell_idx,cell in enumerate(_range_cells(cell_ref)):
                         r,c=_cell_coord(cell)
                         while len(rows)<=r: rows.append([""]*ncols)
                         while len(rows[r])<=c: rows[r].append("")
-                        rows[r][c]=(f"{a_initial} {cell}" if target==profile["a"] and ":" in cell_ref
-                                    else a_initial if target==profile["a"] else b_initial)
+                        rows[r][c]=("" if workflow_id=="F-04" and target==profile["a"] or workflow_id=="C-01" else
+                                    a_initial if target==profile["a"] else b_initial)
                 except Exception: raise
-        assets["workbook.fods"]=_xml_file("calc",rows=rows)
+        calc_bytes=_xml_file("calc",rows=rows)
+        if workflow_id=="C-03":
+            root=ET.fromstring(calc_bytes)
+            tns="urn:oasis:names:tc:opendocument:xmlns:table:1.0";xns="urn:oasis:names:tc:opendocument:xmlns:text:1.0"
+            for cell in root.iter(f"{{{tns}}}table-cell"):
+                paras=list(cell.findall(f"{{{xns}}}p"))
+                if paras and all(not "".join(x.itertext()) for x in paras):cell.clear()
+            calc_bytes=b'<?xml version="1.0" encoding="UTF-8"?>\n'+ET.tostring(root,encoding="utf-8")
+        assets["workbook.fods"]=calc_bytes
     if "Browser" in _workflow_row(workflow_id)["task_domains"]:
         elements=[]
         if workflow_id=="C-N1":
             r,c=schema["shape"]
-            table="<table data-object='rich-payload'><tbody>"+"".join(
+            table="<table id='source-table' data-object='rich-payload'><tbody>"+"".join(
                 "<tr>"+"".join(f"<td><strong>{domain['entity']} {ri+1}.{ci+1}</strong></td>" for ci in range(c))+"</tr>" for ri in range(r))+"</tbody></table>"
-            elements.append(table)
+            elements.extend([table,f"<p id='source-url'>{b_final}</p>",
+                "<form id='url-form'><input id='url' aria-label='URL destination'><button>Submit URL</button></form>",
+                "<script>document.querySelector('#url-form').addEventListener('submit',async e=>{e.preventDefault();let r=await fetch('/submit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:document.querySelector('#url').value})});document.querySelector('#result').textContent=r.ok?'Submitted':'Rejected'});</script>","<output id='result'></output>"])
         elif workflow_id=="C-02":
-            elements.append(f"<a href='https://example.org/{domain['id']}/{instance_id[-6:]}'>Open {domain['entity']} reference</a>")
+            href=json.loads(a_final)["href"]
+            elements.extend([f"<a id='source-a' href='{href}'>{a_initial}</a>",
+                f"<p id='source-b'>Destination URL: {b_final}</p>",
+                "<form id='submit-form'><input id='value' aria-label='URL destination'><button>Submit URL</button></form>",
+                "<script>document.querySelector('#submit-form').addEventListener('submit',async e=>{e.preventDefault();await fetch('/submit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:document.querySelector('#value').value})});});</script>"])
         elif workflow_id=="A-01":
-            elements.extend([f"<section data-tab='A'><label>{domain['field_a']}<input id='a' value='{a_initial}'></label></section>",
-                             f"<section data-tab='B'><label>{domain['field_b']}<input id='b' value='{b_initial}'></label></section>"])
+            elements.append("<p>CoDesk Application Context task: use the two local Browser routes.</p>")
         elif workflow_id=="A-02":
-            elements.extend([f"<button data-record='A'>{domain['entity']} A</button>",f"<button data-record='B'>{domain['entity']} B</button>"])
+            elements.extend(["<button data-record='A'>Record A</button>","<button data-record='B'>Record B</button>",
+                "<input id='value'><button id='save'>Save selected</button>"])
         elif workflow_id=="A-N1":
             elements.extend(["<button data-route='A'>Open A</button>","<button data-route='B'>Open B</button>",
                              f"<input data-route-field='{schema.get('field','resolution')}'>"])
         elif workflow_id=="F-02":
-            elements.append(f"<form data-object='review'><label>{domain['field_a']}<input id='decision'></label><button>Submit</button></form>")
+            task=json.loads(b_final)
+            elements.extend([f"<h2>Review {task['case']}</h2>",
+                f"<label>Case<input id='case' value='{task['case']}'></label>",
+                f"<label>Decision<input id='decision' value='{task['decision']}'></label>",
+                "<button id='submit'>Submit review</button>",
+                "<script>document.querySelector('#submit').onclick=async()=>{await fetch('/submit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({case:document.querySelector('#case').value,decision:document.querySelector('#decision').value})})}</script>"])
         else:
             elements.append(f"<form data-object='{profile['b']}'><label>{domain['field_b']}<input id='value'></label><button>Submit</button></form>")
-        assets["workspace.html"]=_html(domain["title"],elements,layout["fixture_layout"])
-        assets["browser-initial-state.json"]=(json.dumps({"domain":domain["id"],"records":{"A":a_initial,"B":b_initial},"routes":{"A":"initial","B":"initial"},"submissions":{}},sort_keys=True)+"\n").encode()
+        page_title=("CoDesk C-02 hyperlink transfer" if workflow_id=="C-02" else domain["title"])
+        assets["workspace.html"]=_html(page_title,elements,layout["fixture_layout"])
+        if workflow_id=="A-01":
+            initial_browser={"window_id":None,"active_tab":"tab-a","tabs":{
+                "tab-a":{"url":"/actor-a","goal":"","revision":0},
+                "tab-b":{"url":"/actor-b","goal":"","revision":0}}}
+            assets["browser-server.py"]=_a01_server_source(
+                "/home/oem/codesk/"+instance_id+"/browser-initial-state.json",
+                "/home/oem/codesk/"+instance_id+"/browser-events.jsonl")
+            assets["browser-events.jsonl"]=b""
+        elif workflow_id=="A-02":
+            initial_browser={"selected_record":"record-a","records":{
+                "record-a":{"goal":"","revision":0},"record-b":{"goal":"","revision":0}}}
+            assets["browser-server.py"]=_a02_server_source(
+                "/home/oem/codesk/"+instance_id+"/browser-initial-state.json",
+                "/home/oem/codesk/"+instance_id+"/browser-events.jsonl")
+            assets["browser-events.jsonl"]=b""
+        elif workflow_id=="A-N1":
+            initial_browser={"window_id":None,"active_route":"route-a","tab_hash":"/workspace#route-a",
+                "routes":{"route-a":{"value":"","revision":0},"route-b":{"value":"","revision":0}}}
+            assets["browser-server.py"]=_an1_server_source(
+                "/home/oem/codesk/"+instance_id+"/browser-initial-state.json",
+                "/home/oem/codesk/"+instance_id+"/browser-events.jsonl")
+            assets["browser-events.jsonl"]=b""
+        elif workflow_id=="C-N1":
+            initial_browser={"submission":{},"revision":0,"expected_url":b_final}
+            assets["browser-events.jsonl"]=b""
+        elif workflow_id in {"C-02","F-02"}:
+            initial_browser={"submission":{},"revision":0}
+        else:
+            initial_browser={"domain":domain["id"],"records":{"A":a_initial,"B":b_initial},"routes":{"A":"initial","B":"initial"},"submissions":{}}
+        assets["browser-initial-state.json"]=(json.dumps(initial_browser,sort_keys=True)+"\n").encode()
     if not assets:
         assets["task-state.json"]=(json.dumps({"domain":domain["id"],"initial_a":a_initial,"initial_b":b_initial},sort_keys=True)+"\n").encode()
     return assets
@@ -352,28 +696,104 @@ def build_instance(workflow_id: str, domain: dict[str,Any], profile: dict[str,An
                    layout: dict[str,Any], generation_seed: int, root: Path) -> InstanceSpecV1:
     row=_workflow_row(workflow_id)
     a0,b0,a1,b1=_semantic_values(workflow_id,domain,profile,layout)
+    canonical_f01 = workflow_id=="F-01" and domain["id"]=="capital_allocation" and profile["id"]=="cell_b2" and layout["id"]=="guard_after"
+    if canonical_f01:
+        a0,b0,a1,b1="Quarterly status report","Draft","Approved by GUI actor","Approved"
+    canonical_f04 = workflow_id=="F-04" and domain["id"]=="capital_allocation" and profile["id"]=="range_b2_c3" and layout["id"]=="guard_after"
+    if canonical_f04:
+        b0,b1="Review summary: Draft","Review summary: Final"
     target_objects=_targets(row,profile,layout)
     if len(set(target_objects["A"]+target_objects["B"])) != 2:
         raise ValueError(f"actor target overlap in {workflow_id}/{profile['id']}")
-    if a0==a1 or b0==b1: raise ValueError("no-op actor goal")
+    if (a0==a1 and workflow_id!="U-01") or b0==b1: raise ValueError("no-op actor goal")
     semantic={"workflow_id":workflow_id,"operation_graph":row["operation_graph"],
+              "operation_schema_revision": {"F-01":4,"F-04":4,"C-01":4,"C-02":3,"F-02":3,"A-01":2,"U-01":2,"C-03":3,"U-N1":1,"C-N1":2}.get(workflow_id,1),
               "domain_id":domain["id"],"object_profile_id":profile["id"],
               "object_schema":profile["schema"],"layout_id":layout["id"],
               "domain_schema":{k:domain[k] for k in ("entity","field_a","field_b")}}
     semantic_sig=sha256(canonical_bytes(semantic))
     instance_id=f"cdv1-{workflow_id.lower().replace('-','')}-{semantic_sig[:16]}"
+    matrix_expected = None
+    if workflow_id=="C-01":
+        canonical_c01 = domain["id"]=="capital_allocation" and profile["id"]=="writer_note_calc_cell" and layout["id"]=="guard_after"
+        if canonical_c01:
+            a0,b0,a1,b1="INSERT COPIED VALUE","__EMPTY_CELL__","REF-7319","BATCH-204"
+    if workflow_id=="A-01":
+        a0="";b0=""
+    if workflow_id=="F-02":
+        if domain["id"]=="capital_allocation" and profile["id"]=="anchor_summary" and layout["id"]=="guard_after":
+            a0="Review anchor";b0="__UNSUBMITTED__"
+            a1=json.dumps({"anchor":"Review anchor","comment":"Review note 482"},sort_keys=True,separators=(",",":"))
+            b1=json.dumps({"case":"CASE-901","decision":"APPROVE"},sort_keys=True,separators=(",",":"))
+    if workflow_id=="C-02":
+        if domain["id"]=="capital_allocation" and profile["id"]=="href_reference" and layout["id"]=="guard_after":
+            a0="Reference link"; b0=""
+            a1=json.dumps({"text":"Reference link","href":"https://example.org/codesk/reference-a"},sort_keys=True,separators=(",",":"))
+            b1="https://example.org/codesk/reference-b"
+    if workflow_id=="F-04":
+        r0,c0=_cell_coord(profile["schema"]["range"][0])
+        r1,c1=_cell_coord(profile["schema"]["range"][1])
+        rows,cols=r1-r0+1,c1-c0+1
+        if profile["id"]=="range_b2_c3":
+            matrix_expected=[["11","12"],["21","22"]]
+        else:
+            matrix_expected=[[f"{domain['a_status']}-{r+1}{c+1}" for c in range(cols)] for r in range(rows)]
+        a0="__EMPTY_RANGE__"
+        a1=json.dumps(matrix_expected,separators=(",",":"))
     initial={"actors":{"A":{"value":a0,"object":target_objects["A"][0]},
                        "B":{"value":b0,"object":target_objects["B"][0]},
                        "guards":{"main":"PRESERVE"}},
              "treatment":{"resource":row["family"],"initial":profile["schema"]}}
     expected=json.loads(json.dumps(initial))
-    expected["actors"]["A"]["value"]=a1; expected["actors"]["B"]["value"]=b1
-    actor_goals=(ActorGoalSpec("A",row["task_domains"][0],row["goal_a"],
-                 f"{profile['schema'].get('action','update')} {target_objects['A'][0]}",
-                 tuple(target_objects["A"]),a0,a1),
-                 ActorGoalSpec("B",row["task_domains"][1],row["goal_b"],
-                 f"{profile['schema'].get('action','update')} {target_objects['B'][0]}",
-                 tuple(target_objects["B"]),b0,b1))
+    expected["actors"]["A"]["value"]=a0 if workflow_id in {"U-01","U-N1"} else a1
+    expected["actors"]["B"]["value"]=b1
+    goal_a=row["goal_a"]
+    goal_b=row["goal_b"]
+    op_a=f"{profile['schema'].get('action','update')} {target_objects['A'][0]}"
+    if workflow_id=="U-01":
+        goal_a=f"Temporarily set Calc {profile['a'].split('/')[-1]} to {a1}; after Actor B's edit, use Undo so this cell returns to {a0}."
+        goal_b=f"Set Calc {profile['b'].split('/')[-1]} to {b1} and save."
+        op_a="temporary value edit followed by an Undo after Actor B's committed edit"
+    if workflow_id=="U-N1":
+        index=int(profile["a"].split("[")[-1].split("]")[0])
+        goal_a=f"Temporarily replace Writer paragraph {index+1} with {a1}; after Actor B edits their paragraph, use Undo to restore the original text {a0}."
+        goal_b=f"Replace Writer paragraph {profile['b'].split('[')[-1].split(']')[0]} with {b1} and save."
+        op_a="temporary Writer paragraph replacement followed by Undo after Actor B's committed edit"
+    if workflow_id=="A-01":
+        goal_a=f"Submit {a1} in Browser tab A (/actor-a)."
+        goal_b=f"Submit {b1} in Browser tab B (/actor-b)."
+        op_a="submit exact goal in active tab A"
+    if workflow_id=="F-02":
+        goal_a=f"Attach the exact comment {json.loads(a1)['comment']} to the Writer anchor {a0}; preserve the document text and guard."
+        goal_b=f"Fill the Browser case {json.loads(b1)['case']} and decision {json.loads(b1)['decision']} and submit exactly once."
+        op_a="attach comment to exact Writer anchor without changing visible text"
+    if workflow_id=="C-02":
+        goal_a=f"Copy the Browser link labeled {a0} into the Writer label with its exact destination; preserve the guard and save."
+        goal_b=f"Submit the Browser destination URL {b1} exactly once."
+        op_a="copy Browser hyperlink object and paste into Writer label"
+    if workflow_id=="C-01":
+        goal_a=f"Copy Writer source {a1} into the destination placeholder paragraph and save."
+        goal_b=f"Copy Calc A1 value {b1} into {target_objects['B'][0].split('/')[-1]} and save."
+        op_a="copy Writer source paragraph and paste into the assigned destination paragraph"
+    if workflow_id=="C-N1":
+        goal_a=f"Copy the {profile['schema']['shape'][0]} by {profile['schema']['shape'][1]} HTML table from the Browser page into the Writer destination table and preserve exact row/cell structure."
+        goal_b=f"Copy the Browser URL {b1} into the URL field and submit it exactly once."
+        op_a="copy Browser HTML table and paste as a structured Writer table"
+        op_b="copy Browser URL text and submit exact value"
+    if workflow_id=="C-03":
+        rows,cols=profile["schema"]["shape"];source_end=f"{chr(ord('A')+cols-1)}{rows}"
+        goal_a=f"Copy Calc source range {profile['schema']['source_range']} into {target_objects['A'][0].split('/',1)[1]} and save; preserve the source and guards."
+        goal_b="Copy Writer paragraph 1 into the blank Writer paragraph 2 and save."
+        op_a=f"copy Calc source range {profile['schema']['source_range']} and paste into the assigned destination range"
+        op_b="copy Writer paragraph 1 and paste into blank paragraph 2"
+    if workflow_id=="F-04":
+        goal_a=f"Fill Calc range {profile['schema']['range'][0]}:{profile['schema']['range'][1]} row-wise with {a1} and save."
+        op_a=f"fill {target_objects['A'][0]} row-wise"
+    op_b=locals().get("op_b",f"{profile['schema'].get('action','update')} {target_objects['B'][0]}")
+    actor_goals=(ActorGoalSpec("A",row["task_domains"][0],goal_a,
+                 op_a,tuple(target_objects["A"]),a0,a1),
+                 ActorGoalSpec("B",row["task_domains"][1],goal_b,
+                 op_b,tuple(target_objects["B"]),b0,b1))
     assets=_fixture_bytes(workflow_id,domain,profile,layout,a0,b0,a1,b1,instance_id)
     fixture_rows=[]
     for rel,data in sorted(assets.items()):
@@ -391,6 +811,14 @@ def build_instance(workflow_id: str, domain: dict[str,Any], profile: dict[str,An
        "condition_semantics":{"solo":"score selected actor; require inactive target and guards unchanged",
         "ma_id":"score each actor on equivalent independent desktop fixture",
         "ma_sd":"score both actor goals and shared-state integrity"}}
+    if workflow_id=="U-01":
+        evaluator["history_contract"]={"actor_a_requires":["temporary_edit_committed","undo_action_after_actor_b_commit"],
+            "actor_b_requires":["target_edit_committed"],"final_state_is_not_sufficient":True,
+            "operation_schema_revision":2}
+    if workflow_id=="U-N1":
+        evaluator["history_contract"]={"actor_a_requires":["temporary_edit_committed","undo_action_after_actor_b_commit"],
+            "actor_b_requires":["target_edit_committed"],"final_state_is_not_sufficient":True,
+            "operation_schema_revision":1,"final_actor_a_value":"initial_value"}
     source_hash=_source_digest()
     provenance={"generator":"swcub.production_v1","source_code_sha256":source_hash,
         "source_commit":git_commit(Path(__file__).resolve().parents[1]),"semantic_spec_sha256":semantic_sig,
@@ -437,6 +865,16 @@ def evaluate_oracle(spec: InstanceSpecV1 | dict[str,Any], actual: dict[str,Any],
     initial=row["evaluator"]["initial_state"]; expected=row["evaluator"]["expected_state"]
     actor_success={a:(actual.get("actors",{}).get(a,{}).get("value")==expected["actors"][a]["value"])
                    for a in active_actors}
+    history_contract=row["evaluator"].get("history_contract")
+    if row.get("workflow_id") in {"U-01","U-N1"} and history_contract:
+        evidence=actual.get("workflow_evidence",{})
+        actor_a=evidence.get("A",{})
+        if "A" in active_actors:
+            actor_success["A"]=actor_success.get("A",False) and bool(actor_a.get("temporary_edit_observed"))
+            if "B" in active_actors:
+                actor_success["A"] &= bool(actor_a.get("undo_after_actor_b"))
+            else:
+                actor_success["A"] &= bool(actor_a.get("undo_after_temporary_edit"))
     inactive_integrity={a:(actual.get("actors",{}).get(a)==initial["actors"][a])
                         for a in ("A","B") if a not in active_actors}
     guards_ok=actual.get("actors",{}).get("guards")==initial["actors"]["guards"]
@@ -444,9 +882,15 @@ def evaluate_oracle(spec: InstanceSpecV1 | dict[str,Any], actual: dict[str,Any],
        "guards_intact":guards_ok,"joint_success":bool(actor_success) and all(actor_success.values())
            and all(inactive_integrity.values()) and guards_ok}
 
-def _positive_state(spec: InstanceSpecV1) -> dict[str,Any]: return json.loads(json.dumps(spec.expected_final_state))
+def _positive_state(spec: InstanceSpecV1) -> dict[str,Any]:
+    state=json.loads(json.dumps(spec.expected_final_state))
+    if spec.workflow_id in {"U-01","U-N1"}:
+        state["workflow_evidence"]={"A":{"temporary_edit_observed":True,"undo_after_temporary_edit":True,"undo_after_actor_b":True}}
+    return state
 def _negative_state(spec: InstanceSpecV1) -> dict[str,Any]:
-    bad=_positive_state(spec); bad["actors"]["A"]["value"]=spec.actor_goals[0].initial_value; return bad
+    bad=_positive_state(spec); bad["actors"]["A"]["value"]=spec.actor_goals[0].initial_value
+    if spec.workflow_id in {"U-01","U-N1"}:bad["workflow_evidence"]["A"]["undo_after_actor_b"]=False
+    return bad
 
 def to_record(spec: InstanceSpecV1) -> dict[str,Any]:
     d=instance_dict(spec)

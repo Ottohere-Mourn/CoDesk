@@ -1,0 +1,261 @@
+{
+  "actor_goals": [
+    {
+      "actor_id": "A",
+      "expected_value": "Accepted-SUP-2048",
+      "goal": "Submit Accepted-SUP-2048 in Browser tab A (/actor-a).",
+      "initial_value": "",
+      "operation": "submit exact goal in active tab A",
+      "target_objects": [
+        "browser/tab-a/supplier-page"
+      ],
+      "task_domain": "Browser"
+    },
+    {
+      "actor_id": "B",
+      "expected_value": "Verified-SUP-2048",
+      "goal": "Submit Verified-SUP-2048 in Browser tab B (/actor-b).",
+      "initial_value": "",
+      "operation": "update browser/tab-b/document-page",
+      "target_objects": [
+        "browser/tab-b/document-page"
+      ],
+      "task_domain": "Browser"
+    }
+  ],
+  "benchmark_version": "codesk-v1.0",
+  "evaluator": {
+    "actor_paths": {
+      "A": "actors.A.value",
+      "B": "actors.B.value"
+    },
+    "adapter": "codesk_exact_state_v1",
+    "condition_semantics": {
+      "ma_id": "score each actor on equivalent independent desktop fixture",
+      "ma_sd": "score both actor goals and shared-state integrity",
+      "solo": "score selected actor; require inactive target and guards unchanged"
+    },
+    "expected_state": {
+      "actors": {
+        "A": {
+          "object": "browser/tab-a/supplier-page",
+          "value": "Accepted-SUP-2048"
+        },
+        "B": {
+          "object": "browser/tab-b/document-page",
+          "value": "Verified-SUP-2048"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "context_kind": "tab-specific records",
+          "fields": [
+            "supplier",
+            "document"
+          ]
+        },
+        "resource": "application_context"
+      }
+    },
+    "initial_state": {
+      "actors": {
+        "A": {
+          "object": "browser/tab-a/supplier-page",
+          "value": ""
+        },
+        "B": {
+          "object": "browser/tab-b/document-page",
+          "value": ""
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "context_kind": "tab-specific records",
+          "fields": [
+            "supplier",
+            "document"
+          ]
+        },
+        "resource": "application_context"
+      }
+    },
+    "invariants": [
+      {
+        "equals": "PRESERVE",
+        "path": "actors.guards.main"
+      }
+    ],
+    "schedule_policy_id": "observe-a-context-change-b-resume-a-v1"
+  },
+  "evaluator_path": "evaluators/cdv1-a01-6d9910967ca9e8b2.json",
+  "evaluator_sha256": "6a12caa1a80bb441223e6d2ff06045a17cdc966e4c7a71730923d3c28b5cf527",
+  "family": "application_context",
+  "fixture_files": [
+    {
+      "path": "fixtures/cdv1-a01-6d9910967ca9e8b2/browser-events.jsonl",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size_bytes": 0
+    },
+    {
+      "path": "fixtures/cdv1-a01-6d9910967ca9e8b2/browser-initial-state.json",
+      "sha256": "76178f3af15858b8b4a1db37f3acbe697bc68c3f12d54be759627be34896e819",
+      "size_bytes": 167
+    },
+    {
+      "path": "fixtures/cdv1-a01-6d9910967ca9e8b2/browser-server.py",
+      "sha256": "eae9ddad52911b3d50d844c80b89364779d1ac23a9cc03e0a795629580420d4f",
+      "size_bytes": 3243
+    },
+    {
+      "path": "fixtures/cdv1-a01-6d9910967ca9e8b2/workspace.html",
+      "sha256": "9be2860a35d2afcd91f1b0212e0e6b28c2155b84e5060a8bc02e1c23c5080f3a",
+      "size_bytes": 233
+    }
+  ],
+  "generation_seed": 2026,
+  "initial_fixture_spec": {
+    "application_set": [
+      "Browser",
+      "Browser"
+    ],
+    "fixture_profile": "tabs_supplier_docs",
+    "layout_id": "guard_after",
+    "public_assets": [
+      {
+        "path": "fixtures/cdv1-a01-6d9910967ca9e8b2/browser-events.jsonl",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size_bytes": 0
+      },
+      {
+        "path": "fixtures/cdv1-a01-6d9910967ca9e8b2/browser-initial-state.json",
+        "sha256": "76178f3af15858b8b4a1db37f3acbe697bc68c3f12d54be759627be34896e819",
+        "size_bytes": 167
+      },
+      {
+        "path": "fixtures/cdv1-a01-6d9910967ca9e8b2/browser-server.py",
+        "sha256": "eae9ddad52911b3d50d844c80b89364779d1ac23a9cc03e0a795629580420d4f",
+        "size_bytes": 3243
+      },
+      {
+        "path": "fixtures/cdv1-a01-6d9910967ca9e8b2/workspace.html",
+        "sha256": "9be2860a35d2afcd91f1b0212e0e6b28c2155b84e5060a8bc02e1c23c5080f3a",
+        "size_bytes": 233
+      }
+    ]
+  },
+  "instance_id": "cdv1-a01-6d9910967ca9e8b2",
+  "manifest_entry_sha256": "b7be07979c64678143372bdacfddd52af5b95ce57e57eb81126fa80450c29e14",
+  "provenance": {
+    "fixture_sha256": "a4e9d65649845c3f967b61f82117745be0a724b980548079b80fcec0be3992f1",
+    "generation_seed": 2026,
+    "generator": "swcub.production_v1",
+    "seed_role": "deterministic profile ordering only; excluded from instance identity",
+    "semantic_spec_sha256": "6d9910967ca9e8b280a7f9fa50e24b0cc06790f4a5cdaff82e2938c7474ff43f",
+    "source_code_sha256": "abaf2fd32b70bf456dc7b4672199745df8a1968aab95f9cb043ee3501c5158dd",
+    "source_commit": "9417ff53cb75118a89529f670bb4323b8f07b25a"
+  },
+  "reset_metadata": {
+    "fixture_id": "cdv1-a01-6d9910967ca9e8b2",
+    "fresh_guest_required": true,
+    "remove_prior_app_state": true,
+    "verify_fixture_hash": "a4e9d65649845c3f967b61f82117745be0a724b980548079b80fcec0be3992f1",
+    "verify_state": {
+      "actors": {
+        "A": {
+          "object": "browser/tab-a/supplier-page",
+          "value": ""
+        },
+        "B": {
+          "object": "browser/tab-b/document-page",
+          "value": ""
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "context_kind": "tab-specific records",
+          "fields": [
+            "supplier",
+            "document"
+          ]
+        },
+        "resource": "application_context"
+      }
+    }
+  },
+  "schedule_policy_id": "observe-a-context-change-b-resume-a-v1",
+  "semantic_parameters": {
+    "domain_id": "supplier_onboarding",
+    "domain_schema": {
+      "entity": "supplier record",
+      "field_a": "Review decision",
+      "field_b": "Verification state"
+    },
+    "layout_id": "guard_after",
+    "object_profile_id": "tabs_supplier_docs",
+    "object_schema": {
+      "context_kind": "tab-specific records",
+      "fields": [
+        "supplier",
+        "document"
+      ]
+    },
+    "operation_graph": "two_tab_context",
+    "operation_schema_revision": 2,
+    "workflow_id": "A-01"
+  },
+  "signatures": {
+    "fixture": "a4e9d65649845c3f967b61f82117745be0a724b980548079b80fcec0be3992f1",
+    "goal": "a2110ce5bb570c816d360217bcf98182260e7717b0ed80af65dba4b8b891cf4a",
+    "semantic": "6d9910967ca9e8b280a7f9fa50e24b0cc06790f4a5cdaff82e2938c7474ff43f",
+    "structural": "a7540431258db609e607faefb827804c5c2596282f2daa2f7c8be3a48bf80795"
+  },
+  "target_objects": {
+    "A": [
+      "browser/tab-a/supplier-page"
+    ],
+    "B": [
+      "browser/tab-b/document-page"
+    ]
+  },
+  "task_domains": {
+    "A": "Browser",
+    "B": "Browser"
+  },
+  "topology_compatibility": {
+    "ma_id": {
+      "backend_binding": "same logical workspace seed; independent desktop sessions allowed",
+      "desktop_count": 2,
+      "fixtures": "byte-identical task-relevant clones"
+    },
+    "ma_sd": {
+      "actor_bindings": "A and B share desktop",
+      "desktop_count": 1
+    },
+    "solo": {
+      "actor_bindings": "A or B",
+      "desktop_count": 1
+    }
+  },
+  "treatment_relevant_state": {
+    "family_state": "application_context",
+    "operation_graph": "two_tab_context",
+    "shared_resource": {
+      "context_kind": "tab-specific records",
+      "fields": [
+        "supplier",
+        "document"
+      ]
+    }
+  },
+  "validation_level": "qwen_mechanism_evidence",
+  "workflow_id": "A-01"
+}

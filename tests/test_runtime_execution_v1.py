@@ -17,7 +17,8 @@ class RuntimeExecutionTests(unittest.TestCase):
    events=[];kwargs=dict(scheduler_kwargs or {})
    policy=plan["topologies"][topology]["schedule_policy_id"]
    if "round-robin" not in policy and "gate" not in kwargs:
-    kwargs["gate"]=EventGate([{"kind":"action_complete","actor_id":aid} for aid in active])
+    sequence=("A","B","A") if policy=="edit-a-edit-b-undo-a-v1" else tuple(active)
+    kwargs["gate"]=EventGate([{"kind":"action_complete","actor_id":aid} for aid in sequence])
    scheduler=DeterministicRuntimeScheduler(actor_factory,backend,step_budget=3,event_sink=events.append,**kwargs)
    result=RuntimeExecutor().execute(adapter,plan,cfg,backend,scheduler,Path(tmp))
    result["_test_provenance_exists"]=(Path(tmp)/"provenance.json").is_file()
@@ -96,7 +97,8 @@ class RuntimeExecutionTests(unittest.TestCase):
    summary=json.loads(proc.stdout)
    self.assertEqual(result["status"],Outcome.BLOCKED_RUNTIME_BACKEND.value)
    self.assertFalse(result["guest_started"]);self.assertFalse(summary["guest_started"])
-   self.assertIn("exact_hidden_state_observer",result["unresolved_plan_components"])
+   self.assertEqual(result["unresolved_plan_components"],[])
+   self.assertTrue(result["missing_components"])
  def test_fake_backend_cannot_be_mistaken_for_guest_evidence(self):
   self.assertTrue(FakeGuestBackend.FAKE_BACKEND_ONLY)
  def test_static_a6000_backend_preflight_has_no_guest_side_effects(self):

@@ -1,0 +1,236 @@
+{
+  "actor_goals": [
+    {
+      "actor_id": "A",
+      "expected_value": "{\"href\":\"https://example.org/capital_allocation/href_ticket\",\"text\":\"Open capital request reference\"}",
+      "goal": "Copy the Browser link labeled Open capital request reference into the Writer label with its exact destination; preserve the guard and save.",
+      "initial_value": "Open capital request reference",
+      "operation": "copy Browser hyperlink object and paste into Writer label",
+      "target_objects": [
+        "writer/hyperlink-paragraph[0]"
+      ],
+      "task_domain": "Writer"
+    },
+    {
+      "actor_id": "B",
+      "expected_value": "https://example.org/capital_allocation/submit",
+      "goal": "Submit the Browser destination URL https://example.org/capital_allocation/submit exactly once.",
+      "initial_value": "",
+      "operation": "update browser/url-field:ticket",
+      "target_objects": [
+        "browser/url-field:ticket"
+      ],
+      "task_domain": "Browser"
+    }
+  ],
+  "benchmark_version": "codesk-v1.0",
+  "evaluator": {
+    "actor_paths": {
+      "A": "actors.A.value",
+      "B": "actors.B.value"
+    },
+    "adapter": "codesk_exact_state_v1",
+    "condition_semantics": {
+      "ma_id": "score each actor on equivalent independent desktop fixture",
+      "ma_sd": "score both actor goals and shared-state integrity",
+      "solo": "score selected actor; require inactive target and guards unchanged"
+    },
+    "expected_state": {
+      "actors": {
+        "A": {
+          "object": "writer/hyperlink-paragraph[0]",
+          "value": "{\"href\":\"https://example.org/capital_allocation/href_ticket\",\"text\":\"Open capital request reference\"}"
+        },
+        "B": {
+          "object": "browser/url-field:ticket",
+          "value": "https://example.org/capital_allocation/submit"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "destination_field": "ticket-url",
+          "link_label_kind": "ticket label"
+        },
+        "resource": "clipboard_state"
+      }
+    },
+    "initial_state": {
+      "actors": {
+        "A": {
+          "object": "writer/hyperlink-paragraph[0]",
+          "value": "Open capital request reference"
+        },
+        "B": {
+          "object": "browser/url-field:ticket",
+          "value": ""
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "destination_field": "ticket-url",
+          "link_label_kind": "ticket label"
+        },
+        "resource": "clipboard_state"
+      }
+    },
+    "invariants": [
+      {
+        "equals": "PRESERVE",
+        "path": "actors.guards.main"
+      }
+    ],
+    "schedule_policy_id": "url-copy-confirm-link-copy-confirm-resume-v1"
+  },
+  "evaluator_path": "evaluators/cdv1-c02-245c22d02811d8ef.json",
+  "evaluator_sha256": "c1b763283b59282d96829e30cace4b7c99b78b7a33d449e9227d7d6b18a1ecaa",
+  "family": "clipboard_state",
+  "fixture_files": [
+    {
+      "path": "fixtures/cdv1-c02-245c22d02811d8ef/browser-initial-state.json",
+      "sha256": "e2e28dfd2ee2acd67aa5f7c5439e6ba096fea81ff01562bef00ff641f8ce805d",
+      "size_bytes": 34
+    },
+    {
+      "path": "fixtures/cdv1-c02-245c22d02811d8ef/document.fodt",
+      "sha256": "0af9c129263c50ab380667ba1fa65955e095c6cc9147d1733149d9a156f91edb",
+      "size_bytes": 352
+    },
+    {
+      "path": "fixtures/cdv1-c02-245c22d02811d8ef/workspace.html",
+      "sha256": "3654fc91796277d3fbacc54c1648775c6eeb0492d5a7dd97217549a3e5abbf87",
+      "size_bytes": 730
+    }
+  ],
+  "generation_seed": 2026,
+  "initial_fixture_spec": {
+    "application_set": [
+      "Writer",
+      "Browser"
+    ],
+    "fixture_profile": "href_ticket",
+    "layout_id": "guard_after",
+    "public_assets": [
+      {
+        "path": "fixtures/cdv1-c02-245c22d02811d8ef/browser-initial-state.json",
+        "sha256": "e2e28dfd2ee2acd67aa5f7c5439e6ba096fea81ff01562bef00ff641f8ce805d",
+        "size_bytes": 34
+      },
+      {
+        "path": "fixtures/cdv1-c02-245c22d02811d8ef/document.fodt",
+        "sha256": "0af9c129263c50ab380667ba1fa65955e095c6cc9147d1733149d9a156f91edb",
+        "size_bytes": 352
+      },
+      {
+        "path": "fixtures/cdv1-c02-245c22d02811d8ef/workspace.html",
+        "sha256": "3654fc91796277d3fbacc54c1648775c6eeb0492d5a7dd97217549a3e5abbf87",
+        "size_bytes": 730
+      }
+    ]
+  },
+  "instance_id": "cdv1-c02-245c22d02811d8ef",
+  "manifest_entry_sha256": "34c6cd49e802161a614a89959babf231ddb9f8efe43ae2d823b2704d96ee5efa",
+  "provenance": {
+    "fixture_sha256": "6dc1fcdbe8fdb1871a4f5d9b635477c8d1e4ea760ff4e3cfc0b055b4e0b8212a",
+    "generation_seed": 2026,
+    "generator": "swcub.production_v1",
+    "seed_role": "deterministic profile ordering only; excluded from instance identity",
+    "semantic_spec_sha256": "245c22d02811d8ef833539bcea0ebef2fc383fda68c87daf80525371bcdc285e",
+    "source_code_sha256": "3e624ddcdfaca243000fe8b96103ce5fc81997e132763290377d2312ded40335",
+    "source_commit": "9417ff53cb75118a89529f670bb4323b8f07b25a"
+  },
+  "reset_metadata": {
+    "fixture_id": "cdv1-c02-245c22d02811d8ef",
+    "fresh_guest_required": true,
+    "remove_prior_app_state": true,
+    "verify_fixture_hash": "6dc1fcdbe8fdb1871a4f5d9b635477c8d1e4ea760ff4e3cfc0b055b4e0b8212a",
+    "verify_state": {
+      "actors": {
+        "A": {
+          "object": "writer/hyperlink-paragraph[0]",
+          "value": "Open capital request reference"
+        },
+        "B": {
+          "object": "browser/url-field:ticket",
+          "value": ""
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "destination_field": "ticket-url",
+          "link_label_kind": "ticket label"
+        },
+        "resource": "clipboard_state"
+      }
+    }
+  },
+  "schedule_policy_id": "url-copy-confirm-link-copy-confirm-resume-v1",
+  "semantic_parameters": {
+    "domain_id": "capital_allocation",
+    "domain_schema": {
+      "entity": "capital request",
+      "field_a": "Decision",
+      "field_b": "Ledger state"
+    },
+    "layout_id": "guard_after",
+    "object_profile_id": "href_ticket",
+    "object_schema": {
+      "destination_field": "ticket-url",
+      "link_label_kind": "ticket label"
+    },
+    "operation_graph": "semantic_hyperlink_transfer",
+    "operation_schema_revision": 3,
+    "workflow_id": "C-02"
+  },
+  "signatures": {
+    "fixture": "6dc1fcdbe8fdb1871a4f5d9b635477c8d1e4ea760ff4e3cfc0b055b4e0b8212a",
+    "goal": "53c501606333599ed5a685a6f6e51e1d10c4757cae08b6e450a19af7883ded2b",
+    "semantic": "245c22d02811d8ef833539bcea0ebef2fc383fda68c87daf80525371bcdc285e",
+    "structural": "8afc84c9c7ce6f1b680b38cf091ab3ad6139acfd763dae20e6d6328e944a9878"
+  },
+  "target_objects": {
+    "A": [
+      "writer/hyperlink-paragraph[0]"
+    ],
+    "B": [
+      "browser/url-field:ticket"
+    ]
+  },
+  "task_domains": {
+    "A": "Writer",
+    "B": "Browser"
+  },
+  "topology_compatibility": {
+    "ma_id": {
+      "backend_binding": "same logical workspace seed; independent desktop sessions allowed",
+      "desktop_count": 2,
+      "fixtures": "byte-identical task-relevant clones"
+    },
+    "ma_sd": {
+      "actor_bindings": "A and B share desktop",
+      "desktop_count": 1
+    },
+    "solo": {
+      "actor_bindings": "A or B",
+      "desktop_count": 1
+    }
+  },
+  "treatment_relevant_state": {
+    "family_state": "clipboard_state",
+    "operation_graph": "semantic_hyperlink_transfer",
+    "shared_resource": {
+      "destination_field": "ticket-url",
+      "link_label_kind": "ticket label"
+    }
+  },
+  "validation_level": "scripted_full",
+  "workflow_id": "C-02"
+}

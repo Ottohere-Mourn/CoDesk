@@ -52,6 +52,7 @@ class DeterministicRuntimeScheduler:
         self.actor_factory=actor_factory; self.context_provider=context_provider
         self.step_budget=step_budget; self.max_actions_per_turn=max_actions_per_turn
         self.timeout_seconds=timeout_seconds; self.event_sink=event_sink or (lambda _e:None); self.gate=gate
+        self.event_history=[]
     def execute(self, actor_specs, schedule_policy_id, guests, topology, artifact_root,
                 active_actor_ids=None):
         if topology not in {"solo","ma_id","ma_sd"}: raise ValueError("unsupported topology")
@@ -77,7 +78,10 @@ class DeterministicRuntimeScheduler:
         action_count={}; paused=set(); order=[s.actor_id for s in specs]
         def boundary(actor_id, action):
             action_count[actor_id]=action_count.get(actor_id,0)+1
-            self._emit({"kind":"action_complete","actor_id":actor_id,"action_in_turn":action_count[actor_id],"action_type":type(action).__name__})
+            try: action_payload=json.dumps(action,sort_keys=True,ensure_ascii=False,default=str)
+            except Exception: action_payload=repr(action)
+            self._emit({"kind":"action_complete","actor_id":actor_id,"action_in_turn":action_count[actor_id],
+                "action_type":type(action).__name__,"action_payload":action_payload})
             if action_count[actor_id]>=self.max_actions_per_turn:
                 pause=getattr(actors[actor_id],"pause",None)
                 if callable(pause): pause()
@@ -131,6 +135,7 @@ class DeterministicRuntimeScheduler:
                 "elapsed_seconds":round(time.monotonic()-start,3)}
     def observe_event(self,event):
         row={"ts_unix_ns":time.time_ns(),**dict(event)}
+        self.event_history.append(row)
         advanced=self.gate.observe(row) if self.gate else False
         self.event_sink(row)
         if advanced: self.event_sink({"ts_unix_ns":time.time_ns(),"kind":"gate_advanced","gate_index":self.gate.index})
@@ -164,6 +169,8 @@ class RuntimeExecutor:
         try:
             set_callback=getattr(backend,"set_scheduler_event_callback",None)
             if callable(set_callback): set_callback(scheduler.observe_event)
+            backend.scheduler_event_history=scheduler.event_history
+            backend.active_actor_ids=active
             guests=adapter.prepare(plan,topology,backend)
             execution=scheduler.execute(adapter.get_actor_specs(plan,active),
                 plan["topologies"][topology]["schedule_policy_id"],guests,topology,output,active_actor_ids=active)

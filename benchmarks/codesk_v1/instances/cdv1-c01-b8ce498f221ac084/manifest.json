@@ -1,0 +1,226 @@
+{
+  "actor_goals": [
+    {
+      "actor_id": "A",
+      "expected_value": "SKU-7316",
+      "goal": "Copy Writer source SKU-7316 into the destination placeholder paragraph and save.",
+      "initial_value": "INSERT COPIED VALUE",
+      "operation": "copy Writer source paragraph and paste into the assigned destination paragraph",
+      "target_objects": [
+        "writer/paragraph[1]"
+      ],
+      "task_domain": "Writer"
+    },
+    {
+      "actor_id": "B",
+      "expected_value": "COUNTED-7316",
+      "goal": "Copy Calc A1 value COUNTED-7316 into C2 and save.",
+      "initial_value": "__EMPTY_CELL__",
+      "operation": "update calc/C2",
+      "target_objects": [
+        "calc/C2"
+      ],
+      "task_domain": "Calc"
+    }
+  ],
+  "benchmark_version": "codesk-v1.0",
+  "evaluator": {
+    "actor_paths": {
+      "A": "actors.A.value",
+      "B": "actors.B.value"
+    },
+    "adapter": "codesk_exact_state_v1",
+    "condition_semantics": {
+      "ma_id": "score each actor on equivalent independent desktop fixture",
+      "ma_sd": "score both actor goals and shared-state integrity",
+      "solo": "score selected actor; require inactive target and guards unchanged"
+    },
+    "expected_state": {
+      "actors": {
+        "A": {
+          "object": "writer/paragraph[1]",
+          "value": "SKU-7316"
+        },
+        "B": {
+          "object": "calc/C2",
+          "value": "COUNTED-7316"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "destination": "single cell",
+          "payload_kind": "record identifier"
+        },
+        "resource": "clipboard_state"
+      }
+    },
+    "initial_state": {
+      "actors": {
+        "A": {
+          "object": "writer/paragraph[1]",
+          "value": "INSERT COPIED VALUE"
+        },
+        "B": {
+          "object": "calc/C2",
+          "value": "__EMPTY_CELL__"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "destination": "single cell",
+          "payload_kind": "record identifier"
+        },
+        "resource": "clipboard_state"
+      }
+    },
+    "invariants": [
+      {
+        "equals": "PRESERVE",
+        "path": "actors.guards.main"
+      }
+    ],
+    "schedule_policy_id": "copy-confirm-b-copy-confirm-resume-a-v1"
+  },
+  "evaluator_path": "evaluators/cdv1-c01-b8ce498f221ac084.json",
+  "evaluator_sha256": "418b401f268091c67809a7a27b1a6913b2a045d808b6d8d3332f51bce5c048b0",
+  "family": "clipboard_state",
+  "fixture_files": [
+    {
+      "path": "fixtures/cdv1-c01-b8ce498f221ac084/document.fodt",
+      "sha256": "96f688077bfa1f90e742270cb0ad7b5451a2d4357c2afad80db7d54980d3f9ae",
+      "size_bytes": 334
+    },
+    {
+      "path": "fixtures/cdv1-c01-b8ce498f221ac084/workbook.fods",
+      "sha256": "d646c4c21c528a9690691d9f06aa7bc0505567405ce4c634876acbb8732f129e",
+      "size_bytes": 778
+    }
+  ],
+  "generation_seed": 2026,
+  "initial_fixture_spec": {
+    "application_set": [
+      "Writer",
+      "Calc"
+    ],
+    "fixture_profile": "writer_record_calc_cell",
+    "layout_id": "guard_after",
+    "public_assets": [
+      {
+        "path": "fixtures/cdv1-c01-b8ce498f221ac084/document.fodt",
+        "sha256": "96f688077bfa1f90e742270cb0ad7b5451a2d4357c2afad80db7d54980d3f9ae",
+        "size_bytes": 334
+      },
+      {
+        "path": "fixtures/cdv1-c01-b8ce498f221ac084/workbook.fods",
+        "sha256": "d646c4c21c528a9690691d9f06aa7bc0505567405ce4c634876acbb8732f129e",
+        "size_bytes": 778
+      }
+    ]
+  },
+  "instance_id": "cdv1-c01-b8ce498f221ac084",
+  "manifest_entry_sha256": "1b24dd779f9baddaec6f1d7dbb0e44298b2c959369156cc79826e929511047d6",
+  "provenance": {
+    "fixture_sha256": "fe596f91dbe55f8f9a9c5a18cd4465a5111016f5bb0e09ae7fe012cef7ef7109",
+    "generation_seed": 2026,
+    "generator": "swcub.production_v1",
+    "seed_role": "deterministic profile ordering only; excluded from instance identity",
+    "semantic_spec_sha256": "b8ce498f221ac0842e261b4c790a00590256863cb2d3466354baff9ab1845918",
+    "source_code_sha256": "f5a6ce546ff9c6d6f6c590363015445a5d2302ecd825588c6eeffccbe6233fd7",
+    "source_commit": "9417ff53cb75118a89529f670bb4323b8f07b25a"
+  },
+  "reset_metadata": {
+    "fixture_id": "cdv1-c01-b8ce498f221ac084",
+    "fresh_guest_required": true,
+    "remove_prior_app_state": true,
+    "verify_fixture_hash": "fe596f91dbe55f8f9a9c5a18cd4465a5111016f5bb0e09ae7fe012cef7ef7109",
+    "verify_state": {
+      "actors": {
+        "A": {
+          "object": "writer/paragraph[1]",
+          "value": "INSERT COPIED VALUE"
+        },
+        "B": {
+          "object": "calc/C2",
+          "value": "__EMPTY_CELL__"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "destination": "single cell",
+          "payload_kind": "record identifier"
+        },
+        "resource": "clipboard_state"
+      }
+    }
+  },
+  "schedule_policy_id": "copy-confirm-b-copy-confirm-resume-a-v1",
+  "semantic_parameters": {
+    "domain_id": "warehouse_reconciliation",
+    "domain_schema": {
+      "entity": "warehouse lot",
+      "field_a": "Reconciliation",
+      "field_b": "Count status"
+    },
+    "layout_id": "guard_after",
+    "object_profile_id": "writer_record_calc_cell",
+    "object_schema": {
+      "destination": "single cell",
+      "payload_kind": "record identifier"
+    },
+    "operation_graph": "plain_text_transfer",
+    "operation_schema_revision": 4,
+    "workflow_id": "C-01"
+  },
+  "signatures": {
+    "fixture": "fe596f91dbe55f8f9a9c5a18cd4465a5111016f5bb0e09ae7fe012cef7ef7109",
+    "goal": "34d55ca3e361fe1a0d0590049d972df3278d5c180dc73e3f2aeac30658fab01d",
+    "semantic": "b8ce498f221ac0842e261b4c790a00590256863cb2d3466354baff9ab1845918",
+    "structural": "d3443cdaed2a13310eb0445af87a750c28be76784e6d9f3e64de25fd55c660a4"
+  },
+  "target_objects": {
+    "A": [
+      "writer/paragraph[1]"
+    ],
+    "B": [
+      "calc/C2"
+    ]
+  },
+  "task_domains": {
+    "A": "Writer",
+    "B": "Calc"
+  },
+  "topology_compatibility": {
+    "ma_id": {
+      "backend_binding": "same logical workspace seed; independent desktop sessions allowed",
+      "desktop_count": 2,
+      "fixtures": "byte-identical task-relevant clones"
+    },
+    "ma_sd": {
+      "actor_bindings": "A and B share desktop",
+      "desktop_count": 1
+    },
+    "solo": {
+      "actor_bindings": "A or B",
+      "desktop_count": 1
+    }
+  },
+  "treatment_relevant_state": {
+    "family_state": "clipboard_state",
+    "operation_graph": "plain_text_transfer",
+    "shared_resource": {
+      "destination": "single cell",
+      "payload_kind": "record identifier"
+    }
+  },
+  "validation_level": "qwen_smoke",
+  "workflow_id": "C-01"
+}

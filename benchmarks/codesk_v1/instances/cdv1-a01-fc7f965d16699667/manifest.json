@@ -1,0 +1,261 @@
+{
+  "actor_goals": [
+    {
+      "actor_id": "A",
+      "expected_value": "Reconciled-SKU-7316",
+      "goal": "Submit Reconciled-SKU-7316 in Browser tab A (/actor-a).",
+      "initial_value": "",
+      "operation": "submit exact goal in active tab A",
+      "target_objects": [
+        "browser/tab-a/review-form"
+      ],
+      "task_domain": "Browser"
+    },
+    {
+      "actor_id": "B",
+      "expected_value": "Counted-SKU-7316",
+      "goal": "Submit Counted-SKU-7316 in Browser tab B (/actor-b).",
+      "initial_value": "",
+      "operation": "update browser/tab-b/case-form",
+      "target_objects": [
+        "browser/tab-b/case-form"
+      ],
+      "task_domain": "Browser"
+    }
+  ],
+  "benchmark_version": "codesk-v1.0",
+  "evaluator": {
+    "actor_paths": {
+      "A": "actors.A.value",
+      "B": "actors.B.value"
+    },
+    "adapter": "codesk_exact_state_v1",
+    "condition_semantics": {
+      "ma_id": "score each actor on equivalent independent desktop fixture",
+      "ma_sd": "score both actor goals and shared-state integrity",
+      "solo": "score selected actor; require inactive target and guards unchanged"
+    },
+    "expected_state": {
+      "actors": {
+        "A": {
+          "object": "browser/tab-a/review-form",
+          "value": "Reconciled-SKU-7316"
+        },
+        "B": {
+          "object": "browser/tab-b/case-form",
+          "value": "Counted-SKU-7316"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "context_kind": "independent tab forms",
+          "fields": [
+            "review",
+            "case"
+          ]
+        },
+        "resource": "application_context"
+      }
+    },
+    "initial_state": {
+      "actors": {
+        "A": {
+          "object": "browser/tab-a/review-form",
+          "value": ""
+        },
+        "B": {
+          "object": "browser/tab-b/case-form",
+          "value": ""
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "context_kind": "independent tab forms",
+          "fields": [
+            "review",
+            "case"
+          ]
+        },
+        "resource": "application_context"
+      }
+    },
+    "invariants": [
+      {
+        "equals": "PRESERVE",
+        "path": "actors.guards.main"
+      }
+    ],
+    "schedule_policy_id": "observe-a-context-change-b-resume-a-v1"
+  },
+  "evaluator_path": "evaluators/cdv1-a01-fc7f965d16699667.json",
+  "evaluator_sha256": "14a3b52e5f7139974af91d7519b38185ffcb1cb4f96afc9c13e5f73c8760bd0a",
+  "family": "application_context",
+  "fixture_files": [
+    {
+      "path": "fixtures/cdv1-a01-fc7f965d16699667/browser-events.jsonl",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size_bytes": 0
+    },
+    {
+      "path": "fixtures/cdv1-a01-fc7f965d16699667/browser-initial-state.json",
+      "sha256": "76178f3af15858b8b4a1db37f3acbe697bc68c3f12d54be759627be34896e819",
+      "size_bytes": 167
+    },
+    {
+      "path": "fixtures/cdv1-a01-fc7f965d16699667/browser-server.py",
+      "sha256": "b010727c289bac39b55d8d8904eb3b67fdbccf859cc6a512cf0aae500d09eab7",
+      "size_bytes": 3243
+    },
+    {
+      "path": "fixtures/cdv1-a01-fc7f965d16699667/workspace.html",
+      "sha256": "2f1a2a38404320918d95b534af53e1243527b0dadd16d567975640d6f146bd0a",
+      "size_bytes": 229
+    }
+  ],
+  "generation_seed": 2026,
+  "initial_fixture_spec": {
+    "application_set": [
+      "Browser",
+      "Browser"
+    ],
+    "fixture_profile": "tabs_review_cases",
+    "layout_id": "guard_after",
+    "public_assets": [
+      {
+        "path": "fixtures/cdv1-a01-fc7f965d16699667/browser-events.jsonl",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size_bytes": 0
+      },
+      {
+        "path": "fixtures/cdv1-a01-fc7f965d16699667/browser-initial-state.json",
+        "sha256": "76178f3af15858b8b4a1db37f3acbe697bc68c3f12d54be759627be34896e819",
+        "size_bytes": 167
+      },
+      {
+        "path": "fixtures/cdv1-a01-fc7f965d16699667/browser-server.py",
+        "sha256": "b010727c289bac39b55d8d8904eb3b67fdbccf859cc6a512cf0aae500d09eab7",
+        "size_bytes": 3243
+      },
+      {
+        "path": "fixtures/cdv1-a01-fc7f965d16699667/workspace.html",
+        "sha256": "2f1a2a38404320918d95b534af53e1243527b0dadd16d567975640d6f146bd0a",
+        "size_bytes": 229
+      }
+    ]
+  },
+  "instance_id": "cdv1-a01-fc7f965d16699667",
+  "manifest_entry_sha256": "0c0f14f68ad0657adc5a05b3d206a948638cca63ef93b0253752aa283ba5706e",
+  "provenance": {
+    "fixture_sha256": "d94114b9a8e74a059b02cbfcd28bc228d3cde51456a8be572055fa13cf4627b8",
+    "generation_seed": 2026,
+    "generator": "swcub.production_v1",
+    "seed_role": "deterministic profile ordering only; excluded from instance identity",
+    "semantic_spec_sha256": "fc7f965d16699667155d9c1a9f8e38ed1fdf9ec32e5eb8add217fb520da5cf73",
+    "source_code_sha256": "abaf2fd32b70bf456dc7b4672199745df8a1968aab95f9cb043ee3501c5158dd",
+    "source_commit": "9417ff53cb75118a89529f670bb4323b8f07b25a"
+  },
+  "reset_metadata": {
+    "fixture_id": "cdv1-a01-fc7f965d16699667",
+    "fresh_guest_required": true,
+    "remove_prior_app_state": true,
+    "verify_fixture_hash": "d94114b9a8e74a059b02cbfcd28bc228d3cde51456a8be572055fa13cf4627b8",
+    "verify_state": {
+      "actors": {
+        "A": {
+          "object": "browser/tab-a/review-form",
+          "value": ""
+        },
+        "B": {
+          "object": "browser/tab-b/case-form",
+          "value": ""
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "context_kind": "independent tab forms",
+          "fields": [
+            "review",
+            "case"
+          ]
+        },
+        "resource": "application_context"
+      }
+    }
+  },
+  "schedule_policy_id": "observe-a-context-change-b-resume-a-v1",
+  "semantic_parameters": {
+    "domain_id": "warehouse_reconciliation",
+    "domain_schema": {
+      "entity": "warehouse lot",
+      "field_a": "Reconciliation",
+      "field_b": "Count status"
+    },
+    "layout_id": "guard_after",
+    "object_profile_id": "tabs_review_cases",
+    "object_schema": {
+      "context_kind": "independent tab forms",
+      "fields": [
+        "review",
+        "case"
+      ]
+    },
+    "operation_graph": "two_tab_context",
+    "operation_schema_revision": 2,
+    "workflow_id": "A-01"
+  },
+  "signatures": {
+    "fixture": "d94114b9a8e74a059b02cbfcd28bc228d3cde51456a8be572055fa13cf4627b8",
+    "goal": "f4e74b32b4b8b033714ed7c76619eb1911aa861509a7b2eaf65fa3de35622dee",
+    "semantic": "fc7f965d16699667155d9c1a9f8e38ed1fdf9ec32e5eb8add217fb520da5cf73",
+    "structural": "9b4cbf78a778ad1f553d74d32b503d79d12e037ac7fa6120bcb4decb710ee242"
+  },
+  "target_objects": {
+    "A": [
+      "browser/tab-a/review-form"
+    ],
+    "B": [
+      "browser/tab-b/case-form"
+    ]
+  },
+  "task_domains": {
+    "A": "Browser",
+    "B": "Browser"
+  },
+  "topology_compatibility": {
+    "ma_id": {
+      "backend_binding": "same logical workspace seed; independent desktop sessions allowed",
+      "desktop_count": 2,
+      "fixtures": "byte-identical task-relevant clones"
+    },
+    "ma_sd": {
+      "actor_bindings": "A and B share desktop",
+      "desktop_count": 1
+    },
+    "solo": {
+      "actor_bindings": "A or B",
+      "desktop_count": 1
+    }
+  },
+  "treatment_relevant_state": {
+    "family_state": "application_context",
+    "operation_graph": "two_tab_context",
+    "shared_resource": {
+      "context_kind": "independent tab forms",
+      "fields": [
+        "review",
+        "case"
+      ]
+    }
+  },
+  "validation_level": "qwen_mechanism_evidence",
+  "workflow_id": "A-01"
+}

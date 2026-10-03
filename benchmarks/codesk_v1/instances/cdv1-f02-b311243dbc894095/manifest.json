@@ -1,0 +1,251 @@
+{
+  "actor_goals": [
+    {
+      "actor_id": "A",
+      "expected_value": "{\"anchor\":\"Decision for capital request\",\"comment\":\"Review note 482\"}",
+      "goal": "Attach the exact comment Review note 482 to the Writer anchor Decision for capital request; preserve the document text and guard.",
+      "initial_value": "Decision for capital request",
+      "operation": "attach comment to exact Writer anchor without changing visible text",
+      "target_objects": [
+        "writer/comment-anchor:summary"
+      ],
+      "task_domain": "Writer"
+    },
+    {
+      "actor_id": "B",
+      "expected_value": "{\"case\":\"CASE-4821\",\"decision\":\"APPROVED\"}",
+      "goal": "Fill the Browser case CASE-4821 and decision APPROVED and submit exactly once.",
+      "initial_value": "__UNSUBMITTED__",
+      "operation": "update browser/review/decision",
+      "target_objects": [
+        "browser/review/decision"
+      ],
+      "task_domain": "Browser"
+    }
+  ],
+  "benchmark_version": "codesk-v1.0",
+  "evaluator": {
+    "actor_paths": {
+      "A": "actors.A.value",
+      "B": "actors.B.value"
+    },
+    "adapter": "codesk_exact_state_v1",
+    "condition_semantics": {
+      "ma_id": "score each actor on equivalent independent desktop fixture",
+      "ma_sd": "score both actor goals and shared-state integrity",
+      "solo": "score selected actor; require inactive target and guards unchanged"
+    },
+    "expected_state": {
+      "actors": {
+        "A": {
+          "object": "writer/comment-anchor:summary",
+          "value": "{\"anchor\":\"Decision for capital request\",\"comment\":\"Review note 482\"}"
+        },
+        "B": {
+          "object": "browser/review/decision",
+          "value": "{\"case\":\"CASE-4821\",\"decision\":\"APPROVED\"}"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "anchor_kind": "summary sentence",
+          "form_fields": [
+            "case",
+            "decision"
+          ]
+        },
+        "resource": "focus_input_routing"
+      }
+    },
+    "initial_state": {
+      "actors": {
+        "A": {
+          "object": "writer/comment-anchor:summary",
+          "value": "Decision for capital request"
+        },
+        "B": {
+          "object": "browser/review/decision",
+          "value": "__UNSUBMITTED__"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "anchor_kind": "summary sentence",
+          "form_fields": [
+            "case",
+            "decision"
+          ]
+        },
+        "resource": "focus_input_routing"
+      }
+    },
+    "invariants": [
+      {
+        "equals": "PRESERVE",
+        "path": "actors.guards.main"
+      }
+    ],
+    "schedule_policy_id": "writer-anchor-browser-form-comment-v1"
+  },
+  "evaluator_path": "evaluators/cdv1-f02-b311243dbc894095.json",
+  "evaluator_sha256": "cd4d17df85a56fec1756f2627c1695464cb6e4dd0139f575b50249765b8749d0",
+  "family": "focus_input_routing",
+  "fixture_files": [
+    {
+      "path": "fixtures/cdv1-f02-b311243dbc894095/browser-initial-state.json",
+      "sha256": "e2e28dfd2ee2acd67aa5f7c5439e6ba096fea81ff01562bef00ff641f8ce805d",
+      "size_bytes": 34
+    },
+    {
+      "path": "fixtures/cdv1-f02-b311243dbc894095/document.fodt",
+      "sha256": "33d7fc84ee79094e94c696e6accb3d19c23e82d8ff020e6b47938ecaf5f1fdb9",
+      "size_bytes": 350
+    },
+    {
+      "path": "fixtures/cdv1-f02-b311243dbc894095/workspace.html",
+      "sha256": "c668695c17c52f959f985c0d9634a5495f0551307b008f18bb196c9fe6c784aa",
+      "size_bytes": 613
+    }
+  ],
+  "generation_seed": 2026,
+  "initial_fixture_spec": {
+    "application_set": [
+      "Writer",
+      "Browser"
+    ],
+    "fixture_profile": "anchor_summary",
+    "layout_id": "guard_before",
+    "public_assets": [
+      {
+        "path": "fixtures/cdv1-f02-b311243dbc894095/browser-initial-state.json",
+        "sha256": "e2e28dfd2ee2acd67aa5f7c5439e6ba096fea81ff01562bef00ff641f8ce805d",
+        "size_bytes": 34
+      },
+      {
+        "path": "fixtures/cdv1-f02-b311243dbc894095/document.fodt",
+        "sha256": "33d7fc84ee79094e94c696e6accb3d19c23e82d8ff020e6b47938ecaf5f1fdb9",
+        "size_bytes": 350
+      },
+      {
+        "path": "fixtures/cdv1-f02-b311243dbc894095/workspace.html",
+        "sha256": "c668695c17c52f959f985c0d9634a5495f0551307b008f18bb196c9fe6c784aa",
+        "size_bytes": 613
+      }
+    ]
+  },
+  "instance_id": "cdv1-f02-b311243dbc894095",
+  "manifest_entry_sha256": "e7cc9ecbb619a1be01d1902feac73951030a716e637c72422c1da33a2e81bfcd",
+  "provenance": {
+    "fixture_sha256": "20564de1746b392a5b67717914069e39d1a4e00edbd259ffbd7a1f8bb594c0ab",
+    "generation_seed": 2026,
+    "generator": "swcub.production_v1",
+    "seed_role": "deterministic profile ordering only; excluded from instance identity",
+    "semantic_spec_sha256": "b311243dbc894095a1969b90e9aa3ebcef13d0f2c096504f27c4816addf44954",
+    "source_code_sha256": "fe94cbf9cf5b818fca1ccebe2043ed44436f23961d8709ac2c95a248586bc624",
+    "source_commit": "9417ff53cb75118a89529f670bb4323b8f07b25a"
+  },
+  "reset_metadata": {
+    "fixture_id": "cdv1-f02-b311243dbc894095",
+    "fresh_guest_required": true,
+    "remove_prior_app_state": true,
+    "verify_fixture_hash": "20564de1746b392a5b67717914069e39d1a4e00edbd259ffbd7a1f8bb594c0ab",
+    "verify_state": {
+      "actors": {
+        "A": {
+          "object": "writer/comment-anchor:summary",
+          "value": "Decision for capital request"
+        },
+        "B": {
+          "object": "browser/review/decision",
+          "value": "__UNSUBMITTED__"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "anchor_kind": "summary sentence",
+          "form_fields": [
+            "case",
+            "decision"
+          ]
+        },
+        "resource": "focus_input_routing"
+      }
+    }
+  },
+  "schedule_policy_id": "writer-anchor-browser-form-comment-v1",
+  "semantic_parameters": {
+    "domain_id": "capital_allocation",
+    "domain_schema": {
+      "entity": "capital request",
+      "field_a": "Decision",
+      "field_b": "Ledger state"
+    },
+    "layout_id": "guard_before",
+    "object_profile_id": "anchor_summary",
+    "object_schema": {
+      "anchor_kind": "summary sentence",
+      "form_fields": [
+        "case",
+        "decision"
+      ]
+    },
+    "operation_graph": "writer_comment_vs_browser_form",
+    "operation_schema_revision": 3,
+    "workflow_id": "F-02"
+  },
+  "signatures": {
+    "fixture": "20564de1746b392a5b67717914069e39d1a4e00edbd259ffbd7a1f8bb594c0ab",
+    "goal": "cb770d73efb44306c75e2f2e7620c0e0a56f13588da6b4273abf40be3c52a207",
+    "semantic": "b311243dbc894095a1969b90e9aa3ebcef13d0f2c096504f27c4816addf44954",
+    "structural": "aa570e2502aa2120b52f13f3486d3ca6686073b39af37eca490c78b5c43fdf36"
+  },
+  "target_objects": {
+    "A": [
+      "writer/comment-anchor:summary"
+    ],
+    "B": [
+      "browser/review/decision"
+    ]
+  },
+  "task_domains": {
+    "A": "Writer",
+    "B": "Browser"
+  },
+  "topology_compatibility": {
+    "ma_id": {
+      "backend_binding": "same logical workspace seed; independent desktop sessions allowed",
+      "desktop_count": 2,
+      "fixtures": "byte-identical task-relevant clones"
+    },
+    "ma_sd": {
+      "actor_bindings": "A and B share desktop",
+      "desktop_count": 1
+    },
+    "solo": {
+      "actor_bindings": "A or B",
+      "desktop_count": 1
+    }
+  },
+  "treatment_relevant_state": {
+    "family_state": "focus_input_routing",
+    "operation_graph": "writer_comment_vs_browser_form",
+    "shared_resource": {
+      "anchor_kind": "summary sentence",
+      "form_fields": [
+        "case",
+        "decision"
+      ]
+    }
+  },
+  "validation_level": "scripted_full",
+  "workflow_id": "F-02"
+}

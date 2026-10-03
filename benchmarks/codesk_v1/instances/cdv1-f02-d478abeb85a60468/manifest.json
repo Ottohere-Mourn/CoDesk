@@ -1,0 +1,251 @@
+{
+  "actor_goals": [
+    {
+      "actor_id": "A",
+      "expected_value": "{\"anchor\":\"Reconciliation for warehouse lot\",\"comment\":\"Review note 482\"}",
+      "goal": "Attach the exact comment Review note 482 to the Writer anchor Reconciliation for warehouse lot; preserve the document text and guard.",
+      "initial_value": "Reconciliation for warehouse lot",
+      "operation": "attach comment to exact Writer anchor without changing visible text",
+      "target_objects": [
+        "writer/comment-anchor:summary"
+      ],
+      "task_domain": "Writer"
+    },
+    {
+      "actor_id": "B",
+      "expected_value": "{\"case\":\"CASE-7316\",\"decision\":\"RECONCILED\"}",
+      "goal": "Fill the Browser case CASE-7316 and decision RECONCILED and submit exactly once.",
+      "initial_value": "__UNSUBMITTED__",
+      "operation": "update browser/review/decision",
+      "target_objects": [
+        "browser/review/decision"
+      ],
+      "task_domain": "Browser"
+    }
+  ],
+  "benchmark_version": "codesk-v1.0",
+  "evaluator": {
+    "actor_paths": {
+      "A": "actors.A.value",
+      "B": "actors.B.value"
+    },
+    "adapter": "codesk_exact_state_v1",
+    "condition_semantics": {
+      "ma_id": "score each actor on equivalent independent desktop fixture",
+      "ma_sd": "score both actor goals and shared-state integrity",
+      "solo": "score selected actor; require inactive target and guards unchanged"
+    },
+    "expected_state": {
+      "actors": {
+        "A": {
+          "object": "writer/comment-anchor:summary",
+          "value": "{\"anchor\":\"Reconciliation for warehouse lot\",\"comment\":\"Review note 482\"}"
+        },
+        "B": {
+          "object": "browser/review/decision",
+          "value": "{\"case\":\"CASE-7316\",\"decision\":\"RECONCILED\"}"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "anchor_kind": "summary sentence",
+          "form_fields": [
+            "case",
+            "decision"
+          ]
+        },
+        "resource": "focus_input_routing"
+      }
+    },
+    "initial_state": {
+      "actors": {
+        "A": {
+          "object": "writer/comment-anchor:summary",
+          "value": "Reconciliation for warehouse lot"
+        },
+        "B": {
+          "object": "browser/review/decision",
+          "value": "__UNSUBMITTED__"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "anchor_kind": "summary sentence",
+          "form_fields": [
+            "case",
+            "decision"
+          ]
+        },
+        "resource": "focus_input_routing"
+      }
+    },
+    "invariants": [
+      {
+        "equals": "PRESERVE",
+        "path": "actors.guards.main"
+      }
+    ],
+    "schedule_policy_id": "writer-anchor-browser-form-comment-v1"
+  },
+  "evaluator_path": "evaluators/cdv1-f02-d478abeb85a60468.json",
+  "evaluator_sha256": "143ce2c323457bfa101b5058f0a8e824a2a0fda30bd9af8dc21286bacee31017",
+  "family": "focus_input_routing",
+  "fixture_files": [
+    {
+      "path": "fixtures/cdv1-f02-d478abeb85a60468/browser-initial-state.json",
+      "sha256": "e2e28dfd2ee2acd67aa5f7c5439e6ba096fea81ff01562bef00ff641f8ce805d",
+      "size_bytes": 34
+    },
+    {
+      "path": "fixtures/cdv1-f02-d478abeb85a60468/document.fodt",
+      "sha256": "6b4d2fa6c188666f15b04a74f6d4354168a8375a9f17ba1c0c1c22313965641c",
+      "size_bytes": 354
+    },
+    {
+      "path": "fixtures/cdv1-f02-d478abeb85a60468/workspace.html",
+      "sha256": "5735071334a71c74546556c79adbc2f1d7940a9e5e0b983e0337001adf5ea303",
+      "size_bytes": 613
+    }
+  ],
+  "generation_seed": 2026,
+  "initial_fixture_spec": {
+    "application_set": [
+      "Writer",
+      "Browser"
+    ],
+    "fixture_profile": "anchor_summary",
+    "layout_id": "guard_after",
+    "public_assets": [
+      {
+        "path": "fixtures/cdv1-f02-d478abeb85a60468/browser-initial-state.json",
+        "sha256": "e2e28dfd2ee2acd67aa5f7c5439e6ba096fea81ff01562bef00ff641f8ce805d",
+        "size_bytes": 34
+      },
+      {
+        "path": "fixtures/cdv1-f02-d478abeb85a60468/document.fodt",
+        "sha256": "6b4d2fa6c188666f15b04a74f6d4354168a8375a9f17ba1c0c1c22313965641c",
+        "size_bytes": 354
+      },
+      {
+        "path": "fixtures/cdv1-f02-d478abeb85a60468/workspace.html",
+        "sha256": "5735071334a71c74546556c79adbc2f1d7940a9e5e0b983e0337001adf5ea303",
+        "size_bytes": 613
+      }
+    ]
+  },
+  "instance_id": "cdv1-f02-d478abeb85a60468",
+  "manifest_entry_sha256": "58e462b1df62ebafd72ad1c8433708a5f832841ca665cfa59b1951e3eb7bdabe",
+  "provenance": {
+    "fixture_sha256": "5e84e7d2ec9867b67f7ff814aaf4716e1eee7eee51fc0345fa1e712f28e73dc6",
+    "generation_seed": 2026,
+    "generator": "swcub.production_v1",
+    "seed_role": "deterministic profile ordering only; excluded from instance identity",
+    "semantic_spec_sha256": "d478abeb85a60468a9cd0de3f6f94c6ff1a00f3a9ae076526bff8b05c83c3d0d",
+    "source_code_sha256": "fe94cbf9cf5b818fca1ccebe2043ed44436f23961d8709ac2c95a248586bc624",
+    "source_commit": "9417ff53cb75118a89529f670bb4323b8f07b25a"
+  },
+  "reset_metadata": {
+    "fixture_id": "cdv1-f02-d478abeb85a60468",
+    "fresh_guest_required": true,
+    "remove_prior_app_state": true,
+    "verify_fixture_hash": "5e84e7d2ec9867b67f7ff814aaf4716e1eee7eee51fc0345fa1e712f28e73dc6",
+    "verify_state": {
+      "actors": {
+        "A": {
+          "object": "writer/comment-anchor:summary",
+          "value": "Reconciliation for warehouse lot"
+        },
+        "B": {
+          "object": "browser/review/decision",
+          "value": "__UNSUBMITTED__"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "anchor_kind": "summary sentence",
+          "form_fields": [
+            "case",
+            "decision"
+          ]
+        },
+        "resource": "focus_input_routing"
+      }
+    }
+  },
+  "schedule_policy_id": "writer-anchor-browser-form-comment-v1",
+  "semantic_parameters": {
+    "domain_id": "warehouse_reconciliation",
+    "domain_schema": {
+      "entity": "warehouse lot",
+      "field_a": "Reconciliation",
+      "field_b": "Count status"
+    },
+    "layout_id": "guard_after",
+    "object_profile_id": "anchor_summary",
+    "object_schema": {
+      "anchor_kind": "summary sentence",
+      "form_fields": [
+        "case",
+        "decision"
+      ]
+    },
+    "operation_graph": "writer_comment_vs_browser_form",
+    "operation_schema_revision": 3,
+    "workflow_id": "F-02"
+  },
+  "signatures": {
+    "fixture": "5e84e7d2ec9867b67f7ff814aaf4716e1eee7eee51fc0345fa1e712f28e73dc6",
+    "goal": "543af94970b145beca5c3de697b90f78a0ca85f1d930bd4ebe9cd16215a91e89",
+    "semantic": "d478abeb85a60468a9cd0de3f6f94c6ff1a00f3a9ae076526bff8b05c83c3d0d",
+    "structural": "733d619c67de0daefc94ca181e0cef578b79dd3199ff31e4b283008bbc07dec2"
+  },
+  "target_objects": {
+    "A": [
+      "writer/comment-anchor:summary"
+    ],
+    "B": [
+      "browser/review/decision"
+    ]
+  },
+  "task_domains": {
+    "A": "Writer",
+    "B": "Browser"
+  },
+  "topology_compatibility": {
+    "ma_id": {
+      "backend_binding": "same logical workspace seed; independent desktop sessions allowed",
+      "desktop_count": 2,
+      "fixtures": "byte-identical task-relevant clones"
+    },
+    "ma_sd": {
+      "actor_bindings": "A and B share desktop",
+      "desktop_count": 1
+    },
+    "solo": {
+      "actor_bindings": "A or B",
+      "desktop_count": 1
+    }
+  },
+  "treatment_relevant_state": {
+    "family_state": "focus_input_routing",
+    "operation_graph": "writer_comment_vs_browser_form",
+    "shared_resource": {
+      "anchor_kind": "summary sentence",
+      "form_fields": [
+        "case",
+        "decision"
+      ]
+    }
+  },
+  "validation_level": "scripted_full",
+  "workflow_id": "F-02"
+}

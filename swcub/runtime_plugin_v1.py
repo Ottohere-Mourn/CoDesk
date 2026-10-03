@@ -26,7 +26,9 @@ class A6000RuntimePlugin:
     def __init__(self,repo_root:Path): self.repo_root=repo_root
     def _binding_registry(self):
         spec=os.environ.get("SWCUB_RUNTIME_BINDING_FACTORY","")
-        if not spec: return None
+        if not spec:
+            from .runtime_bindings_v1 import build_runtime_binding_registry
+            return build_runtime_binding_registry()
         module,attr=spec.split(":",1);return getattr(importlib.import_module(module),attr)()
     def execute_run(self,adapter,plan,run,output):
         import json

@@ -1,0 +1,281 @@
+{
+  "actor_goals": [
+    {
+      "actor_id": "A",
+      "expected_value": "[[\"warehouse lot 1.1\",\"warehouse lot 1.2\"],[\"warehouse lot 2.1\",\"warehouse lot 2.2\"]]",
+      "goal": "Copy the 2 by 2 HTML table from the Browser page into the Writer destination table and preserve exact row/cell structure.",
+      "initial_value": "__EMPTY_TABLE__",
+      "operation": "copy Browser HTML table and paste as a structured Writer table",
+      "target_objects": [
+        "writer/table[0]"
+      ],
+      "task_domain": "Writer"
+    },
+    {
+      "actor_id": "B",
+      "expected_value": "https://example.org/codesk/warehouse_reconciliation/SKU-7316",
+      "goal": "Copy the Browser URL https://example.org/codesk/warehouse_reconciliation/SKU-7316 into the URL field and submit it exactly once.",
+      "initial_value": "__UNSUBMITTED__",
+      "operation": "copy Browser URL text and submit exact value",
+      "target_objects": [
+        "browser/url-submit"
+      ],
+      "task_domain": "Browser"
+    }
+  ],
+  "benchmark_version": "codesk-v1.0",
+  "evaluator": {
+    "actor_paths": {
+      "A": "actors.A.value",
+      "B": "actors.B.value"
+    },
+    "adapter": "codesk_exact_state_v1",
+    "condition_semantics": {
+      "ma_id": "score each actor on equivalent independent desktop fixture",
+      "ma_sd": "score both actor goals and shared-state integrity",
+      "solo": "score selected actor; require inactive target and guards unchanged"
+    },
+    "expected_state": {
+      "actors": {
+        "A": {
+          "object": "writer/table[0]",
+          "value": "[[\"warehouse lot 1.1\",\"warehouse lot 1.2\"],[\"warehouse lot 2.1\",\"warehouse lot 2.2\"]]"
+        },
+        "B": {
+          "object": "browser/url-submit",
+          "value": "https://example.org/codesk/warehouse_reconciliation/SKU-7316"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "mime": [
+            "text/html",
+            "text/plain"
+          ],
+          "payload": "HTML table",
+          "shape": [
+            2,
+            2
+          ]
+        },
+        "resource": "clipboard_state"
+      }
+    },
+    "initial_state": {
+      "actors": {
+        "A": {
+          "object": "writer/table[0]",
+          "value": "__EMPTY_TABLE__"
+        },
+        "B": {
+          "object": "browser/url-submit",
+          "value": "__UNSUBMITTED__"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "mime": [
+            "text/html",
+            "text/plain"
+          ],
+          "payload": "HTML table",
+          "shape": [
+            2,
+            2
+          ]
+        },
+        "resource": "clipboard_state"
+      }
+    },
+    "invariants": [
+      {
+        "equals": "PRESERVE",
+        "path": "actors.guards.main"
+      }
+    ],
+    "schedule_policy_id": "rich-copy-a-url-copy-b-resume-a-v1"
+  },
+  "evaluator_path": "evaluators/cdv1-cn1-fb78cd39577b3550.json",
+  "evaluator_sha256": "54d7cf1b42cad1505484666d09d5ca67b8b020e99400e3983e3542d37dc064a8",
+  "family": "clipboard_state",
+  "fixture_files": [
+    {
+      "path": "fixtures/cdv1-cn1-fb78cd39577b3550/browser-events.jsonl",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size_bytes": 0
+    },
+    {
+      "path": "fixtures/cdv1-cn1-fb78cd39577b3550/browser-initial-state.json",
+      "sha256": "b5dcef5083e64381c0c5d52adbb51e448a47e5717a74004712f329b193fc6537",
+      "size_bytes": 114
+    },
+    {
+      "path": "fixtures/cdv1-cn1-fb78cd39577b3550/document.fodt",
+      "sha256": "7fdaf655d0681f355578ffc2662ebe11ba4e0e921e92edce2c17bc98bab7f379",
+      "size_bytes": 832
+    },
+    {
+      "path": "fixtures/cdv1-cn1-fb78cd39577b3550/workspace.html",
+      "sha256": "60e4044448b88246aba78fcbb53ba219c8ef2784e4462c11b08410053accc504",
+      "size_bytes": 973
+    }
+  ],
+  "generation_seed": 2026,
+  "initial_fixture_spec": {
+    "application_set": [
+      "Writer",
+      "Browser"
+    ],
+    "fixture_profile": "rich_table_2x2",
+    "layout_id": "guard_before",
+    "public_assets": [
+      {
+        "path": "fixtures/cdv1-cn1-fb78cd39577b3550/browser-events.jsonl",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size_bytes": 0
+      },
+      {
+        "path": "fixtures/cdv1-cn1-fb78cd39577b3550/browser-initial-state.json",
+        "sha256": "b5dcef5083e64381c0c5d52adbb51e448a47e5717a74004712f329b193fc6537",
+        "size_bytes": 114
+      },
+      {
+        "path": "fixtures/cdv1-cn1-fb78cd39577b3550/document.fodt",
+        "sha256": "7fdaf655d0681f355578ffc2662ebe11ba4e0e921e92edce2c17bc98bab7f379",
+        "size_bytes": 832
+      },
+      {
+        "path": "fixtures/cdv1-cn1-fb78cd39577b3550/workspace.html",
+        "sha256": "60e4044448b88246aba78fcbb53ba219c8ef2784e4462c11b08410053accc504",
+        "size_bytes": 973
+      }
+    ]
+  },
+  "instance_id": "cdv1-cn1-fb78cd39577b3550",
+  "manifest_entry_sha256": "f5330f25cb0d693a1d571834d8e9367f3ebe9748a53bd2bf041f731cfb569dee",
+  "provenance": {
+    "fixture_sha256": "6cd8f53b52b7ead70718e072f28e11737719e36c4ec29f22aced5e672252cc80",
+    "generation_seed": 2026,
+    "generator": "swcub.production_v1",
+    "seed_role": "deterministic profile ordering only; excluded from instance identity",
+    "semantic_spec_sha256": "fb78cd39577b35502a05304e36a84e53c13205b34d979b52c550d8e1dd35dd93",
+    "source_code_sha256": "d3c9791dd9c4712589c9f7f2587e3fbecade364528e87cef27aab9f865192df9",
+    "source_commit": "9417ff53cb75118a89529f670bb4323b8f07b25a"
+  },
+  "reset_metadata": {
+    "fixture_id": "cdv1-cn1-fb78cd39577b3550",
+    "fresh_guest_required": true,
+    "remove_prior_app_state": true,
+    "verify_fixture_hash": "6cd8f53b52b7ead70718e072f28e11737719e36c4ec29f22aced5e672252cc80",
+    "verify_state": {
+      "actors": {
+        "A": {
+          "object": "writer/table[0]",
+          "value": "__EMPTY_TABLE__"
+        },
+        "B": {
+          "object": "browser/url-submit",
+          "value": "__UNSUBMITTED__"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "mime": [
+            "text/html",
+            "text/plain"
+          ],
+          "payload": "HTML table",
+          "shape": [
+            2,
+            2
+          ]
+        },
+        "resource": "clipboard_state"
+      }
+    }
+  },
+  "schedule_policy_id": "rich-copy-a-url-copy-b-resume-a-v1",
+  "semantic_parameters": {
+    "domain_id": "warehouse_reconciliation",
+    "domain_schema": {
+      "entity": "warehouse lot",
+      "field_a": "Reconciliation",
+      "field_b": "Count status"
+    },
+    "layout_id": "guard_before",
+    "object_profile_id": "rich_table_2x2",
+    "object_schema": {
+      "mime": [
+        "text/html",
+        "text/plain"
+      ],
+      "payload": "HTML table",
+      "shape": [
+        2,
+        2
+      ]
+    },
+    "operation_graph": "rich_html_table_transfer",
+    "operation_schema_revision": 2,
+    "workflow_id": "C-N1"
+  },
+  "signatures": {
+    "fixture": "6cd8f53b52b7ead70718e072f28e11737719e36c4ec29f22aced5e672252cc80",
+    "goal": "d1ad46c323691cbc44e40b949ca7a24ca06f2ca3ce52663256293cb9d12ffeb1",
+    "semantic": "fb78cd39577b35502a05304e36a84e53c13205b34d979b52c550d8e1dd35dd93",
+    "structural": "5222bf5908337d99863ad43bd0f6b45df02f5bbf6bd7484cbadec1fe6cb94659"
+  },
+  "target_objects": {
+    "A": [
+      "writer/table[0]"
+    ],
+    "B": [
+      "browser/url-submit"
+    ]
+  },
+  "task_domains": {
+    "A": "Writer",
+    "B": "Browser"
+  },
+  "topology_compatibility": {
+    "ma_id": {
+      "backend_binding": "same logical workspace seed; independent desktop sessions allowed",
+      "desktop_count": 2,
+      "fixtures": "byte-identical task-relevant clones"
+    },
+    "ma_sd": {
+      "actor_bindings": "A and B share desktop",
+      "desktop_count": 1
+    },
+    "solo": {
+      "actor_bindings": "A or B",
+      "desktop_count": 1
+    }
+  },
+  "treatment_relevant_state": {
+    "family_state": "clipboard_state",
+    "operation_graph": "rich_html_table_transfer",
+    "shared_resource": {
+      "mime": [
+        "text/html",
+        "text/plain"
+      ],
+      "payload": "HTML table",
+      "shape": [
+        2,
+        2
+      ]
+    }
+  },
+  "validation_level": "offline",
+  "workflow_id": "C-N1"
+}

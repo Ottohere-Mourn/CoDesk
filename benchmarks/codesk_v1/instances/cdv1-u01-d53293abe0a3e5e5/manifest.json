@@ -1,0 +1,232 @@
+{
+  "actor_goals": [
+    {
+      "actor_id": "A",
+      "expected_value": "A-TEMP",
+      "goal": "Temporarily set Calc C2 to A-TEMP; after Actor B's edit, use Undo so this cell returns to B2 seed.",
+      "initial_value": "B2 seed",
+      "operation": "temporary value edit followed by an Undo after Actor B's committed edit",
+      "target_objects": [
+        "calc/C2"
+      ],
+      "task_domain": "Calc"
+    },
+    {
+      "actor_id": "B",
+      "expected_value": "B-2042",
+      "goal": "Set Calc D3 to B-2042 and save.",
+      "initial_value": "C3 seed",
+      "operation": "update calc/D3",
+      "target_objects": [
+        "calc/D3"
+      ],
+      "task_domain": "Calc"
+    }
+  ],
+  "benchmark_version": "codesk-v1.0",
+  "evaluator": {
+    "actor_paths": {
+      "A": "actors.A.value",
+      "B": "actors.B.value"
+    },
+    "adapter": "codesk_exact_state_v1",
+    "condition_semantics": {
+      "ma_id": "score each actor on equivalent independent desktop fixture",
+      "ma_sd": "score both actor goals and shared-state integrity",
+      "solo": "score selected actor; require inactive target and guards unchanged"
+    },
+    "expected_state": {
+      "actors": {
+        "A": {
+          "object": "calc/C2",
+          "value": "B2 seed"
+        },
+        "B": {
+          "object": "calc/D3",
+          "value": "B-2042"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "object_type": "cell",
+          "operation": "formula/value edit",
+          "undo_depth": 1
+        },
+        "resource": "undo_redo_history"
+      }
+    },
+    "history_contract": {
+      "actor_a_requires": [
+        "temporary_edit_committed",
+        "undo_action_after_actor_b_commit"
+      ],
+      "actor_b_requires": [
+        "target_edit_committed"
+      ],
+      "final_state_is_not_sufficient": true,
+      "operation_schema_revision": 2
+    },
+    "initial_state": {
+      "actors": {
+        "A": {
+          "object": "calc/C2",
+          "value": "B2 seed"
+        },
+        "B": {
+          "object": "calc/D3",
+          "value": "C3 seed"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "object_type": "cell",
+          "operation": "formula/value edit",
+          "undo_depth": 1
+        },
+        "resource": "undo_redo_history"
+      }
+    },
+    "invariants": [
+      {
+        "equals": "PRESERVE",
+        "path": "actors.guards.main"
+      }
+    ],
+    "schedule_policy_id": "edit-a-edit-b-undo-a-v1"
+  },
+  "evaluator_path": "evaluators/cdv1-u01-d53293abe0a3e5e5.json",
+  "evaluator_sha256": "a461dbce600e3744660d6c2eee1e2ad518ba5e526abe22bb9f9bbfcb0ddaa559",
+  "family": "undo_redo_history",
+  "fixture_files": [
+    {
+      "path": "fixtures/cdv1-u01-d53293abe0a3e5e5/workbook.fods",
+      "sha256": "cd0e5e403d418784356e410f41437366d64bab5145ef96d094633d30d97876ba",
+      "size_bytes": 1744
+    }
+  ],
+  "generation_seed": 2026,
+  "initial_fixture_spec": {
+    "application_set": [
+      "Calc",
+      "Calc"
+    ],
+    "fixture_profile": "calc_formula_cells",
+    "layout_id": "guard_before",
+    "public_assets": [
+      {
+        "path": "fixtures/cdv1-u01-d53293abe0a3e5e5/workbook.fods",
+        "sha256": "cd0e5e403d418784356e410f41437366d64bab5145ef96d094633d30d97876ba",
+        "size_bytes": 1744
+      }
+    ]
+  },
+  "instance_id": "cdv1-u01-d53293abe0a3e5e5",
+  "manifest_entry_sha256": "6c33ac55aaf02bca61bbffb8783a6067296937cd79db1d6edf319efecb60928c",
+  "provenance": {
+    "fixture_sha256": "f042dea2b4ff1f3155efee8f2d53384f3b514030728bddc888dfe3b6ca5e769e",
+    "generation_seed": 2026,
+    "generator": "swcub.production_v1",
+    "seed_role": "deterministic profile ordering only; excluded from instance identity",
+    "semantic_spec_sha256": "d53293abe0a3e5e5535bedeb194b46ec26aef659b225ae86d3b3e55008663e7a",
+    "source_code_sha256": "cf9942c7950bfbc58ce55c1ff634b148cf015a2f4d5adfa45f49a61d336769ee",
+    "source_commit": "9417ff53cb75118a89529f670bb4323b8f07b25a"
+  },
+  "reset_metadata": {
+    "fixture_id": "cdv1-u01-d53293abe0a3e5e5",
+    "fresh_guest_required": true,
+    "remove_prior_app_state": true,
+    "verify_fixture_hash": "f042dea2b4ff1f3155efee8f2d53384f3b514030728bddc888dfe3b6ca5e769e",
+    "verify_state": {
+      "actors": {
+        "A": {
+          "object": "calc/C2",
+          "value": "B2 seed"
+        },
+        "B": {
+          "object": "calc/D3",
+          "value": "C3 seed"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "object_type": "cell",
+          "operation": "formula/value edit",
+          "undo_depth": 1
+        },
+        "resource": "undo_redo_history"
+      }
+    }
+  },
+  "schedule_policy_id": "edit-a-edit-b-undo-a-v1",
+  "semantic_parameters": {
+    "domain_id": "safety_inspection",
+    "domain_schema": {
+      "entity": "inspection item",
+      "field_a": "Clearance",
+      "field_b": "Inspection state"
+    },
+    "layout_id": "guard_before",
+    "object_profile_id": "calc_formula_cells",
+    "object_schema": {
+      "object_type": "cell",
+      "operation": "formula/value edit",
+      "undo_depth": 1
+    },
+    "operation_graph": "calc_document_history",
+    "operation_schema_revision": 2,
+    "workflow_id": "U-01"
+  },
+  "signatures": {
+    "fixture": "f042dea2b4ff1f3155efee8f2d53384f3b514030728bddc888dfe3b6ca5e769e",
+    "goal": "efec712790002bc382100b790fbec3063c9157321b958028c32599b27c9edeec",
+    "semantic": "d53293abe0a3e5e5535bedeb194b46ec26aef659b225ae86d3b3e55008663e7a",
+    "structural": "30a0350adbc8d9bd0c8b3ab10cf70a5c230879d719bb91a54ecddbcfebe94cf2"
+  },
+  "target_objects": {
+    "A": [
+      "calc/C2"
+    ],
+    "B": [
+      "calc/D3"
+    ]
+  },
+  "task_domains": {
+    "A": "Calc",
+    "B": "Calc"
+  },
+  "topology_compatibility": {
+    "ma_id": {
+      "backend_binding": "same logical workspace seed; independent desktop sessions allowed",
+      "desktop_count": 2,
+      "fixtures": "byte-identical task-relevant clones"
+    },
+    "ma_sd": {
+      "actor_bindings": "A and B share desktop",
+      "desktop_count": 1
+    },
+    "solo": {
+      "actor_bindings": "A or B",
+      "desktop_count": 1
+    }
+  },
+  "treatment_relevant_state": {
+    "family_state": "undo_redo_history",
+    "operation_graph": "calc_document_history",
+    "shared_resource": {
+      "object_type": "cell",
+      "operation": "formula/value edit",
+      "undo_depth": 1
+    }
+  },
+  "validation_level": "qwen_smoke",
+  "workflow_id": "U-01"
+}

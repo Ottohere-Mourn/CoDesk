@@ -1,0 +1,216 @@
+{
+  "actor_goals": [
+    {
+      "actor_id": "A",
+      "expected_value": "bold",
+      "goal": "Bold only range A.",
+      "initial_value": "normal",
+      "operation": "bold writer/range:list-item-a",
+      "target_objects": [
+        "writer/range:list-item-a"
+      ],
+      "task_domain": "Writer"
+    },
+    {
+      "actor_id": "B",
+      "expected_value": "bold",
+      "goal": "Bold only range B.",
+      "initial_value": "normal",
+      "operation": "bold writer/range:list-item-b",
+      "target_objects": [
+        "writer/range:list-item-b"
+      ],
+      "task_domain": "Writer"
+    }
+  ],
+  "benchmark_version": "codesk-v1.0",
+  "evaluator": {
+    "actor_paths": {
+      "A": "actors.A.value",
+      "B": "actors.B.value"
+    },
+    "adapter": "codesk_exact_state_v1",
+    "condition_semantics": {
+      "ma_id": "score each actor on equivalent independent desktop fixture",
+      "ma_sd": "score both actor goals and shared-state integrity",
+      "solo": "score selected actor; require inactive target and guards unchanged"
+    },
+    "expected_state": {
+      "actors": {
+        "A": {
+          "object": "writer/range:list-item-a",
+          "value": "bold"
+        },
+        "B": {
+          "object": "writer/range:list-item-b",
+          "value": "bold"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "action": "bold",
+          "selection_kind": "list item range"
+        },
+        "resource": "selection_active_object"
+      }
+    },
+    "initial_state": {
+      "actors": {
+        "A": {
+          "object": "writer/range:list-item-a",
+          "value": "normal"
+        },
+        "B": {
+          "object": "writer/range:list-item-b",
+          "value": "normal"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "action": "bold",
+          "selection_kind": "list item range"
+        },
+        "resource": "selection_active_object"
+      }
+    },
+    "invariants": [
+      {
+        "equals": "PRESERVE",
+        "path": "actors.guards.main"
+      }
+    ],
+    "schedule_policy_id": "range-select-a-select-b-resume-a-v1"
+  },
+  "evaluator_path": "evaluators/cdv1-sn1-7102cc0f5bb30ba2.json",
+  "evaluator_sha256": "26a0d37e93cf960e224644fab5b121797b57213d52ced2a6003ab6281b10e8d8",
+  "family": "selection_active_object",
+  "fixture_files": [
+    {
+      "path": "fixtures/cdv1-sn1-7102cc0f5bb30ba2/document.fodt",
+      "sha256": "c933c3756b69771125c745e7510326f1a561c6e2f4564066db5bdfbc1ee93d78",
+      "size_bytes": 1174
+    }
+  ],
+  "generation_seed": 2026,
+  "initial_fixture_spec": {
+    "application_set": [
+      "Writer",
+      "Writer"
+    ],
+    "fixture_profile": "range_list_item_pair",
+    "layout_id": "guard_after",
+    "public_assets": [
+      {
+        "path": "fixtures/cdv1-sn1-7102cc0f5bb30ba2/document.fodt",
+        "sha256": "c933c3756b69771125c745e7510326f1a561c6e2f4564066db5bdfbc1ee93d78",
+        "size_bytes": 1174
+      }
+    ]
+  },
+  "instance_id": "cdv1-sn1-7102cc0f5bb30ba2",
+  "manifest_entry_sha256": "22abe46022baa0b0c7c5ef2df098428be39577ad6b91ff88d0519362c62d54a6",
+  "provenance": {
+    "fixture_sha256": "fa0f41fb78000d44d6ea9b1bf0e709f3b2c141d0bf2efbfe29656cd416eb8ea6",
+    "generation_seed": 2026,
+    "generator": "swcub.production_v1",
+    "seed_role": "deterministic profile ordering only; excluded from instance identity",
+    "semantic_spec_sha256": "7102cc0f5bb30ba24ad6b5facbd4009595707a8ae2d73b007f0d6b62a13161b9",
+    "source_code_sha256": "715037d4bdac2a46f00df1630223191c7c1a27afa3e9dab435bcf409d7e99605",
+    "source_commit": "9417ff53cb75118a89529f670bb4323b8f07b25a"
+  },
+  "reset_metadata": {
+    "fixture_id": "cdv1-sn1-7102cc0f5bb30ba2",
+    "fresh_guest_required": true,
+    "remove_prior_app_state": true,
+    "verify_fixture_hash": "fa0f41fb78000d44d6ea9b1bf0e709f3b2c141d0bf2efbfe29656cd416eb8ea6",
+    "verify_state": {
+      "actors": {
+        "A": {
+          "object": "writer/range:list-item-a",
+          "value": "normal"
+        },
+        "B": {
+          "object": "writer/range:list-item-b",
+          "value": "normal"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "action": "bold",
+          "selection_kind": "list item range"
+        },
+        "resource": "selection_active_object"
+      }
+    }
+  },
+  "schedule_policy_id": "range-select-a-select-b-resume-a-v1",
+  "semantic_parameters": {
+    "domain_id": "safety_inspection",
+    "domain_schema": {
+      "entity": "inspection item",
+      "field_a": "Clearance",
+      "field_b": "Inspection state"
+    },
+    "layout_id": "guard_after",
+    "object_profile_id": "range_list_item_pair",
+    "object_schema": {
+      "action": "bold",
+      "selection_kind": "list item range"
+    },
+    "operation_graph": "writer_text_range_selection",
+    "operation_schema_revision": 1,
+    "workflow_id": "S-N1"
+  },
+  "signatures": {
+    "fixture": "fa0f41fb78000d44d6ea9b1bf0e709f3b2c141d0bf2efbfe29656cd416eb8ea6",
+    "goal": "82c87637ba2e8424ac2a6525afe8db54ed0ff9db39e472b2669315894dad88f0",
+    "semantic": "7102cc0f5bb30ba24ad6b5facbd4009595707a8ae2d73b007f0d6b62a13161b9",
+    "structural": "9877e40ca8c1f9d67125c04305f926d43023e0f4883aa07bbc553bf3991ea31f"
+  },
+  "target_objects": {
+    "A": [
+      "writer/range:list-item-a"
+    ],
+    "B": [
+      "writer/range:list-item-b"
+    ]
+  },
+  "task_domains": {
+    "A": "Writer",
+    "B": "Writer"
+  },
+  "topology_compatibility": {
+    "ma_id": {
+      "backend_binding": "same logical workspace seed; independent desktop sessions allowed",
+      "desktop_count": 2,
+      "fixtures": "byte-identical task-relevant clones"
+    },
+    "ma_sd": {
+      "actor_bindings": "A and B share desktop",
+      "desktop_count": 1
+    },
+    "solo": {
+      "actor_bindings": "A or B",
+      "desktop_count": 1
+    }
+  },
+  "treatment_relevant_state": {
+    "family_state": "selection_active_object",
+    "operation_graph": "writer_text_range_selection",
+    "shared_resource": {
+      "action": "bold",
+      "selection_kind": "list item range"
+    }
+  },
+  "validation_level": "offline",
+  "workflow_id": "S-N1"
+}

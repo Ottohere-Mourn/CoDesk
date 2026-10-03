@@ -1,0 +1,251 @@
+{
+  "actor_goals": [
+    {
+      "actor_id": "A",
+      "expected_value": "Reconciled: warehouse lot (D2)",
+      "goal": "Replace all Writer document content with the assigned decision and save.",
+      "initial_value": "Draft: warehouse lot",
+      "operation": "update writer/document-content",
+      "target_objects": [
+        "writer/document-content"
+      ],
+      "task_domain": "Writer"
+    },
+    {
+      "actor_id": "B",
+      "expected_value": "Counted: warehouse lot (D2)",
+      "goal": "Set the assigned Calc field and preserve the remaining table.",
+      "initial_value": "Pending: warehouse lot",
+      "operation": "update calc/D2",
+      "target_objects": [
+        "calc/D2"
+      ],
+      "task_domain": "Calc"
+    }
+  ],
+  "benchmark_version": "codesk-v1.0",
+  "evaluator": {
+    "actor_paths": {
+      "A": "actors.A.value",
+      "B": "actors.B.value"
+    },
+    "adapter": "codesk_exact_state_v1",
+    "condition_semantics": {
+      "ma_id": "score each actor on equivalent independent desktop fixture",
+      "ma_sd": "score both actor goals and shared-state integrity",
+      "solo": "score selected actor; require inactive target and guards unchanged"
+    },
+    "expected_state": {
+      "actors": {
+        "A": {
+          "object": "writer/document-content",
+          "value": "Reconciled: warehouse lot (D2)"
+        },
+        "B": {
+          "object": "calc/D2",
+          "value": "Counted: warehouse lot (D2)"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "headers": [
+            "Item",
+            "Owner",
+            "Region",
+            "Status"
+          ],
+          "target": "D2"
+        },
+        "resource": "focus_input_routing"
+      }
+    },
+    "initial_state": {
+      "actors": {
+        "A": {
+          "object": "writer/document-content",
+          "value": "Draft: warehouse lot"
+        },
+        "B": {
+          "object": "calc/D2",
+          "value": "Pending: warehouse lot"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "headers": [
+            "Item",
+            "Owner",
+            "Region",
+            "Status"
+          ],
+          "target": "D2"
+        },
+        "resource": "focus_input_routing"
+      }
+    },
+    "invariants": [
+      {
+        "equals": "PRESERVE",
+        "path": "actors.guards.main"
+      }
+    ],
+    "schedule_policy_id": "action-boundary-round-robin-ab-v1"
+  },
+  "evaluator_path": "evaluators/cdv1-f01-a1f2e8d1634b7478.json",
+  "evaluator_sha256": "567a8ec60ce3da3d686b32dea221e25e3c273a3cc63f39550695724e73a8a92b",
+  "family": "focus_input_routing",
+  "fixture_files": [
+    {
+      "path": "fixtures/cdv1-f01-a1f2e8d1634b7478/document.fodt",
+      "sha256": "40871be87fa4b7200491251c4ee4d89f6bd5ad4d68dedfe7a2db2044bcd64fe0",
+      "size_bytes": 310
+    },
+    {
+      "path": "fixtures/cdv1-f01-a1f2e8d1634b7478/workbook.fods",
+      "sha256": "33dd938e7e608293c76a01571ee49e5957678f80f7d3c02b33fcc6678b6d17bd",
+      "size_bytes": 2349
+    }
+  ],
+  "generation_seed": 2026,
+  "initial_fixture_spec": {
+    "application_set": [
+      "Writer",
+      "Calc"
+    ],
+    "fixture_profile": "cell_d2",
+    "layout_id": "guard_before",
+    "public_assets": [
+      {
+        "path": "fixtures/cdv1-f01-a1f2e8d1634b7478/document.fodt",
+        "sha256": "40871be87fa4b7200491251c4ee4d89f6bd5ad4d68dedfe7a2db2044bcd64fe0",
+        "size_bytes": 310
+      },
+      {
+        "path": "fixtures/cdv1-f01-a1f2e8d1634b7478/workbook.fods",
+        "sha256": "33dd938e7e608293c76a01571ee49e5957678f80f7d3c02b33fcc6678b6d17bd",
+        "size_bytes": 2349
+      }
+    ]
+  },
+  "instance_id": "cdv1-f01-a1f2e8d1634b7478",
+  "manifest_entry_sha256": "e4def716f314dbf8e57b716003639ec6ddd85c4cb8cfdc1bead3807c238e0696",
+  "provenance": {
+    "fixture_sha256": "fd28bbd21f185af3e92eb6b3540b4f4116649bc119f75be5924e30389ce5cf04",
+    "generation_seed": 2026,
+    "generator": "swcub.production_v1",
+    "seed_role": "deterministic profile ordering only; excluded from instance identity",
+    "semantic_spec_sha256": "a1f2e8d1634b74782332ee8661c1a3a756a1399097d3c3de93cf08763e52c919",
+    "source_code_sha256": "f5a6ce546ff9c6d6f6c590363015445a5d2302ecd825588c6eeffccbe6233fd7",
+    "source_commit": "9417ff53cb75118a89529f670bb4323b8f07b25a"
+  },
+  "reset_metadata": {
+    "fixture_id": "cdv1-f01-a1f2e8d1634b7478",
+    "fresh_guest_required": true,
+    "remove_prior_app_state": true,
+    "verify_fixture_hash": "fd28bbd21f185af3e92eb6b3540b4f4116649bc119f75be5924e30389ce5cf04",
+    "verify_state": {
+      "actors": {
+        "A": {
+          "object": "writer/document-content",
+          "value": "Draft: warehouse lot"
+        },
+        "B": {
+          "object": "calc/D2",
+          "value": "Pending: warehouse lot"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "headers": [
+            "Item",
+            "Owner",
+            "Region",
+            "Status"
+          ],
+          "target": "D2"
+        },
+        "resource": "focus_input_routing"
+      }
+    }
+  },
+  "schedule_policy_id": "action-boundary-round-robin-ab-v1",
+  "semantic_parameters": {
+    "domain_id": "warehouse_reconciliation",
+    "domain_schema": {
+      "entity": "warehouse lot",
+      "field_a": "Reconciliation",
+      "field_b": "Count status"
+    },
+    "layout_id": "guard_before",
+    "object_profile_id": "cell_d2",
+    "object_schema": {
+      "headers": [
+        "Item",
+        "Owner",
+        "Region",
+        "Status"
+      ],
+      "target": "D2"
+    },
+    "operation_graph": "writer_full_document_vs_calc_cell",
+    "operation_schema_revision": 4,
+    "workflow_id": "F-01"
+  },
+  "signatures": {
+    "fixture": "fd28bbd21f185af3e92eb6b3540b4f4116649bc119f75be5924e30389ce5cf04",
+    "goal": "5ae63555ad32a590a85cc1041785460c2567c9cc8d64bf704d1f75cb56baf73b",
+    "semantic": "a1f2e8d1634b74782332ee8661c1a3a756a1399097d3c3de93cf08763e52c919",
+    "structural": "87357b7a7c1e03895ee7133d3d81b30ca27ddcb875c6892000585186f7ca2a6e"
+  },
+  "target_objects": {
+    "A": [
+      "writer/document-content"
+    ],
+    "B": [
+      "calc/D2"
+    ]
+  },
+  "task_domains": {
+    "A": "Writer",
+    "B": "Calc"
+  },
+  "topology_compatibility": {
+    "ma_id": {
+      "backend_binding": "same logical workspace seed; independent desktop sessions allowed",
+      "desktop_count": 2,
+      "fixtures": "byte-identical task-relevant clones"
+    },
+    "ma_sd": {
+      "actor_bindings": "A and B share desktop",
+      "desktop_count": 1
+    },
+    "solo": {
+      "actor_bindings": "A or B",
+      "desktop_count": 1
+    }
+  },
+  "treatment_relevant_state": {
+    "family_state": "focus_input_routing",
+    "operation_graph": "writer_full_document_vs_calc_cell",
+    "shared_resource": {
+      "headers": [
+        "Item",
+        "Owner",
+        "Region",
+        "Status"
+      ],
+      "target": "D2"
+    }
+  },
+  "validation_level": "qwen_mechanism_evidence",
+  "workflow_id": "F-01"
+}
