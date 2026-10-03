@@ -25,6 +25,10 @@ WORKFLOW_REFERENCES={
  "U-N1":{"runner":"scripts/run_matrix_workflow_v1.py","setup":"single Writer document and ordered edit history","actor":"U-N1 workflow actors","evaluator":"ODF paragraphs + undo history oracle","observer":"UNO undo action/history + document identity","reset":"matrix runner reset","cleanup":"owned DesktopEnv close"},
 }
 
+from .second_wave_v1 import SECOND_WAVE as _SECOND_WAVE
+for _wid,_row in _SECOND_WAVE.items():
+    WORKFLOW_REFERENCES[_wid]={"runner":"scripts/run_benchmark.py","setup":"_setup_second_wave(plan, guest, backend) using immutable workflow config","actor":"OSWorldAgentActor per InstanceSpec actor goal","evaluator":"OperationRuntimeObserver + production_v1.evaluate_oracle","observer":"workflow-specific operation-state observer contract","reset":"A6000OSWorldBackend.reset_guest","cleanup":"A6000OSWorldBackend.cleanup_owned_guest"}
+
 FAMILY_OBSERVERS={
  "focus_input_routing":"foreground_window_and_input_target_v1",
  "clipboard_state":"x11_selection_owner_payload_generation_v1",
@@ -74,14 +78,17 @@ import xml.etree.ElementTree as _ET
 
 
 def concrete_runtime_binding_ids() -> set[str]:
-    return {"F-01", "F-04", "F-02", "C-01", "C-03", "C-02", "A-01", "A-02", "A-N1", "S-01", "S-N1", "U-01", "U-N1", "F-N1", "C-N1"}
+    return set(_SECOND_WAVE) | {"F-01", "F-04", "F-02", "C-01", "C-03", "C-02", "A-01", "A-02", "A-N1", "S-01", "S-N1", "U-01", "U-N1", "F-N1", "C-N1"}
 
 
 def concrete_observer_ids() -> set[str]:
-    return {"F-01", "F-04", "F-02", "C-01", "C-03", "C-02", "A-01", "A-02", "A-N1", "S-01", "S-N1", "U-01", "U-N1", "F-N1", "C-N1"}
+    return set(_SECOND_WAVE) | {"F-01", "F-04", "F-02", "C-01", "C-03", "C-02", "A-01", "A-02", "A-N1", "S-01", "S-N1", "U-01", "U-N1", "F-N1", "C-N1"}
 
 
 def required_observers_for(workflow_id: str) -> list[str]:
+    if workflow_id in _SECOND_WAVE:
+        row=_SECOND_WAVE[workflow_id]; kind=row["operation_graph"]
+        return ["foreground_window_and_input_target_v1", row["schema"]["shared"].replace(" ","_").lower(), f"operation_graph:{kind}", "private_exact_target_state_v1", "guard_integrity_v1"]
     if workflow_id == "A-01":
         return ["chromium_top_level_window_identity_v1", "browser_active_tab_and_submission_v1", "browser_context_event_log_v1"]
     if workflow_id == "A-02":
@@ -298,7 +305,7 @@ class _ODFRuntimeObserver:
 
     @staticmethod
     def _range(target):
-        from .production_v1 import _range_cells
+        from .production_v1 import _range_cells,_cell_coord
         return [_ODFRuntimeObserver._cell(x) for x in _range_cells(target)]
 
     @staticmethod
@@ -503,6 +510,80 @@ class CN1RuntimeObserver:
                     if not any(x.get("app")==app for x in guest.launched):return False
             return True
         except Exception:return False
+    def _guards_intact(self,guests,plan,backend):
+        """Check all observed non-target ODF/browser state against seeded fixtures."""
+        from .production_v1 import _range_cells,_cell_coord
+        actors=plan["actors"]
+        for gi,guest in enumerate(guests):
+            guest_actors=actors if len(guests)==1 else [actors[gi]]
+            # Writer content outside assigned paragraph/table targets must remain byte-semantic exact.
+            assets=self._assets(plan)
+            doc=assets.get("document.fodt")
+            if doc:
+                initial=_ET.fromstring(guest.fixtures[doc]); actual=_ET.fromstring(self._read(guest,backend,doc))
+                ns_text="urn:oasis:names:tc:opendocument:xmlns:text:1.0";ns_table="urn:oasis:names:tc:opendocument:xmlns:table:1.0"
+                def paras(root): return ["".join(p.itertext()) for p in root.iter(f"{{{ns_text}}}p")]
+                ip,ap=paras(initial),paras(actual)
+                allow_p=set();allow_t=set()
+                for actor in guest_actors:
+                    for target in actor["target_objects"]:
+                        m=__import__("re").search(r"paragraph\[(\d+)\]",target)
+                        if m:allow_p.add(int(m.group(1)))
+                        if "section[" in target:allow_p.update({0,1})
+                        if "writer/range/" in target and self.workflow_id=="S-03":allow_p.update({1,2})
+                        m=__import__("re").search(r"table\[(\d+)\]",target)
+                        if m:allow_t.add(int(m.group(1)))
+                if len(ip)!=len(ap) or any(ip[i]!=ap[i] for i in range(min(len(ip),len(ap))) if i not in allow_p):return False
+                def table_sig(root):
+                    out=[]
+                    for table in root.iter(f"{{{ns_table}}}table"):
+                        rows=[]
+                        for tr in table.iter(f"{{{ns_table}}}table-row"):
+                            rows.append(["".join(x.itertext()) for x in tr if x.tag==f"{{{ns_table}}}table-cell"])
+                        out.append(rows)
+                    return out
+                it,at=table_sig(initial),table_sig(actual)
+                if len(it)!=len(at) or any(it[i]!=at[i] for i in range(min(len(it),len(at))) if i not in allow_t):return False
+            # Calc cells outside targets are immutable, including source ranges.
+            book=assets.get("workbook.fods")
+            if book:
+                seed_raw=guest.fixtures[book]; live_raw=self._read(guest,backend,book)
+                ns_table="urn:oasis:names:tc:opendocument:xmlns:table:1.0"
+                seed_root=_ET.fromstring(seed_raw); live_root=_ET.fromstring(live_raw)
+                def sheets(root):return {x.get(f"{{{ns_table}}}name"):self._sheet_grid(_ET.tostring(root,encoding="utf-8"),x.get(f"{{{ns_table}}}name")) for x in root.iter(f"{{{ns_table}}}table")}
+                s0,s1=sheets(seed_root),sheets(live_root);allowed={}
+                for actor in guest_actors:
+                    for target in actor["target_objects"]:
+                        if not target.startswith("calc/"):continue
+                        cell=target.split("/",1)[1];sheet=None
+                        if cell.startswith("Sheet") and "." in cell:sheet,cell=cell.split(".",1)
+                        try:coords=_range_cells(cell)
+                        except Exception:continue
+                        for coord in coords:allowed.setdefault(sheet,set()).add(_cell_coord(coord))
+                if set(s0)!=set(s1):return False
+                for name in s0:
+                    for coord,val in s0[name].items():
+                        if coord not in allowed.get(name,set()) and coord not in allowed.get(None,set()) and s1[name].get(coord,"")!=val:return False
+                    for coord,val in s1[name].items():
+                        if coord not in s0[name] and coord not in allowed.get(name,set()) and coord not in allowed.get(None,set()) and val not in (None,""):return False
+            # Browser hidden state must retain its schema and row identity; only task-owned
+            # actor values/revisions, route/selection state, row statuses, and editor history may change.
+            browser=assets.get("browser-initial-state.json")
+            if browser:
+                try: before=json.loads(guest.fixtures[browser]); after=json.loads(self._read(guest,backend,browser))
+                except Exception:return False
+                for key,value in before.items():
+                    if key in {"actors","active_context","active_filter","context_revision","selected_rows","selection_generation","rows","editor_text","undo_stack"}:continue
+                    if after.get(key)!=value:return False
+                if set(before.get("actors",{}))!=set(after.get("actors",{})):return False
+                if set(before.get("rows",{}))!=set(after.get("rows",{})):return False
+                if self.workflow_id=="S-04":
+                    schema=plan["initial_gui_state"]["semantic_parameters"]["object_schema"]
+                    owned={str(x) for x in schema.get("rows_a",[])+schema.get("rows_b",[])}
+                    for row_id,row in before.get("rows",{}).items():
+                        if row_id not in owned and after["rows"].get(row_id)!=row:return False
+        return True
+
     def __call__(self,guests,plan,backend):
         apps=self._apps(plan);support=self._support(plan);actors={x["actor_id"]:x for x in plan["actors"]}
         guest_for={a:guests[i] if len(guests)>1 else guests[0] for i,a in enumerate(("A","B"))}
@@ -571,6 +652,80 @@ class C02RuntimeObserver:
             initial=json.loads(self._read(guest,backend,support["browser-initial-state.json"]))
             if initial!={"submission":{},"revision":0}:return False
         return True
+    def _guards_intact(self,guests,plan,backend):
+        """Check all observed non-target ODF/browser state against seeded fixtures."""
+        from .production_v1 import _range_cells,_cell_coord
+        actors=plan["actors"]
+        for gi,guest in enumerate(guests):
+            guest_actors=actors if len(guests)==1 else [actors[gi]]
+            # Writer content outside assigned paragraph/table targets must remain byte-semantic exact.
+            assets=self._assets(plan)
+            doc=assets.get("document.fodt")
+            if doc:
+                initial=_ET.fromstring(guest.fixtures[doc]); actual=_ET.fromstring(self._read(guest,backend,doc))
+                ns_text="urn:oasis:names:tc:opendocument:xmlns:text:1.0";ns_table="urn:oasis:names:tc:opendocument:xmlns:table:1.0"
+                def paras(root): return ["".join(p.itertext()) for p in root.iter(f"{{{ns_text}}}p")]
+                ip,ap=paras(initial),paras(actual)
+                allow_p=set();allow_t=set()
+                for actor in guest_actors:
+                    for target in actor["target_objects"]:
+                        m=__import__("re").search(r"paragraph\[(\d+)\]",target)
+                        if m:allow_p.add(int(m.group(1)))
+                        if "section[" in target:allow_p.update({0,1})
+                        if "writer/range/" in target and self.workflow_id=="S-03":allow_p.update({1,2})
+                        m=__import__("re").search(r"table\[(\d+)\]",target)
+                        if m:allow_t.add(int(m.group(1)))
+                if len(ip)!=len(ap) or any(ip[i]!=ap[i] for i in range(min(len(ip),len(ap))) if i not in allow_p):return False
+                def table_sig(root):
+                    out=[]
+                    for table in root.iter(f"{{{ns_table}}}table"):
+                        rows=[]
+                        for tr in table.iter(f"{{{ns_table}}}table-row"):
+                            rows.append(["".join(x.itertext()) for x in tr if x.tag==f"{{{ns_table}}}table-cell"])
+                        out.append(rows)
+                    return out
+                it,at=table_sig(initial),table_sig(actual)
+                if len(it)!=len(at) or any(it[i]!=at[i] for i in range(min(len(it),len(at))) if i not in allow_t):return False
+            # Calc cells outside targets are immutable, including source ranges.
+            book=assets.get("workbook.fods")
+            if book:
+                seed_raw=guest.fixtures[book]; live_raw=self._read(guest,backend,book)
+                ns_table="urn:oasis:names:tc:opendocument:xmlns:table:1.0"
+                seed_root=_ET.fromstring(seed_raw); live_root=_ET.fromstring(live_raw)
+                def sheets(root):return {x.get(f"{{{ns_table}}}name"):self._sheet_grid(_ET.tostring(root,encoding="utf-8"),x.get(f"{{{ns_table}}}name")) for x in root.iter(f"{{{ns_table}}}table")}
+                s0,s1=sheets(seed_root),sheets(live_root);allowed={}
+                for actor in guest_actors:
+                    for target in actor["target_objects"]:
+                        if not target.startswith("calc/"):continue
+                        cell=target.split("/",1)[1];sheet=None
+                        if cell.startswith("Sheet") and "." in cell:sheet,cell=cell.split(".",1)
+                        try:coords=_range_cells(cell)
+                        except Exception:continue
+                        for coord in coords:allowed.setdefault(sheet,set()).add(_cell_coord(coord))
+                if set(s0)!=set(s1):return False
+                for name in s0:
+                    for coord,val in s0[name].items():
+                        if coord not in allowed.get(name,set()) and coord not in allowed.get(None,set()) and s1[name].get(coord,"")!=val:return False
+                    for coord,val in s1[name].items():
+                        if coord not in s0[name] and coord not in allowed.get(name,set()) and coord not in allowed.get(None,set()) and val not in (None,""):return False
+            # Browser hidden state must retain its schema and row identity; only task-owned
+            # actor values/revisions, route/selection state, row statuses, and editor history may change.
+            browser=assets.get("browser-initial-state.json")
+            if browser:
+                try: before=json.loads(guest.fixtures[browser]); after=json.loads(self._read(guest,backend,browser))
+                except Exception:return False
+                for key,value in before.items():
+                    if key in {"actors","active_context","active_filter","context_revision","selected_rows","selection_generation","rows","editor_text","undo_stack"}:continue
+                    if after.get(key)!=value:return False
+                if set(before.get("actors",{}))!=set(after.get("actors",{})):return False
+                if set(before.get("rows",{}))!=set(after.get("rows",{})):return False
+                if self.workflow_id=="S-04":
+                    schema=plan["initial_gui_state"]["semantic_parameters"]["object_schema"]
+                    owned={str(x) for x in schema.get("rows_a",[])+schema.get("rows_b",[])}
+                    for row_id,row in before.get("rows",{}).items():
+                        if row_id not in owned and after["rows"].get(row_id)!=row:return False
+        return True
+
     def __call__(self,guests,plan,backend):
         assets=self._assets(plan); support=self._support(plan); actors=plan["actors"]
         guest_for={a["actor_id"]:guests[i] if len(guests)>1 else guests[0] for i,a in enumerate(actors)}
@@ -636,6 +791,80 @@ class F02RuntimeObserver:
             if len(paras)!=2 or not any(a["initial_value"] in paras for a in plan["actors"] if a["actor_id"]=="A"):
                 return False
         return True
+    def _guards_intact(self,guests,plan,backend):
+        """Check all observed non-target ODF/browser state against seeded fixtures."""
+        from .production_v1 import _range_cells,_cell_coord
+        actors=plan["actors"]
+        for gi,guest in enumerate(guests):
+            guest_actors=actors if len(guests)==1 else [actors[gi]]
+            # Writer content outside assigned paragraph/table targets must remain byte-semantic exact.
+            assets=self._assets(plan)
+            doc=assets.get("document.fodt")
+            if doc:
+                initial=_ET.fromstring(guest.fixtures[doc]); actual=_ET.fromstring(self._read(guest,backend,doc))
+                ns_text="urn:oasis:names:tc:opendocument:xmlns:text:1.0";ns_table="urn:oasis:names:tc:opendocument:xmlns:table:1.0"
+                def paras(root): return ["".join(p.itertext()) for p in root.iter(f"{{{ns_text}}}p")]
+                ip,ap=paras(initial),paras(actual)
+                allow_p=set();allow_t=set()
+                for actor in guest_actors:
+                    for target in actor["target_objects"]:
+                        m=__import__("re").search(r"paragraph\[(\d+)\]",target)
+                        if m:allow_p.add(int(m.group(1)))
+                        if "section[" in target:allow_p.update({0,1})
+                        if "writer/range/" in target and self.workflow_id=="S-03":allow_p.update({1,2})
+                        m=__import__("re").search(r"table\[(\d+)\]",target)
+                        if m:allow_t.add(int(m.group(1)))
+                if len(ip)!=len(ap) or any(ip[i]!=ap[i] for i in range(min(len(ip),len(ap))) if i not in allow_p):return False
+                def table_sig(root):
+                    out=[]
+                    for table in root.iter(f"{{{ns_table}}}table"):
+                        rows=[]
+                        for tr in table.iter(f"{{{ns_table}}}table-row"):
+                            rows.append(["".join(x.itertext()) for x in tr if x.tag==f"{{{ns_table}}}table-cell"])
+                        out.append(rows)
+                    return out
+                it,at=table_sig(initial),table_sig(actual)
+                if len(it)!=len(at) or any(it[i]!=at[i] for i in range(min(len(it),len(at))) if i not in allow_t):return False
+            # Calc cells outside targets are immutable, including source ranges.
+            book=assets.get("workbook.fods")
+            if book:
+                seed_raw=guest.fixtures[book]; live_raw=self._read(guest,backend,book)
+                ns_table="urn:oasis:names:tc:opendocument:xmlns:table:1.0"
+                seed_root=_ET.fromstring(seed_raw); live_root=_ET.fromstring(live_raw)
+                def sheets(root):return {x.get(f"{{{ns_table}}}name"):self._sheet_grid(_ET.tostring(root,encoding="utf-8"),x.get(f"{{{ns_table}}}name")) for x in root.iter(f"{{{ns_table}}}table")}
+                s0,s1=sheets(seed_root),sheets(live_root);allowed={}
+                for actor in guest_actors:
+                    for target in actor["target_objects"]:
+                        if not target.startswith("calc/"):continue
+                        cell=target.split("/",1)[1];sheet=None
+                        if cell.startswith("Sheet") and "." in cell:sheet,cell=cell.split(".",1)
+                        try:coords=_range_cells(cell)
+                        except Exception:continue
+                        for coord in coords:allowed.setdefault(sheet,set()).add(_cell_coord(coord))
+                if set(s0)!=set(s1):return False
+                for name in s0:
+                    for coord,val in s0[name].items():
+                        if coord not in allowed.get(name,set()) and coord not in allowed.get(None,set()) and s1[name].get(coord,"")!=val:return False
+                    for coord,val in s1[name].items():
+                        if coord not in s0[name] and coord not in allowed.get(name,set()) and coord not in allowed.get(None,set()) and val not in (None,""):return False
+            # Browser hidden state must retain its schema and row identity; only task-owned
+            # actor values/revisions, route/selection state, row statuses, and editor history may change.
+            browser=assets.get("browser-initial-state.json")
+            if browser:
+                try: before=json.loads(guest.fixtures[browser]); after=json.loads(self._read(guest,backend,browser))
+                except Exception:return False
+                for key,value in before.items():
+                    if key in {"actors","active_context","active_filter","context_revision","selected_rows","selection_generation","rows","editor_text","undo_stack"}:continue
+                    if after.get(key)!=value:return False
+                if set(before.get("actors",{}))!=set(after.get("actors",{})):return False
+                if set(before.get("rows",{}))!=set(after.get("rows",{})):return False
+                if self.workflow_id=="S-04":
+                    schema=plan["initial_gui_state"]["semantic_parameters"]["object_schema"]
+                    owned={str(x) for x in schema.get("rows_a",[])+schema.get("rows_b",[])}
+                    for row_id,row in before.get("rows",{}).items():
+                        if row_id not in owned and after["rows"].get(row_id)!=row:return False
+        return True
+
     def __call__(self,guests,plan,backend):
         assets=self._assets(plan); support=self._support(plan); actors=plan["actors"]
         guest_for={a["actor_id"]:guests[i] if len(guests)>1 else guests[0] for i,a in enumerate(actors)}
@@ -702,6 +931,80 @@ class S01RuntimeObserver(_ODFRuntimeObserver):
     def __init__(self):
         super().__init__("S-01")
         self.observer_ids=tuple(required_observers_for("S-01"))
+    def _guards_intact(self,guests,plan,backend):
+        """Check all observed non-target ODF/browser state against seeded fixtures."""
+        from .production_v1 import _range_cells,_cell_coord
+        actors=plan["actors"]
+        for gi,guest in enumerate(guests):
+            guest_actors=actors if len(guests)==1 else [actors[gi]]
+            # Writer content outside assigned paragraph/table targets must remain byte-semantic exact.
+            assets=self._assets(plan)
+            doc=assets.get("document.fodt")
+            if doc:
+                initial=_ET.fromstring(guest.fixtures[doc]); actual=_ET.fromstring(self._read(guest,backend,doc))
+                ns_text="urn:oasis:names:tc:opendocument:xmlns:text:1.0";ns_table="urn:oasis:names:tc:opendocument:xmlns:table:1.0"
+                def paras(root): return ["".join(p.itertext()) for p in root.iter(f"{{{ns_text}}}p")]
+                ip,ap=paras(initial),paras(actual)
+                allow_p=set();allow_t=set()
+                for actor in guest_actors:
+                    for target in actor["target_objects"]:
+                        m=__import__("re").search(r"paragraph\[(\d+)\]",target)
+                        if m:allow_p.add(int(m.group(1)))
+                        if "section[" in target:allow_p.update({0,1})
+                        if "writer/range/" in target and self.workflow_id=="S-03":allow_p.update({1,2})
+                        m=__import__("re").search(r"table\[(\d+)\]",target)
+                        if m:allow_t.add(int(m.group(1)))
+                if len(ip)!=len(ap) or any(ip[i]!=ap[i] for i in range(min(len(ip),len(ap))) if i not in allow_p):return False
+                def table_sig(root):
+                    out=[]
+                    for table in root.iter(f"{{{ns_table}}}table"):
+                        rows=[]
+                        for tr in table.iter(f"{{{ns_table}}}table-row"):
+                            rows.append(["".join(x.itertext()) for x in tr if x.tag==f"{{{ns_table}}}table-cell"])
+                        out.append(rows)
+                    return out
+                it,at=table_sig(initial),table_sig(actual)
+                if len(it)!=len(at) or any(it[i]!=at[i] for i in range(min(len(it),len(at))) if i not in allow_t):return False
+            # Calc cells outside targets are immutable, including source ranges.
+            book=assets.get("workbook.fods")
+            if book:
+                seed_raw=guest.fixtures[book]; live_raw=self._read(guest,backend,book)
+                ns_table="urn:oasis:names:tc:opendocument:xmlns:table:1.0"
+                seed_root=_ET.fromstring(seed_raw); live_root=_ET.fromstring(live_raw)
+                def sheets(root):return {x.get(f"{{{ns_table}}}name"):self._sheet_grid(_ET.tostring(root,encoding="utf-8"),x.get(f"{{{ns_table}}}name")) for x in root.iter(f"{{{ns_table}}}table")}
+                s0,s1=sheets(seed_root),sheets(live_root);allowed={}
+                for actor in guest_actors:
+                    for target in actor["target_objects"]:
+                        if not target.startswith("calc/"):continue
+                        cell=target.split("/",1)[1];sheet=None
+                        if cell.startswith("Sheet") and "." in cell:sheet,cell=cell.split(".",1)
+                        try:coords=_range_cells(cell)
+                        except Exception:continue
+                        for coord in coords:allowed.setdefault(sheet,set()).add(_cell_coord(coord))
+                if set(s0)!=set(s1):return False
+                for name in s0:
+                    for coord,val in s0[name].items():
+                        if coord not in allowed.get(name,set()) and coord not in allowed.get(None,set()) and s1[name].get(coord,"")!=val:return False
+                    for coord,val in s1[name].items():
+                        if coord not in s0[name] and coord not in allowed.get(name,set()) and coord not in allowed.get(None,set()) and val not in (None,""):return False
+            # Browser hidden state must retain its schema and row identity; only task-owned
+            # actor values/revisions, route/selection state, row statuses, and editor history may change.
+            browser=assets.get("browser-initial-state.json")
+            if browser:
+                try: before=json.loads(guest.fixtures[browser]); after=json.loads(self._read(guest,backend,browser))
+                except Exception:return False
+                for key,value in before.items():
+                    if key in {"actors","active_context","active_filter","context_revision","selected_rows","selection_generation","rows","editor_text","undo_stack"}:continue
+                    if after.get(key)!=value:return False
+                if set(before.get("actors",{}))!=set(after.get("actors",{})):return False
+                if set(before.get("rows",{}))!=set(after.get("rows",{})):return False
+                if self.workflow_id=="S-04":
+                    schema=plan["initial_gui_state"]["semantic_parameters"]["object_schema"]
+                    owned={str(x) for x in schema.get("rows_a",[])+schema.get("rows_b",[])}
+                    for row_id,row in before.get("rows",{}).items():
+                        if row_id not in owned and after["rows"].get(row_id)!=row:return False
+        return True
+
     def __call__(self,guests,plan,backend):
         result=super().__call__(guests,plan,backend)
         probe=("import json,uno; c=uno.getComponentContext(); r=c.ServiceManager.createInstanceWithContext('com.sun.star.bridge.UnoUrlResolver',c); "
@@ -1003,6 +1306,80 @@ class A01RuntimeObserver:
         except Exception:
             return False
 
+    def _guards_intact(self,guests,plan,backend):
+        """Check all observed non-target ODF/browser state against seeded fixtures."""
+        from .production_v1 import _range_cells,_cell_coord
+        actors=plan["actors"]
+        for gi,guest in enumerate(guests):
+            guest_actors=actors if len(guests)==1 else [actors[gi]]
+            # Writer content outside assigned paragraph/table targets must remain byte-semantic exact.
+            assets=self._assets(plan)
+            doc=assets.get("document.fodt")
+            if doc:
+                initial=_ET.fromstring(guest.fixtures[doc]); actual=_ET.fromstring(self._read(guest,backend,doc))
+                ns_text="urn:oasis:names:tc:opendocument:xmlns:text:1.0";ns_table="urn:oasis:names:tc:opendocument:xmlns:table:1.0"
+                def paras(root): return ["".join(p.itertext()) for p in root.iter(f"{{{ns_text}}}p")]
+                ip,ap=paras(initial),paras(actual)
+                allow_p=set();allow_t=set()
+                for actor in guest_actors:
+                    for target in actor["target_objects"]:
+                        m=__import__("re").search(r"paragraph\[(\d+)\]",target)
+                        if m:allow_p.add(int(m.group(1)))
+                        if "section[" in target:allow_p.update({0,1})
+                        if "writer/range/" in target and self.workflow_id=="S-03":allow_p.update({1,2})
+                        m=__import__("re").search(r"table\[(\d+)\]",target)
+                        if m:allow_t.add(int(m.group(1)))
+                if len(ip)!=len(ap) or any(ip[i]!=ap[i] for i in range(min(len(ip),len(ap))) if i not in allow_p):return False
+                def table_sig(root):
+                    out=[]
+                    for table in root.iter(f"{{{ns_table}}}table"):
+                        rows=[]
+                        for tr in table.iter(f"{{{ns_table}}}table-row"):
+                            rows.append(["".join(x.itertext()) for x in tr if x.tag==f"{{{ns_table}}}table-cell"])
+                        out.append(rows)
+                    return out
+                it,at=table_sig(initial),table_sig(actual)
+                if len(it)!=len(at) or any(it[i]!=at[i] for i in range(min(len(it),len(at))) if i not in allow_t):return False
+            # Calc cells outside targets are immutable, including source ranges.
+            book=assets.get("workbook.fods")
+            if book:
+                seed_raw=guest.fixtures[book]; live_raw=self._read(guest,backend,book)
+                ns_table="urn:oasis:names:tc:opendocument:xmlns:table:1.0"
+                seed_root=_ET.fromstring(seed_raw); live_root=_ET.fromstring(live_raw)
+                def sheets(root):return {x.get(f"{{{ns_table}}}name"):self._sheet_grid(_ET.tostring(root,encoding="utf-8"),x.get(f"{{{ns_table}}}name")) for x in root.iter(f"{{{ns_table}}}table")}
+                s0,s1=sheets(seed_root),sheets(live_root);allowed={}
+                for actor in guest_actors:
+                    for target in actor["target_objects"]:
+                        if not target.startswith("calc/"):continue
+                        cell=target.split("/",1)[1];sheet=None
+                        if cell.startswith("Sheet") and "." in cell:sheet,cell=cell.split(".",1)
+                        try:coords=_range_cells(cell)
+                        except Exception:continue
+                        for coord in coords:allowed.setdefault(sheet,set()).add(_cell_coord(coord))
+                if set(s0)!=set(s1):return False
+                for name in s0:
+                    for coord,val in s0[name].items():
+                        if coord not in allowed.get(name,set()) and coord not in allowed.get(None,set()) and s1[name].get(coord,"")!=val:return False
+                    for coord,val in s1[name].items():
+                        if coord not in s0[name] and coord not in allowed.get(name,set()) and coord not in allowed.get(None,set()) and val not in (None,""):return False
+            # Browser hidden state must retain its schema and row identity; only task-owned
+            # actor values/revisions, route/selection state, row statuses, and editor history may change.
+            browser=assets.get("browser-initial-state.json")
+            if browser:
+                try: before=json.loads(guest.fixtures[browser]); after=json.loads(self._read(guest,backend,browser))
+                except Exception:return False
+                for key,value in before.items():
+                    if key in {"actors","active_context","active_filter","context_revision","selected_rows","selection_generation","rows","editor_text","undo_stack"}:continue
+                    if after.get(key)!=value:return False
+                if set(before.get("actors",{}))!=set(after.get("actors",{})):return False
+                if set(before.get("rows",{}))!=set(after.get("rows",{})):return False
+                if self.workflow_id=="S-04":
+                    schema=plan["initial_gui_state"]["semantic_parameters"]["object_schema"]
+                    owned={str(x) for x in schema.get("rows_a",[])+schema.get("rows_b",[])}
+                    for row_id,row in before.get("rows",{}).items():
+                        if row_id not in owned and after["rows"].get(row_id)!=row:return False
+        return True
+
     def __call__(self,guests,plan,backend):
         if not guests:raise ValueError("A-01 observer requires at least one Guest")
         actors=plan["actors"]
@@ -1108,6 +1485,80 @@ class AN1RuntimeObserver:
                 if len(self._ids(g,backend))!=1:return False
             return True
         except Exception:return False
+    def _guards_intact(self,guests,plan,backend):
+        """Check all observed non-target ODF/browser state against seeded fixtures."""
+        from .production_v1 import _range_cells,_cell_coord
+        actors=plan["actors"]
+        for gi,guest in enumerate(guests):
+            guest_actors=actors if len(guests)==1 else [actors[gi]]
+            # Writer content outside assigned paragraph/table targets must remain byte-semantic exact.
+            assets=self._assets(plan)
+            doc=assets.get("document.fodt")
+            if doc:
+                initial=_ET.fromstring(guest.fixtures[doc]); actual=_ET.fromstring(self._read(guest,backend,doc))
+                ns_text="urn:oasis:names:tc:opendocument:xmlns:text:1.0";ns_table="urn:oasis:names:tc:opendocument:xmlns:table:1.0"
+                def paras(root): return ["".join(p.itertext()) for p in root.iter(f"{{{ns_text}}}p")]
+                ip,ap=paras(initial),paras(actual)
+                allow_p=set();allow_t=set()
+                for actor in guest_actors:
+                    for target in actor["target_objects"]:
+                        m=__import__("re").search(r"paragraph\[(\d+)\]",target)
+                        if m:allow_p.add(int(m.group(1)))
+                        if "section[" in target:allow_p.update({0,1})
+                        if "writer/range/" in target and self.workflow_id=="S-03":allow_p.update({1,2})
+                        m=__import__("re").search(r"table\[(\d+)\]",target)
+                        if m:allow_t.add(int(m.group(1)))
+                if len(ip)!=len(ap) or any(ip[i]!=ap[i] for i in range(min(len(ip),len(ap))) if i not in allow_p):return False
+                def table_sig(root):
+                    out=[]
+                    for table in root.iter(f"{{{ns_table}}}table"):
+                        rows=[]
+                        for tr in table.iter(f"{{{ns_table}}}table-row"):
+                            rows.append(["".join(x.itertext()) for x in tr if x.tag==f"{{{ns_table}}}table-cell"])
+                        out.append(rows)
+                    return out
+                it,at=table_sig(initial),table_sig(actual)
+                if len(it)!=len(at) or any(it[i]!=at[i] for i in range(min(len(it),len(at))) if i not in allow_t):return False
+            # Calc cells outside targets are immutable, including source ranges.
+            book=assets.get("workbook.fods")
+            if book:
+                seed_raw=guest.fixtures[book]; live_raw=self._read(guest,backend,book)
+                ns_table="urn:oasis:names:tc:opendocument:xmlns:table:1.0"
+                seed_root=_ET.fromstring(seed_raw); live_root=_ET.fromstring(live_raw)
+                def sheets(root):return {x.get(f"{{{ns_table}}}name"):self._sheet_grid(_ET.tostring(root,encoding="utf-8"),x.get(f"{{{ns_table}}}name")) for x in root.iter(f"{{{ns_table}}}table")}
+                s0,s1=sheets(seed_root),sheets(live_root);allowed={}
+                for actor in guest_actors:
+                    for target in actor["target_objects"]:
+                        if not target.startswith("calc/"):continue
+                        cell=target.split("/",1)[1];sheet=None
+                        if cell.startswith("Sheet") and "." in cell:sheet,cell=cell.split(".",1)
+                        try:coords=_range_cells(cell)
+                        except Exception:continue
+                        for coord in coords:allowed.setdefault(sheet,set()).add(_cell_coord(coord))
+                if set(s0)!=set(s1):return False
+                for name in s0:
+                    for coord,val in s0[name].items():
+                        if coord not in allowed.get(name,set()) and coord not in allowed.get(None,set()) and s1[name].get(coord,"")!=val:return False
+                    for coord,val in s1[name].items():
+                        if coord not in s0[name] and coord not in allowed.get(name,set()) and coord not in allowed.get(None,set()) and val not in (None,""):return False
+            # Browser hidden state must retain its schema and row identity; only task-owned
+            # actor values/revisions, route/selection state, row statuses, and editor history may change.
+            browser=assets.get("browser-initial-state.json")
+            if browser:
+                try: before=json.loads(guest.fixtures[browser]); after=json.loads(self._read(guest,backend,browser))
+                except Exception:return False
+                for key,value in before.items():
+                    if key in {"actors","active_context","active_filter","context_revision","selected_rows","selection_generation","rows","editor_text","undo_stack"}:continue
+                    if after.get(key)!=value:return False
+                if set(before.get("actors",{}))!=set(after.get("actors",{})):return False
+                if set(before.get("rows",{}))!=set(after.get("rows",{})):return False
+                if self.workflow_id=="S-04":
+                    schema=plan["initial_gui_state"]["semantic_parameters"]["object_schema"]
+                    owned={str(x) for x in schema.get("rows_a",[])+schema.get("rows_b",[])}
+                    for row_id,row in before.get("rows",{}).items():
+                        if row_id not in owned and after["rows"].get(row_id)!=row:return False
+        return True
+
     def __call__(self,guests,plan,backend):
         actors=plan["actors"];out={};rows=[];intact=True
         for i,g in enumerate(guests):
@@ -1195,6 +1646,80 @@ class SN1RuntimeObserver:
                 if len(spans)!=2 or any(x["weight"]!="normal" for x in spans) or "Guard: PRESERVE" not in paras:return False
             return True
         except Exception:return False
+    def _guards_intact(self,guests,plan,backend):
+        """Check all observed non-target ODF/browser state against seeded fixtures."""
+        from .production_v1 import _range_cells,_cell_coord
+        actors=plan["actors"]
+        for gi,guest in enumerate(guests):
+            guest_actors=actors if len(guests)==1 else [actors[gi]]
+            # Writer content outside assigned paragraph/table targets must remain byte-semantic exact.
+            assets=self._assets(plan)
+            doc=assets.get("document.fodt")
+            if doc:
+                initial=_ET.fromstring(guest.fixtures[doc]); actual=_ET.fromstring(self._read(guest,backend,doc))
+                ns_text="urn:oasis:names:tc:opendocument:xmlns:text:1.0";ns_table="urn:oasis:names:tc:opendocument:xmlns:table:1.0"
+                def paras(root): return ["".join(p.itertext()) for p in root.iter(f"{{{ns_text}}}p")]
+                ip,ap=paras(initial),paras(actual)
+                allow_p=set();allow_t=set()
+                for actor in guest_actors:
+                    for target in actor["target_objects"]:
+                        m=__import__("re").search(r"paragraph\[(\d+)\]",target)
+                        if m:allow_p.add(int(m.group(1)))
+                        if "section[" in target:allow_p.update({0,1})
+                        if "writer/range/" in target and self.workflow_id=="S-03":allow_p.update({1,2})
+                        m=__import__("re").search(r"table\[(\d+)\]",target)
+                        if m:allow_t.add(int(m.group(1)))
+                if len(ip)!=len(ap) or any(ip[i]!=ap[i] for i in range(min(len(ip),len(ap))) if i not in allow_p):return False
+                def table_sig(root):
+                    out=[]
+                    for table in root.iter(f"{{{ns_table}}}table"):
+                        rows=[]
+                        for tr in table.iter(f"{{{ns_table}}}table-row"):
+                            rows.append(["".join(x.itertext()) for x in tr if x.tag==f"{{{ns_table}}}table-cell"])
+                        out.append(rows)
+                    return out
+                it,at=table_sig(initial),table_sig(actual)
+                if len(it)!=len(at) or any(it[i]!=at[i] for i in range(min(len(it),len(at))) if i not in allow_t):return False
+            # Calc cells outside targets are immutable, including source ranges.
+            book=assets.get("workbook.fods")
+            if book:
+                seed_raw=guest.fixtures[book]; live_raw=self._read(guest,backend,book)
+                ns_table="urn:oasis:names:tc:opendocument:xmlns:table:1.0"
+                seed_root=_ET.fromstring(seed_raw); live_root=_ET.fromstring(live_raw)
+                def sheets(root):return {x.get(f"{{{ns_table}}}name"):self._sheet_grid(_ET.tostring(root,encoding="utf-8"),x.get(f"{{{ns_table}}}name")) for x in root.iter(f"{{{ns_table}}}table")}
+                s0,s1=sheets(seed_root),sheets(live_root);allowed={}
+                for actor in guest_actors:
+                    for target in actor["target_objects"]:
+                        if not target.startswith("calc/"):continue
+                        cell=target.split("/",1)[1];sheet=None
+                        if cell.startswith("Sheet") and "." in cell:sheet,cell=cell.split(".",1)
+                        try:coords=_range_cells(cell)
+                        except Exception:continue
+                        for coord in coords:allowed.setdefault(sheet,set()).add(_cell_coord(coord))
+                if set(s0)!=set(s1):return False
+                for name in s0:
+                    for coord,val in s0[name].items():
+                        if coord not in allowed.get(name,set()) and coord not in allowed.get(None,set()) and s1[name].get(coord,"")!=val:return False
+                    for coord,val in s1[name].items():
+                        if coord not in s0[name] and coord not in allowed.get(name,set()) and coord not in allowed.get(None,set()) and val not in (None,""):return False
+            # Browser hidden state must retain its schema and row identity; only task-owned
+            # actor values/revisions, route/selection state, row statuses, and editor history may change.
+            browser=assets.get("browser-initial-state.json")
+            if browser:
+                try: before=json.loads(guest.fixtures[browser]); after=json.loads(self._read(guest,backend,browser))
+                except Exception:return False
+                for key,value in before.items():
+                    if key in {"actors","active_context","active_filter","context_revision","selected_rows","selection_generation","rows","editor_text","undo_stack"}:continue
+                    if after.get(key)!=value:return False
+                if set(before.get("actors",{}))!=set(after.get("actors",{})):return False
+                if set(before.get("rows",{}))!=set(after.get("rows",{})):return False
+                if self.workflow_id=="S-04":
+                    schema=plan["initial_gui_state"]["semantic_parameters"]["object_schema"]
+                    owned={str(x) for x in schema.get("rows_a",[])+schema.get("rows_b",[])}
+                    for row_id,row in before.get("rows",{}).items():
+                        if row_id not in owned and after["rows"].get(row_id)!=row:return False
+        return True
+
     def __call__(self,guests,plan,backend):
         row=self._asset(plan);actors=plan["actors"];out={};intact=True;selected=[]
         probe=("import json,uno; c=uno.getComponentContext(); r=c.ServiceManager.createInstanceWithContext('com.sun.star.bridge.UnoUrlResolver',c); "
@@ -1242,6 +1767,80 @@ class UN1RuntimeObserver(_ODFRuntimeObserver):
     @staticmethod
     def _action_text(event):
         return str(event.get("action_payload","")).lower()
+    def _guards_intact(self,guests,plan,backend):
+        """Check all observed non-target ODF/browser state against seeded fixtures."""
+        from .production_v1 import _range_cells,_cell_coord
+        actors=plan["actors"]
+        for gi,guest in enumerate(guests):
+            guest_actors=actors if len(guests)==1 else [actors[gi]]
+            # Writer content outside assigned paragraph/table targets must remain byte-semantic exact.
+            assets=self._assets(plan)
+            doc=assets.get("document.fodt")
+            if doc:
+                initial=_ET.fromstring(guest.fixtures[doc]); actual=_ET.fromstring(self._read(guest,backend,doc))
+                ns_text="urn:oasis:names:tc:opendocument:xmlns:text:1.0";ns_table="urn:oasis:names:tc:opendocument:xmlns:table:1.0"
+                def paras(root): return ["".join(p.itertext()) for p in root.iter(f"{{{ns_text}}}p")]
+                ip,ap=paras(initial),paras(actual)
+                allow_p=set();allow_t=set()
+                for actor in guest_actors:
+                    for target in actor["target_objects"]:
+                        m=__import__("re").search(r"paragraph\[(\d+)\]",target)
+                        if m:allow_p.add(int(m.group(1)))
+                        if "section[" in target:allow_p.update({0,1})
+                        if "writer/range/" in target and self.workflow_id=="S-03":allow_p.update({1,2})
+                        m=__import__("re").search(r"table\[(\d+)\]",target)
+                        if m:allow_t.add(int(m.group(1)))
+                if len(ip)!=len(ap) or any(ip[i]!=ap[i] for i in range(min(len(ip),len(ap))) if i not in allow_p):return False
+                def table_sig(root):
+                    out=[]
+                    for table in root.iter(f"{{{ns_table}}}table"):
+                        rows=[]
+                        for tr in table.iter(f"{{{ns_table}}}table-row"):
+                            rows.append(["".join(x.itertext()) for x in tr if x.tag==f"{{{ns_table}}}table-cell"])
+                        out.append(rows)
+                    return out
+                it,at=table_sig(initial),table_sig(actual)
+                if len(it)!=len(at) or any(it[i]!=at[i] for i in range(min(len(it),len(at))) if i not in allow_t):return False
+            # Calc cells outside targets are immutable, including source ranges.
+            book=assets.get("workbook.fods")
+            if book:
+                seed_raw=guest.fixtures[book]; live_raw=self._read(guest,backend,book)
+                ns_table="urn:oasis:names:tc:opendocument:xmlns:table:1.0"
+                seed_root=_ET.fromstring(seed_raw); live_root=_ET.fromstring(live_raw)
+                def sheets(root):return {x.get(f"{{{ns_table}}}name"):self._sheet_grid(_ET.tostring(root,encoding="utf-8"),x.get(f"{{{ns_table}}}name")) for x in root.iter(f"{{{ns_table}}}table")}
+                s0,s1=sheets(seed_root),sheets(live_root);allowed={}
+                for actor in guest_actors:
+                    for target in actor["target_objects"]:
+                        if not target.startswith("calc/"):continue
+                        cell=target.split("/",1)[1];sheet=None
+                        if cell.startswith("Sheet") and "." in cell:sheet,cell=cell.split(".",1)
+                        try:coords=_range_cells(cell)
+                        except Exception:continue
+                        for coord in coords:allowed.setdefault(sheet,set()).add(_cell_coord(coord))
+                if set(s0)!=set(s1):return False
+                for name in s0:
+                    for coord,val in s0[name].items():
+                        if coord not in allowed.get(name,set()) and coord not in allowed.get(None,set()) and s1[name].get(coord,"")!=val:return False
+                    for coord,val in s1[name].items():
+                        if coord not in s0[name] and coord not in allowed.get(name,set()) and coord not in allowed.get(None,set()) and val not in (None,""):return False
+            # Browser hidden state must retain its schema and row identity; only task-owned
+            # actor values/revisions, route/selection state, row statuses, and editor history may change.
+            browser=assets.get("browser-initial-state.json")
+            if browser:
+                try: before=json.loads(guest.fixtures[browser]); after=json.loads(self._read(guest,backend,browser))
+                except Exception:return False
+                for key,value in before.items():
+                    if key in {"actors","active_context","active_filter","context_revision","selected_rows","selection_generation","rows","editor_text","undo_stack"}:continue
+                    if after.get(key)!=value:return False
+                if set(before.get("actors",{}))!=set(after.get("actors",{})):return False
+                if set(before.get("rows",{}))!=set(after.get("rows",{})):return False
+                if self.workflow_id=="S-04":
+                    schema=plan["initial_gui_state"]["semantic_parameters"]["object_schema"]
+                    owned={str(x) for x in schema.get("rows_a",[])+schema.get("rows_b",[])}
+                    for row_id,row in before.get("rows",{}).items():
+                        if row_id not in owned and after["rows"].get(row_id)!=row:return False
+        return True
+
     def __call__(self,guests,plan,backend):
         result=super().__call__(guests,plan,backend)
         actors={x["actor_id"]:x for x in plan["actors"]}
@@ -1280,6 +1879,80 @@ class U01RuntimeObserver(_ODFRuntimeObserver):
     @staticmethod
     def _action_text(e):
         return str(e.get("action_payload","")).lower()
+    def _guards_intact(self,guests,plan,backend):
+        """Check all observed non-target ODF/browser state against seeded fixtures."""
+        from .production_v1 import _range_cells,_cell_coord
+        actors=plan["actors"]
+        for gi,guest in enumerate(guests):
+            guest_actors=actors if len(guests)==1 else [actors[gi]]
+            # Writer content outside assigned paragraph/table targets must remain byte-semantic exact.
+            assets=self._assets(plan)
+            doc=assets.get("document.fodt")
+            if doc:
+                initial=_ET.fromstring(guest.fixtures[doc]); actual=_ET.fromstring(self._read(guest,backend,doc))
+                ns_text="urn:oasis:names:tc:opendocument:xmlns:text:1.0";ns_table="urn:oasis:names:tc:opendocument:xmlns:table:1.0"
+                def paras(root): return ["".join(p.itertext()) for p in root.iter(f"{{{ns_text}}}p")]
+                ip,ap=paras(initial),paras(actual)
+                allow_p=set();allow_t=set()
+                for actor in guest_actors:
+                    for target in actor["target_objects"]:
+                        m=__import__("re").search(r"paragraph\[(\d+)\]",target)
+                        if m:allow_p.add(int(m.group(1)))
+                        if "section[" in target:allow_p.update({0,1})
+                        if "writer/range/" in target and self.workflow_id=="S-03":allow_p.update({1,2})
+                        m=__import__("re").search(r"table\[(\d+)\]",target)
+                        if m:allow_t.add(int(m.group(1)))
+                if len(ip)!=len(ap) or any(ip[i]!=ap[i] for i in range(min(len(ip),len(ap))) if i not in allow_p):return False
+                def table_sig(root):
+                    out=[]
+                    for table in root.iter(f"{{{ns_table}}}table"):
+                        rows=[]
+                        for tr in table.iter(f"{{{ns_table}}}table-row"):
+                            rows.append(["".join(x.itertext()) for x in tr if x.tag==f"{{{ns_table}}}table-cell"])
+                        out.append(rows)
+                    return out
+                it,at=table_sig(initial),table_sig(actual)
+                if len(it)!=len(at) or any(it[i]!=at[i] for i in range(min(len(it),len(at))) if i not in allow_t):return False
+            # Calc cells outside targets are immutable, including source ranges.
+            book=assets.get("workbook.fods")
+            if book:
+                seed_raw=guest.fixtures[book]; live_raw=self._read(guest,backend,book)
+                ns_table="urn:oasis:names:tc:opendocument:xmlns:table:1.0"
+                seed_root=_ET.fromstring(seed_raw); live_root=_ET.fromstring(live_raw)
+                def sheets(root):return {x.get(f"{{{ns_table}}}name"):self._sheet_grid(_ET.tostring(root,encoding="utf-8"),x.get(f"{{{ns_table}}}name")) for x in root.iter(f"{{{ns_table}}}table")}
+                s0,s1=sheets(seed_root),sheets(live_root);allowed={}
+                for actor in guest_actors:
+                    for target in actor["target_objects"]:
+                        if not target.startswith("calc/"):continue
+                        cell=target.split("/",1)[1];sheet=None
+                        if cell.startswith("Sheet") and "." in cell:sheet,cell=cell.split(".",1)
+                        try:coords=_range_cells(cell)
+                        except Exception:continue
+                        for coord in coords:allowed.setdefault(sheet,set()).add(_cell_coord(coord))
+                if set(s0)!=set(s1):return False
+                for name in s0:
+                    for coord,val in s0[name].items():
+                        if coord not in allowed.get(name,set()) and coord not in allowed.get(None,set()) and s1[name].get(coord,"")!=val:return False
+                    for coord,val in s1[name].items():
+                        if coord not in s0[name] and coord not in allowed.get(name,set()) and coord not in allowed.get(None,set()) and val not in (None,""):return False
+            # Browser hidden state must retain its schema and row identity; only task-owned
+            # actor values/revisions, route/selection state, row statuses, and editor history may change.
+            browser=assets.get("browser-initial-state.json")
+            if browser:
+                try: before=json.loads(guest.fixtures[browser]); after=json.loads(self._read(guest,backend,browser))
+                except Exception:return False
+                for key,value in before.items():
+                    if key in {"actors","active_context","active_filter","context_revision","selected_rows","selection_generation","rows","editor_text","undo_stack"}:continue
+                    if after.get(key)!=value:return False
+                if set(before.get("actors",{}))!=set(after.get("actors",{})):return False
+                if set(before.get("rows",{}))!=set(after.get("rows",{})):return False
+                if self.workflow_id=="S-04":
+                    schema=plan["initial_gui_state"]["semantic_parameters"]["object_schema"]
+                    owned={str(x) for x in schema.get("rows_a",[])+schema.get("rows_b",[])}
+                    for row_id,row in before.get("rows",{}).items():
+                        if row_id not in owned and after["rows"].get(row_id)!=row:return False
+        return True
+
     def __call__(self,guests,plan,backend):
         result=super().__call__(guests,plan,backend)
         actors={x["actor_id"]:x for x in plan["actors"]}
@@ -1336,6 +2009,80 @@ class A02RuntimeObserver:
                 if len(self._window_ids(guest,backend))!=1:return False
             return True
         except Exception:return False
+    def _guards_intact(self,guests,plan,backend):
+        """Check all observed non-target ODF/browser state against seeded fixtures."""
+        from .production_v1 import _range_cells,_cell_coord
+        actors=plan["actors"]
+        for gi,guest in enumerate(guests):
+            guest_actors=actors if len(guests)==1 else [actors[gi]]
+            # Writer content outside assigned paragraph/table targets must remain byte-semantic exact.
+            assets=self._assets(plan)
+            doc=assets.get("document.fodt")
+            if doc:
+                initial=_ET.fromstring(guest.fixtures[doc]); actual=_ET.fromstring(self._read(guest,backend,doc))
+                ns_text="urn:oasis:names:tc:opendocument:xmlns:text:1.0";ns_table="urn:oasis:names:tc:opendocument:xmlns:table:1.0"
+                def paras(root): return ["".join(p.itertext()) for p in root.iter(f"{{{ns_text}}}p")]
+                ip,ap=paras(initial),paras(actual)
+                allow_p=set();allow_t=set()
+                for actor in guest_actors:
+                    for target in actor["target_objects"]:
+                        m=__import__("re").search(r"paragraph\[(\d+)\]",target)
+                        if m:allow_p.add(int(m.group(1)))
+                        if "section[" in target:allow_p.update({0,1})
+                        if "writer/range/" in target and self.workflow_id=="S-03":allow_p.update({1,2})
+                        m=__import__("re").search(r"table\[(\d+)\]",target)
+                        if m:allow_t.add(int(m.group(1)))
+                if len(ip)!=len(ap) or any(ip[i]!=ap[i] for i in range(min(len(ip),len(ap))) if i not in allow_p):return False
+                def table_sig(root):
+                    out=[]
+                    for table in root.iter(f"{{{ns_table}}}table"):
+                        rows=[]
+                        for tr in table.iter(f"{{{ns_table}}}table-row"):
+                            rows.append(["".join(x.itertext()) for x in tr if x.tag==f"{{{ns_table}}}table-cell"])
+                        out.append(rows)
+                    return out
+                it,at=table_sig(initial),table_sig(actual)
+                if len(it)!=len(at) or any(it[i]!=at[i] for i in range(min(len(it),len(at))) if i not in allow_t):return False
+            # Calc cells outside targets are immutable, including source ranges.
+            book=assets.get("workbook.fods")
+            if book:
+                seed_raw=guest.fixtures[book]; live_raw=self._read(guest,backend,book)
+                ns_table="urn:oasis:names:tc:opendocument:xmlns:table:1.0"
+                seed_root=_ET.fromstring(seed_raw); live_root=_ET.fromstring(live_raw)
+                def sheets(root):return {x.get(f"{{{ns_table}}}name"):self._sheet_grid(_ET.tostring(root,encoding="utf-8"),x.get(f"{{{ns_table}}}name")) for x in root.iter(f"{{{ns_table}}}table")}
+                s0,s1=sheets(seed_root),sheets(live_root);allowed={}
+                for actor in guest_actors:
+                    for target in actor["target_objects"]:
+                        if not target.startswith("calc/"):continue
+                        cell=target.split("/",1)[1];sheet=None
+                        if cell.startswith("Sheet") and "." in cell:sheet,cell=cell.split(".",1)
+                        try:coords=_range_cells(cell)
+                        except Exception:continue
+                        for coord in coords:allowed.setdefault(sheet,set()).add(_cell_coord(coord))
+                if set(s0)!=set(s1):return False
+                for name in s0:
+                    for coord,val in s0[name].items():
+                        if coord not in allowed.get(name,set()) and coord not in allowed.get(None,set()) and s1[name].get(coord,"")!=val:return False
+                    for coord,val in s1[name].items():
+                        if coord not in s0[name] and coord not in allowed.get(name,set()) and coord not in allowed.get(None,set()) and val not in (None,""):return False
+            # Browser hidden state must retain its schema and row identity; only task-owned
+            # actor values/revisions, route/selection state, row statuses, and editor history may change.
+            browser=assets.get("browser-initial-state.json")
+            if browser:
+                try: before=json.loads(guest.fixtures[browser]); after=json.loads(self._read(guest,backend,browser))
+                except Exception:return False
+                for key,value in before.items():
+                    if key in {"actors","active_context","active_filter","context_revision","selected_rows","selection_generation","rows","editor_text","undo_stack"}:continue
+                    if after.get(key)!=value:return False
+                if set(before.get("actors",{}))!=set(after.get("actors",{})):return False
+                if set(before.get("rows",{}))!=set(after.get("rows",{})):return False
+                if self.workflow_id=="S-04":
+                    schema=plan["initial_gui_state"]["semantic_parameters"]["object_schema"]
+                    owned={str(x) for x in schema.get("rows_a",[])+schema.get("rows_b",[])}
+                    for row_id,row in before.get("rows",{}).items():
+                        if row_id not in owned and after["rows"].get(row_id)!=row:return False
+        return True
+
     def __call__(self,guests,plan,backend):
         if not guests:raise ValueError("A-02 observer requires a Guest")
         actors=plan["actors"];output={};event_rows=[];intact=True
@@ -1396,10 +2143,280 @@ def _setup_a02(plan,guest,backend):
 def _event_gate_odf(plan,run):
     if run["topology"] not in {"ma_sd","ma_id"}: return None
     from .runtime_execution_v1 import EventGate
-    return EventGate([{"kind":"action_complete","actor_id":"A"},
-                      {"kind":"action_complete","actor_id":"B"},
-                      {"kind":"action_complete","actor_id":"A"}])
+    order=("A","B","A","B") if plan["workflow_id"] in {"U-02","U-03"} else ("A","B","A")
+    return EventGate([{"kind":"action_complete","actor_id":actor} for actor in order])
 
+
+
+class OperationRuntimeObserver:
+    """InstanceSpec-bound exact-state observer for the second-wave offline templates."""
+    def __init__(self, workflow_id: str):
+        self.workflow_id=workflow_id
+        self.observer_ids=tuple(required_observers_for(workflow_id))
+
+    @staticmethod
+    def _read(guest,backend,path):
+        return backend._command(guest,["cat",path]).encode("utf-8")
+
+    def _assets(self,plan):
+        return {Path(x["guest_path"]).name:x["guest_path"] for x in plan["fixture_assets"]}
+
+    def verify_initial(self,guests,plan,backend):
+        assets=self._assets(plan)
+        for guest in guests:
+            if set(guest.fixtures)!={x["guest_path"] for x in plan["fixture_assets"]}:return False
+            for row in plan["fixture_assets"]:
+                try: actual=self._read(guest,backend,row["guest_path"])
+                except Exception:return False
+                if actual!=guest.fixtures[row["guest_path"]]:return False
+            for app in plan["required_apps"]:
+                if not any(x.get("app")==app for x in guest.launched):return False
+        return True
+
+    @staticmethod
+    def _sheet_rows(raw,sheet_name=None):
+        root=_ET.fromstring(raw); ns_t="urn:oasis:names:tc:opendocument:xmlns:table:1.0"
+        sheets=list(root.iter(f"{{{ns_t}}}table"))
+        if sheet_name:
+            sheets=[x for x in sheets if x.get(f"{{{ns_t}}}name")==sheet_name]
+        return sheets[0] if sheets else None
+
+    @classmethod
+    def _formula(cls,raw,cell,sheet_name=None):
+        from .production_v1 import _cell_coord
+        ns_t="urn:oasis:names:tc:opendocument:xmlns:table:1.0";ri,ci=_cell_coord(cell)
+        sheet=cls._sheet_rows(raw,sheet_name)
+        if sheet is None:return ""
+        rows=list(sheet.iter(f"{{{ns_t}}}table-row"))
+        if ri>=len(rows):return ""
+        cells=[x for x in rows[ri] if x.tag==f"{{{ns_t}}}table-cell"]
+        if ci>=len(cells):return ""
+        return cells[ci].get(f"{{{ns_t}}}formula","").removeprefix("of:")
+
+    @classmethod
+    def _sheet_grid(cls,raw,sheet_name=None):
+        sheet=cls._sheet_rows(raw,sheet_name)
+        if sheet is None:return {}
+        ns_t="urn:oasis:names:tc:opendocument:xmlns:table:1.0"
+        ns_o="urn:oasis:names:tc:opendocument:xmlns:office:1.0";ns_x="urn:oasis:names:tc:opendocument:xmlns:text:1.0"
+        grid={}
+        for ri,row in enumerate(sheet.iter(f"{{{ns_t}}}table-row")):
+            ci=0
+            for cell in list(row):
+                if cell.tag not in {f"{{{ns_t}}}table-cell",f"{{{ns_t}}}covered-table-cell"}:continue
+                value=cell.get(f"{{{ns_o}}}string-value")
+                if value is None:value="".join("".join(x.itertext()) for x in cell.findall(f".//{{{ns_x}}}p"))
+                repeat=int(cell.get(f"{{{ns_t}}}number-columns-repeated","1"))
+                for cc in range(repeat):grid[(ri,ci+cc)]=value
+                ci+=repeat
+        return grid
+
+    def _actor_value(self,guest,plan,backend,actor):
+        app=actor["task_domain"]; target=actor["target_objects"][0]
+        assets=self._assets(plan)
+        if app=="Browser":
+            path=assets.get("browser-initial-state.json")
+            if not path:return actor["initial_value"]
+            state=json.loads(self._read(guest,backend,path))
+            if self.workflow_id=="U-04":
+                text=state.get("editor_text","")
+                return actor["expected_value"] if actor["expected_value"] in text else actor["initial_value"]
+            return state.get("actors",{}).get(actor["actor_id"],{}).get("value",actor["initial_value"])
+        if app=="Terminal":
+            path=f"/home/oem/codesk/{plan['instance_id']}/terminal-result-{actor['actor_id']}.txt"
+            try:return self._read(guest,backend,path).decode().rstrip("\n")
+            except Exception:return actor["initial_value"]
+        if app=="Writer":
+            path=assets.get("document.fodt")
+            if not path:return actor["initial_value"]
+            raw=self._read(guest,backend,path); paras=_writer_paragraphs(raw)
+            if target.startswith("table["):
+                root=_ET.fromstring(raw); ns_t="urn:oasis:names:tc:opendocument:xmlns:table:1.0";ns_x="urn:oasis:names:tc:opendocument:xmlns:text:1.0"
+                tables=list(root.iter(f"{{{ns_t}}}table")); idx=int(target[6:].split("]",1)[0])
+                if idx>=len(tables):return actor["initial_value"]
+                matrix=[]
+                for tr in tables[idx].iter(f"{{{ns_t}}}table-row"):
+                    row=[]
+                    for cell in tr:
+                        if cell.tag==f"{{{ns_t}}}table-cell":row.append("".join("".join(x.itertext()) for x in cell.findall(f".//{{{ns_x}}}p")))
+                    if row:matrix.append(row)
+                value=json.dumps(matrix,separators=(",",":"))
+                if value==actor["expected_value"]:return value
+                return value
+            match=__import__("re").search(r"paragraph\[(\d+)\]",target)
+            initial=actor["initial_value"]; expected=actor["expected_value"]
+            if expected in paras:return expected
+            if initial in paras:return initial
+            if match:
+                idx=int(match.group(1)); return paras[idx] if idx<len(paras) else ""
+            joined="\n".join(paras)
+            if initial.startswith("plain:") or expected.startswith("bold:"):
+                text=expected.removeprefix("bold:") if expected.startswith("bold:") else initial.removeprefix("plain:")
+                if text in joined:
+                    # ODF style check is based on saved text-span properties, not a prompt/action claim.
+                    root=_ET.fromstring(raw); ns_text="urn:oasis:names:tc:opendocument:xmlns:text:1.0"
+                    ns_style="urn:oasis:names:tc:opendocument:xmlns:style:1.0"
+                    ns_fo="urn:oasis:names:tc:opendocument:xmlns:xsl-fo-compatible:1.0"
+                    bold_names={x.get(f"{{{ns_style}}}name") for x in root.iter(f"{{{ns_style}}}style")
+                        if any(p.get(f"{{{ns_fo}}}font-weight")=="bold" for p in x.iter(f"{{{ns_style}}}text-properties"))}
+                    spans=[x for x in root.iter(f"{{{ns_text}}}span") if "".join(x.itertext())==text]
+                    return ("bold:" if any(x.get(f"{{{ns_text}}}style-name") in bold_names for x in spans) else "plain:")+text
+            return joined
+        if app=="Calc":
+            path=assets.get("workbook.fods")
+            if not path:return actor["initial_value"]
+            raw=self._read(guest,backend,path); target=target.removeprefix("calc/")
+            sheet_name=None
+            if target.startswith("Sheet") and "." in target:
+                sheet_name, target=target.split(".",1)
+            if ":" not in target:
+                formula=self._formula(raw,target,sheet_name)
+                if formula:return formula
+            grid=self._sheet_grid(raw,sheet_name)
+            coords=_ODFRuntimeObserver._range(target)
+            values=[grid.get(x,"") for x in coords]
+            try: expected=json.loads(actor["expected_value"])
+            except Exception: expected=None
+            if isinstance(expected,list):
+                shape=plan["initial_gui_state"]["semantic_parameters"].get("object_schema",{}).get("shape")
+                cols=(int(shape[1]) if shape else (len(expected[0]) if expected else 1))
+                vals=[values[i:i+cols] for i in range(0,len(values),cols)]
+                return json.dumps(vals,separators=(",",":"))
+            if len(values)==1:return str(values[0])
+            return json.dumps(values,separators=(",",":"))
+        return actor["initial_value"]
+
+    def _guards_intact(self,guests,plan,backend):
+        """Check all observed non-target ODF/browser state against seeded fixtures."""
+        from .production_v1 import _range_cells,_cell_coord
+        actors=plan["actors"]
+        for gi,guest in enumerate(guests):
+            guest_actors=actors if len(guests)==1 else [actors[gi]]
+            # Writer content outside assigned paragraph/table targets must remain byte-semantic exact.
+            assets=self._assets(plan)
+            doc=assets.get("document.fodt")
+            if doc:
+                initial=_ET.fromstring(guest.fixtures[doc]); actual=_ET.fromstring(self._read(guest,backend,doc))
+                ns_text="urn:oasis:names:tc:opendocument:xmlns:text:1.0";ns_table="urn:oasis:names:tc:opendocument:xmlns:table:1.0"
+                def paras(root): return ["".join(p.itertext()) for p in root.iter(f"{{{ns_text}}}p")]
+                ip,ap=paras(initial),paras(actual)
+                allow_p=set();allow_t=set()
+                for actor in guest_actors:
+                    for target in actor["target_objects"]:
+                        m=__import__("re").search(r"paragraph\[(\d+)\]",target)
+                        if m:allow_p.add(int(m.group(1)))
+                        if "section[" in target:allow_p.update({0,1})
+                        if "writer/range/" in target and self.workflow_id=="S-03":allow_p.update({1,2})
+                        m=__import__("re").search(r"table\[(\d+)\]",target)
+                        if m:allow_t.add(int(m.group(1)))
+                if len(ip)!=len(ap) or any(ip[i]!=ap[i] for i in range(min(len(ip),len(ap))) if i not in allow_p):return False
+                def table_sig(root):
+                    out=[]
+                    for table in root.iter(f"{{{ns_table}}}table"):
+                        rows=[]
+                        for tr in table.iter(f"{{{ns_table}}}table-row"):
+                            rows.append(["".join(x.itertext()) for x in tr if x.tag==f"{{{ns_table}}}table-cell"])
+                        out.append(rows)
+                    return out
+                it,at=table_sig(initial),table_sig(actual)
+                if len(it)!=len(at) or any(it[i]!=at[i] for i in range(min(len(it),len(at))) if i not in allow_t):return False
+            # Calc cells outside targets are immutable, including source ranges.
+            book=assets.get("workbook.fods")
+            if book:
+                seed_raw=guest.fixtures[book]; live_raw=self._read(guest,backend,book)
+                ns_table="urn:oasis:names:tc:opendocument:xmlns:table:1.0"
+                seed_root=_ET.fromstring(seed_raw); live_root=_ET.fromstring(live_raw)
+                def sheets(root):return {x.get(f"{{{ns_table}}}name"):self._sheet_grid(_ET.tostring(root,encoding="utf-8"),x.get(f"{{{ns_table}}}name")) for x in root.iter(f"{{{ns_table}}}table")}
+                s0,s1=sheets(seed_root),sheets(live_root);allowed={}
+                for actor in guest_actors:
+                    for target in actor["target_objects"]:
+                        if not target.startswith("calc/"):continue
+                        cell=target.split("/",1)[1];sheet=None
+                        if cell.startswith("Sheet") and "." in cell:sheet,cell=cell.split(".",1)
+                        try:coords=_range_cells(cell)
+                        except Exception:continue
+                        for coord in coords:allowed.setdefault(sheet,set()).add(_cell_coord(coord))
+                if set(s0)!=set(s1):return False
+                for name in s0:
+                    for coord,val in s0[name].items():
+                        if coord not in allowed.get(name,set()) and coord not in allowed.get(None,set()) and s1[name].get(coord,"")!=val:return False
+                    for coord,val in s1[name].items():
+                        if coord not in s0[name] and coord not in allowed.get(name,set()) and coord not in allowed.get(None,set()) and val not in (None,""):return False
+            # Browser hidden state must retain its schema and row identity; only task-owned
+            # actor values/revisions, route/selection state, row statuses, and editor history may change.
+            browser=assets.get("browser-initial-state.json")
+            if browser:
+                try: before=json.loads(guest.fixtures[browser]); after=json.loads(self._read(guest,backend,browser))
+                except Exception:return False
+                for key,value in before.items():
+                    if key in {"actors","active_context","active_filter","context_revision","selected_rows","selection_generation","rows","editor_text","undo_stack"}:continue
+                    if after.get(key)!=value:return False
+                if set(before.get("actors",{}))!=set(after.get("actors",{})):return False
+                if set(before.get("rows",{}))!=set(after.get("rows",{})):return False
+                if self.workflow_id=="S-04":
+                    schema=plan["initial_gui_state"]["semantic_parameters"]["object_schema"]
+                    owned={str(x) for x in schema.get("rows_a",[])+schema.get("rows_b",[])}
+                    for row_id,row in before.get("rows",{}).items():
+                        if row_id not in owned and after["rows"].get(row_id)!=row:return False
+        return True
+
+    def __call__(self,guests,plan,backend):
+        if not guests:raise ValueError("operation observer requires a Guest")
+        actors=plan["actors"]; active=list(getattr(backend,"active_actor_ids",["A","B"]))
+        if len(guests)>1: guest_for={a["actor_id"]:guests[i] for i,a in enumerate(actors)}
+        else:guest_for={a["actor_id"]:guests[0] for a in actors}
+        state={}; evidence={}; intact=self._guards_intact(guests,plan,backend)
+        for actor in actors:
+            aid=actor["actor_id"]; value=self._actor_value(guest_for[aid],plan,backend,actor)
+            state[aid]={"object":actor["target_objects"][0],"value":value}
+            final_value=actor["initial_value"] if self.workflow_id=="U-02" and aid=="A" else actor["expected_value"]
+            evidence[aid]={"operation":_SECOND_WAVE[self.workflow_id]["schema"][aid],
+                           "satisfied":value==final_value}
+        state["guards"]={"main":"PRESERVE" if intact else "CONTAMINATED"}
+        result={"actors":state,"operation_evidence":evidence}
+        if self.workflow_id in {"U-02","U-03","U-04"}:
+            history=list(getattr(backend,"scheduler_event_history",[]))
+            action_events=[x for x in history if x.get("kind")=="action_complete"]
+            order=[x.get("actor_id") for x in action_events]
+            undo_indices=[]
+            for i,event in enumerate(action_events):
+                payload=str(event.get("action_payload","")).lower().replace(" ","")
+                if "ctrl+z" in payload or "'ctrl','z'" in payload or "undo" in payload or "hotkey('ctrl'" in payload:
+                    undo_indices.append(i)
+            first_a=next((i for i,x in enumerate(order) if x=="A"),None)
+            first_b=next((i for i,x in enumerate(order) if x=="B"),None)
+            undo_after_a=any(first_a is not None and i>first_a for i in undo_indices)
+            undo_after_b=any(first_b is not None and i>first_b for i in undo_indices)
+            result["workflow_evidence"]={"A":{"temporary_edit_observed":first_a is not None,
+                "undo_after_actor_b":undo_after_b,
+                "undo_after_temporary_edit":undo_after_a,
+                "recovery_verified":all(state.get(a,{}).get("value") is not None for a in ("A","B"))}}
+        if "Browser" in plan["required_apps"]:
+            path=self._assets(plan).get("browser-events.jsonl")
+            if path:
+                for guest in guests:
+                    try: result["browser_events"]=self._read(guest,backend,path).decode().splitlines()
+                    except Exception: result["browser_events"]=[]
+        return result
+
+
+def _setup_second_wave(plan,guest,backend):
+    wid=plan["workflow_id"]; assets={Path(x["guest_path"]).name:x["guest_path"] for x in plan["fixture_assets"]}
+    if "browser-server.py" in assets:
+        import shlex,time
+        server=assets["browser-server.py"]; port=8780+int(wid.split("-")[1][1:])
+        backend._command(guest,["bash","-lc",f"nohup python3 {shlex.quote(server)} >/tmp/codesk-{wid.lower()}-server.log 2>&1 </dev/null &"])
+        deadline=time.monotonic()+10;health=""
+        while time.monotonic()<deadline:
+            health=backend._command(guest,["bash","-lc",f"curl -fsS --max-time 1 http://127.0.0.1:{port}/health || true"])
+            if '"ok"' in health:break
+            time.sleep(.25)
+        if '"ok"' not in health:raise RuntimeError(f"{wid} Browser server readiness failed: {health}")
+        backend._command(guest,["bash","-lc",f"wid=$(xdotool search --class chromium 2>/dev/null | head -1); test -n \"$wid\" && xdotool windowactivate --sync \"$wid\" && xdotool key ctrl+l && xdotool type http://127.0.0.1:{port}/workspace && xdotool key Return; sleep 2"])
+    observer=OperationRuntimeObserver(wid)
+    if not observer.verify_initial([guest],plan,backend):raise RuntimeError(f"{wid} initial fixture/readiness check failed")
+    guest.episode.log.record("task_setup","readiness",f"{wid.lower()}.operation_runtime_ready",{},{"required_apps":plan["required_apps"]},
+        details={"observer_ids":list(observer.observer_ids)})
 
 def build_runtime_binding_registry() -> dict[str, dict[str, Any]]:
     bindings = {}
@@ -1423,10 +2440,15 @@ def build_runtime_binding_registry() -> dict[str, dict[str, Any]]:
         bindings[wid] = {"setup": setup, "initial_verifier": observer.verify_initial,
             "evaluator": observer,
             "event_gate": _event_gate_f_n1 if wid=="F-N1" else _event_gate_odf}
+    for wid in _SECOND_WAVE:
+        observer=OperationRuntimeObserver(wid)
+        bindings[wid]={"setup":_setup_second_wave,"initial_verifier":observer.verify_initial,"evaluator":observer,"event_gate":_event_gate_odf}
     return bindings
 
 
 def concrete_binding_refs(workflow_id: str) -> dict[str, str]:
+    if workflow_id in _SECOND_WAVE:
+        return {"setup":"swcub.runtime_bindings_v1._setup_second_wave","observer":f"swcub.runtime_bindings_v1.OperationRuntimeObserver[{workflow_id}]","evaluator":"swcub.production_v1.evaluate_oracle","reset":"swcub.osworld_guest_backend_v1.A6000OSWorldBackend.reset_guest","cleanup":"swcub.osworld_guest_backend_v1.A6000OSWorldBackend.cleanup_owned_guest"}
     classes = {"F-01": "F01RuntimeObserver", "F-04": "F04RuntimeObserver", "F-02": "F02RuntimeObserver",
                "C-01": "C01RuntimeObserver", "C-03": "C03RuntimeObserver", "C-02": "C02RuntimeObserver",
                "F-N1": "F_N1RuntimeObserver", "A-01": "A01RuntimeObserver", "A-02": "A02RuntimeObserver", "A-N1": "AN1RuntimeObserver", "S-01": "S01RuntimeObserver", "S-N1": "SN1RuntimeObserver", "U-01": "U01RuntimeObserver", "U-N1": "UN1RuntimeObserver", "C-N1": "CN1RuntimeObserver"}

@@ -64,7 +64,11 @@ class DeterministicRuntimeScheduler:
         if topology=="ma_sd" and len(guests)!=1: raise ValueError("MA-SD requires one shared Guest")
         if not isinstance(schedule_policy_id,str) or not schedule_policy_id:
             raise RuntimeBackendUnavailable("missing frozen schedule policy id")
-        if "round-robin" in schedule_policy_id and schedule_policy_id!="round_robin_v1":
+        if topology=="solo":
+            # A one-actor run has no interleaving to gate; the workflow's shared
+            # condition schedule remains unchanged for MA-ID and MA-SD.
+            mode="fixed_order_v1"
+        elif "round-robin" in schedule_policy_id and schedule_policy_id!="round_robin_v1":
             mode="round_robin_v1"
         elif schedule_policy_id in {"round_robin_v1","fixed_order_v1","event_gated_v1"}:
             mode=schedule_policy_id

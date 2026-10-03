@@ -5,8 +5,9 @@ from swcub.production_v1 import (workflow_registry,_profile_catalog,build_instan
  evaluate_oracle,_positive_state,_negative_state,materialize,read_manifest,make_run_plan)
 
 class ProductionV1Tests(unittest.TestCase):
- def test_fifteen_workflows_and_determinism(self):
-  rows=workflow_registry();self.assertEqual(len(rows),15)
+ def test_thirty_workflows_and_determinism(self):
+  rows=workflow_registry();self.assertEqual(len(rows),30)
+  self.assertEqual(sum(row["workflow_id"].startswith(("F-05","F-06","F-07","C-04","C-05","C-06","A-03","A-04","A-05","S-02","S-03","S-04","U-02","U-03","U-04")) for row in rows),15)
   root=Path(__file__).resolve().parents[1]
   for row in rows:
    wid=row['workflow_id'];d,p,l=_profile_catalog(wid,7)[0]

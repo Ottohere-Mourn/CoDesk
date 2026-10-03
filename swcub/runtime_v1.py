@@ -83,7 +83,7 @@ class WorkflowRuntimeAdapter:
         self.workflow_id=workflow["workflow_id"]
         self.family=workflow["family"]
         self.validation_level=workflow["validation_level"]
-        self.required_apps=tuple(dict.fromkeys(workflow["task_domains"]))
+        self.required_apps=tuple(dict.fromkeys(workflow.get("required_apps",workflow["task_domains"])))
         self.schedule_policy_id=workflow["schedule_policy_id"]
         self.workflow=workflow
         self.supported_topologies=TOPOLOGIES
@@ -134,6 +134,7 @@ class WorkflowRuntimeAdapter:
             if ext in {".fodt",".odt"}: app="Writer"
             elif ext in {".fods",".ods"}: app="Calc"
             elif ext in {".html",".htm"}: app="Browser"
+            elif ext in {".sh"}: app="Terminal"
             else: app="Support"
             app_assets.append({"app":app,"fixture":fixture["path"],"host_path":fixture["host_path"],"sha256":fixture["sha256"],
                                "guest_path":f"/home/oem/codesk/{instance['instance_id']}/{Path(fixture['path']).name}"})

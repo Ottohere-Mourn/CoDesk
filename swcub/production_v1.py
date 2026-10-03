@@ -125,6 +125,9 @@ _PROFILE_ROWS: dict[str, list[dict[str, Any]]] = {
 {"id":"writer_lines_1_3","a":"writer/paragraph[1]","b":"writer/paragraph[3]","schema":{"object_type":"paragraph","undo_operation":"text replacement","undo_depth":1}}],
 }
 
+from .second_wave_v1 import SECOND_WAVE as _SECOND_WAVE, profile_rows as _second_wave_profile_rows
+_PROFILE_ROWS.update(_second_wave_profile_rows())
+
 ACTORS = ("A", "B")
 
 @dataclass(frozen=True)
@@ -237,6 +240,9 @@ def _profile_catalog(workflow_id: str, seed: int) -> list[tuple[dict[str,Any],di
     return combos
 
 def _workflow_row(workflow_id: str) -> dict[str,Any]:
+    if workflow_id in _SECOND_WAVE:
+        from .second_wave_v1 import workflow_row as _second_workflow_row
+        return _second_workflow_row(workflow_id)
     common={
       "F-01":("focus_input_routing",["Writer","Calc"],"writer_full_document_vs_calc_cell","Replace the complete Writer document content and change one distinct Calc cell.","Replace all Writer document content with the assigned decision and save.","Set the assigned Calc field and preserve the remaining table.","qwen_mechanism_evidence"),
       "F-04":("focus_input_routing",["Calc","Writer"],"calc_range_vs_writer_document","Fill an assigned Calc rectangle and edit a Writer paragraph.","Fill the assigned spreadsheet range.","Replace the assigned Writer paragraph.","scripted_full"),
@@ -294,6 +300,9 @@ def _targets(row: dict[str,Any], profile: dict[str,Any], layout: dict[str,Any]) 
 
 def _semantic_values(workflow_id: str, domain: dict[str,Any], profile: dict[str,Any],
                       layout: dict[str,Any]) -> tuple[str,str,str,str]:
+    if workflow_id in _SECOND_WAVE:
+        from .second_wave_v1 import semantic_values as _second_semantic_values
+        return _second_semantic_values(workflow_id, domain, profile, layout)
     label=profile["schema"].get("target",profile["schema"].get("selection",profile["schema"].get("payload",profile["schema"].get("object_type","object"))))
     a_initial=f"Draft: {domain['entity']}"
     b_initial=f"Pending: {domain['entity']}"
@@ -508,6 +517,10 @@ HTTPServer(("127.0.0.1",8770),H).serve_forever()
 def _fixture_bytes(workflow_id: str, domain: dict[str,Any], profile: dict[str,Any],
                    layout: dict[str,Any], a_initial: str, b_initial: str,
                    a_final: str, b_final: str, instance_id: str) -> dict[str,bytes]:
+    if workflow_id in _SECOND_WAVE:
+        from .second_wave_v1 import fixture_bytes as _second_fixture_bytes
+        return _second_fixture_bytes(workflow_id, domain, profile, layout, a_initial, b_initial, a_final, b_final, instance_id,
+            xml_file=_xml_file, html_file=_html, writer_table_file=_writer_table_file, range_cells=_range_cells, cell_coord=_cell_coord)
     schema=profile["schema"]
     assets:dict[str,bytes]={}
     if "Writer" in _workflow_row(workflow_id)["task_domains"]:
@@ -745,10 +758,20 @@ def build_instance(workflow_id: str, domain: dict[str,Any], profile: dict[str,An
                        "guards":{"main":"PRESERVE"}},
              "treatment":{"resource":row["family"],"initial":profile["schema"]}}
     expected=json.loads(json.dumps(initial))
-    expected["actors"]["A"]["value"]=a0 if workflow_id in {"U-01","U-N1"} else a1
+    expected["actors"]["A"]["value"]=a0 if workflow_id in {"U-01","U-N1","U-02"} else a1
     expected["actors"]["B"]["value"]=b1
     goal_a=row["goal_a"]
     goal_b=row["goal_b"]
+    if workflow_id in _SECOND_WAVE:
+        goal_a += f" Target {target_objects['A'][0]}; initial {a0!r}; required final {a1!r}."
+        goal_b += f" Target {target_objects['B'][0]}; initial {b0!r}; required final {b1!r}."
+        for _actor_id,_domain,_target,_value in (("A",row["task_domains"][0],target_objects["A"][0],a1),("B",row["task_domains"][1],target_objects["B"][0],b1)):
+            if _domain=="Terminal":
+                _path=f"/home/oem/codesk/{instance_id}/terminal-result-{_actor_id}.txt"
+                if _actor_id=="A": goal_a += f" Run the command and write exactly {_value!r} to {_path}."
+                else: goal_b += f" Run the command and write exactly {_value!r} to {_path}."
+        if workflow_id=="C-04": goal_a=f"Create a Calc hyperlink in {target_objects['A'][0]} with the assigned Browser URL and exact visible label {domain['entity']}."
+        if workflow_id=="C-05": goal_a=f"Copy Calc range {profile['schema']['source_range']} into the Writer destination table with exact rows/cells."
     op_a=f"{profile['schema'].get('action','update')} {target_objects['A'][0]}"
     if workflow_id=="U-01":
         goal_a=f"Temporarily set Calc {profile['a'].split('/')[-1]} to {a1}; after Actor B's edit, use Undo so this cell returns to {a0}."
@@ -759,6 +782,21 @@ def build_instance(workflow_id: str, domain: dict[str,Any], profile: dict[str,An
         goal_a=f"Temporarily replace Writer paragraph {index+1} with {a1}; after Actor B edits their paragraph, use Undo to restore the original text {a0}."
         goal_b=f"Replace Writer paragraph {profile['b'].split('[')[-1].split(']')[0]} with {b1} and save."
         op_a="temporary Writer paragraph replacement followed by Undo after Actor B's committed edit"
+    if workflow_id=="U-02":
+        goal_a=f"Apply the temporary style {a1} to the assigned range. After Actor B's independent paragraph edit, use Undo once, then verify your range is back to its seeded unstyled state {a0}."
+        goal_b=f"Insert {b1} into the assigned Writer paragraph; after Actor A's Undo, re-observe and restore the paragraph if it was reverted."
+        op_a="temporary Writer character style followed by cross-actor Undo"
+        op_b="Writer text insertion followed by post-Undo recovery"
+    if workflow_id=="U-03":
+        goal_a=f"Enter the assigned formula {a1} in {target_objects['A'][0]}. After Actor B commits, use Undo once to expose the shared history effect; preserve your formula."
+        goal_b=f"Commit {b1} in {target_objects['B'][0]}; after Actor A's Undo, re-observe and restore the value if it was reverted."
+        op_a="temporary Calc formula edit followed by peer-history Undo"
+        op_b="Calc value edit followed by post-Undo recovery"
+    if workflow_id=="U-04":
+        goal_a=f"Insert {a1} into the shared editor. After Actor B's edit, use Undo once and restore both assigned phrases so {a1} and {b1} are present."
+        goal_b=f"Insert {b1} into the shared editor after Actor A's first edit and preserve both phrases."
+        op_a="temporary rich-text insertion, cross-actor Undo, then restoration"
+        op_b="rich-text insertion into shared editor history"
     if workflow_id=="A-01":
         goal_a=f"Submit {a1} in Browser tab A (/actor-a)."
         goal_b=f"Submit {b1} in Browser tab B (/actor-b)."
@@ -819,6 +857,11 @@ def build_instance(workflow_id: str, domain: dict[str,Any], profile: dict[str,An
         evaluator["history_contract"]={"actor_a_requires":["temporary_edit_committed","undo_action_after_actor_b_commit"],
             "actor_b_requires":["target_edit_committed"],"final_state_is_not_sufficient":True,
             "operation_schema_revision":1,"final_actor_a_value":"initial_value"}
+    if workflow_id in _SECOND_WAVE:
+        row2=_SECOND_WAVE[workflow_id]
+        evaluator["operation_contract"]={"A":row2["schema"]["A"],"B":row2["schema"]["B"],"shared_state":row2["schema"]["shared"],"operation_graph":row2["operation_graph"],"evidence_required":True}
+    if workflow_id in {"U-02","U-03","U-04"}:
+        evaluator["history_contract"]={"actor_a_requires":["temporary_edit_or_operation_observed","undo_action_after_actor_b_commit","recovery_verified"],"actor_b_requires":["target_edit_committed"],"final_state_is_not_sufficient":True,"operation_schema_revision":1}
     source_hash=_source_digest()
     provenance={"generator":"swcub.production_v1","source_code_sha256":source_hash,
         "source_commit":git_commit(Path(__file__).resolve().parents[1]),"semantic_spec_sha256":semantic_sig,
@@ -832,7 +875,7 @@ def build_instance(workflow_id: str, domain: dict[str,Any], profile: dict[str,An
        "ma_sd":{"desktop_count":1,"actor_bindings":"A and B share desktop"}}
     spec=InstanceSpecV1(BENCHMARK_VERSION,row["family"],workflow_id,instance_id,generation_seed,
        actor_goals,{"A":row["task_domains"][0],"B":row["task_domains"][1]},row["schedule_policy_id"],
-       {"application_set":row["task_domains"],"fixture_profile":profile["id"],"layout_id":layout["id"],
+       {"application_set":row.get("required_apps",row["task_domains"]),"fixture_profile":profile["id"],"layout_id":layout["id"],
         "public_assets":fixture_rows},semantic,target_objects,expected,
        {"family_state":row["family"],"shared_resource":profile["schema"],"operation_graph":row["operation_graph"]},
        reset,topology,provenance,tuple({"path":f"fixtures/{instance_id}/{rel}","bytes_b64":base64.b64encode(data).decode()} for rel,data in sorted(assets.items())),
@@ -865,8 +908,13 @@ def evaluate_oracle(spec: InstanceSpecV1 | dict[str,Any], actual: dict[str,Any],
     initial=row["evaluator"]["initial_state"]; expected=row["evaluator"]["expected_state"]
     actor_success={a:(actual.get("actors",{}).get(a,{}).get("value")==expected["actors"][a]["value"])
                    for a in active_actors}
+    operation_contract=row["evaluator"].get("operation_contract")
+    if operation_contract:
+        evidence=actual.get("operation_evidence",{})
+        for aid in active_actors:
+            actor_success[aid]=actor_success.get(aid,False) and bool(evidence.get(aid,{}).get("satisfied"))
     history_contract=row["evaluator"].get("history_contract")
-    if row.get("workflow_id") in {"U-01","U-N1"} and history_contract:
+    if row.get("workflow_id") in {"U-01","U-N1","U-02","U-03","U-04"} and history_contract:
         evidence=actual.get("workflow_evidence",{})
         actor_a=evidence.get("A",{})
         if "A" in active_actors:
@@ -884,12 +932,15 @@ def evaluate_oracle(spec: InstanceSpecV1 | dict[str,Any], actual: dict[str,Any],
 
 def _positive_state(spec: InstanceSpecV1) -> dict[str,Any]:
     state=json.loads(json.dumps(spec.expected_final_state))
-    if spec.workflow_id in {"U-01","U-N1"}:
+    if spec.workflow_id in _SECOND_WAVE:
+        state["operation_evidence"]={a:{"satisfied":True,"operation":op} for a,op in _SECOND_WAVE[spec.workflow_id]["schema"].items() if a in {"A","B"}}
+    if spec.workflow_id in {"U-01","U-N1","U-02","U-03","U-04"}:
         state["workflow_evidence"]={"A":{"temporary_edit_observed":True,"undo_after_temporary_edit":True,"undo_after_actor_b":True}}
     return state
 def _negative_state(spec: InstanceSpecV1) -> dict[str,Any]:
     bad=_positive_state(spec); bad["actors"]["A"]["value"]=spec.actor_goals[0].initial_value
-    if spec.workflow_id in {"U-01","U-N1"}:bad["workflow_evidence"]["A"]["undo_after_actor_b"]=False
+    if spec.workflow_id in _SECOND_WAVE: bad["operation_evidence"]["A"]["satisfied"]=False
+    if spec.workflow_id in {"U-01","U-N1","U-02","U-03","U-04"}:bad["workflow_evidence"]["A"]["undo_after_actor_b"]=False
     return bad
 
 def to_record(spec: InstanceSpecV1) -> dict[str,Any]:

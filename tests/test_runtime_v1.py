@@ -11,9 +11,10 @@ class RuntimeAdapterTests(unittest.TestCase):
  @classmethod
  def setUpClass(cls):
   cls.records=read_manifest(SUITE/"manifest.jsonl");cls.registry=build_runtime_registry()
- def test_registry_has_all_fifteen_adapters(self):
-  self.assertEqual(len(self.registry.workflow_ids()),15)
-  self.assertEqual(set(self.registry.workflow_ids()),{r["workflow_id"] for r in self.records})
+ def test_registry_has_all_thirty_adapters_and_preserves_snapshot_ids(self):
+  self.assertEqual(len(self.registry.workflow_ids()),30)
+  self.assertTrue({r["workflow_id"] for r in self.records} <= set(self.registry.workflow_ids()))
+  self.assertEqual(set(self.registry.workflow_ids())- {r["workflow_id"] for r in self.records},{"F-05","F-06","F-07","C-04","C-05","C-06","A-03","A-04","A-05","S-02","S-03","S-04","U-02","U-03","U-04"})
  def test_all_instances_compile_topologies_fixtures_goals_eval_reset_provenance(self):
   with tempfile.TemporaryDirectory() as temp:
    out=Path(temp)/"plans.jsonl"

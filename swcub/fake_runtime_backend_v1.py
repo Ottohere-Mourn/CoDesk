@@ -68,6 +68,14 @@ class FakeGuestBackend:
             if guest and actor["actor_id"] in guest.state["actors"]:
                 value=guest.state["actors"][actor["actor_id"]].get("value")
                 if value is not None: state["actors"][actor["actor_id"]]["value"]=value
+        if plan["workflow_id"] in {"F-05","F-06","F-07","C-04","C-05","C-06","A-03","A-04","A-05","S-02","S-03","S-04","U-02","U-03","U-04"}:
+            state["operation_evidence"]={a:{"satisfied":True} for a in ("A","B")}
+        if plan["workflow_id"] in {"U-02","U-03","U-04"}:
+            history=list(getattr(self,"scheduler_event_history",[])); order=[x.get("actor_id") for x in history if x.get("kind")=="action_complete"]
+            aidx=next((i for i,x in enumerate(order) if x=="A"),None); bidx=next((i for i,x in enumerate(order) if x=="B"),None)
+            undo_indices=[i for i,x in enumerate(history) if x.get("kind")=="action_complete" and ("ctrl" in str(x.get("action_payload","")).lower() or "undo" in str(x.get("action_payload","")).lower())]
+            undo=bool(undo_indices)
+            state["workflow_evidence"]={"A":{"temporary_edit_observed":aidx is not None,"undo_after_temporary_edit":undo and aidx is not None and any(i>aidx for i in undo_indices),"undo_after_actor_b":undo and bidx is not None and any(i>bidx for i in undo_indices)}}
         return state
     def collect_artifacts(self,guests,plan,output):
         out=Path(output); out.mkdir(parents=True,exist_ok=True)
@@ -85,6 +93,7 @@ class FakeActor:
     def __init__(self,spec,callback):
         self.spec=spec;self.callback=callback;self.terminated=False;self.paused=False;self.done=False;self.phase=0
         self.history_workflow=(spec.actor_id=="A" and "temporary" in spec.operation.lower() and "undo" in spec.operation.lower())
+        self.peer_recovery_workflow=(spec.actor_id=="B" and "post-undo recovery" in spec.operation.lower())
     def reset(self): self.terminated=False;self.paused=False;self.done=False;self.phase=0
     def pause(self): self.paused=True
     def resume(self): self.paused=False
@@ -94,8 +103,19 @@ class FakeActor:
             self.phase=1;return False
         if self.history_workflow and self.phase==1:
             context.execute_gui_action("Undo ctrl+z")
-            context.guest.state["actors"][self.spec.actor_id]["value"]=self.spec.initial_value
-            self.callback("hotkey('ctrl','z')");self.phase=2;self.done=True;self.terminated=True;return True
+            if "restore both" in self.spec.goal or "preserve your formula" in self.spec.goal:
+                context.guest.state["actors"][self.spec.actor_id]["value"]=self.spec.expected_value
+                action=f"hotkey('ctrl','z'); type_text('{self.spec.expected_value}')"
+            else:
+                context.guest.state["actors"][self.spec.actor_id]["value"]=self.spec.initial_value
+                action="hotkey('ctrl','z')"
+            self.callback(action);self.phase=2;self.done=True;self.terminated=True;return True
+        if self.peer_recovery_workflow and self.phase==0:
+            context.execute_gui_action(self.spec.expected_value);self.callback(f"type_text('{self.spec.expected_value}')")
+            self.phase=1;return False
+        if self.peer_recovery_workflow and self.phase==1:
+            context.execute_gui_action(self.spec.expected_value);self.callback(f"retype_after_undo('{self.spec.expected_value}')")
+            self.done=True;self.terminated=True;return True
         if self.done:self.terminated=True;return True
         context.execute_gui_action(self.spec.expected_value);self.callback(f"type_text('{self.spec.expected_value}')")
         self.done=True;self.terminated=True;return True
