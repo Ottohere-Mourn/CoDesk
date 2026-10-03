@@ -39,8 +39,6 @@ def resolve_guest_image_path() -> Path:
     )
     return next((path.resolve() for path in candidates if path.is_file()), candidates[0].resolve())
 
-from desktop_env.desktop_env import DesktopEnv
-from mm_agents.qwen3vl_agent import Qwen3VLAgent
 from swcub.actors import ScriptedCalcActor, ScriptedWriterActor
 from swcub.core import EventLog
 from swcub.environment import ActorContext
@@ -51,7 +49,6 @@ from swcub.osworld_readiness import wait_for_guest_desktop
 from swcub.comparison_metrics import summarize_focus_events
 from swcub.provenance import source_path_label
 from swcub.resource_safety import PROJECT_NAME, ResourceLedger, ensure_resource_identity
-from swcub.nfs_gateway import NfsGateway
 from swcub.task_factory import render_calc_fods, render_writer_fodt
 from swcub.shared_workspace import (GUEST_WORKSPACE_MOUNT, SHARED_WORKSPACE_TAG,
                                     guest_mount_command, guest_mount_nfs_command,
@@ -270,7 +267,7 @@ def seed_shared_backend(host_dir: Path) -> dict[str, dict[str, Any]]:
     return manifest
 
 
-class EpisodeBindings(dict[str, tuple[OSWorldSharedEpisode, DesktopEnv]]):
+class EpisodeBindings(dict[str, tuple[OSWorldSharedEpisode, Any]]):
     """Host-side handles for all desktops participating in one task episode."""
 
 
@@ -301,6 +298,10 @@ def make_desktop(binding: str, log: EventLog, out: Path,
                  nfs_server_ip: str | None = None,
                  nfs_server_port: int = 12049,
                  nfs_export: str = "/task") -> tuple[OSWorldSharedEpisode, DesktopEnv]:
+    # Keep pure/offline helpers importable when the pinned external OSWorld
+    # checkout is not installed; real Guest construction still requires it.
+    from desktop_env.desktop_env import DesktopEnv
+
     guest_image = resolve_guest_image_path()
     workspace_env_key = "SWCUB_OSWORLD_SHARED_WORKSPACE_HOST_DIR"
     prior_workspace_env = os.environ.get(workspace_env_key)
@@ -740,6 +741,8 @@ def run_actors(condition: str, environments: EpisodeBindings,
             record["event_seq"] = event.seq
             record["ts_utc"] = event.ts_utc
 
+        from mm_agents.qwen3vl_agent import Qwen3VLAgent
+
         for actor_id in ("writer_actor", "calc_actor"):
             agent = Qwen3VLAgent(
                 platform="ubuntu", model="qwen3-vl", max_tokens=512,
@@ -1030,6 +1033,8 @@ def main() -> int:
             if args.shared_backend_transport == "nfs4":
                 if nfs_export_root is None or reset_backend_host_dir is None:
                     raise RuntimeError("NFS export paths were not initialized")
+                from swcub.nfs_gateway import NfsGateway
+
                 nfs_gateway = NfsGateway.start(
                     export_root=str(nfs_export_root), identity=identity,
                     host_uid=os.getuid(), host_gid=os.getgid())

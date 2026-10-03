@@ -178,9 +178,11 @@ def test_clipboard_template_uses_common_manifest_contract_but_stays_unvalidated(
                                     task_id=manifest["task_id"],
                                     task_version=manifest["template_version"]).evaluate()
     assert result["success"] is False
-    assert result["initial_state"]["writer_text"] == f"{writer_token}\n"
+    assert result["initial_state"]["writer_text"] == (
+        f"{writer_token}\nINSERT COPIED VALUE")
     values[CLIP_WRITER_PATH] = writer_seed_odf(writer_token).decode().replace(
-        "<text:p/></office:text>", f"<text:p>{writer_token}</text:p></office:text>")
+        "<text:p>INSERT COPIED VALUE</text:p>",
+        f"<text:p>{writer_token}</text:p>")
     values[CLIP_CALC_PATH] = calc_seed_odf(calc_token).decode().replace(
         "<table:table-cell/></table:table-row>",
         f"<table:table-cell office:value-type=\"string\"><text:p>{calc_token}</text:p>"
