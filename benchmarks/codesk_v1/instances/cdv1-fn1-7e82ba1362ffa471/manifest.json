@@ -1,0 +1,240 @@
+{
+  "actor_goals": [
+    {
+      "actor_id": "A",
+      "expected_value": "Reconciled: warehouse lot (object)",
+      "goal": "Replace the assigned paragraph in doc-A.",
+      "initial_value": "Draft: warehouse lot",
+      "operation": "update writer/doc-a/decision-field",
+      "target_objects": [
+        "writer/doc-a/decision-field"
+      ],
+      "task_domain": "Writer"
+    },
+    {
+      "actor_id": "B",
+      "expected_value": "Counted: warehouse lot (object)",
+      "goal": "Replace the assigned paragraph in doc-B.",
+      "initial_value": "Pending: warehouse lot",
+      "operation": "update writer/doc-b/decision-field",
+      "target_objects": [
+        "writer/doc-b/decision-field"
+      ],
+      "task_domain": "Writer"
+    }
+  ],
+  "benchmark_version": "codesk-v1.0",
+  "evaluator": {
+    "actor_paths": {
+      "A": "actors.A.value",
+      "B": "actors.B.value"
+    },
+    "adapter": "codesk_exact_state_v1",
+    "condition_semantics": {
+      "ma_id": "score each actor on equivalent independent desktop fixture",
+      "ma_sd": "score both actor goals and shared-state integrity",
+      "solo": "score selected actor; require inactive target and guards unchanged"
+    },
+    "expected_state": {
+      "actors": {
+        "A": {
+          "object": "writer/doc-a/decision-field",
+          "value": "Reconciled: warehouse lot (object)"
+        },
+        "B": {
+          "object": "writer/doc-b/decision-field",
+          "value": "Counted: warehouse lot (object)"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "documents": [
+            "doc-a",
+            "doc-b"
+          ],
+          "target_kind": "decision field"
+        },
+        "resource": "focus_input_routing"
+      }
+    },
+    "initial_state": {
+      "actors": {
+        "A": {
+          "object": "writer/doc-a/decision-field",
+          "value": "Draft: warehouse lot"
+        },
+        "B": {
+          "object": "writer/doc-b/decision-field",
+          "value": "Pending: warehouse lot"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "documents": [
+            "doc-a",
+            "doc-b"
+          ],
+          "target_kind": "decision field"
+        },
+        "resource": "focus_input_routing"
+      }
+    },
+    "invariants": [
+      {
+        "equals": "PRESERVE",
+        "path": "actors.guards.main"
+      }
+    ],
+    "schedule_policy_id": "writer-window-a-window-b-resume-a-v1"
+  },
+  "evaluator_path": "evaluators/cdv1-fn1-7e82ba1362ffa471.json",
+  "evaluator_sha256": "132876572fe2038f939f79b0cb6f0ea3011d8af913f2636fc3645de2caac352d",
+  "family": "focus_input_routing",
+  "fixture_files": [
+    {
+      "path": "fixtures/cdv1-fn1-7e82ba1362ffa471/doc-a.fodt",
+      "sha256": "8a6f199cc323082586180442daa1182fca3332de66572c5d1fb375a93ce703ba",
+      "size_bytes": 381
+    },
+    {
+      "path": "fixtures/cdv1-fn1-7e82ba1362ffa471/doc-b.fodt",
+      "sha256": "d2f2b2d5f92f3ce9b0681e8ce60a3361f51dc44d75db7137630f43faf4a01477",
+      "size_bytes": 383
+    }
+  ],
+  "generation_seed": 2026,
+  "initial_fixture_spec": {
+    "application_set": [
+      "Writer",
+      "Writer"
+    ],
+    "fixture_profile": "writer_doc_decision",
+    "layout_id": "guard_after",
+    "public_assets": [
+      {
+        "path": "fixtures/cdv1-fn1-7e82ba1362ffa471/doc-a.fodt",
+        "sha256": "8a6f199cc323082586180442daa1182fca3332de66572c5d1fb375a93ce703ba",
+        "size_bytes": 381
+      },
+      {
+        "path": "fixtures/cdv1-fn1-7e82ba1362ffa471/doc-b.fodt",
+        "sha256": "d2f2b2d5f92f3ce9b0681e8ce60a3361f51dc44d75db7137630f43faf4a01477",
+        "size_bytes": 383
+      }
+    ]
+  },
+  "instance_id": "cdv1-fn1-7e82ba1362ffa471",
+  "manifest_entry_sha256": "f4b7329831b2e19c5fd8f526c60cfa0fd5e9d9ca0aed799fa3c305d0af1c9f60",
+  "provenance": {
+    "fixture_sha256": "5af97f80e6c4ba113fda1913ee8609e827ec3efc94c344a13e1e183ba4893885",
+    "generation_seed": 2026,
+    "generator": "swcub.production_v1",
+    "seed_role": "deterministic profile ordering only; excluded from instance identity",
+    "semantic_spec_sha256": "7e82ba1362ffa471854c93ca311fc64ebc32a4f4cb8e14750cd5b50309241a7d",
+    "source_code_sha256": "579c135b4b828886e972dbc72c0d8fd242dacbade19164e4f80b52194ae045f4",
+    "source_commit": "ac5801113da9bfbd96057c3cda51d13f722105fb"
+  },
+  "reset_metadata": {
+    "fixture_id": "cdv1-fn1-7e82ba1362ffa471",
+    "fresh_guest_required": true,
+    "remove_prior_app_state": true,
+    "verify_fixture_hash": "5af97f80e6c4ba113fda1913ee8609e827ec3efc94c344a13e1e183ba4893885",
+    "verify_state": {
+      "actors": {
+        "A": {
+          "object": "writer/doc-a/decision-field",
+          "value": "Draft: warehouse lot"
+        },
+        "B": {
+          "object": "writer/doc-b/decision-field",
+          "value": "Pending: warehouse lot"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "documents": [
+            "doc-a",
+            "doc-b"
+          ],
+          "target_kind": "decision field"
+        },
+        "resource": "focus_input_routing"
+      }
+    }
+  },
+  "schedule_policy_id": "writer-window-a-window-b-resume-a-v1",
+  "semantic_parameters": {
+    "domain_id": "warehouse_reconciliation",
+    "domain_schema": {
+      "entity": "warehouse lot",
+      "field_a": "Reconciliation",
+      "field_b": "Count status"
+    },
+    "layout_id": "guard_after",
+    "object_profile_id": "writer_doc_decision",
+    "object_schema": {
+      "documents": [
+        "doc-a",
+        "doc-b"
+      ],
+      "target_kind": "decision field"
+    },
+    "operation_graph": "two_writer_windows",
+    "workflow_id": "F-N1"
+  },
+  "signatures": {
+    "fixture": "5af97f80e6c4ba113fda1913ee8609e827ec3efc94c344a13e1e183ba4893885",
+    "goal": "a86b8fbed71dbc37d3fbb6297bd97df67d3518920e42facc64de494f7cf5a947",
+    "semantic": "7e82ba1362ffa471854c93ca311fc64ebc32a4f4cb8e14750cd5b50309241a7d",
+    "structural": "ef1e7d483ec8dc1df05a535c520a849de26f9cfccf427abeed936ea17a2a567a"
+  },
+  "target_objects": {
+    "A": [
+      "writer/doc-a/decision-field"
+    ],
+    "B": [
+      "writer/doc-b/decision-field"
+    ]
+  },
+  "task_domains": {
+    "A": "Writer",
+    "B": "Writer"
+  },
+  "topology_compatibility": {
+    "ma_id": {
+      "backend_binding": "same logical workspace seed; independent desktop sessions allowed",
+      "desktop_count": 2,
+      "fixtures": "byte-identical task-relevant clones"
+    },
+    "ma_sd": {
+      "actor_bindings": "A and B share desktop",
+      "desktop_count": 1
+    },
+    "solo": {
+      "actor_bindings": "A or B",
+      "desktop_count": 1
+    }
+  },
+  "treatment_relevant_state": {
+    "family_state": "focus_input_routing",
+    "operation_graph": "two_writer_windows",
+    "shared_resource": {
+      "documents": [
+        "doc-a",
+        "doc-b"
+      ],
+      "target_kind": "decision field"
+    }
+  },
+  "validation_level": "guest_solo",
+  "workflow_id": "F-N1"
+}

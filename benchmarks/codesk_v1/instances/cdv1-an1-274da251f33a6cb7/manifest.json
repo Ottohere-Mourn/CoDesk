@@ -1,0 +1,240 @@
+{
+  "actor_goals": [
+    {
+      "actor_id": "A",
+      "expected_value": "Approved: capital request (object)",
+      "goal": "Submit route A's exact value.",
+      "initial_value": "Draft: capital request",
+      "operation": "update browser/route:release",
+      "target_objects": [
+        "browser/route:release"
+      ],
+      "task_domain": "Browser"
+    },
+    {
+      "actor_id": "B",
+      "expected_value": "Recorded: capital request (object)",
+      "goal": "Submit route B's exact value.",
+      "initial_value": "Pending: capital request",
+      "operation": "update browser/route:change",
+      "target_objects": [
+        "browser/route:change"
+      ],
+      "task_domain": "Browser"
+    }
+  ],
+  "benchmark_version": "codesk-v1.0",
+  "evaluator": {
+    "actor_paths": {
+      "A": "actors.A.value",
+      "B": "actors.B.value"
+    },
+    "adapter": "codesk_exact_state_v1",
+    "condition_semantics": {
+      "ma_id": "score each actor on equivalent independent desktop fixture",
+      "ma_sd": "score both actor goals and shared-state integrity",
+      "solo": "score selected actor; require inactive target and guards unchanged"
+    },
+    "expected_state": {
+      "actors": {
+        "A": {
+          "object": "browser/route:release",
+          "value": "Approved: capital request (object)"
+        },
+        "B": {
+          "object": "browser/route:change",
+          "value": "Recorded: capital request (object)"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "field": "approval",
+          "route_pair": [
+            "release",
+            "change"
+          ]
+        },
+        "resource": "application_context"
+      }
+    },
+    "initial_state": {
+      "actors": {
+        "A": {
+          "object": "browser/route:release",
+          "value": "Draft: capital request"
+        },
+        "B": {
+          "object": "browser/route:change",
+          "value": "Pending: capital request"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "field": "approval",
+          "route_pair": [
+            "release",
+            "change"
+          ]
+        },
+        "resource": "application_context"
+      }
+    },
+    "invariants": [
+      {
+        "equals": "PRESERVE",
+        "path": "actors.guards.main"
+      }
+    ],
+    "schedule_policy_id": "route-observe-a-change-b-resume-a-v1"
+  },
+  "evaluator_path": "evaluators/cdv1-an1-274da251f33a6cb7.json",
+  "evaluator_sha256": "5d9ac0364bd7a3744d607143345ec6dd8ed96c0055f87620e15459e6c93c024e",
+  "family": "application_context",
+  "fixture_files": [
+    {
+      "path": "fixtures/cdv1-an1-274da251f33a6cb7/browser-initial-state.json",
+      "sha256": "be50e02c8484b0628edb8900605a94666333779c4eaa4481d458cebca0c87fae",
+      "size_bytes": 173
+    },
+    {
+      "path": "fixtures/cdv1-an1-274da251f33a6cb7/workspace.html",
+      "sha256": "e4e8042ce4bc5ec0bf75422d9578d5bf56c16c63bcdb98fa00d179c151f31147",
+      "size_bytes": 271
+    }
+  ],
+  "generation_seed": 2026,
+  "initial_fixture_spec": {
+    "application_set": [
+      "Browser",
+      "Browser"
+    ],
+    "fixture_profile": "spa_release_change",
+    "layout_id": "guard_before",
+    "public_assets": [
+      {
+        "path": "fixtures/cdv1-an1-274da251f33a6cb7/browser-initial-state.json",
+        "sha256": "be50e02c8484b0628edb8900605a94666333779c4eaa4481d458cebca0c87fae",
+        "size_bytes": 173
+      },
+      {
+        "path": "fixtures/cdv1-an1-274da251f33a6cb7/workspace.html",
+        "sha256": "e4e8042ce4bc5ec0bf75422d9578d5bf56c16c63bcdb98fa00d179c151f31147",
+        "size_bytes": 271
+      }
+    ]
+  },
+  "instance_id": "cdv1-an1-274da251f33a6cb7",
+  "manifest_entry_sha256": "837be8a81270c1263d629d68c22d7e455377b7c57ce8388d8226962512a48604",
+  "provenance": {
+    "fixture_sha256": "28d723cf7c1c7e16b342d4c64e4d20745e1a5e316081bad175680c82ecca9dab",
+    "generation_seed": 2026,
+    "generator": "swcub.production_v1",
+    "seed_role": "deterministic profile ordering only; excluded from instance identity",
+    "semantic_spec_sha256": "274da251f33a6cb74851a0813d2b27df927a6fb1368baebddc1c5081f62659eb",
+    "source_code_sha256": "579c135b4b828886e972dbc72c0d8fd242dacbade19164e4f80b52194ae045f4",
+    "source_commit": "ac5801113da9bfbd96057c3cda51d13f722105fb"
+  },
+  "reset_metadata": {
+    "fixture_id": "cdv1-an1-274da251f33a6cb7",
+    "fresh_guest_required": true,
+    "remove_prior_app_state": true,
+    "verify_fixture_hash": "28d723cf7c1c7e16b342d4c64e4d20745e1a5e316081bad175680c82ecca9dab",
+    "verify_state": {
+      "actors": {
+        "A": {
+          "object": "browser/route:release",
+          "value": "Draft: capital request"
+        },
+        "B": {
+          "object": "browser/route:change",
+          "value": "Pending: capital request"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "field": "approval",
+          "route_pair": [
+            "release",
+            "change"
+          ]
+        },
+        "resource": "application_context"
+      }
+    }
+  },
+  "schedule_policy_id": "route-observe-a-change-b-resume-a-v1",
+  "semantic_parameters": {
+    "domain_id": "capital_allocation",
+    "domain_schema": {
+      "entity": "capital request",
+      "field_a": "Decision",
+      "field_b": "Ledger state"
+    },
+    "layout_id": "guard_before",
+    "object_profile_id": "spa_release_change",
+    "object_schema": {
+      "field": "approval",
+      "route_pair": [
+        "release",
+        "change"
+      ]
+    },
+    "operation_graph": "same_tab_spa_route",
+    "workflow_id": "A-N1"
+  },
+  "signatures": {
+    "fixture": "28d723cf7c1c7e16b342d4c64e4d20745e1a5e316081bad175680c82ecca9dab",
+    "goal": "abf6e5c288c09d1635663412edec1de1d50fec9bfb3ba43460bd2eea6a0cd7eb",
+    "semantic": "274da251f33a6cb74851a0813d2b27df927a6fb1368baebddc1c5081f62659eb",
+    "structural": "3dfaa635170cc54f7ab717eb8e5c88139c15c9285c391060d1399bf0990bbb1b"
+  },
+  "target_objects": {
+    "A": [
+      "browser/route:release"
+    ],
+    "B": [
+      "browser/route:change"
+    ]
+  },
+  "task_domains": {
+    "A": "Browser",
+    "B": "Browser"
+  },
+  "topology_compatibility": {
+    "ma_id": {
+      "backend_binding": "same logical workspace seed; independent desktop sessions allowed",
+      "desktop_count": 2,
+      "fixtures": "byte-identical task-relevant clones"
+    },
+    "ma_sd": {
+      "actor_bindings": "A and B share desktop",
+      "desktop_count": 1
+    },
+    "solo": {
+      "actor_bindings": "A or B",
+      "desktop_count": 1
+    }
+  },
+  "treatment_relevant_state": {
+    "family_state": "application_context",
+    "operation_graph": "same_tab_spa_route",
+    "shared_resource": {
+      "field": "approval",
+      "route_pair": [
+        "release",
+        "change"
+      ]
+    }
+  },
+  "validation_level": "offline",
+  "workflow_id": "A-N1"
+}

@@ -1,0 +1,240 @@
+{
+  "actor_goals": [
+    {
+      "actor_id": "A",
+      "expected_value": "Accepted: supplier record (object)",
+      "goal": "Copy the assigned rectangular range into Writer.",
+      "initial_value": "Draft: supplier record",
+      "operation": "update calc/B2:E3",
+      "target_objects": [
+        "calc/B2:E3"
+      ],
+      "task_domain": "Calc"
+    },
+    {
+      "actor_id": "B",
+      "expected_value": "Verified: supplier record (object)",
+      "goal": "Duplicate the assigned Writer paragraph.",
+      "initial_value": "Pending: supplier record",
+      "operation": "update writer/paragraph-4",
+      "target_objects": [
+        "writer/paragraph-4"
+      ],
+      "task_domain": "Writer"
+    }
+  ],
+  "benchmark_version": "codesk-v1.0",
+  "evaluator": {
+    "actor_paths": {
+      "A": "actors.A.value",
+      "B": "actors.B.value"
+    },
+    "adapter": "codesk_exact_state_v1",
+    "condition_semantics": {
+      "ma_id": "score each actor on equivalent independent desktop fixture",
+      "ma_sd": "score both actor goals and shared-state integrity",
+      "solo": "score selected actor; require inactive target and guards unchanged"
+    },
+    "expected_state": {
+      "actors": {
+        "A": {
+          "object": "calc/B2:E3",
+          "value": "Accepted: supplier record (object)"
+        },
+        "B": {
+          "object": "writer/paragraph-4",
+          "value": "Verified: supplier record (object)"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "paste_target": "paragraph",
+          "shape": [
+            2,
+            4
+          ]
+        },
+        "resource": "clipboard_state"
+      }
+    },
+    "initial_state": {
+      "actors": {
+        "A": {
+          "object": "calc/B2:E3",
+          "value": "Draft: supplier record"
+        },
+        "B": {
+          "object": "writer/paragraph-4",
+          "value": "Pending: supplier record"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "paste_target": "paragraph",
+          "shape": [
+            2,
+            4
+          ]
+        },
+        "resource": "clipboard_state"
+      }
+    },
+    "invariants": [
+      {
+        "equals": "PRESERVE",
+        "path": "actors.guards.main"
+      }
+    ],
+    "schedule_policy_id": "range-copy-confirm-paragraph-copy-confirm-resume-v1"
+  },
+  "evaluator_path": "evaluators/cdv1-c03-26361d83a0588b9a.json",
+  "evaluator_sha256": "ddc5300acea46e134f191466dc88d55e19a5fb9c19c5106871dcbe5b902e2e76",
+  "family": "clipboard_state",
+  "fixture_files": [
+    {
+      "path": "fixtures/cdv1-c03-26361d83a0588b9a/document.fodt",
+      "sha256": "8c7ea4d32c6aef895a2b163963e8392d9e41b32e6752b8d77d69969ad7234311",
+      "size_bytes": 428
+    },
+    {
+      "path": "fixtures/cdv1-c03-26361d83a0588b9a/workbook.fods",
+      "sha256": "cf71ef0f173801c43de94ec95ad89ab73b4c73114feed37ec5cc819b17ee9e5b",
+      "size_bytes": 2178
+    }
+  ],
+  "generation_seed": 2026,
+  "initial_fixture_spec": {
+    "application_set": [
+      "Calc",
+      "Writer"
+    ],
+    "fixture_profile": "matrix_2x4",
+    "layout_id": "guard_after",
+    "public_assets": [
+      {
+        "path": "fixtures/cdv1-c03-26361d83a0588b9a/document.fodt",
+        "sha256": "8c7ea4d32c6aef895a2b163963e8392d9e41b32e6752b8d77d69969ad7234311",
+        "size_bytes": 428
+      },
+      {
+        "path": "fixtures/cdv1-c03-26361d83a0588b9a/workbook.fods",
+        "sha256": "cf71ef0f173801c43de94ec95ad89ab73b4c73114feed37ec5cc819b17ee9e5b",
+        "size_bytes": 2178
+      }
+    ]
+  },
+  "instance_id": "cdv1-c03-26361d83a0588b9a",
+  "manifest_entry_sha256": "caeca8c40a5e1a098bd64431cb9f0f8ecb092dfd01bce2a967fe8885ce361282",
+  "provenance": {
+    "fixture_sha256": "9fa6b0eda3ed7b9ad783e0394d780d758e41bafb925cfafa98be0a004d6effa0",
+    "generation_seed": 2026,
+    "generator": "swcub.production_v1",
+    "seed_role": "deterministic profile ordering only; excluded from instance identity",
+    "semantic_spec_sha256": "26361d83a0588b9a85e50f3280426695efb2f115afee5aa38e91cb308d94bf99",
+    "source_code_sha256": "579c135b4b828886e972dbc72c0d8fd242dacbade19164e4f80b52194ae045f4",
+    "source_commit": "ac5801113da9bfbd96057c3cda51d13f722105fb"
+  },
+  "reset_metadata": {
+    "fixture_id": "cdv1-c03-26361d83a0588b9a",
+    "fresh_guest_required": true,
+    "remove_prior_app_state": true,
+    "verify_fixture_hash": "9fa6b0eda3ed7b9ad783e0394d780d758e41bafb925cfafa98be0a004d6effa0",
+    "verify_state": {
+      "actors": {
+        "A": {
+          "object": "calc/B2:E3",
+          "value": "Draft: supplier record"
+        },
+        "B": {
+          "object": "writer/paragraph-4",
+          "value": "Pending: supplier record"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "paste_target": "paragraph",
+          "shape": [
+            2,
+            4
+          ]
+        },
+        "resource": "clipboard_state"
+      }
+    }
+  },
+  "schedule_policy_id": "range-copy-confirm-paragraph-copy-confirm-resume-v1",
+  "semantic_parameters": {
+    "domain_id": "supplier_onboarding",
+    "domain_schema": {
+      "entity": "supplier record",
+      "field_a": "Review decision",
+      "field_b": "Verification state"
+    },
+    "layout_id": "guard_after",
+    "object_profile_id": "matrix_2x4",
+    "object_schema": {
+      "paste_target": "paragraph",
+      "shape": [
+        2,
+        4
+      ]
+    },
+    "operation_graph": "rectangular_table_transfer",
+    "workflow_id": "C-03"
+  },
+  "signatures": {
+    "fixture": "9fa6b0eda3ed7b9ad783e0394d780d758e41bafb925cfafa98be0a004d6effa0",
+    "goal": "ed1f4fe19e27d43e04800b917018af3773ed13c58688b98d61cac5b641b53e73",
+    "semantic": "26361d83a0588b9a85e50f3280426695efb2f115afee5aa38e91cb308d94bf99",
+    "structural": "bc7c7f4f8c80f2c6924a9b07bac6df05d65e19eeadd11b451ab2d7b5c062b1d7"
+  },
+  "target_objects": {
+    "A": [
+      "calc/B2:E3"
+    ],
+    "B": [
+      "writer/paragraph-4"
+    ]
+  },
+  "task_domains": {
+    "A": "Calc",
+    "B": "Writer"
+  },
+  "topology_compatibility": {
+    "ma_id": {
+      "backend_binding": "same logical workspace seed; independent desktop sessions allowed",
+      "desktop_count": 2,
+      "fixtures": "byte-identical task-relevant clones"
+    },
+    "ma_sd": {
+      "actor_bindings": "A and B share desktop",
+      "desktop_count": 1
+    },
+    "solo": {
+      "actor_bindings": "A or B",
+      "desktop_count": 1
+    }
+  },
+  "treatment_relevant_state": {
+    "family_state": "clipboard_state",
+    "operation_graph": "rectangular_table_transfer",
+    "shared_resource": {
+      "paste_target": "paragraph",
+      "shape": [
+        2,
+        4
+      ]
+    }
+  },
+  "validation_level": "scripted_full",
+  "workflow_id": "C-03"
+}

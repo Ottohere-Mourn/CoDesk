@@ -1,0 +1,240 @@
+{
+  "actor_goals": [
+    {
+      "actor_id": "A",
+      "expected_value": "Approved: capital request (object)",
+      "goal": "Submit route A's exact value.",
+      "initial_value": "Draft: capital request",
+      "operation": "update browser/route:safety",
+      "target_objects": [
+        "browser/route:safety"
+      ],
+      "task_domain": "Browser"
+    },
+    {
+      "actor_id": "B",
+      "expected_value": "Recorded: capital request (object)",
+      "goal": "Submit route B's exact value.",
+      "initial_value": "Pending: capital request",
+      "operation": "update browser/route:followup",
+      "target_objects": [
+        "browser/route:followup"
+      ],
+      "task_domain": "Browser"
+    }
+  ],
+  "benchmark_version": "codesk-v1.0",
+  "evaluator": {
+    "actor_paths": {
+      "A": "actors.A.value",
+      "B": "actors.B.value"
+    },
+    "adapter": "codesk_exact_state_v1",
+    "condition_semantics": {
+      "ma_id": "score each actor on equivalent independent desktop fixture",
+      "ma_sd": "score both actor goals and shared-state integrity",
+      "solo": "score selected actor; require inactive target and guards unchanged"
+    },
+    "expected_state": {
+      "actors": {
+        "A": {
+          "object": "browser/route:safety",
+          "value": "Approved: capital request (object)"
+        },
+        "B": {
+          "object": "browser/route:followup",
+          "value": "Recorded: capital request (object)"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "field": "clearance",
+          "route_pair": [
+            "safety",
+            "followup"
+          ]
+        },
+        "resource": "application_context"
+      }
+    },
+    "initial_state": {
+      "actors": {
+        "A": {
+          "object": "browser/route:safety",
+          "value": "Draft: capital request"
+        },
+        "B": {
+          "object": "browser/route:followup",
+          "value": "Pending: capital request"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "field": "clearance",
+          "route_pair": [
+            "safety",
+            "followup"
+          ]
+        },
+        "resource": "application_context"
+      }
+    },
+    "invariants": [
+      {
+        "equals": "PRESERVE",
+        "path": "actors.guards.main"
+      }
+    ],
+    "schedule_policy_id": "route-observe-a-change-b-resume-a-v1"
+  },
+  "evaluator_path": "evaluators/cdv1-an1-57fc7ad9cedb585b.json",
+  "evaluator_sha256": "88a4e770a09ad0b8abb9da5a0ab3a2b4905cb75e2ab9da9ac265913e2eb50909",
+  "family": "application_context",
+  "fixture_files": [
+    {
+      "path": "fixtures/cdv1-an1-57fc7ad9cedb585b/browser-initial-state.json",
+      "sha256": "be50e02c8484b0628edb8900605a94666333779c4eaa4481d458cebca0c87fae",
+      "size_bytes": 173
+    },
+    {
+      "path": "fixtures/cdv1-an1-57fc7ad9cedb585b/workspace.html",
+      "sha256": "148c78e47a8ef78433fed169c215fdbad8aca7cb546fc0d64564be3877377904",
+      "size_bytes": 272
+    }
+  ],
+  "generation_seed": 2026,
+  "initial_fixture_spec": {
+    "application_set": [
+      "Browser",
+      "Browser"
+    ],
+    "fixture_profile": "spa_safety_followup",
+    "layout_id": "guard_after",
+    "public_assets": [
+      {
+        "path": "fixtures/cdv1-an1-57fc7ad9cedb585b/browser-initial-state.json",
+        "sha256": "be50e02c8484b0628edb8900605a94666333779c4eaa4481d458cebca0c87fae",
+        "size_bytes": 173
+      },
+      {
+        "path": "fixtures/cdv1-an1-57fc7ad9cedb585b/workspace.html",
+        "sha256": "148c78e47a8ef78433fed169c215fdbad8aca7cb546fc0d64564be3877377904",
+        "size_bytes": 272
+      }
+    ]
+  },
+  "instance_id": "cdv1-an1-57fc7ad9cedb585b",
+  "manifest_entry_sha256": "cba5b4f1ebe25d57e0e69ec54724474012bb2870fcea470d196ab8c1088969ae",
+  "provenance": {
+    "fixture_sha256": "e848abcbf38d69ce864a1e72ffaeb9236837e783ba878dff23471db447169eb7",
+    "generation_seed": 2026,
+    "generator": "swcub.production_v1",
+    "seed_role": "deterministic profile ordering only; excluded from instance identity",
+    "semantic_spec_sha256": "57fc7ad9cedb585b4ec4907524da9ea07e33c97258dcb6ea23d8918e1584dfbb",
+    "source_code_sha256": "579c135b4b828886e972dbc72c0d8fd242dacbade19164e4f80b52194ae045f4",
+    "source_commit": "ac5801113da9bfbd96057c3cda51d13f722105fb"
+  },
+  "reset_metadata": {
+    "fixture_id": "cdv1-an1-57fc7ad9cedb585b",
+    "fresh_guest_required": true,
+    "remove_prior_app_state": true,
+    "verify_fixture_hash": "e848abcbf38d69ce864a1e72ffaeb9236837e783ba878dff23471db447169eb7",
+    "verify_state": {
+      "actors": {
+        "A": {
+          "object": "browser/route:safety",
+          "value": "Draft: capital request"
+        },
+        "B": {
+          "object": "browser/route:followup",
+          "value": "Pending: capital request"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "field": "clearance",
+          "route_pair": [
+            "safety",
+            "followup"
+          ]
+        },
+        "resource": "application_context"
+      }
+    }
+  },
+  "schedule_policy_id": "route-observe-a-change-b-resume-a-v1",
+  "semantic_parameters": {
+    "domain_id": "capital_allocation",
+    "domain_schema": {
+      "entity": "capital request",
+      "field_a": "Decision",
+      "field_b": "Ledger state"
+    },
+    "layout_id": "guard_after",
+    "object_profile_id": "spa_safety_followup",
+    "object_schema": {
+      "field": "clearance",
+      "route_pair": [
+        "safety",
+        "followup"
+      ]
+    },
+    "operation_graph": "same_tab_spa_route",
+    "workflow_id": "A-N1"
+  },
+  "signatures": {
+    "fixture": "e848abcbf38d69ce864a1e72ffaeb9236837e783ba878dff23471db447169eb7",
+    "goal": "bb4a8766381c2db5ac451d3a6f1d44171aa25118500b1f6bcaf2ddd3fa3db015",
+    "semantic": "57fc7ad9cedb585b4ec4907524da9ea07e33c97258dcb6ea23d8918e1584dfbb",
+    "structural": "484d0b5d4e815d4df13ce090861cce6d96ade72e76dd8054508723368fc297ed"
+  },
+  "target_objects": {
+    "A": [
+      "browser/route:safety"
+    ],
+    "B": [
+      "browser/route:followup"
+    ]
+  },
+  "task_domains": {
+    "A": "Browser",
+    "B": "Browser"
+  },
+  "topology_compatibility": {
+    "ma_id": {
+      "backend_binding": "same logical workspace seed; independent desktop sessions allowed",
+      "desktop_count": 2,
+      "fixtures": "byte-identical task-relevant clones"
+    },
+    "ma_sd": {
+      "actor_bindings": "A and B share desktop",
+      "desktop_count": 1
+    },
+    "solo": {
+      "actor_bindings": "A or B",
+      "desktop_count": 1
+    }
+  },
+  "treatment_relevant_state": {
+    "family_state": "application_context",
+    "operation_graph": "same_tab_spa_route",
+    "shared_resource": {
+      "field": "clearance",
+      "route_pair": [
+        "safety",
+        "followup"
+      ]
+    }
+  },
+  "validation_level": "offline",
+  "workflow_id": "A-N1"
+}

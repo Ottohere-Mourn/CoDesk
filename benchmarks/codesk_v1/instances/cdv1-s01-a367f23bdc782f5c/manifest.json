@@ -1,0 +1,215 @@
+{
+  "actor_goals": [
+    {
+      "actor_id": "A",
+      "expected_value": "Accepted: supplier record (cell)",
+      "goal": "Set the selected cell A target.",
+      "initial_value": "Draft: supplier record",
+      "operation": "set value calc/B3",
+      "target_objects": [
+        "calc/B3"
+      ],
+      "task_domain": "Calc"
+    },
+    {
+      "actor_id": "B",
+      "expected_value": "Verified: supplier record (cell)",
+      "goal": "Set the selected cell B target.",
+      "initial_value": "Pending: supplier record",
+      "operation": "set value calc/D2",
+      "target_objects": [
+        "calc/D2"
+      ],
+      "task_domain": "Calc"
+    }
+  ],
+  "benchmark_version": "codesk-v1.0",
+  "evaluator": {
+    "actor_paths": {
+      "A": "actors.A.value",
+      "B": "actors.B.value"
+    },
+    "adapter": "codesk_exact_state_v1",
+    "condition_semantics": {
+      "ma_id": "score each actor on equivalent independent desktop fixture",
+      "ma_sd": "score both actor goals and shared-state integrity",
+      "solo": "score selected actor; require inactive target and guards unchanged"
+    },
+    "expected_state": {
+      "actors": {
+        "A": {
+          "object": "calc/B3",
+          "value": "Accepted: supplier record (cell)"
+        },
+        "B": {
+          "object": "calc/D2",
+          "value": "Verified: supplier record (cell)"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "action": "set value",
+          "object_type": "cell"
+        },
+        "resource": "selection_active_object"
+      }
+    },
+    "initial_state": {
+      "actors": {
+        "A": {
+          "object": "calc/B3",
+          "value": "Draft: supplier record"
+        },
+        "B": {
+          "object": "calc/D2",
+          "value": "Pending: supplier record"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "action": "set value",
+          "object_type": "cell"
+        },
+        "resource": "selection_active_object"
+      }
+    },
+    "invariants": [
+      {
+        "equals": "PRESERVE",
+        "path": "actors.guards.main"
+      }
+    ],
+    "schedule_policy_id": "select-a-select-b-resume-a-v1"
+  },
+  "evaluator_path": "evaluators/cdv1-s01-a367f23bdc782f5c.json",
+  "evaluator_sha256": "098d50a8d7a0defa86d5f48218c734309754f87590ef24764bebeef0f9341841",
+  "family": "selection_active_object",
+  "fixture_files": [
+    {
+      "path": "fixtures/cdv1-s01-a367f23bdc782f5c/workbook.fods",
+      "sha256": "f06a730cb09df115a498775687ecd18f647b5975c640a25a9868963be04f92a0",
+      "size_bytes": 1698
+    }
+  ],
+  "generation_seed": 2026,
+  "initial_fixture_spec": {
+    "application_set": [
+      "Calc",
+      "Calc"
+    ],
+    "fixture_profile": "cells_b3_d2",
+    "layout_id": "guard_before",
+    "public_assets": [
+      {
+        "path": "fixtures/cdv1-s01-a367f23bdc782f5c/workbook.fods",
+        "sha256": "f06a730cb09df115a498775687ecd18f647b5975c640a25a9868963be04f92a0",
+        "size_bytes": 1698
+      }
+    ]
+  },
+  "instance_id": "cdv1-s01-a367f23bdc782f5c",
+  "manifest_entry_sha256": "e65fdc8231ca0104f77045aa0574bf3b9c12d3995bd163588f7b6738b24eeda8",
+  "provenance": {
+    "fixture_sha256": "8860f222785b2aa7115ad59883b632572b9bbfe2df43c39f35c701ae6bc3e73d",
+    "generation_seed": 2026,
+    "generator": "swcub.production_v1",
+    "seed_role": "deterministic profile ordering only; excluded from instance identity",
+    "semantic_spec_sha256": "a367f23bdc782f5cdb76bf039800f31904ea4a10a914fc7498f3eb298e89fc83",
+    "source_code_sha256": "579c135b4b828886e972dbc72c0d8fd242dacbade19164e4f80b52194ae045f4",
+    "source_commit": "ac5801113da9bfbd96057c3cda51d13f722105fb"
+  },
+  "reset_metadata": {
+    "fixture_id": "cdv1-s01-a367f23bdc782f5c",
+    "fresh_guest_required": true,
+    "remove_prior_app_state": true,
+    "verify_fixture_hash": "8860f222785b2aa7115ad59883b632572b9bbfe2df43c39f35c701ae6bc3e73d",
+    "verify_state": {
+      "actors": {
+        "A": {
+          "object": "calc/B3",
+          "value": "Draft: supplier record"
+        },
+        "B": {
+          "object": "calc/D2",
+          "value": "Pending: supplier record"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "action": "set value",
+          "object_type": "cell"
+        },
+        "resource": "selection_active_object"
+      }
+    }
+  },
+  "schedule_policy_id": "select-a-select-b-resume-a-v1",
+  "semantic_parameters": {
+    "domain_id": "supplier_onboarding",
+    "domain_schema": {
+      "entity": "supplier record",
+      "field_a": "Review decision",
+      "field_b": "Verification state"
+    },
+    "layout_id": "guard_before",
+    "object_profile_id": "cells_b3_d2",
+    "object_schema": {
+      "action": "set value",
+      "object_type": "cell"
+    },
+    "operation_graph": "active_cell_selection",
+    "workflow_id": "S-01"
+  },
+  "signatures": {
+    "fixture": "8860f222785b2aa7115ad59883b632572b9bbfe2df43c39f35c701ae6bc3e73d",
+    "goal": "e1a577fb19253e2279378535e67f042aca3875ae07fa5d81ddbbe00e90ecd355",
+    "semantic": "a367f23bdc782f5cdb76bf039800f31904ea4a10a914fc7498f3eb298e89fc83",
+    "structural": "bb1d04494fcf0bc89c65631a6386f8c89eeae7afcf12581dd6255984aed2b007"
+  },
+  "target_objects": {
+    "A": [
+      "calc/B3"
+    ],
+    "B": [
+      "calc/D2"
+    ]
+  },
+  "task_domains": {
+    "A": "Calc",
+    "B": "Calc"
+  },
+  "topology_compatibility": {
+    "ma_id": {
+      "backend_binding": "same logical workspace seed; independent desktop sessions allowed",
+      "desktop_count": 2,
+      "fixtures": "byte-identical task-relevant clones"
+    },
+    "ma_sd": {
+      "actor_bindings": "A and B share desktop",
+      "desktop_count": 1
+    },
+    "solo": {
+      "actor_bindings": "A or B",
+      "desktop_count": 1
+    }
+  },
+  "treatment_relevant_state": {
+    "family_state": "selection_active_object",
+    "operation_graph": "active_cell_selection",
+    "shared_resource": {
+      "action": "set value",
+      "object_type": "cell"
+    }
+  },
+  "validation_level": "qwen_smoke",
+  "workflow_id": "S-01"
+}

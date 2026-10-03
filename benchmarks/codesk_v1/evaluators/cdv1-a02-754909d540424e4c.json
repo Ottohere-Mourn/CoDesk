@@ -1,0 +1,63 @@
+{
+  "actor_paths": {
+    "A": "actors.A.value",
+    "B": "actors.B.value"
+  },
+  "adapter": "codesk_exact_state_v1",
+  "condition_semantics": {
+    "ma_id": "score each actor on equivalent independent desktop fixture",
+    "ma_sd": "score both actor goals and shared-state integrity",
+    "solo": "score selected actor; require inactive target and guards unchanged"
+  },
+  "expected_state": {
+    "actors": {
+      "A": {
+        "object": "browser/record:allocation",
+        "value": "Cleared: inspection item (record row)"
+      },
+      "B": {
+        "object": "browser/record:reimbursement",
+        "value": "Inspected: inspection item (record row)"
+      },
+      "guards": {
+        "main": "PRESERVE"
+      }
+    },
+    "treatment": {
+      "initial": {
+        "record_type": "allocation/reimbursement",
+        "selection": "record row"
+      },
+      "resource": "selection_active_object"
+    }
+  },
+  "initial_state": {
+    "actors": {
+      "A": {
+        "object": "browser/record:allocation",
+        "value": "Draft: inspection item"
+      },
+      "B": {
+        "object": "browser/record:reimbursement",
+        "value": "Pending: inspection item"
+      },
+      "guards": {
+        "main": "PRESERVE"
+      }
+    },
+    "treatment": {
+      "initial": {
+        "record_type": "allocation/reimbursement",
+        "selection": "record row"
+      },
+      "resource": "selection_active_object"
+    }
+  },
+  "invariants": [
+    {
+      "equals": "PRESERVE",
+      "path": "actors.guards.main"
+    }
+  ],
+  "schedule_policy_id": "observe-selection-change-b-resume-a-v1"
+}

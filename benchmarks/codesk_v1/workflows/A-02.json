@@ -1,0 +1,85 @@
+{
+  "workflow_id": "A-02",
+  "family": "selection_active_object",
+  "task_domains": [
+    "Browser",
+    "Browser"
+  ],
+  "operation_graph": "selected_record_context",
+  "description": "Update two distinct selected Browser records.",
+  "goal_a": "Update record A only.",
+  "goal_b": "Update record B only.",
+  "schedule_policy_id": "observe-selection-change-b-resume-a-v1",
+  "validation_level": "scripted_full",
+  "runtime_validation_incomplete": false,
+  "semantic_parameter_schema": {
+    "domain_fields": [
+      "entity",
+      "field_a",
+      "field_b",
+      "a_status",
+      "b_status"
+    ],
+    "object_profiles": [
+      {
+        "id": "record_supplier",
+        "a": "browser/record:supplier",
+        "b": "browser/record:invoice",
+        "schema": {
+          "record_type": "supplier/invoice",
+          "selection": "record row"
+        }
+      },
+      {
+        "id": "record_asset",
+        "a": "browser/record:asset",
+        "b": "browser/record:maintenance",
+        "schema": {
+          "record_type": "asset/maintenance",
+          "selection": "record row"
+        }
+      },
+      {
+        "id": "record_safety",
+        "a": "browser/record:inspection",
+        "b": "browser/record:incident",
+        "schema": {
+          "record_type": "inspection/incident",
+          "selection": "record row"
+        }
+      },
+      {
+        "id": "record_budget",
+        "a": "browser/record:allocation",
+        "b": "browser/record:reimbursement",
+        "schema": {
+          "record_type": "allocation/reimbursement",
+          "selection": "record row"
+        }
+      },
+      {
+        "id": "record_release",
+        "a": "browser/record:release",
+        "b": "browser/record:change-request",
+        "schema": {
+          "record_type": "release/change-request",
+          "selection": "record row"
+        }
+      }
+    ],
+    "layout_fields": [
+      "guard_placement",
+      "field_order",
+      "fixture_layout"
+    ],
+    "identity_excludes": [
+      "generation_seed",
+      "repeat",
+      "condition",
+      "model",
+      "window_coordinates"
+    ],
+    "actor_target_disjoint": true,
+    "no_op_goals_allowed": false
+  }
+}

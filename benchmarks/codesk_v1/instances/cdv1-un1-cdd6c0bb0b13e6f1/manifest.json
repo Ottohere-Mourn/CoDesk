@@ -1,0 +1,220 @@
+{
+  "actor_goals": [
+    {
+      "actor_id": "A",
+      "expected_value": "Accepted: supplier record (paragraph)",
+      "goal": "Undo the temporary first-line edit and restore the seed.",
+      "initial_value": "Draft: supplier record",
+      "operation": "update writer/paragraph[1]",
+      "target_objects": [
+        "writer/paragraph[1]"
+      ],
+      "task_domain": "Writer"
+    },
+    {
+      "actor_id": "B",
+      "expected_value": "Verified: supplier record (paragraph)",
+      "goal": "Set the second-line goal without losing it to A's Undo.",
+      "initial_value": "Pending: supplier record",
+      "operation": "update writer/paragraph[2]",
+      "target_objects": [
+        "writer/paragraph[2]"
+      ],
+      "task_domain": "Writer"
+    }
+  ],
+  "benchmark_version": "codesk-v1.0",
+  "evaluator": {
+    "actor_paths": {
+      "A": "actors.A.value",
+      "B": "actors.B.value"
+    },
+    "adapter": "codesk_exact_state_v1",
+    "condition_semantics": {
+      "ma_id": "score each actor on equivalent independent desktop fixture",
+      "ma_sd": "score both actor goals and shared-state integrity",
+      "solo": "score selected actor; require inactive target and guards unchanged"
+    },
+    "expected_state": {
+      "actors": {
+        "A": {
+          "object": "writer/paragraph[1]",
+          "value": "Accepted: supplier record (paragraph)"
+        },
+        "B": {
+          "object": "writer/paragraph[2]",
+          "value": "Verified: supplier record (paragraph)"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "object_type": "paragraph",
+          "undo_depth": 1,
+          "undo_operation": "text replacement"
+        },
+        "resource": "undo_redo_history"
+      }
+    },
+    "initial_state": {
+      "actors": {
+        "A": {
+          "object": "writer/paragraph[1]",
+          "value": "Draft: supplier record"
+        },
+        "B": {
+          "object": "writer/paragraph[2]",
+          "value": "Pending: supplier record"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "object_type": "paragraph",
+          "undo_depth": 1,
+          "undo_operation": "text replacement"
+        },
+        "resource": "undo_redo_history"
+      }
+    },
+    "invariants": [
+      {
+        "equals": "PRESERVE",
+        "path": "actors.guards.main"
+      }
+    ],
+    "schedule_policy_id": "edit-a-edit-b-undo-a-v1"
+  },
+  "evaluator_path": "evaluators/cdv1-un1-cdd6c0bb0b13e6f1.json",
+  "evaluator_sha256": "02d8a7b8bbb34d9b7da24a1fe9293d3b3822554040bcbcb11852bbd45b7ae683",
+  "family": "undo_redo_history",
+  "fixture_files": [
+    {
+      "path": "fixtures/cdv1-un1-cdd6c0bb0b13e6f1/document.fodt",
+      "sha256": "1ac59a0c007bb5cb57c7109b6075f47cf5bf60a0e1a7816a3164db4b83557472",
+      "size_bytes": 385
+    }
+  ],
+  "generation_seed": 2026,
+  "initial_fixture_spec": {
+    "application_set": [
+      "Writer",
+      "Writer"
+    ],
+    "fixture_profile": "writer_lines_1_2",
+    "layout_id": "guard_before",
+    "public_assets": [
+      {
+        "path": "fixtures/cdv1-un1-cdd6c0bb0b13e6f1/document.fodt",
+        "sha256": "1ac59a0c007bb5cb57c7109b6075f47cf5bf60a0e1a7816a3164db4b83557472",
+        "size_bytes": 385
+      }
+    ]
+  },
+  "instance_id": "cdv1-un1-cdd6c0bb0b13e6f1",
+  "manifest_entry_sha256": "56f7cafc5607756cc2823160d5b515a139dd54aea023bab7248870e5304d6c0d",
+  "provenance": {
+    "fixture_sha256": "ad2239c0930a6ac86aced011e84361e2049d219f1eda5d8966b976b9b2ef71d2",
+    "generation_seed": 2026,
+    "generator": "swcub.production_v1",
+    "seed_role": "deterministic profile ordering only; excluded from instance identity",
+    "semantic_spec_sha256": "cdd6c0bb0b13e6f1545fd69f7234df72fc43984d88733067fccefd53d6036b34",
+    "source_code_sha256": "579c135b4b828886e972dbc72c0d8fd242dacbade19164e4f80b52194ae045f4",
+    "source_commit": "ac5801113da9bfbd96057c3cda51d13f722105fb"
+  },
+  "reset_metadata": {
+    "fixture_id": "cdv1-un1-cdd6c0bb0b13e6f1",
+    "fresh_guest_required": true,
+    "remove_prior_app_state": true,
+    "verify_fixture_hash": "ad2239c0930a6ac86aced011e84361e2049d219f1eda5d8966b976b9b2ef71d2",
+    "verify_state": {
+      "actors": {
+        "A": {
+          "object": "writer/paragraph[1]",
+          "value": "Draft: supplier record"
+        },
+        "B": {
+          "object": "writer/paragraph[2]",
+          "value": "Pending: supplier record"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "object_type": "paragraph",
+          "undo_depth": 1,
+          "undo_operation": "text replacement"
+        },
+        "resource": "undo_redo_history"
+      }
+    }
+  },
+  "schedule_policy_id": "edit-a-edit-b-undo-a-v1",
+  "semantic_parameters": {
+    "domain_id": "supplier_onboarding",
+    "domain_schema": {
+      "entity": "supplier record",
+      "field_a": "Review decision",
+      "field_b": "Verification state"
+    },
+    "layout_id": "guard_before",
+    "object_profile_id": "writer_lines_1_2",
+    "object_schema": {
+      "object_type": "paragraph",
+      "undo_depth": 1,
+      "undo_operation": "text replacement"
+    },
+    "operation_graph": "writer_document_history",
+    "workflow_id": "U-N1"
+  },
+  "signatures": {
+    "fixture": "ad2239c0930a6ac86aced011e84361e2049d219f1eda5d8966b976b9b2ef71d2",
+    "goal": "d504f747412d5bc18e6cacf57f0b73d779c8257232a0263eb5a1138da5c4d2ec",
+    "semantic": "cdd6c0bb0b13e6f1545fd69f7234df72fc43984d88733067fccefd53d6036b34",
+    "structural": "98665cf2ca73a36a3dd69deb54b220f09e5134aadd3ec49749c23482c39f65ab"
+  },
+  "target_objects": {
+    "A": [
+      "writer/paragraph[1]"
+    ],
+    "B": [
+      "writer/paragraph[2]"
+    ]
+  },
+  "task_domains": {
+    "A": "Writer",
+    "B": "Writer"
+  },
+  "topology_compatibility": {
+    "ma_id": {
+      "backend_binding": "same logical workspace seed; independent desktop sessions allowed",
+      "desktop_count": 2,
+      "fixtures": "byte-identical task-relevant clones"
+    },
+    "ma_sd": {
+      "actor_bindings": "A and B share desktop",
+      "desktop_count": 1
+    },
+    "solo": {
+      "actor_bindings": "A or B",
+      "desktop_count": 1
+    }
+  },
+  "treatment_relevant_state": {
+    "family_state": "undo_redo_history",
+    "operation_graph": "writer_document_history",
+    "shared_resource": {
+      "object_type": "paragraph",
+      "undo_depth": 1,
+      "undo_operation": "text replacement"
+    }
+  },
+  "validation_level": "offline",
+  "workflow_id": "U-N1"
+}

@@ -1,0 +1,240 @@
+{
+  "actor_goals": [
+    {
+      "actor_id": "A",
+      "expected_value": "Approved: capital request (object)",
+      "goal": "Submit the target value in tab A.",
+      "initial_value": "Draft: capital request",
+      "operation": "update browser/tab-a/supplier-page",
+      "target_objects": [
+        "browser/tab-a/supplier-page"
+      ],
+      "task_domain": "Browser"
+    },
+    {
+      "actor_id": "B",
+      "expected_value": "Recorded: capital request (object)",
+      "goal": "Submit the other target value in tab B.",
+      "initial_value": "Pending: capital request",
+      "operation": "update browser/tab-b/document-page",
+      "target_objects": [
+        "browser/tab-b/document-page"
+      ],
+      "task_domain": "Browser"
+    }
+  ],
+  "benchmark_version": "codesk-v1.0",
+  "evaluator": {
+    "actor_paths": {
+      "A": "actors.A.value",
+      "B": "actors.B.value"
+    },
+    "adapter": "codesk_exact_state_v1",
+    "condition_semantics": {
+      "ma_id": "score each actor on equivalent independent desktop fixture",
+      "ma_sd": "score both actor goals and shared-state integrity",
+      "solo": "score selected actor; require inactive target and guards unchanged"
+    },
+    "expected_state": {
+      "actors": {
+        "A": {
+          "object": "browser/tab-a/supplier-page",
+          "value": "Approved: capital request (object)"
+        },
+        "B": {
+          "object": "browser/tab-b/document-page",
+          "value": "Recorded: capital request (object)"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "context_kind": "tab-specific records",
+          "fields": [
+            "supplier",
+            "document"
+          ]
+        },
+        "resource": "application_context"
+      }
+    },
+    "initial_state": {
+      "actors": {
+        "A": {
+          "object": "browser/tab-a/supplier-page",
+          "value": "Draft: capital request"
+        },
+        "B": {
+          "object": "browser/tab-b/document-page",
+          "value": "Pending: capital request"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "context_kind": "tab-specific records",
+          "fields": [
+            "supplier",
+            "document"
+          ]
+        },
+        "resource": "application_context"
+      }
+    },
+    "invariants": [
+      {
+        "equals": "PRESERVE",
+        "path": "actors.guards.main"
+      }
+    ],
+    "schedule_policy_id": "observe-a-context-change-b-resume-a-v1"
+  },
+  "evaluator_path": "evaluators/cdv1-a01-f0c981107b24111e.json",
+  "evaluator_sha256": "e239cfbc62c527ebfa3a0f0ab6ff367c968101fba7e147529865b1cf578cc40e",
+  "family": "application_context",
+  "fixture_files": [
+    {
+      "path": "fixtures/cdv1-a01-f0c981107b24111e/browser-initial-state.json",
+      "sha256": "be50e02c8484b0628edb8900605a94666333779c4eaa4481d458cebca0c87fae",
+      "size_bytes": 173
+    },
+    {
+      "path": "fixtures/cdv1-a01-f0c981107b24111e/workspace.html",
+      "sha256": "048ad00d7eb23aac49a723b9b0f6f5218a009a8ae89bb1ee19d217bd4108a759",
+      "size_bytes": 365
+    }
+  ],
+  "generation_seed": 2026,
+  "initial_fixture_spec": {
+    "application_set": [
+      "Browser",
+      "Browser"
+    ],
+    "fixture_profile": "tabs_supplier_docs",
+    "layout_id": "guard_before",
+    "public_assets": [
+      {
+        "path": "fixtures/cdv1-a01-f0c981107b24111e/browser-initial-state.json",
+        "sha256": "be50e02c8484b0628edb8900605a94666333779c4eaa4481d458cebca0c87fae",
+        "size_bytes": 173
+      },
+      {
+        "path": "fixtures/cdv1-a01-f0c981107b24111e/workspace.html",
+        "sha256": "048ad00d7eb23aac49a723b9b0f6f5218a009a8ae89bb1ee19d217bd4108a759",
+        "size_bytes": 365
+      }
+    ]
+  },
+  "instance_id": "cdv1-a01-f0c981107b24111e",
+  "manifest_entry_sha256": "2d89be71d4271c99d679ccfb22c0ebac55456ce96f4590e08e26327f226445b0",
+  "provenance": {
+    "fixture_sha256": "53e2f4cc177a978752d46eaf946979bf3c1fa4ee057990298b0843f574cb52f6",
+    "generation_seed": 2026,
+    "generator": "swcub.production_v1",
+    "seed_role": "deterministic profile ordering only; excluded from instance identity",
+    "semantic_spec_sha256": "f0c981107b24111eeb13608ba72ba3fd4cdc8b9044dfb2fa7e4db4932aaa236e",
+    "source_code_sha256": "579c135b4b828886e972dbc72c0d8fd242dacbade19164e4f80b52194ae045f4",
+    "source_commit": "ac5801113da9bfbd96057c3cda51d13f722105fb"
+  },
+  "reset_metadata": {
+    "fixture_id": "cdv1-a01-f0c981107b24111e",
+    "fresh_guest_required": true,
+    "remove_prior_app_state": true,
+    "verify_fixture_hash": "53e2f4cc177a978752d46eaf946979bf3c1fa4ee057990298b0843f574cb52f6",
+    "verify_state": {
+      "actors": {
+        "A": {
+          "object": "browser/tab-a/supplier-page",
+          "value": "Draft: capital request"
+        },
+        "B": {
+          "object": "browser/tab-b/document-page",
+          "value": "Pending: capital request"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "context_kind": "tab-specific records",
+          "fields": [
+            "supplier",
+            "document"
+          ]
+        },
+        "resource": "application_context"
+      }
+    }
+  },
+  "schedule_policy_id": "observe-a-context-change-b-resume-a-v1",
+  "semantic_parameters": {
+    "domain_id": "capital_allocation",
+    "domain_schema": {
+      "entity": "capital request",
+      "field_a": "Decision",
+      "field_b": "Ledger state"
+    },
+    "layout_id": "guard_before",
+    "object_profile_id": "tabs_supplier_docs",
+    "object_schema": {
+      "context_kind": "tab-specific records",
+      "fields": [
+        "supplier",
+        "document"
+      ]
+    },
+    "operation_graph": "two_tab_context",
+    "workflow_id": "A-01"
+  },
+  "signatures": {
+    "fixture": "53e2f4cc177a978752d46eaf946979bf3c1fa4ee057990298b0843f574cb52f6",
+    "goal": "12c765b3a671571943c72b2e77eb370a80eed716b8c2a7c904d24dda22b6edb9",
+    "semantic": "f0c981107b24111eeb13608ba72ba3fd4cdc8b9044dfb2fa7e4db4932aaa236e",
+    "structural": "cb33f3702e7e5db337177010109aba37fb183aec6101c13e08857a95b9116c76"
+  },
+  "target_objects": {
+    "A": [
+      "browser/tab-a/supplier-page"
+    ],
+    "B": [
+      "browser/tab-b/document-page"
+    ]
+  },
+  "task_domains": {
+    "A": "Browser",
+    "B": "Browser"
+  },
+  "topology_compatibility": {
+    "ma_id": {
+      "backend_binding": "same logical workspace seed; independent desktop sessions allowed",
+      "desktop_count": 2,
+      "fixtures": "byte-identical task-relevant clones"
+    },
+    "ma_sd": {
+      "actor_bindings": "A and B share desktop",
+      "desktop_count": 1
+    },
+    "solo": {
+      "actor_bindings": "A or B",
+      "desktop_count": 1
+    }
+  },
+  "treatment_relevant_state": {
+    "family_state": "application_context",
+    "operation_graph": "two_tab_context",
+    "shared_resource": {
+      "context_kind": "tab-specific records",
+      "fields": [
+        "supplier",
+        "document"
+      ]
+    }
+  },
+  "validation_level": "qwen_mechanism_evidence",
+  "workflow_id": "A-01"
+}

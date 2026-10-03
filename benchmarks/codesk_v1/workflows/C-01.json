@@ -1,0 +1,85 @@
+{
+  "workflow_id": "C-01",
+  "family": "clipboard_state",
+  "task_domains": [
+    "Writer",
+    "Calc"
+  ],
+  "operation_graph": "plain_text_transfer",
+  "description": "Transfer plain text from independent sources to Writer and Calc destinations.",
+  "goal_a": "Paste the assigned note into the Writer destination.",
+  "goal_b": "Paste the assigned identifier into the Calc destination.",
+  "schedule_policy_id": "copy-confirm-b-copy-confirm-resume-a-v1",
+  "validation_level": "qwen_smoke",
+  "runtime_validation_incomplete": false,
+  "semantic_parameter_schema": {
+    "domain_fields": [
+      "entity",
+      "field_a",
+      "field_b",
+      "a_status",
+      "b_status"
+    ],
+    "object_profiles": [
+      {
+        "id": "writer_note_calc_cell",
+        "a": "writer/insertion-after-heading",
+        "b": "calc/B2",
+        "schema": {
+          "payload_kind": "plain note",
+          "destination": "single cell"
+        }
+      },
+      {
+        "id": "writer_record_calc_cell",
+        "a": "writer/insertion-after-record",
+        "b": "calc/C2",
+        "schema": {
+          "payload_kind": "record identifier",
+          "destination": "single cell"
+        }
+      },
+      {
+        "id": "writer_url_calc_cell",
+        "a": "writer/insertion-after-reference",
+        "b": "calc/B3",
+        "schema": {
+          "payload_kind": "plain URL text",
+          "destination": "single cell"
+        }
+      },
+      {
+        "id": "writer_action_calc_cell",
+        "a": "writer/insertion-after-action",
+        "b": "calc/C3",
+        "schema": {
+          "payload_kind": "action phrase",
+          "destination": "single cell"
+        }
+      },
+      {
+        "id": "writer_summary_calc_cell",
+        "a": "writer/insertion-before-guard",
+        "b": "calc/D2",
+        "schema": {
+          "payload_kind": "summary text",
+          "destination": "single cell"
+        }
+      }
+    ],
+    "layout_fields": [
+      "guard_placement",
+      "field_order",
+      "fixture_layout"
+    ],
+    "identity_excludes": [
+      "generation_seed",
+      "repeat",
+      "condition",
+      "model",
+      "window_coordinates"
+    ],
+    "actor_target_disjoint": true,
+    "no_op_goals_allowed": false
+  }
+}

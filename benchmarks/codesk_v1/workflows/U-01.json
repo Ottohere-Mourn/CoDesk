@@ -1,0 +1,90 @@
+{
+  "workflow_id": "U-01",
+  "family": "undo_redo_history",
+  "task_domains": [
+    "Calc",
+    "Calc"
+  ],
+  "operation_graph": "calc_document_history",
+  "description": "Undo A's temporary edit after B has independently edited the same Calc document.",
+  "goal_a": "Undo the temporary value and restore the seeded cell.",
+  "goal_b": "Set B's distinct Calc cell to its goal.",
+  "schedule_policy_id": "edit-a-edit-b-undo-a-v1",
+  "validation_level": "qwen_smoke",
+  "runtime_validation_incomplete": false,
+  "semantic_parameter_schema": {
+    "domain_fields": [
+      "entity",
+      "field_a",
+      "field_b",
+      "a_status",
+      "b_status"
+    ],
+    "object_profiles": [
+      {
+        "id": "calc_status_cells",
+        "a": "calc/B2",
+        "b": "calc/C3",
+        "schema": {
+          "object_type": "cell",
+          "operation": "value edit",
+          "undo_depth": 1
+        }
+      },
+      {
+        "id": "calc_formula_cells",
+        "a": "calc/C2",
+        "b": "calc/D3",
+        "schema": {
+          "object_type": "cell",
+          "operation": "formula/value edit",
+          "undo_depth": 1
+        }
+      },
+      {
+        "id": "calc_audit_cells",
+        "a": "calc/B3",
+        "b": "calc/E2",
+        "schema": {
+          "object_type": "cell",
+          "operation": "audit value edit",
+          "undo_depth": 1
+        }
+      },
+      {
+        "id": "calc_release_cells",
+        "a": "calc/C3",
+        "b": "calc/D4",
+        "schema": {
+          "object_type": "cell",
+          "operation": "release value edit",
+          "undo_depth": 1
+        }
+      },
+      {
+        "id": "calc_inventory_cells",
+        "a": "calc/D2",
+        "b": "calc/E4",
+        "schema": {
+          "object_type": "cell",
+          "operation": "inventory value edit",
+          "undo_depth": 1
+        }
+      }
+    ],
+    "layout_fields": [
+      "guard_placement",
+      "field_order",
+      "fixture_layout"
+    ],
+    "identity_excludes": [
+      "generation_seed",
+      "repeat",
+      "condition",
+      "model",
+      "window_coordinates"
+    ],
+    "actor_target_disjoint": true,
+    "no_op_goals_allowed": false
+  }
+}

@@ -1,0 +1,225 @@
+{
+  "actor_goals": [
+    {
+      "actor_id": "A",
+      "expected_value": "Reconciled: warehouse lot (record row)",
+      "goal": "Update record A only.",
+      "initial_value": "Draft: warehouse lot",
+      "operation": "update browser/record:release",
+      "target_objects": [
+        "browser/record:release"
+      ],
+      "task_domain": "Browser"
+    },
+    {
+      "actor_id": "B",
+      "expected_value": "Counted: warehouse lot (record row)",
+      "goal": "Update record B only.",
+      "initial_value": "Pending: warehouse lot",
+      "operation": "update browser/record:change-request",
+      "target_objects": [
+        "browser/record:change-request"
+      ],
+      "task_domain": "Browser"
+    }
+  ],
+  "benchmark_version": "codesk-v1.0",
+  "evaluator": {
+    "actor_paths": {
+      "A": "actors.A.value",
+      "B": "actors.B.value"
+    },
+    "adapter": "codesk_exact_state_v1",
+    "condition_semantics": {
+      "ma_id": "score each actor on equivalent independent desktop fixture",
+      "ma_sd": "score both actor goals and shared-state integrity",
+      "solo": "score selected actor; require inactive target and guards unchanged"
+    },
+    "expected_state": {
+      "actors": {
+        "A": {
+          "object": "browser/record:release",
+          "value": "Reconciled: warehouse lot (record row)"
+        },
+        "B": {
+          "object": "browser/record:change-request",
+          "value": "Counted: warehouse lot (record row)"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "record_type": "release/change-request",
+          "selection": "record row"
+        },
+        "resource": "selection_active_object"
+      }
+    },
+    "initial_state": {
+      "actors": {
+        "A": {
+          "object": "browser/record:release",
+          "value": "Draft: warehouse lot"
+        },
+        "B": {
+          "object": "browser/record:change-request",
+          "value": "Pending: warehouse lot"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "record_type": "release/change-request",
+          "selection": "record row"
+        },
+        "resource": "selection_active_object"
+      }
+    },
+    "invariants": [
+      {
+        "equals": "PRESERVE",
+        "path": "actors.guards.main"
+      }
+    ],
+    "schedule_policy_id": "observe-selection-change-b-resume-a-v1"
+  },
+  "evaluator_path": "evaluators/cdv1-a02-226c7b3a639fc04d.json",
+  "evaluator_sha256": "00a7e28dba595fcc13da15d3bd94d810289ba3a8a195914dd280422adf60907e",
+  "family": "selection_active_object",
+  "fixture_files": [
+    {
+      "path": "fixtures/cdv1-a02-226c7b3a639fc04d/browser-initial-state.json",
+      "sha256": "66670b6f4786797b711ba557d40e34df1cc09b117ab512756f2bc7b24ed10f63",
+      "size_bytes": 175
+    },
+    {
+      "path": "fixtures/cdv1-a02-226c7b3a639fc04d/workspace.html",
+      "sha256": "f8332bf269e58173f2acff8237248dd4630e3de592df8e241223bdd440e88ebf",
+      "size_bytes": 253
+    }
+  ],
+  "generation_seed": 2026,
+  "initial_fixture_spec": {
+    "application_set": [
+      "Browser",
+      "Browser"
+    ],
+    "fixture_profile": "record_release",
+    "layout_id": "guard_before",
+    "public_assets": [
+      {
+        "path": "fixtures/cdv1-a02-226c7b3a639fc04d/browser-initial-state.json",
+        "sha256": "66670b6f4786797b711ba557d40e34df1cc09b117ab512756f2bc7b24ed10f63",
+        "size_bytes": 175
+      },
+      {
+        "path": "fixtures/cdv1-a02-226c7b3a639fc04d/workspace.html",
+        "sha256": "f8332bf269e58173f2acff8237248dd4630e3de592df8e241223bdd440e88ebf",
+        "size_bytes": 253
+      }
+    ]
+  },
+  "instance_id": "cdv1-a02-226c7b3a639fc04d",
+  "manifest_entry_sha256": "b65429f23281c0215f4ebe32f1884e934ff3bb665b09c0feb579969467597f60",
+  "provenance": {
+    "fixture_sha256": "38825a6337b59747748476809b0fd08102904d12fee911661fd6bf90fe99f41d",
+    "generation_seed": 2026,
+    "generator": "swcub.production_v1",
+    "seed_role": "deterministic profile ordering only; excluded from instance identity",
+    "semantic_spec_sha256": "226c7b3a639fc04d00e5a235c52954a4a09b930f2b61dcbdeccd3c1db06f6457",
+    "source_code_sha256": "579c135b4b828886e972dbc72c0d8fd242dacbade19164e4f80b52194ae045f4",
+    "source_commit": "ac5801113da9bfbd96057c3cda51d13f722105fb"
+  },
+  "reset_metadata": {
+    "fixture_id": "cdv1-a02-226c7b3a639fc04d",
+    "fresh_guest_required": true,
+    "remove_prior_app_state": true,
+    "verify_fixture_hash": "38825a6337b59747748476809b0fd08102904d12fee911661fd6bf90fe99f41d",
+    "verify_state": {
+      "actors": {
+        "A": {
+          "object": "browser/record:release",
+          "value": "Draft: warehouse lot"
+        },
+        "B": {
+          "object": "browser/record:change-request",
+          "value": "Pending: warehouse lot"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "record_type": "release/change-request",
+          "selection": "record row"
+        },
+        "resource": "selection_active_object"
+      }
+    }
+  },
+  "schedule_policy_id": "observe-selection-change-b-resume-a-v1",
+  "semantic_parameters": {
+    "domain_id": "warehouse_reconciliation",
+    "domain_schema": {
+      "entity": "warehouse lot",
+      "field_a": "Reconciliation",
+      "field_b": "Count status"
+    },
+    "layout_id": "guard_before",
+    "object_profile_id": "record_release",
+    "object_schema": {
+      "record_type": "release/change-request",
+      "selection": "record row"
+    },
+    "operation_graph": "selected_record_context",
+    "workflow_id": "A-02"
+  },
+  "signatures": {
+    "fixture": "38825a6337b59747748476809b0fd08102904d12fee911661fd6bf90fe99f41d",
+    "goal": "1268d1a272ef6c53f446b8813837d821291418ce8658d98d34eb2d0b72b27169",
+    "semantic": "226c7b3a639fc04d00e5a235c52954a4a09b930f2b61dcbdeccd3c1db06f6457",
+    "structural": "234346f0437745e62e9de318565fe6d21ae998257608a57fe062d10683f464ce"
+  },
+  "target_objects": {
+    "A": [
+      "browser/record:release"
+    ],
+    "B": [
+      "browser/record:change-request"
+    ]
+  },
+  "task_domains": {
+    "A": "Browser",
+    "B": "Browser"
+  },
+  "topology_compatibility": {
+    "ma_id": {
+      "backend_binding": "same logical workspace seed; independent desktop sessions allowed",
+      "desktop_count": 2,
+      "fixtures": "byte-identical task-relevant clones"
+    },
+    "ma_sd": {
+      "actor_bindings": "A and B share desktop",
+      "desktop_count": 1
+    },
+    "solo": {
+      "actor_bindings": "A or B",
+      "desktop_count": 1
+    }
+  },
+  "treatment_relevant_state": {
+    "family_state": "selection_active_object",
+    "operation_graph": "selected_record_context",
+    "shared_resource": {
+      "record_type": "release/change-request",
+      "selection": "record row"
+    }
+  },
+  "validation_level": "scripted_full",
+  "workflow_id": "A-02"
+}

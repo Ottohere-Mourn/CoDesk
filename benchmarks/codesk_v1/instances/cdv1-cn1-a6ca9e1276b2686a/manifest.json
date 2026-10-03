@@ -1,0 +1,270 @@
+{
+  "actor_goals": [
+    {
+      "actor_id": "A",
+      "expected_value": "Approved: capital request (HTML table)",
+      "goal": "Paste the structured table, preserving rows and cells.",
+      "initial_value": "Draft: capital request",
+      "operation": "update writer/table-slot-2",
+      "target_objects": [
+        "writer/table-slot-2"
+      ],
+      "task_domain": "Browser"
+    },
+    {
+      "actor_id": "B",
+      "expected_value": "Recorded: capital request (HTML table)",
+      "goal": "Copy and submit the assigned URL.",
+      "initial_value": "Pending: capital request",
+      "operation": "update browser/url-submit",
+      "target_objects": [
+        "browser/url-submit"
+      ],
+      "task_domain": "Writer"
+    }
+  ],
+  "benchmark_version": "codesk-v1.0",
+  "evaluator": {
+    "actor_paths": {
+      "A": "actors.A.value",
+      "B": "actors.B.value"
+    },
+    "adapter": "codesk_exact_state_v1",
+    "condition_semantics": {
+      "ma_id": "score each actor on equivalent independent desktop fixture",
+      "ma_sd": "score both actor goals and shared-state integrity",
+      "solo": "score selected actor; require inactive target and guards unchanged"
+    },
+    "expected_state": {
+      "actors": {
+        "A": {
+          "object": "writer/table-slot-2",
+          "value": "Approved: capital request (HTML table)"
+        },
+        "B": {
+          "object": "browser/url-submit",
+          "value": "Recorded: capital request (HTML table)"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "mime": [
+            "text/html",
+            "text/plain"
+          ],
+          "payload": "HTML table",
+          "shape": [
+            3,
+            3
+          ]
+        },
+        "resource": "clipboard_state"
+      }
+    },
+    "initial_state": {
+      "actors": {
+        "A": {
+          "object": "writer/table-slot-2",
+          "value": "Draft: capital request"
+        },
+        "B": {
+          "object": "browser/url-submit",
+          "value": "Pending: capital request"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "mime": [
+            "text/html",
+            "text/plain"
+          ],
+          "payload": "HTML table",
+          "shape": [
+            3,
+            3
+          ]
+        },
+        "resource": "clipboard_state"
+      }
+    },
+    "invariants": [
+      {
+        "equals": "PRESERVE",
+        "path": "actors.guards.main"
+      }
+    ],
+    "schedule_policy_id": "rich-copy-a-url-copy-b-resume-a-v1"
+  },
+  "evaluator_path": "evaluators/cdv1-cn1-a6ca9e1276b2686a.json",
+  "evaluator_sha256": "fe6835adb0c57e5713f49dcd1f874cae783a78f09af07b9258c5240f45acd439",
+  "family": "clipboard_state",
+  "fixture_files": [
+    {
+      "path": "fixtures/cdv1-cn1-a6ca9e1276b2686a/browser-initial-state.json",
+      "sha256": "be50e02c8484b0628edb8900605a94666333779c4eaa4481d458cebca0c87fae",
+      "size_bytes": 173
+    },
+    {
+      "path": "fixtures/cdv1-cn1-a6ca9e1276b2686a/document.fodt",
+      "sha256": "b33bc6ec92ad4dd7ff2b5f334d1dbc89351045d45a5e0d1afc133fe411452296",
+      "size_bytes": 427
+    },
+    {
+      "path": "fixtures/cdv1-cn1-a6ca9e1276b2686a/workspace.html",
+      "sha256": "de04239b4d29c58569c07795268a7ce742996d37fa657ae3d30138a103e6699d",
+      "size_bytes": 647
+    }
+  ],
+  "generation_seed": 2026,
+  "initial_fixture_spec": {
+    "application_set": [
+      "Browser",
+      "Writer"
+    ],
+    "fixture_profile": "rich_table_3x3",
+    "layout_id": "guard_after",
+    "public_assets": [
+      {
+        "path": "fixtures/cdv1-cn1-a6ca9e1276b2686a/browser-initial-state.json",
+        "sha256": "be50e02c8484b0628edb8900605a94666333779c4eaa4481d458cebca0c87fae",
+        "size_bytes": 173
+      },
+      {
+        "path": "fixtures/cdv1-cn1-a6ca9e1276b2686a/document.fodt",
+        "sha256": "b33bc6ec92ad4dd7ff2b5f334d1dbc89351045d45a5e0d1afc133fe411452296",
+        "size_bytes": 427
+      },
+      {
+        "path": "fixtures/cdv1-cn1-a6ca9e1276b2686a/workspace.html",
+        "sha256": "de04239b4d29c58569c07795268a7ce742996d37fa657ae3d30138a103e6699d",
+        "size_bytes": 647
+      }
+    ]
+  },
+  "instance_id": "cdv1-cn1-a6ca9e1276b2686a",
+  "manifest_entry_sha256": "d3ff0d94ab1fedd36d4882d2b52a101e54313a7d0ce8169332a476a5be907dc9",
+  "provenance": {
+    "fixture_sha256": "7d0d712d9d3fba17c54a86f5ae17c5480d1603ab3187e6561eb63978b694b278",
+    "generation_seed": 2026,
+    "generator": "swcub.production_v1",
+    "seed_role": "deterministic profile ordering only; excluded from instance identity",
+    "semantic_spec_sha256": "a6ca9e1276b2686aa42d721030b305b056182eca00e6e4a24aa608af7640996e",
+    "source_code_sha256": "579c135b4b828886e972dbc72c0d8fd242dacbade19164e4f80b52194ae045f4",
+    "source_commit": "ac5801113da9bfbd96057c3cda51d13f722105fb"
+  },
+  "reset_metadata": {
+    "fixture_id": "cdv1-cn1-a6ca9e1276b2686a",
+    "fresh_guest_required": true,
+    "remove_prior_app_state": true,
+    "verify_fixture_hash": "7d0d712d9d3fba17c54a86f5ae17c5480d1603ab3187e6561eb63978b694b278",
+    "verify_state": {
+      "actors": {
+        "A": {
+          "object": "writer/table-slot-2",
+          "value": "Draft: capital request"
+        },
+        "B": {
+          "object": "browser/url-submit",
+          "value": "Pending: capital request"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "mime": [
+            "text/html",
+            "text/plain"
+          ],
+          "payload": "HTML table",
+          "shape": [
+            3,
+            3
+          ]
+        },
+        "resource": "clipboard_state"
+      }
+    }
+  },
+  "schedule_policy_id": "rich-copy-a-url-copy-b-resume-a-v1",
+  "semantic_parameters": {
+    "domain_id": "capital_allocation",
+    "domain_schema": {
+      "entity": "capital request",
+      "field_a": "Decision",
+      "field_b": "Ledger state"
+    },
+    "layout_id": "guard_after",
+    "object_profile_id": "rich_table_3x3",
+    "object_schema": {
+      "mime": [
+        "text/html",
+        "text/plain"
+      ],
+      "payload": "HTML table",
+      "shape": [
+        3,
+        3
+      ]
+    },
+    "operation_graph": "rich_html_table_transfer",
+    "workflow_id": "C-N1"
+  },
+  "signatures": {
+    "fixture": "7d0d712d9d3fba17c54a86f5ae17c5480d1603ab3187e6561eb63978b694b278",
+    "goal": "2f687babecec0d2530c118d0cbfe24ce496082482a49871dd7c0547445b57116",
+    "semantic": "a6ca9e1276b2686aa42d721030b305b056182eca00e6e4a24aa608af7640996e",
+    "structural": "2765d8cdf09c3d55b1645c13ea69e4bc62f799fc7420311d8acbf67a891d25a0"
+  },
+  "target_objects": {
+    "A": [
+      "writer/table-slot-2"
+    ],
+    "B": [
+      "browser/url-submit"
+    ]
+  },
+  "task_domains": {
+    "A": "Browser",
+    "B": "Writer"
+  },
+  "topology_compatibility": {
+    "ma_id": {
+      "backend_binding": "same logical workspace seed; independent desktop sessions allowed",
+      "desktop_count": 2,
+      "fixtures": "byte-identical task-relevant clones"
+    },
+    "ma_sd": {
+      "actor_bindings": "A and B share desktop",
+      "desktop_count": 1
+    },
+    "solo": {
+      "actor_bindings": "A or B",
+      "desktop_count": 1
+    }
+  },
+  "treatment_relevant_state": {
+    "family_state": "clipboard_state",
+    "operation_graph": "rich_html_table_transfer",
+    "shared_resource": {
+      "mime": [
+        "text/html",
+        "text/plain"
+      ],
+      "payload": "HTML table",
+      "shape": [
+        3,
+        3
+      ]
+    }
+  },
+  "validation_level": "offline",
+  "workflow_id": "C-N1"
+}

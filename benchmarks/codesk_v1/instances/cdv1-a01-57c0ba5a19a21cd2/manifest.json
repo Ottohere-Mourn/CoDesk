@@ -1,0 +1,240 @@
+{
+  "actor_goals": [
+    {
+      "actor_id": "A",
+      "expected_value": "Reconciled: warehouse lot (object)",
+      "goal": "Submit the target value in tab A.",
+      "initial_value": "Draft: warehouse lot",
+      "operation": "update browser/tab-a/review-form",
+      "target_objects": [
+        "browser/tab-a/review-form"
+      ],
+      "task_domain": "Browser"
+    },
+    {
+      "actor_id": "B",
+      "expected_value": "Counted: warehouse lot (object)",
+      "goal": "Submit the other target value in tab B.",
+      "initial_value": "Pending: warehouse lot",
+      "operation": "update browser/tab-b/case-form",
+      "target_objects": [
+        "browser/tab-b/case-form"
+      ],
+      "task_domain": "Browser"
+    }
+  ],
+  "benchmark_version": "codesk-v1.0",
+  "evaluator": {
+    "actor_paths": {
+      "A": "actors.A.value",
+      "B": "actors.B.value"
+    },
+    "adapter": "codesk_exact_state_v1",
+    "condition_semantics": {
+      "ma_id": "score each actor on equivalent independent desktop fixture",
+      "ma_sd": "score both actor goals and shared-state integrity",
+      "solo": "score selected actor; require inactive target and guards unchanged"
+    },
+    "expected_state": {
+      "actors": {
+        "A": {
+          "object": "browser/tab-a/review-form",
+          "value": "Reconciled: warehouse lot (object)"
+        },
+        "B": {
+          "object": "browser/tab-b/case-form",
+          "value": "Counted: warehouse lot (object)"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "context_kind": "independent tab forms",
+          "fields": [
+            "review",
+            "case"
+          ]
+        },
+        "resource": "application_context"
+      }
+    },
+    "initial_state": {
+      "actors": {
+        "A": {
+          "object": "browser/tab-a/review-form",
+          "value": "Draft: warehouse lot"
+        },
+        "B": {
+          "object": "browser/tab-b/case-form",
+          "value": "Pending: warehouse lot"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "context_kind": "independent tab forms",
+          "fields": [
+            "review",
+            "case"
+          ]
+        },
+        "resource": "application_context"
+      }
+    },
+    "invariants": [
+      {
+        "equals": "PRESERVE",
+        "path": "actors.guards.main"
+      }
+    ],
+    "schedule_policy_id": "observe-a-context-change-b-resume-a-v1"
+  },
+  "evaluator_path": "evaluators/cdv1-a01-57c0ba5a19a21cd2.json",
+  "evaluator_sha256": "765a0acb2d0f922f750c3b882e870462ad14d224fa06c986422c095095c5f00c",
+  "family": "application_context",
+  "fixture_files": [
+    {
+      "path": "fixtures/cdv1-a01-57c0ba5a19a21cd2/browser-initial-state.json",
+      "sha256": "66670b6f4786797b711ba557d40e34df1cc09b117ab512756f2bc7b24ed10f63",
+      "size_bytes": 175
+    },
+    {
+      "path": "fixtures/cdv1-a01-57c0ba5a19a21cd2/workspace.html",
+      "sha256": "c96c6c1b020909fc8b1645009127eecaba6d9f92d0bd0d25f3f2b96b361d2748",
+      "size_bytes": 365
+    }
+  ],
+  "generation_seed": 2026,
+  "initial_fixture_spec": {
+    "application_set": [
+      "Browser",
+      "Browser"
+    ],
+    "fixture_profile": "tabs_review_cases",
+    "layout_id": "guard_after",
+    "public_assets": [
+      {
+        "path": "fixtures/cdv1-a01-57c0ba5a19a21cd2/browser-initial-state.json",
+        "sha256": "66670b6f4786797b711ba557d40e34df1cc09b117ab512756f2bc7b24ed10f63",
+        "size_bytes": 175
+      },
+      {
+        "path": "fixtures/cdv1-a01-57c0ba5a19a21cd2/workspace.html",
+        "sha256": "c96c6c1b020909fc8b1645009127eecaba6d9f92d0bd0d25f3f2b96b361d2748",
+        "size_bytes": 365
+      }
+    ]
+  },
+  "instance_id": "cdv1-a01-57c0ba5a19a21cd2",
+  "manifest_entry_sha256": "5b00238dc53cc5642a307009279504bbc1dc0085a767955264971a64ba0aea64",
+  "provenance": {
+    "fixture_sha256": "c0179c858a45746fdce501a1999123d9685516caf082dfe1832c6847b360d3db",
+    "generation_seed": 2026,
+    "generator": "swcub.production_v1",
+    "seed_role": "deterministic profile ordering only; excluded from instance identity",
+    "semantic_spec_sha256": "57c0ba5a19a21cd29731778ae8dd93594e6dee8564d60ad5156bb1c6b6012b1f",
+    "source_code_sha256": "579c135b4b828886e972dbc72c0d8fd242dacbade19164e4f80b52194ae045f4",
+    "source_commit": "ac5801113da9bfbd96057c3cda51d13f722105fb"
+  },
+  "reset_metadata": {
+    "fixture_id": "cdv1-a01-57c0ba5a19a21cd2",
+    "fresh_guest_required": true,
+    "remove_prior_app_state": true,
+    "verify_fixture_hash": "c0179c858a45746fdce501a1999123d9685516caf082dfe1832c6847b360d3db",
+    "verify_state": {
+      "actors": {
+        "A": {
+          "object": "browser/tab-a/review-form",
+          "value": "Draft: warehouse lot"
+        },
+        "B": {
+          "object": "browser/tab-b/case-form",
+          "value": "Pending: warehouse lot"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "context_kind": "independent tab forms",
+          "fields": [
+            "review",
+            "case"
+          ]
+        },
+        "resource": "application_context"
+      }
+    }
+  },
+  "schedule_policy_id": "observe-a-context-change-b-resume-a-v1",
+  "semantic_parameters": {
+    "domain_id": "warehouse_reconciliation",
+    "domain_schema": {
+      "entity": "warehouse lot",
+      "field_a": "Reconciliation",
+      "field_b": "Count status"
+    },
+    "layout_id": "guard_after",
+    "object_profile_id": "tabs_review_cases",
+    "object_schema": {
+      "context_kind": "independent tab forms",
+      "fields": [
+        "review",
+        "case"
+      ]
+    },
+    "operation_graph": "two_tab_context",
+    "workflow_id": "A-01"
+  },
+  "signatures": {
+    "fixture": "c0179c858a45746fdce501a1999123d9685516caf082dfe1832c6847b360d3db",
+    "goal": "75e71eadce6dca04d96d5d1de59d6461f788023527b7a0aa39429b74198c8298",
+    "semantic": "57c0ba5a19a21cd29731778ae8dd93594e6dee8564d60ad5156bb1c6b6012b1f",
+    "structural": "9b4cbf78a778ad1f553d74d32b503d79d12e037ac7fa6120bcb4decb710ee242"
+  },
+  "target_objects": {
+    "A": [
+      "browser/tab-a/review-form"
+    ],
+    "B": [
+      "browser/tab-b/case-form"
+    ]
+  },
+  "task_domains": {
+    "A": "Browser",
+    "B": "Browser"
+  },
+  "topology_compatibility": {
+    "ma_id": {
+      "backend_binding": "same logical workspace seed; independent desktop sessions allowed",
+      "desktop_count": 2,
+      "fixtures": "byte-identical task-relevant clones"
+    },
+    "ma_sd": {
+      "actor_bindings": "A and B share desktop",
+      "desktop_count": 1
+    },
+    "solo": {
+      "actor_bindings": "A or B",
+      "desktop_count": 1
+    }
+  },
+  "treatment_relevant_state": {
+    "family_state": "application_context",
+    "operation_graph": "two_tab_context",
+    "shared_resource": {
+      "context_kind": "independent tab forms",
+      "fields": [
+        "review",
+        "case"
+      ]
+    }
+  },
+  "validation_level": "qwen_mechanism_evidence",
+  "workflow_id": "A-01"
+}

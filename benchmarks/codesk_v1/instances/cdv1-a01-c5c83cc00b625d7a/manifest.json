@@ -1,0 +1,240 @@
+{
+  "actor_goals": [
+    {
+      "actor_id": "A",
+      "expected_value": "Cleared: inspection item (object)",
+      "goal": "Submit the target value in tab A.",
+      "initial_value": "Draft: inspection item",
+      "operation": "update browser/tab-a/review-form",
+      "target_objects": [
+        "browser/tab-a/review-form"
+      ],
+      "task_domain": "Browser"
+    },
+    {
+      "actor_id": "B",
+      "expected_value": "Inspected: inspection item (object)",
+      "goal": "Submit the other target value in tab B.",
+      "initial_value": "Pending: inspection item",
+      "operation": "update browser/tab-b/case-form",
+      "target_objects": [
+        "browser/tab-b/case-form"
+      ],
+      "task_domain": "Browser"
+    }
+  ],
+  "benchmark_version": "codesk-v1.0",
+  "evaluator": {
+    "actor_paths": {
+      "A": "actors.A.value",
+      "B": "actors.B.value"
+    },
+    "adapter": "codesk_exact_state_v1",
+    "condition_semantics": {
+      "ma_id": "score each actor on equivalent independent desktop fixture",
+      "ma_sd": "score both actor goals and shared-state integrity",
+      "solo": "score selected actor; require inactive target and guards unchanged"
+    },
+    "expected_state": {
+      "actors": {
+        "A": {
+          "object": "browser/tab-a/review-form",
+          "value": "Cleared: inspection item (object)"
+        },
+        "B": {
+          "object": "browser/tab-b/case-form",
+          "value": "Inspected: inspection item (object)"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "context_kind": "independent tab forms",
+          "fields": [
+            "review",
+            "case"
+          ]
+        },
+        "resource": "application_context"
+      }
+    },
+    "initial_state": {
+      "actors": {
+        "A": {
+          "object": "browser/tab-a/review-form",
+          "value": "Draft: inspection item"
+        },
+        "B": {
+          "object": "browser/tab-b/case-form",
+          "value": "Pending: inspection item"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "context_kind": "independent tab forms",
+          "fields": [
+            "review",
+            "case"
+          ]
+        },
+        "resource": "application_context"
+      }
+    },
+    "invariants": [
+      {
+        "equals": "PRESERVE",
+        "path": "actors.guards.main"
+      }
+    ],
+    "schedule_policy_id": "observe-a-context-change-b-resume-a-v1"
+  },
+  "evaluator_path": "evaluators/cdv1-a01-c5c83cc00b625d7a.json",
+  "evaluator_sha256": "0949e48cfb71284fee29d9f9752c7d5f1a7d4409148868194439f1e2cfb82899",
+  "family": "application_context",
+  "fixture_files": [
+    {
+      "path": "fixtures/cdv1-a01-c5c83cc00b625d7a/browser-initial-state.json",
+      "sha256": "3e33d88eb9b54427c0212e106e1d1b3c014e2feb4ad35c84e0ff72aaf13b7dd0",
+      "size_bytes": 172
+    },
+    {
+      "path": "fixtures/cdv1-a01-c5c83cc00b625d7a/workspace.html",
+      "sha256": "e76ef0034d21c45bc55e2113cbcc39cdad11f3f0a48795ebfd724804e1f7b361",
+      "size_bytes": 372
+    }
+  ],
+  "generation_seed": 2026,
+  "initial_fixture_spec": {
+    "application_set": [
+      "Browser",
+      "Browser"
+    ],
+    "fixture_profile": "tabs_review_cases",
+    "layout_id": "guard_before",
+    "public_assets": [
+      {
+        "path": "fixtures/cdv1-a01-c5c83cc00b625d7a/browser-initial-state.json",
+        "sha256": "3e33d88eb9b54427c0212e106e1d1b3c014e2feb4ad35c84e0ff72aaf13b7dd0",
+        "size_bytes": 172
+      },
+      {
+        "path": "fixtures/cdv1-a01-c5c83cc00b625d7a/workspace.html",
+        "sha256": "e76ef0034d21c45bc55e2113cbcc39cdad11f3f0a48795ebfd724804e1f7b361",
+        "size_bytes": 372
+      }
+    ]
+  },
+  "instance_id": "cdv1-a01-c5c83cc00b625d7a",
+  "manifest_entry_sha256": "8a460e9f31371df5b589742e791db44ee4c38e7a4bd9a255a01919c6c52bb0b5",
+  "provenance": {
+    "fixture_sha256": "5b23a08b38df11745a37cdf1e55b1d0a105a3c00336d50cb7b0882442e88209a",
+    "generation_seed": 2026,
+    "generator": "swcub.production_v1",
+    "seed_role": "deterministic profile ordering only; excluded from instance identity",
+    "semantic_spec_sha256": "c5c83cc00b625d7a5c52172c1a6621c522b6b460c32dd507d6b31dd0bf3eb6d1",
+    "source_code_sha256": "579c135b4b828886e972dbc72c0d8fd242dacbade19164e4f80b52194ae045f4",
+    "source_commit": "ac5801113da9bfbd96057c3cda51d13f722105fb"
+  },
+  "reset_metadata": {
+    "fixture_id": "cdv1-a01-c5c83cc00b625d7a",
+    "fresh_guest_required": true,
+    "remove_prior_app_state": true,
+    "verify_fixture_hash": "5b23a08b38df11745a37cdf1e55b1d0a105a3c00336d50cb7b0882442e88209a",
+    "verify_state": {
+      "actors": {
+        "A": {
+          "object": "browser/tab-a/review-form",
+          "value": "Draft: inspection item"
+        },
+        "B": {
+          "object": "browser/tab-b/case-form",
+          "value": "Pending: inspection item"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "context_kind": "independent tab forms",
+          "fields": [
+            "review",
+            "case"
+          ]
+        },
+        "resource": "application_context"
+      }
+    }
+  },
+  "schedule_policy_id": "observe-a-context-change-b-resume-a-v1",
+  "semantic_parameters": {
+    "domain_id": "safety_inspection",
+    "domain_schema": {
+      "entity": "inspection item",
+      "field_a": "Clearance",
+      "field_b": "Inspection state"
+    },
+    "layout_id": "guard_before",
+    "object_profile_id": "tabs_review_cases",
+    "object_schema": {
+      "context_kind": "independent tab forms",
+      "fields": [
+        "review",
+        "case"
+      ]
+    },
+    "operation_graph": "two_tab_context",
+    "workflow_id": "A-01"
+  },
+  "signatures": {
+    "fixture": "5b23a08b38df11745a37cdf1e55b1d0a105a3c00336d50cb7b0882442e88209a",
+    "goal": "782edbbeba9ae52170ad756a520513539e1ab444e382a45079032ba2a81cbcbf",
+    "semantic": "c5c83cc00b625d7a5c52172c1a6621c522b6b460c32dd507d6b31dd0bf3eb6d1",
+    "structural": "b65b4d0e10a430c832a798ecae7c67d4149bd005d920854a63c431cc5ba1d2e6"
+  },
+  "target_objects": {
+    "A": [
+      "browser/tab-a/review-form"
+    ],
+    "B": [
+      "browser/tab-b/case-form"
+    ]
+  },
+  "task_domains": {
+    "A": "Browser",
+    "B": "Browser"
+  },
+  "topology_compatibility": {
+    "ma_id": {
+      "backend_binding": "same logical workspace seed; independent desktop sessions allowed",
+      "desktop_count": 2,
+      "fixtures": "byte-identical task-relevant clones"
+    },
+    "ma_sd": {
+      "actor_bindings": "A and B share desktop",
+      "desktop_count": 1
+    },
+    "solo": {
+      "actor_bindings": "A or B",
+      "desktop_count": 1
+    }
+  },
+  "treatment_relevant_state": {
+    "family_state": "application_context",
+    "operation_graph": "two_tab_context",
+    "shared_resource": {
+      "context_kind": "independent tab forms",
+      "fields": [
+        "review",
+        "case"
+      ]
+    }
+  },
+  "validation_level": "qwen_mechanism_evidence",
+  "workflow_id": "A-01"
+}

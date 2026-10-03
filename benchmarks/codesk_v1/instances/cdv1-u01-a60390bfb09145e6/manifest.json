@@ -1,0 +1,220 @@
+{
+  "actor_goals": [
+    {
+      "actor_id": "A",
+      "expected_value": "Accepted: supplier record (cell)",
+      "goal": "Undo the temporary value and restore the seeded cell.",
+      "initial_value": "Draft: supplier record",
+      "operation": "update calc/B2",
+      "target_objects": [
+        "calc/B2"
+      ],
+      "task_domain": "Calc"
+    },
+    {
+      "actor_id": "B",
+      "expected_value": "Verified: supplier record (cell)",
+      "goal": "Set B's distinct Calc cell to its goal.",
+      "initial_value": "Pending: supplier record",
+      "operation": "update calc/C3",
+      "target_objects": [
+        "calc/C3"
+      ],
+      "task_domain": "Calc"
+    }
+  ],
+  "benchmark_version": "codesk-v1.0",
+  "evaluator": {
+    "actor_paths": {
+      "A": "actors.A.value",
+      "B": "actors.B.value"
+    },
+    "adapter": "codesk_exact_state_v1",
+    "condition_semantics": {
+      "ma_id": "score each actor on equivalent independent desktop fixture",
+      "ma_sd": "score both actor goals and shared-state integrity",
+      "solo": "score selected actor; require inactive target and guards unchanged"
+    },
+    "expected_state": {
+      "actors": {
+        "A": {
+          "object": "calc/B2",
+          "value": "Accepted: supplier record (cell)"
+        },
+        "B": {
+          "object": "calc/C3",
+          "value": "Verified: supplier record (cell)"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "object_type": "cell",
+          "operation": "value edit",
+          "undo_depth": 1
+        },
+        "resource": "undo_redo_history"
+      }
+    },
+    "initial_state": {
+      "actors": {
+        "A": {
+          "object": "calc/B2",
+          "value": "Draft: supplier record"
+        },
+        "B": {
+          "object": "calc/C3",
+          "value": "Pending: supplier record"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "object_type": "cell",
+          "operation": "value edit",
+          "undo_depth": 1
+        },
+        "resource": "undo_redo_history"
+      }
+    },
+    "invariants": [
+      {
+        "equals": "PRESERVE",
+        "path": "actors.guards.main"
+      }
+    ],
+    "schedule_policy_id": "edit-a-edit-b-undo-a-v1"
+  },
+  "evaluator_path": "evaluators/cdv1-u01-a60390bfb09145e6.json",
+  "evaluator_sha256": "32cf0ba3c31ac3cf79eddfeb875a603dd519b1f26ca6e004ca5faa5876f42f86",
+  "family": "undo_redo_history",
+  "fixture_files": [
+    {
+      "path": "fixtures/cdv1-u01-a60390bfb09145e6/workbook.fods",
+      "sha256": "fda10b442729f806b64776706b3ab1c0b670b837a19c31e31fba9a74e51aa6ba",
+      "size_bytes": 1624
+    }
+  ],
+  "generation_seed": 2026,
+  "initial_fixture_spec": {
+    "application_set": [
+      "Calc",
+      "Calc"
+    ],
+    "fixture_profile": "calc_status_cells",
+    "layout_id": "guard_after",
+    "public_assets": [
+      {
+        "path": "fixtures/cdv1-u01-a60390bfb09145e6/workbook.fods",
+        "sha256": "fda10b442729f806b64776706b3ab1c0b670b837a19c31e31fba9a74e51aa6ba",
+        "size_bytes": 1624
+      }
+    ]
+  },
+  "instance_id": "cdv1-u01-a60390bfb09145e6",
+  "manifest_entry_sha256": "c198e16f94ade97c373ce46959c98288fe7e0700e9fc704cc0a97223f45c3c27",
+  "provenance": {
+    "fixture_sha256": "65c29a88d4b9339e3fd8fd4b837fcf57da7a3b1ec14b335ca02687f5691dcb3c",
+    "generation_seed": 2026,
+    "generator": "swcub.production_v1",
+    "seed_role": "deterministic profile ordering only; excluded from instance identity",
+    "semantic_spec_sha256": "a60390bfb09145e646b363a3dddc05df291f5797ba1c1249afbaf410399bf728",
+    "source_code_sha256": "579c135b4b828886e972dbc72c0d8fd242dacbade19164e4f80b52194ae045f4",
+    "source_commit": "ac5801113da9bfbd96057c3cda51d13f722105fb"
+  },
+  "reset_metadata": {
+    "fixture_id": "cdv1-u01-a60390bfb09145e6",
+    "fresh_guest_required": true,
+    "remove_prior_app_state": true,
+    "verify_fixture_hash": "65c29a88d4b9339e3fd8fd4b837fcf57da7a3b1ec14b335ca02687f5691dcb3c",
+    "verify_state": {
+      "actors": {
+        "A": {
+          "object": "calc/B2",
+          "value": "Draft: supplier record"
+        },
+        "B": {
+          "object": "calc/C3",
+          "value": "Pending: supplier record"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "object_type": "cell",
+          "operation": "value edit",
+          "undo_depth": 1
+        },
+        "resource": "undo_redo_history"
+      }
+    }
+  },
+  "schedule_policy_id": "edit-a-edit-b-undo-a-v1",
+  "semantic_parameters": {
+    "domain_id": "supplier_onboarding",
+    "domain_schema": {
+      "entity": "supplier record",
+      "field_a": "Review decision",
+      "field_b": "Verification state"
+    },
+    "layout_id": "guard_after",
+    "object_profile_id": "calc_status_cells",
+    "object_schema": {
+      "object_type": "cell",
+      "operation": "value edit",
+      "undo_depth": 1
+    },
+    "operation_graph": "calc_document_history",
+    "workflow_id": "U-01"
+  },
+  "signatures": {
+    "fixture": "65c29a88d4b9339e3fd8fd4b837fcf57da7a3b1ec14b335ca02687f5691dcb3c",
+    "goal": "18e00f91f40413d7d38a37bc6605c615d49be258823f28b6d6291c8282d14b19",
+    "semantic": "a60390bfb09145e646b363a3dddc05df291f5797ba1c1249afbaf410399bf728",
+    "structural": "f3ea7ea4ec688770b9ca6326cb94033df56dc7ba1b545a0b419dc250d5d267f0"
+  },
+  "target_objects": {
+    "A": [
+      "calc/B2"
+    ],
+    "B": [
+      "calc/C3"
+    ]
+  },
+  "task_domains": {
+    "A": "Calc",
+    "B": "Calc"
+  },
+  "topology_compatibility": {
+    "ma_id": {
+      "backend_binding": "same logical workspace seed; independent desktop sessions allowed",
+      "desktop_count": 2,
+      "fixtures": "byte-identical task-relevant clones"
+    },
+    "ma_sd": {
+      "actor_bindings": "A and B share desktop",
+      "desktop_count": 1
+    },
+    "solo": {
+      "actor_bindings": "A or B",
+      "desktop_count": 1
+    }
+  },
+  "treatment_relevant_state": {
+    "family_state": "undo_redo_history",
+    "operation_graph": "calc_document_history",
+    "shared_resource": {
+      "object_type": "cell",
+      "operation": "value edit",
+      "undo_depth": 1
+    }
+  },
+  "validation_level": "qwen_smoke",
+  "workflow_id": "U-01"
+}

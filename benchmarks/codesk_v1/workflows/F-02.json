@@ -1,0 +1,100 @@
+{
+  "workflow_id": "F-02",
+  "family": "focus_input_routing",
+  "task_domains": [
+    "Writer",
+    "Browser"
+  ],
+  "operation_graph": "writer_comment_vs_browser_form",
+  "description": "Add an anchored Writer review comment while a Browser review form is completed.",
+  "goal_a": "Attach the assigned note to the target review anchor.",
+  "goal_b": "Submit the independent review form exactly once.",
+  "schedule_policy_id": "writer-anchor-browser-form-comment-v1",
+  "validation_level": "scripted_full",
+  "runtime_validation_incomplete": false,
+  "semantic_parameter_schema": {
+    "domain_fields": [
+      "entity",
+      "field_a",
+      "field_b",
+      "a_status",
+      "b_status"
+    ],
+    "object_profiles": [
+      {
+        "id": "anchor_summary",
+        "a": "writer/comment-anchor:summary",
+        "b": "browser/review/decision",
+        "schema": {
+          "anchor_kind": "summary sentence",
+          "form_fields": [
+            "case",
+            "decision"
+          ]
+        }
+      },
+      {
+        "id": "anchor_risk",
+        "a": "writer/comment-anchor:risk",
+        "b": "browser/review/risk",
+        "schema": {
+          "anchor_kind": "risk sentence",
+          "form_fields": [
+            "risk_id",
+            "disposition"
+          ]
+        }
+      },
+      {
+        "id": "anchor_supplier",
+        "a": "writer/comment-anchor:supplier",
+        "b": "browser/review/vendor",
+        "schema": {
+          "anchor_kind": "supplier paragraph",
+          "form_fields": [
+            "supplier",
+            "decision"
+          ]
+        }
+      },
+      {
+        "id": "anchor_budget",
+        "a": "writer/comment-anchor:budget",
+        "b": "browser/review/allocation",
+        "schema": {
+          "anchor_kind": "allocation sentence",
+          "form_fields": [
+            "request",
+            "approval"
+          ]
+        }
+      },
+      {
+        "id": "anchor_action",
+        "a": "writer/comment-anchor:action",
+        "b": "browser/review/action-item",
+        "schema": {
+          "anchor_kind": "action item",
+          "form_fields": [
+            "owner",
+            "status"
+          ]
+        }
+      }
+    ],
+    "layout_fields": [
+      "guard_placement",
+      "field_order",
+      "fixture_layout"
+    ],
+    "identity_excludes": [
+      "generation_seed",
+      "repeat",
+      "condition",
+      "model",
+      "window_coordinates"
+    ],
+    "actor_target_disjoint": true,
+    "no_op_goals_allowed": false
+  }
+}

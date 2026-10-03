@@ -1,0 +1,215 @@
+{
+  "actor_goals": [
+    {
+      "actor_id": "A",
+      "expected_value": "Cleared: inspection item (object)",
+      "goal": "Bold only range A.",
+      "initial_value": "Draft: inspection item",
+      "operation": "bold writer/range:phrase-a",
+      "target_objects": [
+        "writer/range:phrase-a"
+      ],
+      "task_domain": "Writer"
+    },
+    {
+      "actor_id": "B",
+      "expected_value": "Inspected: inspection item (object)",
+      "goal": "Bold only range B.",
+      "initial_value": "Pending: inspection item",
+      "operation": "bold writer/range:phrase-b",
+      "target_objects": [
+        "writer/range:phrase-b"
+      ],
+      "task_domain": "Writer"
+    }
+  ],
+  "benchmark_version": "codesk-v1.0",
+  "evaluator": {
+    "actor_paths": {
+      "A": "actors.A.value",
+      "B": "actors.B.value"
+    },
+    "adapter": "codesk_exact_state_v1",
+    "condition_semantics": {
+      "ma_id": "score each actor on equivalent independent desktop fixture",
+      "ma_sd": "score both actor goals and shared-state integrity",
+      "solo": "score selected actor; require inactive target and guards unchanged"
+    },
+    "expected_state": {
+      "actors": {
+        "A": {
+          "object": "writer/range:phrase-a",
+          "value": "Cleared: inspection item (object)"
+        },
+        "B": {
+          "object": "writer/range:phrase-b",
+          "value": "Inspected: inspection item (object)"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "action": "bold",
+          "selection_kind": "phrase range"
+        },
+        "resource": "selection_active_object"
+      }
+    },
+    "initial_state": {
+      "actors": {
+        "A": {
+          "object": "writer/range:phrase-a",
+          "value": "Draft: inspection item"
+        },
+        "B": {
+          "object": "writer/range:phrase-b",
+          "value": "Pending: inspection item"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "action": "bold",
+          "selection_kind": "phrase range"
+        },
+        "resource": "selection_active_object"
+      }
+    },
+    "invariants": [
+      {
+        "equals": "PRESERVE",
+        "path": "actors.guards.main"
+      }
+    ],
+    "schedule_policy_id": "range-select-a-select-b-resume-a-v1"
+  },
+  "evaluator_path": "evaluators/cdv1-sn1-9c484a55ae43787e.json",
+  "evaluator_sha256": "22fb29ece3cd047ad9eca36033d4bf223cea7e14e0a30c103a10b0aaae95f537",
+  "family": "selection_active_object",
+  "fixture_files": [
+    {
+      "path": "fixtures/cdv1-sn1-9c484a55ae43787e/document.fodt",
+      "sha256": "22ac3a1d4799fbec875989f7e427d1fea4c21076346089340920cc4f7eae0d82",
+      "size_bytes": 409
+    }
+  ],
+  "generation_seed": 2026,
+  "initial_fixture_spec": {
+    "application_set": [
+      "Writer",
+      "Writer"
+    ],
+    "fixture_profile": "range_phrase_pair",
+    "layout_id": "guard_before",
+    "public_assets": [
+      {
+        "path": "fixtures/cdv1-sn1-9c484a55ae43787e/document.fodt",
+        "sha256": "22ac3a1d4799fbec875989f7e427d1fea4c21076346089340920cc4f7eae0d82",
+        "size_bytes": 409
+      }
+    ]
+  },
+  "instance_id": "cdv1-sn1-9c484a55ae43787e",
+  "manifest_entry_sha256": "cb953213f51e2527d4da9ef73f6f6e248bb3dc045c93385de25b744243e2e694",
+  "provenance": {
+    "fixture_sha256": "37fa7f8924a2ec4a5a15c0bba0cc21b9a5b0cdb4a2ec7891678c6aac65ac4bd2",
+    "generation_seed": 2026,
+    "generator": "swcub.production_v1",
+    "seed_role": "deterministic profile ordering only; excluded from instance identity",
+    "semantic_spec_sha256": "9c484a55ae43787ed44546a14d3a1ae62b10c356b241ff3b2f07295cbf7e6cb4",
+    "source_code_sha256": "579c135b4b828886e972dbc72c0d8fd242dacbade19164e4f80b52194ae045f4",
+    "source_commit": "ac5801113da9bfbd96057c3cda51d13f722105fb"
+  },
+  "reset_metadata": {
+    "fixture_id": "cdv1-sn1-9c484a55ae43787e",
+    "fresh_guest_required": true,
+    "remove_prior_app_state": true,
+    "verify_fixture_hash": "37fa7f8924a2ec4a5a15c0bba0cc21b9a5b0cdb4a2ec7891678c6aac65ac4bd2",
+    "verify_state": {
+      "actors": {
+        "A": {
+          "object": "writer/range:phrase-a",
+          "value": "Draft: inspection item"
+        },
+        "B": {
+          "object": "writer/range:phrase-b",
+          "value": "Pending: inspection item"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "action": "bold",
+          "selection_kind": "phrase range"
+        },
+        "resource": "selection_active_object"
+      }
+    }
+  },
+  "schedule_policy_id": "range-select-a-select-b-resume-a-v1",
+  "semantic_parameters": {
+    "domain_id": "safety_inspection",
+    "domain_schema": {
+      "entity": "inspection item",
+      "field_a": "Clearance",
+      "field_b": "Inspection state"
+    },
+    "layout_id": "guard_before",
+    "object_profile_id": "range_phrase_pair",
+    "object_schema": {
+      "action": "bold",
+      "selection_kind": "phrase range"
+    },
+    "operation_graph": "writer_text_range_selection",
+    "workflow_id": "S-N1"
+  },
+  "signatures": {
+    "fixture": "37fa7f8924a2ec4a5a15c0bba0cc21b9a5b0cdb4a2ec7891678c6aac65ac4bd2",
+    "goal": "53b67e96fd5920f1aad49abd7549f18eb5e28d73644d5b51cb90b4a989120283",
+    "semantic": "9c484a55ae43787ed44546a14d3a1ae62b10c356b241ff3b2f07295cbf7e6cb4",
+    "structural": "590b1dd5bbd2579fd32193e89ed8d58b7409f02d7136f7741f41d45bb6d5d92b"
+  },
+  "target_objects": {
+    "A": [
+      "writer/range:phrase-a"
+    ],
+    "B": [
+      "writer/range:phrase-b"
+    ]
+  },
+  "task_domains": {
+    "A": "Writer",
+    "B": "Writer"
+  },
+  "topology_compatibility": {
+    "ma_id": {
+      "backend_binding": "same logical workspace seed; independent desktop sessions allowed",
+      "desktop_count": 2,
+      "fixtures": "byte-identical task-relevant clones"
+    },
+    "ma_sd": {
+      "actor_bindings": "A and B share desktop",
+      "desktop_count": 1
+    },
+    "solo": {
+      "actor_bindings": "A or B",
+      "desktop_count": 1
+    }
+  },
+  "treatment_relevant_state": {
+    "family_state": "selection_active_object",
+    "operation_graph": "writer_text_range_selection",
+    "shared_resource": {
+      "action": "bold",
+      "selection_kind": "phrase range"
+    }
+  },
+  "validation_level": "offline",
+  "workflow_id": "S-N1"
+}

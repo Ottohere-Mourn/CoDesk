@@ -1,0 +1,250 @@
+{
+  "actor_goals": [
+    {
+      "actor_id": "A",
+      "expected_value": "Reconciled: warehouse lot (object)",
+      "goal": "Attach the assigned note to the target review anchor.",
+      "initial_value": "Draft: warehouse lot",
+      "operation": "update writer/comment-anchor:supplier",
+      "target_objects": [
+        "writer/comment-anchor:supplier"
+      ],
+      "task_domain": "Writer"
+    },
+    {
+      "actor_id": "B",
+      "expected_value": "Counted: warehouse lot (object)",
+      "goal": "Submit the independent review form exactly once.",
+      "initial_value": "Pending: warehouse lot",
+      "operation": "update browser/review/vendor",
+      "target_objects": [
+        "browser/review/vendor"
+      ],
+      "task_domain": "Browser"
+    }
+  ],
+  "benchmark_version": "codesk-v1.0",
+  "evaluator": {
+    "actor_paths": {
+      "A": "actors.A.value",
+      "B": "actors.B.value"
+    },
+    "adapter": "codesk_exact_state_v1",
+    "condition_semantics": {
+      "ma_id": "score each actor on equivalent independent desktop fixture",
+      "ma_sd": "score both actor goals and shared-state integrity",
+      "solo": "score selected actor; require inactive target and guards unchanged"
+    },
+    "expected_state": {
+      "actors": {
+        "A": {
+          "object": "writer/comment-anchor:supplier",
+          "value": "Reconciled: warehouse lot (object)"
+        },
+        "B": {
+          "object": "browser/review/vendor",
+          "value": "Counted: warehouse lot (object)"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "anchor_kind": "supplier paragraph",
+          "form_fields": [
+            "supplier",
+            "decision"
+          ]
+        },
+        "resource": "focus_input_routing"
+      }
+    },
+    "initial_state": {
+      "actors": {
+        "A": {
+          "object": "writer/comment-anchor:supplier",
+          "value": "Draft: warehouse lot"
+        },
+        "B": {
+          "object": "browser/review/vendor",
+          "value": "Pending: warehouse lot"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "anchor_kind": "supplier paragraph",
+          "form_fields": [
+            "supplier",
+            "decision"
+          ]
+        },
+        "resource": "focus_input_routing"
+      }
+    },
+    "invariants": [
+      {
+        "equals": "PRESERVE",
+        "path": "actors.guards.main"
+      }
+    ],
+    "schedule_policy_id": "writer-anchor-browser-form-comment-v1"
+  },
+  "evaluator_path": "evaluators/cdv1-f02-0c5deba54773a07d.json",
+  "evaluator_sha256": "c8692ab6c6cb5b8672ab1ab2a66ea9a3bb83f1602b850b4144280cea0ac76844",
+  "family": "focus_input_routing",
+  "fixture_files": [
+    {
+      "path": "fixtures/cdv1-f02-0c5deba54773a07d/browser-initial-state.json",
+      "sha256": "66670b6f4786797b711ba557d40e34df1cc09b117ab512756f2bc7b24ed10f63",
+      "size_bytes": 175
+    },
+    {
+      "path": "fixtures/cdv1-f02-0c5deba54773a07d/document.fodt",
+      "sha256": "3f1d4957f4410f5bf474bbd744d81b8194ccd45c2e4d49e1684b5063f4c97bc1",
+      "size_bytes": 422
+    },
+    {
+      "path": "fixtures/cdv1-f02-0c5deba54773a07d/workspace.html",
+      "sha256": "faa436cbe0ede7a5dd79040f256d8859c9baa3e260d849462a0fb39e50ead525",
+      "size_bytes": 263
+    }
+  ],
+  "generation_seed": 2026,
+  "initial_fixture_spec": {
+    "application_set": [
+      "Writer",
+      "Browser"
+    ],
+    "fixture_profile": "anchor_supplier",
+    "layout_id": "guard_before",
+    "public_assets": [
+      {
+        "path": "fixtures/cdv1-f02-0c5deba54773a07d/browser-initial-state.json",
+        "sha256": "66670b6f4786797b711ba557d40e34df1cc09b117ab512756f2bc7b24ed10f63",
+        "size_bytes": 175
+      },
+      {
+        "path": "fixtures/cdv1-f02-0c5deba54773a07d/document.fodt",
+        "sha256": "3f1d4957f4410f5bf474bbd744d81b8194ccd45c2e4d49e1684b5063f4c97bc1",
+        "size_bytes": 422
+      },
+      {
+        "path": "fixtures/cdv1-f02-0c5deba54773a07d/workspace.html",
+        "sha256": "faa436cbe0ede7a5dd79040f256d8859c9baa3e260d849462a0fb39e50ead525",
+        "size_bytes": 263
+      }
+    ]
+  },
+  "instance_id": "cdv1-f02-0c5deba54773a07d",
+  "manifest_entry_sha256": "892f43f93ad2d91d5b56a102c6c645fdeb250ba3f4fcdf971ac6c8a0dd4dfbf7",
+  "provenance": {
+    "fixture_sha256": "db6372952ff374a73de71376df2b8035f2c6174f6406b345b03b879f719000fa",
+    "generation_seed": 2026,
+    "generator": "swcub.production_v1",
+    "seed_role": "deterministic profile ordering only; excluded from instance identity",
+    "semantic_spec_sha256": "0c5deba54773a07d8d78e9855c51c08b004fc3c0c1c8228c8839001d746cfe5a",
+    "source_code_sha256": "579c135b4b828886e972dbc72c0d8fd242dacbade19164e4f80b52194ae045f4",
+    "source_commit": "ac5801113da9bfbd96057c3cda51d13f722105fb"
+  },
+  "reset_metadata": {
+    "fixture_id": "cdv1-f02-0c5deba54773a07d",
+    "fresh_guest_required": true,
+    "remove_prior_app_state": true,
+    "verify_fixture_hash": "db6372952ff374a73de71376df2b8035f2c6174f6406b345b03b879f719000fa",
+    "verify_state": {
+      "actors": {
+        "A": {
+          "object": "writer/comment-anchor:supplier",
+          "value": "Draft: warehouse lot"
+        },
+        "B": {
+          "object": "browser/review/vendor",
+          "value": "Pending: warehouse lot"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "anchor_kind": "supplier paragraph",
+          "form_fields": [
+            "supplier",
+            "decision"
+          ]
+        },
+        "resource": "focus_input_routing"
+      }
+    }
+  },
+  "schedule_policy_id": "writer-anchor-browser-form-comment-v1",
+  "semantic_parameters": {
+    "domain_id": "warehouse_reconciliation",
+    "domain_schema": {
+      "entity": "warehouse lot",
+      "field_a": "Reconciliation",
+      "field_b": "Count status"
+    },
+    "layout_id": "guard_before",
+    "object_profile_id": "anchor_supplier",
+    "object_schema": {
+      "anchor_kind": "supplier paragraph",
+      "form_fields": [
+        "supplier",
+        "decision"
+      ]
+    },
+    "operation_graph": "writer_comment_vs_browser_form",
+    "workflow_id": "F-02"
+  },
+  "signatures": {
+    "fixture": "db6372952ff374a73de71376df2b8035f2c6174f6406b345b03b879f719000fa",
+    "goal": "4537513926c0fa8535fb94dd9ea6669706823541daa5825ad12ecc0a59747651",
+    "semantic": "0c5deba54773a07d8d78e9855c51c08b004fc3c0c1c8228c8839001d746cfe5a",
+    "structural": "a3cd6298cca73463304c63592cf87cff02f1eaf59621a0be7e0986ee98aee9a2"
+  },
+  "target_objects": {
+    "A": [
+      "writer/comment-anchor:supplier"
+    ],
+    "B": [
+      "browser/review/vendor"
+    ]
+  },
+  "task_domains": {
+    "A": "Writer",
+    "B": "Browser"
+  },
+  "topology_compatibility": {
+    "ma_id": {
+      "backend_binding": "same logical workspace seed; independent desktop sessions allowed",
+      "desktop_count": 2,
+      "fixtures": "byte-identical task-relevant clones"
+    },
+    "ma_sd": {
+      "actor_bindings": "A and B share desktop",
+      "desktop_count": 1
+    },
+    "solo": {
+      "actor_bindings": "A or B",
+      "desktop_count": 1
+    }
+  },
+  "treatment_relevant_state": {
+    "family_state": "focus_input_routing",
+    "operation_graph": "writer_comment_vs_browser_form",
+    "shared_resource": {
+      "anchor_kind": "supplier paragraph",
+      "form_fields": [
+        "supplier",
+        "decision"
+      ]
+    }
+  },
+  "validation_level": "scripted_full",
+  "workflow_id": "F-02"
+}

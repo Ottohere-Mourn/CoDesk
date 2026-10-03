@@ -1,0 +1,85 @@
+{
+  "workflow_id": "S-N1",
+  "family": "selection_active_object",
+  "task_domains": [
+    "Writer",
+    "Writer"
+  ],
+  "operation_graph": "writer_text_range_selection",
+  "description": "Apply formatting to two distinct text ranges in one Writer document.",
+  "goal_a": "Bold only range A.",
+  "goal_b": "Bold only range B.",
+  "schedule_policy_id": "range-select-a-select-b-resume-a-v1",
+  "validation_level": "offline",
+  "runtime_validation_incomplete": true,
+  "semantic_parameter_schema": {
+    "domain_fields": [
+      "entity",
+      "field_a",
+      "field_b",
+      "a_status",
+      "b_status"
+    ],
+    "object_profiles": [
+      {
+        "id": "range_word_pair",
+        "a": "writer/range:single-word-a",
+        "b": "writer/range:single-word-b",
+        "schema": {
+          "selection_kind": "word range",
+          "action": "bold"
+        }
+      },
+      {
+        "id": "range_phrase_pair",
+        "a": "writer/range:phrase-a",
+        "b": "writer/range:phrase-b",
+        "schema": {
+          "selection_kind": "phrase range",
+          "action": "bold"
+        }
+      },
+      {
+        "id": "range_sentence_pair",
+        "a": "writer/range:sentence-a",
+        "b": "writer/range:sentence-b",
+        "schema": {
+          "selection_kind": "sentence range",
+          "action": "bold"
+        }
+      },
+      {
+        "id": "range_list_item_pair",
+        "a": "writer/range:list-item-a",
+        "b": "writer/range:list-item-b",
+        "schema": {
+          "selection_kind": "list item range",
+          "action": "bold"
+        }
+      },
+      {
+        "id": "range_heading_pair",
+        "a": "writer/range:heading-a",
+        "b": "writer/range:heading-b",
+        "schema": {
+          "selection_kind": "heading text range",
+          "action": "bold"
+        }
+      }
+    ],
+    "layout_fields": [
+      "guard_placement",
+      "field_order",
+      "fixture_layout"
+    ],
+    "identity_excludes": [
+      "generation_seed",
+      "repeat",
+      "condition",
+      "model",
+      "window_coordinates"
+    ],
+    "actor_target_disjoint": true,
+    "no_op_goals_allowed": false
+  }
+}

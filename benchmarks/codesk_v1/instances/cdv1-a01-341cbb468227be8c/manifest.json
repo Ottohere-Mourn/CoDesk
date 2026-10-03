@@ -1,0 +1,240 @@
+{
+  "actor_goals": [
+    {
+      "actor_id": "A",
+      "expected_value": "Approved: capital request (object)",
+      "goal": "Submit the target value in tab A.",
+      "initial_value": "Draft: capital request",
+      "operation": "update browser/tab-a/stock-form",
+      "target_objects": [
+        "browser/tab-a/stock-form"
+      ],
+      "task_domain": "Browser"
+    },
+    {
+      "actor_id": "B",
+      "expected_value": "Recorded: capital request (object)",
+      "goal": "Submit the other target value in tab B.",
+      "initial_value": "Pending: capital request",
+      "operation": "update browser/tab-b/audit-form",
+      "target_objects": [
+        "browser/tab-b/audit-form"
+      ],
+      "task_domain": "Browser"
+    }
+  ],
+  "benchmark_version": "codesk-v1.0",
+  "evaluator": {
+    "actor_paths": {
+      "A": "actors.A.value",
+      "B": "actors.B.value"
+    },
+    "adapter": "codesk_exact_state_v1",
+    "condition_semantics": {
+      "ma_id": "score each actor on equivalent independent desktop fixture",
+      "ma_sd": "score both actor goals and shared-state integrity",
+      "solo": "score selected actor; require inactive target and guards unchanged"
+    },
+    "expected_state": {
+      "actors": {
+        "A": {
+          "object": "browser/tab-a/stock-form",
+          "value": "Approved: capital request (object)"
+        },
+        "B": {
+          "object": "browser/tab-b/audit-form",
+          "value": "Recorded: capital request (object)"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "context_kind": "tab-specific inventory",
+          "fields": [
+            "stock",
+            "audit"
+          ]
+        },
+        "resource": "application_context"
+      }
+    },
+    "initial_state": {
+      "actors": {
+        "A": {
+          "object": "browser/tab-a/stock-form",
+          "value": "Draft: capital request"
+        },
+        "B": {
+          "object": "browser/tab-b/audit-form",
+          "value": "Pending: capital request"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "context_kind": "tab-specific inventory",
+          "fields": [
+            "stock",
+            "audit"
+          ]
+        },
+        "resource": "application_context"
+      }
+    },
+    "invariants": [
+      {
+        "equals": "PRESERVE",
+        "path": "actors.guards.main"
+      }
+    ],
+    "schedule_policy_id": "observe-a-context-change-b-resume-a-v1"
+  },
+  "evaluator_path": "evaluators/cdv1-a01-341cbb468227be8c.json",
+  "evaluator_sha256": "e359f351bf81a9c5cfc41142ba066e85d8c6f6c4315810359e0af5635e7384d9",
+  "family": "application_context",
+  "fixture_files": [
+    {
+      "path": "fixtures/cdv1-a01-341cbb468227be8c/browser-initial-state.json",
+      "sha256": "be50e02c8484b0628edb8900605a94666333779c4eaa4481d458cebca0c87fae",
+      "size_bytes": 173
+    },
+    {
+      "path": "fixtures/cdv1-a01-341cbb468227be8c/workspace.html",
+      "sha256": "a3eab8a9d5085e700131b25c3788f617bb7006527295da6887aac705a9f7aca5",
+      "size_bytes": 365
+    }
+  ],
+  "generation_seed": 2026,
+  "initial_fixture_spec": {
+    "application_set": [
+      "Browser",
+      "Browser"
+    ],
+    "fixture_profile": "tabs_inventory",
+    "layout_id": "guard_after",
+    "public_assets": [
+      {
+        "path": "fixtures/cdv1-a01-341cbb468227be8c/browser-initial-state.json",
+        "sha256": "be50e02c8484b0628edb8900605a94666333779c4eaa4481d458cebca0c87fae",
+        "size_bytes": 173
+      },
+      {
+        "path": "fixtures/cdv1-a01-341cbb468227be8c/workspace.html",
+        "sha256": "a3eab8a9d5085e700131b25c3788f617bb7006527295da6887aac705a9f7aca5",
+        "size_bytes": 365
+      }
+    ]
+  },
+  "instance_id": "cdv1-a01-341cbb468227be8c",
+  "manifest_entry_sha256": "88f4a1e7579ffdd97517b454e765057e7b2d2ac682334c26e3f6accd2067e9a1",
+  "provenance": {
+    "fixture_sha256": "346bb14cb0bd09d12f1b170a575aaa0239a6f7dc83b76f652c94b275ad63d671",
+    "generation_seed": 2026,
+    "generator": "swcub.production_v1",
+    "seed_role": "deterministic profile ordering only; excluded from instance identity",
+    "semantic_spec_sha256": "341cbb468227be8cc0cd31d8591e0d6b474ab0cf92190e778667010ef11101da",
+    "source_code_sha256": "579c135b4b828886e972dbc72c0d8fd242dacbade19164e4f80b52194ae045f4",
+    "source_commit": "ac5801113da9bfbd96057c3cda51d13f722105fb"
+  },
+  "reset_metadata": {
+    "fixture_id": "cdv1-a01-341cbb468227be8c",
+    "fresh_guest_required": true,
+    "remove_prior_app_state": true,
+    "verify_fixture_hash": "346bb14cb0bd09d12f1b170a575aaa0239a6f7dc83b76f652c94b275ad63d671",
+    "verify_state": {
+      "actors": {
+        "A": {
+          "object": "browser/tab-a/stock-form",
+          "value": "Draft: capital request"
+        },
+        "B": {
+          "object": "browser/tab-b/audit-form",
+          "value": "Pending: capital request"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "context_kind": "tab-specific inventory",
+          "fields": [
+            "stock",
+            "audit"
+          ]
+        },
+        "resource": "application_context"
+      }
+    }
+  },
+  "schedule_policy_id": "observe-a-context-change-b-resume-a-v1",
+  "semantic_parameters": {
+    "domain_id": "capital_allocation",
+    "domain_schema": {
+      "entity": "capital request",
+      "field_a": "Decision",
+      "field_b": "Ledger state"
+    },
+    "layout_id": "guard_after",
+    "object_profile_id": "tabs_inventory",
+    "object_schema": {
+      "context_kind": "tab-specific inventory",
+      "fields": [
+        "stock",
+        "audit"
+      ]
+    },
+    "operation_graph": "two_tab_context",
+    "workflow_id": "A-01"
+  },
+  "signatures": {
+    "fixture": "346bb14cb0bd09d12f1b170a575aaa0239a6f7dc83b76f652c94b275ad63d671",
+    "goal": "dce07406e1265ddd6758431df42f8412db6e0637615e9d72a9887f96a793f309",
+    "semantic": "341cbb468227be8cc0cd31d8591e0d6b474ab0cf92190e778667010ef11101da",
+    "structural": "3020cfdf4d81de155f84e7d8a37b367e3f00f5d4c690120e01217816f09044c7"
+  },
+  "target_objects": {
+    "A": [
+      "browser/tab-a/stock-form"
+    ],
+    "B": [
+      "browser/tab-b/audit-form"
+    ]
+  },
+  "task_domains": {
+    "A": "Browser",
+    "B": "Browser"
+  },
+  "topology_compatibility": {
+    "ma_id": {
+      "backend_binding": "same logical workspace seed; independent desktop sessions allowed",
+      "desktop_count": 2,
+      "fixtures": "byte-identical task-relevant clones"
+    },
+    "ma_sd": {
+      "actor_bindings": "A and B share desktop",
+      "desktop_count": 1
+    },
+    "solo": {
+      "actor_bindings": "A or B",
+      "desktop_count": 1
+    }
+  },
+  "treatment_relevant_state": {
+    "family_state": "application_context",
+    "operation_graph": "two_tab_context",
+    "shared_resource": {
+      "context_kind": "tab-specific inventory",
+      "fields": [
+        "stock",
+        "audit"
+      ]
+    }
+  },
+  "validation_level": "qwen_mechanism_evidence",
+  "workflow_id": "A-01"
+}

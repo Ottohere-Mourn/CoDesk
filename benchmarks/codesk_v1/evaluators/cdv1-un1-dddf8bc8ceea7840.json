@@ -1,0 +1,65 @@
+{
+  "actor_paths": {
+    "A": "actors.A.value",
+    "B": "actors.B.value"
+  },
+  "adapter": "codesk_exact_state_v1",
+  "condition_semantics": {
+    "ma_id": "score each actor on equivalent independent desktop fixture",
+    "ma_sd": "score both actor goals and shared-state integrity",
+    "solo": "score selected actor; require inactive target and guards unchanged"
+  },
+  "expected_state": {
+    "actors": {
+      "A": {
+        "object": "writer/paragraph[1]",
+        "value": "Accepted: supplier record (paragraph)"
+      },
+      "B": {
+        "object": "writer/paragraph[3]",
+        "value": "Verified: supplier record (paragraph)"
+      },
+      "guards": {
+        "main": "PRESERVE"
+      }
+    },
+    "treatment": {
+      "initial": {
+        "object_type": "paragraph",
+        "undo_depth": 1,
+        "undo_operation": "text replacement"
+      },
+      "resource": "undo_redo_history"
+    }
+  },
+  "initial_state": {
+    "actors": {
+      "A": {
+        "object": "writer/paragraph[1]",
+        "value": "Draft: supplier record"
+      },
+      "B": {
+        "object": "writer/paragraph[3]",
+        "value": "Pending: supplier record"
+      },
+      "guards": {
+        "main": "PRESERVE"
+      }
+    },
+    "treatment": {
+      "initial": {
+        "object_type": "paragraph",
+        "undo_depth": 1,
+        "undo_operation": "text replacement"
+      },
+      "resource": "undo_redo_history"
+    }
+  },
+  "invariants": [
+    {
+      "equals": "PRESERVE",
+      "path": "actors.guards.main"
+    }
+  ],
+  "schedule_policy_id": "edit-a-edit-b-undo-a-v1"
+}

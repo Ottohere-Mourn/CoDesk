@@ -1,0 +1,1446 @@
+[
+  {
+    "workflow_id": "F-01",
+    "family": "focus_input_routing",
+    "task_domains": [
+      "Writer",
+      "Calc"
+    ],
+    "operation_graph": "writer_document_vs_calc_field",
+    "description": "Edit a Writer decision and a distinct Calc cell.",
+    "goal_a": "Save the exact decision in the assigned Writer document.",
+    "goal_b": "Set the assigned Calc field and preserve the remaining table.",
+    "schedule_policy_id": "action-boundary-round-robin-ab-v1",
+    "validation_level": "qwen_mechanism_evidence",
+    "runtime_validation_incomplete": false,
+    "semantic_parameter_schema": {
+      "domain_fields": [
+        "entity",
+        "field_a",
+        "field_b",
+        "a_status",
+        "b_status"
+      ],
+      "object_profiles": [
+        {
+          "id": "cell_b2",
+          "a": "writer/decision-paragraph",
+          "b": "calc/B2",
+          "schema": {
+            "headers": [
+              "Request",
+              "Decision"
+            ],
+            "target": "B2"
+          }
+        },
+        {
+          "id": "cell_c2",
+          "a": "writer/decision-paragraph",
+          "b": "calc/C2",
+          "schema": {
+            "headers": [
+              "Request",
+              "Owner",
+              "Decision"
+            ],
+            "target": "C2"
+          }
+        },
+        {
+          "id": "cell_b3",
+          "a": "writer/summary-paragraph",
+          "b": "calc/B3",
+          "schema": {
+            "headers": [
+              "Asset",
+              "Status"
+            ],
+            "target": "B3"
+          }
+        },
+        {
+          "id": "cell_c3",
+          "a": "writer/summary-paragraph",
+          "b": "calc/C3",
+          "schema": {
+            "headers": [
+              "Asset",
+              "Region",
+              "Status"
+            ],
+            "target": "C3"
+          }
+        },
+        {
+          "id": "cell_d2",
+          "a": "writer/approval-field",
+          "b": "calc/D2",
+          "schema": {
+            "headers": [
+              "Item",
+              "Owner",
+              "Region",
+              "Status"
+            ],
+            "target": "D2"
+          }
+        }
+      ],
+      "layout_fields": [
+        "guard_placement",
+        "field_order",
+        "fixture_layout"
+      ],
+      "identity_excludes": [
+        "generation_seed",
+        "repeat",
+        "condition",
+        "model",
+        "window_coordinates"
+      ],
+      "actor_target_disjoint": true,
+      "no_op_goals_allowed": false
+    }
+  },
+  {
+    "workflow_id": "F-04",
+    "family": "focus_input_routing",
+    "task_domains": [
+      "Calc",
+      "Writer"
+    ],
+    "operation_graph": "calc_range_vs_writer_document",
+    "description": "Fill an assigned Calc rectangle and edit a Writer paragraph.",
+    "goal_a": "Fill the assigned spreadsheet range.",
+    "goal_b": "Replace the assigned Writer paragraph.",
+    "schedule_policy_id": "action-boundary-round-robin-ab-v1",
+    "validation_level": "scripted_full",
+    "runtime_validation_incomplete": false,
+    "semantic_parameter_schema": {
+      "domain_fields": [
+        "entity",
+        "field_a",
+        "field_b",
+        "a_status",
+        "b_status"
+      ],
+      "object_profiles": [
+        {
+          "id": "range_b2_c3",
+          "a": "calc/B2:C3",
+          "b": "writer/decision-paragraph",
+          "schema": {
+            "range": [
+              "B2",
+              "C3"
+            ],
+            "shape": [
+              2,
+              2
+            ]
+          }
+        },
+        {
+          "id": "range_c2_d3",
+          "a": "calc/C2:D3",
+          "b": "writer/summary-paragraph",
+          "schema": {
+            "range": [
+              "C2",
+              "D3"
+            ],
+            "shape": [
+              2,
+              2
+            ]
+          }
+        },
+        {
+          "id": "range_b2_d3",
+          "a": "calc/B2:D3",
+          "b": "writer/status-paragraph",
+          "schema": {
+            "range": [
+              "B2",
+              "D3"
+            ],
+            "shape": [
+              2,
+              3
+            ]
+          }
+        },
+        {
+          "id": "range_b3_c4",
+          "a": "calc/B3:C4",
+          "b": "writer/approval-paragraph",
+          "schema": {
+            "range": [
+              "B3",
+              "C4"
+            ],
+            "shape": [
+              2,
+              2
+            ]
+          }
+        },
+        {
+          "id": "range_c3_e4",
+          "a": "calc/C3:E4",
+          "b": "writer/summary-paragraph",
+          "schema": {
+            "range": [
+              "C3",
+              "E4"
+            ],
+            "shape": [
+              2,
+              3
+            ]
+          }
+        }
+      ],
+      "layout_fields": [
+        "guard_placement",
+        "field_order",
+        "fixture_layout"
+      ],
+      "identity_excludes": [
+        "generation_seed",
+        "repeat",
+        "condition",
+        "model",
+        "window_coordinates"
+      ],
+      "actor_target_disjoint": true,
+      "no_op_goals_allowed": false
+    }
+  },
+  {
+    "workflow_id": "F-02",
+    "family": "focus_input_routing",
+    "task_domains": [
+      "Writer",
+      "Browser"
+    ],
+    "operation_graph": "writer_comment_vs_browser_form",
+    "description": "Add an anchored Writer review comment while a Browser review form is completed.",
+    "goal_a": "Attach the assigned note to the target review anchor.",
+    "goal_b": "Submit the independent review form exactly once.",
+    "schedule_policy_id": "writer-anchor-browser-form-comment-v1",
+    "validation_level": "scripted_full",
+    "runtime_validation_incomplete": false,
+    "semantic_parameter_schema": {
+      "domain_fields": [
+        "entity",
+        "field_a",
+        "field_b",
+        "a_status",
+        "b_status"
+      ],
+      "object_profiles": [
+        {
+          "id": "anchor_summary",
+          "a": "writer/comment-anchor:summary",
+          "b": "browser/review/decision",
+          "schema": {
+            "anchor_kind": "summary sentence",
+            "form_fields": [
+              "case",
+              "decision"
+            ]
+          }
+        },
+        {
+          "id": "anchor_risk",
+          "a": "writer/comment-anchor:risk",
+          "b": "browser/review/risk",
+          "schema": {
+            "anchor_kind": "risk sentence",
+            "form_fields": [
+              "risk_id",
+              "disposition"
+            ]
+          }
+        },
+        {
+          "id": "anchor_supplier",
+          "a": "writer/comment-anchor:supplier",
+          "b": "browser/review/vendor",
+          "schema": {
+            "anchor_kind": "supplier paragraph",
+            "form_fields": [
+              "supplier",
+              "decision"
+            ]
+          }
+        },
+        {
+          "id": "anchor_budget",
+          "a": "writer/comment-anchor:budget",
+          "b": "browser/review/allocation",
+          "schema": {
+            "anchor_kind": "allocation sentence",
+            "form_fields": [
+              "request",
+              "approval"
+            ]
+          }
+        },
+        {
+          "id": "anchor_action",
+          "a": "writer/comment-anchor:action",
+          "b": "browser/review/action-item",
+          "schema": {
+            "anchor_kind": "action item",
+            "form_fields": [
+              "owner",
+              "status"
+            ]
+          }
+        }
+      ],
+      "layout_fields": [
+        "guard_placement",
+        "field_order",
+        "fixture_layout"
+      ],
+      "identity_excludes": [
+        "generation_seed",
+        "repeat",
+        "condition",
+        "model",
+        "window_coordinates"
+      ],
+      "actor_target_disjoint": true,
+      "no_op_goals_allowed": false
+    }
+  },
+  {
+    "workflow_id": "C-01",
+    "family": "clipboard_state",
+    "task_domains": [
+      "Writer",
+      "Calc"
+    ],
+    "operation_graph": "plain_text_transfer",
+    "description": "Transfer plain text from independent sources to Writer and Calc destinations.",
+    "goal_a": "Paste the assigned note into the Writer destination.",
+    "goal_b": "Paste the assigned identifier into the Calc destination.",
+    "schedule_policy_id": "copy-confirm-b-copy-confirm-resume-a-v1",
+    "validation_level": "qwen_smoke",
+    "runtime_validation_incomplete": false,
+    "semantic_parameter_schema": {
+      "domain_fields": [
+        "entity",
+        "field_a",
+        "field_b",
+        "a_status",
+        "b_status"
+      ],
+      "object_profiles": [
+        {
+          "id": "writer_note_calc_cell",
+          "a": "writer/insertion-after-heading",
+          "b": "calc/B2",
+          "schema": {
+            "payload_kind": "plain note",
+            "destination": "single cell"
+          }
+        },
+        {
+          "id": "writer_record_calc_cell",
+          "a": "writer/insertion-after-record",
+          "b": "calc/C2",
+          "schema": {
+            "payload_kind": "record identifier",
+            "destination": "single cell"
+          }
+        },
+        {
+          "id": "writer_url_calc_cell",
+          "a": "writer/insertion-after-reference",
+          "b": "calc/B3",
+          "schema": {
+            "payload_kind": "plain URL text",
+            "destination": "single cell"
+          }
+        },
+        {
+          "id": "writer_action_calc_cell",
+          "a": "writer/insertion-after-action",
+          "b": "calc/C3",
+          "schema": {
+            "payload_kind": "action phrase",
+            "destination": "single cell"
+          }
+        },
+        {
+          "id": "writer_summary_calc_cell",
+          "a": "writer/insertion-before-guard",
+          "b": "calc/D2",
+          "schema": {
+            "payload_kind": "summary text",
+            "destination": "single cell"
+          }
+        }
+      ],
+      "layout_fields": [
+        "guard_placement",
+        "field_order",
+        "fixture_layout"
+      ],
+      "identity_excludes": [
+        "generation_seed",
+        "repeat",
+        "condition",
+        "model",
+        "window_coordinates"
+      ],
+      "actor_target_disjoint": true,
+      "no_op_goals_allowed": false
+    }
+  },
+  {
+    "workflow_id": "C-03",
+    "family": "clipboard_state",
+    "task_domains": [
+      "Calc",
+      "Writer"
+    ],
+    "operation_graph": "rectangular_table_transfer",
+    "description": "Transfer a Calc rectangle into Writer while duplicating a separate paragraph.",
+    "goal_a": "Copy the assigned rectangular range into Writer.",
+    "goal_b": "Duplicate the assigned Writer paragraph.",
+    "schedule_policy_id": "range-copy-confirm-paragraph-copy-confirm-resume-v1",
+    "validation_level": "scripted_full",
+    "runtime_validation_incomplete": false,
+    "semantic_parameter_schema": {
+      "domain_fields": [
+        "entity",
+        "field_a",
+        "field_b",
+        "a_status",
+        "b_status"
+      ],
+      "object_profiles": [
+        {
+          "id": "matrix_2x2",
+          "a": "calc/B2:C3",
+          "b": "writer/paragraph-2",
+          "schema": {
+            "shape": [
+              2,
+              2
+            ],
+            "paste_target": "paragraph"
+          }
+        },
+        {
+          "id": "matrix_2x3",
+          "a": "calc/B2:D3",
+          "b": "writer/table-slot-1",
+          "schema": {
+            "shape": [
+              2,
+              3
+            ],
+            "paste_target": "table-slot"
+          }
+        },
+        {
+          "id": "matrix_3x2",
+          "a": "calc/B2:C4",
+          "b": "writer/paragraph-3",
+          "schema": {
+            "shape": [
+              3,
+              2
+            ],
+            "paste_target": "paragraph"
+          }
+        },
+        {
+          "id": "matrix_3x3",
+          "a": "calc/B2:D4",
+          "b": "writer/table-slot-2",
+          "schema": {
+            "shape": [
+              3,
+              3
+            ],
+            "paste_target": "table-slot"
+          }
+        },
+        {
+          "id": "matrix_2x4",
+          "a": "calc/B2:E3",
+          "b": "writer/paragraph-4",
+          "schema": {
+            "shape": [
+              2,
+              4
+            ],
+            "paste_target": "paragraph"
+          }
+        }
+      ],
+      "layout_fields": [
+        "guard_placement",
+        "field_order",
+        "fixture_layout"
+      ],
+      "identity_excludes": [
+        "generation_seed",
+        "repeat",
+        "condition",
+        "model",
+        "window_coordinates"
+      ],
+      "actor_target_disjoint": true,
+      "no_op_goals_allowed": false
+    }
+  },
+  {
+    "workflow_id": "C-02",
+    "family": "clipboard_state",
+    "task_domains": [
+      "Browser",
+      "Writer"
+    ],
+    "operation_graph": "semantic_hyperlink_transfer",
+    "description": "Create a semantic hyperlink in Writer while an independent Browser URL is submitted.",
+    "goal_a": "Create a link with the exact label and href.",
+    "goal_b": "Submit the assigned Browser URL exactly once.",
+    "schedule_policy_id": "url-copy-confirm-link-copy-confirm-resume-v1",
+    "validation_level": "scripted_full",
+    "runtime_validation_incomplete": false,
+    "semantic_parameter_schema": {
+      "domain_fields": [
+        "entity",
+        "field_a",
+        "field_b",
+        "a_status",
+        "b_status"
+      ],
+      "object_profiles": [
+        {
+          "id": "href_reference",
+          "a": "writer/hyperlink:reference",
+          "b": "browser/url-field:case",
+          "schema": {
+            "link_label_kind": "reference label",
+            "destination_field": "case-url"
+          }
+        },
+        {
+          "id": "href_source",
+          "a": "writer/hyperlink:source",
+          "b": "browser/url-field:supplier",
+          "schema": {
+            "link_label_kind": "source label",
+            "destination_field": "supplier-url"
+          }
+        },
+        {
+          "id": "href_policy",
+          "a": "writer/hyperlink:policy",
+          "b": "browser/url-field:policy",
+          "schema": {
+            "link_label_kind": "policy label",
+            "destination_field": "policy-url"
+          }
+        },
+        {
+          "id": "href_evidence",
+          "a": "writer/hyperlink:evidence",
+          "b": "browser/url-field:evidence",
+          "schema": {
+            "link_label_kind": "evidence label",
+            "destination_field": "evidence-url"
+          }
+        },
+        {
+          "id": "href_ticket",
+          "a": "writer/hyperlink:ticket",
+          "b": "browser/url-field:ticket",
+          "schema": {
+            "link_label_kind": "ticket label",
+            "destination_field": "ticket-url"
+          }
+        }
+      ],
+      "layout_fields": [
+        "guard_placement",
+        "field_order",
+        "fixture_layout"
+      ],
+      "identity_excludes": [
+        "generation_seed",
+        "repeat",
+        "condition",
+        "model",
+        "window_coordinates"
+      ],
+      "actor_target_disjoint": true,
+      "no_op_goals_allowed": false
+    }
+  },
+  {
+    "workflow_id": "A-01",
+    "family": "application_context",
+    "task_domains": [
+      "Browser",
+      "Browser"
+    ],
+    "operation_graph": "two_tab_context",
+    "description": "Submit independent forms in two Browser tabs.",
+    "goal_a": "Submit the target value in tab A.",
+    "goal_b": "Submit the other target value in tab B.",
+    "schedule_policy_id": "observe-a-context-change-b-resume-a-v1",
+    "validation_level": "qwen_mechanism_evidence",
+    "runtime_validation_incomplete": false,
+    "semantic_parameter_schema": {
+      "domain_fields": [
+        "entity",
+        "field_a",
+        "field_b",
+        "a_status",
+        "b_status"
+      ],
+      "object_profiles": [
+        {
+          "id": "tabs_review_cases",
+          "a": "browser/tab-a/review-form",
+          "b": "browser/tab-b/case-form",
+          "schema": {
+            "context_kind": "independent tab forms",
+            "fields": [
+              "review",
+              "case"
+            ]
+          }
+        },
+        {
+          "id": "tabs_supplier_docs",
+          "a": "browser/tab-a/supplier-page",
+          "b": "browser/tab-b/document-page",
+          "schema": {
+            "context_kind": "tab-specific records",
+            "fields": [
+              "supplier",
+              "document"
+            ]
+          }
+        },
+        {
+          "id": "tabs_inventory",
+          "a": "browser/tab-a/stock-form",
+          "b": "browser/tab-b/audit-form",
+          "schema": {
+            "context_kind": "tab-specific inventory",
+            "fields": [
+              "stock",
+              "audit"
+            ]
+          }
+        },
+        {
+          "id": "tabs_safety",
+          "a": "browser/tab-a/inspection-form",
+          "b": "browser/tab-b/incident-form",
+          "schema": {
+            "context_kind": "tab-specific safety records",
+            "fields": [
+              "inspection",
+              "incident"
+            ]
+          }
+        },
+        {
+          "id": "tabs_release",
+          "a": "browser/tab-a/release-form",
+          "b": "browser/tab-b/approval-form",
+          "schema": {
+            "context_kind": "tab-specific release records",
+            "fields": [
+              "release",
+              "approval"
+            ]
+          }
+        }
+      ],
+      "layout_fields": [
+        "guard_placement",
+        "field_order",
+        "fixture_layout"
+      ],
+      "identity_excludes": [
+        "generation_seed",
+        "repeat",
+        "condition",
+        "model",
+        "window_coordinates"
+      ],
+      "actor_target_disjoint": true,
+      "no_op_goals_allowed": false
+    }
+  },
+  {
+    "workflow_id": "A-02",
+    "family": "selection_active_object",
+    "task_domains": [
+      "Browser",
+      "Browser"
+    ],
+    "operation_graph": "selected_record_context",
+    "description": "Update two distinct selected Browser records.",
+    "goal_a": "Update record A only.",
+    "goal_b": "Update record B only.",
+    "schedule_policy_id": "observe-selection-change-b-resume-a-v1",
+    "validation_level": "scripted_full",
+    "runtime_validation_incomplete": false,
+    "semantic_parameter_schema": {
+      "domain_fields": [
+        "entity",
+        "field_a",
+        "field_b",
+        "a_status",
+        "b_status"
+      ],
+      "object_profiles": [
+        {
+          "id": "record_supplier",
+          "a": "browser/record:supplier",
+          "b": "browser/record:invoice",
+          "schema": {
+            "record_type": "supplier/invoice",
+            "selection": "record row"
+          }
+        },
+        {
+          "id": "record_asset",
+          "a": "browser/record:asset",
+          "b": "browser/record:maintenance",
+          "schema": {
+            "record_type": "asset/maintenance",
+            "selection": "record row"
+          }
+        },
+        {
+          "id": "record_safety",
+          "a": "browser/record:inspection",
+          "b": "browser/record:incident",
+          "schema": {
+            "record_type": "inspection/incident",
+            "selection": "record row"
+          }
+        },
+        {
+          "id": "record_budget",
+          "a": "browser/record:allocation",
+          "b": "browser/record:reimbursement",
+          "schema": {
+            "record_type": "allocation/reimbursement",
+            "selection": "record row"
+          }
+        },
+        {
+          "id": "record_release",
+          "a": "browser/record:release",
+          "b": "browser/record:change-request",
+          "schema": {
+            "record_type": "release/change-request",
+            "selection": "record row"
+          }
+        }
+      ],
+      "layout_fields": [
+        "guard_placement",
+        "field_order",
+        "fixture_layout"
+      ],
+      "identity_excludes": [
+        "generation_seed",
+        "repeat",
+        "condition",
+        "model",
+        "window_coordinates"
+      ],
+      "actor_target_disjoint": true,
+      "no_op_goals_allowed": false
+    }
+  },
+  {
+    "workflow_id": "S-01",
+    "family": "selection_active_object",
+    "task_domains": [
+      "Calc",
+      "Calc"
+    ],
+    "operation_graph": "active_cell_selection",
+    "description": "Write two separate Calc cells through selected-cell state.",
+    "goal_a": "Set the selected cell A target.",
+    "goal_b": "Set the selected cell B target.",
+    "schedule_policy_id": "select-a-select-b-resume-a-v1",
+    "validation_level": "qwen_smoke",
+    "runtime_validation_incomplete": false,
+    "semantic_parameter_schema": {
+      "domain_fields": [
+        "entity",
+        "field_a",
+        "field_b",
+        "a_status",
+        "b_status"
+      ],
+      "object_profiles": [
+        {
+          "id": "cells_b2_c3",
+          "a": "calc/B2",
+          "b": "calc/C3",
+          "schema": {
+            "object_type": "cell",
+            "action": "set value"
+          }
+        },
+        {
+          "id": "cells_c2_d3",
+          "a": "calc/C2",
+          "b": "calc/D3",
+          "schema": {
+            "object_type": "cell",
+            "action": "set value"
+          }
+        },
+        {
+          "id": "cells_b3_d2",
+          "a": "calc/B3",
+          "b": "calc/D2",
+          "schema": {
+            "object_type": "cell",
+            "action": "set value"
+          }
+        },
+        {
+          "id": "cells_c3_e4",
+          "a": "calc/C3",
+          "b": "calc/E4",
+          "schema": {
+            "object_type": "cell",
+            "action": "set value"
+          }
+        },
+        {
+          "id": "cells_b2_e3",
+          "a": "calc/B2",
+          "b": "calc/E3",
+          "schema": {
+            "object_type": "cell",
+            "action": "set value"
+          }
+        }
+      ],
+      "layout_fields": [
+        "guard_placement",
+        "field_order",
+        "fixture_layout"
+      ],
+      "identity_excludes": [
+        "generation_seed",
+        "repeat",
+        "condition",
+        "model",
+        "window_coordinates"
+      ],
+      "actor_target_disjoint": true,
+      "no_op_goals_allowed": false
+    }
+  },
+  {
+    "workflow_id": "U-01",
+    "family": "undo_redo_history",
+    "task_domains": [
+      "Calc",
+      "Calc"
+    ],
+    "operation_graph": "calc_document_history",
+    "description": "Undo A's temporary edit after B has independently edited the same Calc document.",
+    "goal_a": "Undo the temporary value and restore the seeded cell.",
+    "goal_b": "Set B's distinct Calc cell to its goal.",
+    "schedule_policy_id": "edit-a-edit-b-undo-a-v1",
+    "validation_level": "qwen_smoke",
+    "runtime_validation_incomplete": false,
+    "semantic_parameter_schema": {
+      "domain_fields": [
+        "entity",
+        "field_a",
+        "field_b",
+        "a_status",
+        "b_status"
+      ],
+      "object_profiles": [
+        {
+          "id": "calc_status_cells",
+          "a": "calc/B2",
+          "b": "calc/C3",
+          "schema": {
+            "object_type": "cell",
+            "operation": "value edit",
+            "undo_depth": 1
+          }
+        },
+        {
+          "id": "calc_formula_cells",
+          "a": "calc/C2",
+          "b": "calc/D3",
+          "schema": {
+            "object_type": "cell",
+            "operation": "formula/value edit",
+            "undo_depth": 1
+          }
+        },
+        {
+          "id": "calc_audit_cells",
+          "a": "calc/B3",
+          "b": "calc/E2",
+          "schema": {
+            "object_type": "cell",
+            "operation": "audit value edit",
+            "undo_depth": 1
+          }
+        },
+        {
+          "id": "calc_release_cells",
+          "a": "calc/C3",
+          "b": "calc/D4",
+          "schema": {
+            "object_type": "cell",
+            "operation": "release value edit",
+            "undo_depth": 1
+          }
+        },
+        {
+          "id": "calc_inventory_cells",
+          "a": "calc/D2",
+          "b": "calc/E4",
+          "schema": {
+            "object_type": "cell",
+            "operation": "inventory value edit",
+            "undo_depth": 1
+          }
+        }
+      ],
+      "layout_fields": [
+        "guard_placement",
+        "field_order",
+        "fixture_layout"
+      ],
+      "identity_excludes": [
+        "generation_seed",
+        "repeat",
+        "condition",
+        "model",
+        "window_coordinates"
+      ],
+      "actor_target_disjoint": true,
+      "no_op_goals_allowed": false
+    }
+  },
+  {
+    "workflow_id": "F-N1",
+    "family": "focus_input_routing",
+    "task_domains": [
+      "Writer",
+      "Writer"
+    ],
+    "operation_graph": "two_writer_windows",
+    "description": "Edit distinct Writer documents through two top-level windows.",
+    "goal_a": "Replace the assigned paragraph in doc-A.",
+    "goal_b": "Replace the assigned paragraph in doc-B.",
+    "schedule_policy_id": "writer-window-a-window-b-resume-a-v1",
+    "validation_level": "guest_solo",
+    "runtime_validation_incomplete": true,
+    "semantic_parameter_schema": {
+      "domain_fields": [
+        "entity",
+        "field_a",
+        "field_b",
+        "a_status",
+        "b_status"
+      ],
+      "object_profiles": [
+        {
+          "id": "writer_doc_status",
+          "a": "writer/doc-a/status-paragraph",
+          "b": "writer/doc-b/status-paragraph",
+          "schema": {
+            "documents": [
+              "doc-a",
+              "doc-b"
+            ],
+            "target_kind": "status paragraph"
+          }
+        },
+        {
+          "id": "writer_doc_summary",
+          "a": "writer/doc-a/summary-paragraph",
+          "b": "writer/doc-b/summary-paragraph",
+          "schema": {
+            "documents": [
+              "doc-a",
+              "doc-b"
+            ],
+            "target_kind": "summary paragraph"
+          }
+        },
+        {
+          "id": "writer_doc_action",
+          "a": "writer/doc-a/action-item",
+          "b": "writer/doc-b/action-item",
+          "schema": {
+            "documents": [
+              "doc-a",
+              "doc-b"
+            ],
+            "target_kind": "action item"
+          }
+        },
+        {
+          "id": "writer_doc_decision",
+          "a": "writer/doc-a/decision-field",
+          "b": "writer/doc-b/decision-field",
+          "schema": {
+            "documents": [
+              "doc-a",
+              "doc-b"
+            ],
+            "target_kind": "decision field"
+          }
+        },
+        {
+          "id": "writer_doc_owner",
+          "a": "writer/doc-a/owner-line",
+          "b": "writer/doc-b/owner-line",
+          "schema": {
+            "documents": [
+              "doc-a",
+              "doc-b"
+            ],
+            "target_kind": "owner line"
+          }
+        }
+      ],
+      "layout_fields": [
+        "guard_placement",
+        "field_order",
+        "fixture_layout"
+      ],
+      "identity_excludes": [
+        "generation_seed",
+        "repeat",
+        "condition",
+        "model",
+        "window_coordinates"
+      ],
+      "actor_target_disjoint": true,
+      "no_op_goals_allowed": false
+    }
+  },
+  {
+    "workflow_id": "C-N1",
+    "family": "clipboard_state",
+    "task_domains": [
+      "Browser",
+      "Writer"
+    ],
+    "operation_graph": "rich_html_table_transfer",
+    "description": "Paste a real Browser HTML table into Writer while Browser B copies and submits a URL.",
+    "goal_a": "Paste the structured table, preserving rows and cells.",
+    "goal_b": "Copy and submit the assigned URL.",
+    "schedule_policy_id": "rich-copy-a-url-copy-b-resume-a-v1",
+    "validation_level": "offline",
+    "runtime_validation_incomplete": true,
+    "semantic_parameter_schema": {
+      "domain_fields": [
+        "entity",
+        "field_a",
+        "field_b",
+        "a_status",
+        "b_status"
+      ],
+      "object_profiles": [
+        {
+          "id": "rich_table_2x2",
+          "a": "writer/table-slot-1",
+          "b": "browser/url-submit",
+          "schema": {
+            "payload": "HTML table",
+            "shape": [
+              2,
+              2
+            ],
+            "mime": [
+              "text/html",
+              "text/plain"
+            ]
+          }
+        },
+        {
+          "id": "rich_table_2x3",
+          "a": "writer/table-slot-2",
+          "b": "browser/url-submit",
+          "schema": {
+            "payload": "HTML table",
+            "shape": [
+              2,
+              3
+            ],
+            "mime": [
+              "text/html",
+              "text/plain"
+            ]
+          }
+        },
+        {
+          "id": "rich_table_3x2",
+          "a": "writer/table-slot-1",
+          "b": "browser/url-submit",
+          "schema": {
+            "payload": "HTML table",
+            "shape": [
+              3,
+              2
+            ],
+            "mime": [
+              "text/html",
+              "text/plain"
+            ]
+          }
+        },
+        {
+          "id": "rich_table_3x3",
+          "a": "writer/table-slot-2",
+          "b": "browser/url-submit",
+          "schema": {
+            "payload": "HTML table",
+            "shape": [
+              3,
+              3
+            ],
+            "mime": [
+              "text/html",
+              "text/plain"
+            ]
+          }
+        },
+        {
+          "id": "rich_table_4x2",
+          "a": "writer/table-slot-1",
+          "b": "browser/url-submit",
+          "schema": {
+            "payload": "HTML table",
+            "shape": [
+              4,
+              2
+            ],
+            "mime": [
+              "text/html",
+              "text/plain"
+            ]
+          }
+        }
+      ],
+      "layout_fields": [
+        "guard_placement",
+        "field_order",
+        "fixture_layout"
+      ],
+      "identity_excludes": [
+        "generation_seed",
+        "repeat",
+        "condition",
+        "model",
+        "window_coordinates"
+      ],
+      "actor_target_disjoint": true,
+      "no_op_goals_allowed": false
+    }
+  },
+  {
+    "workflow_id": "A-N1",
+    "family": "application_context",
+    "task_domains": [
+      "Browser",
+      "Browser"
+    ],
+    "operation_graph": "same_tab_spa_route",
+    "description": "Complete separate route-keyed transactions in one Browser tab.",
+    "goal_a": "Submit route A's exact value.",
+    "goal_b": "Submit route B's exact value.",
+    "schedule_policy_id": "route-observe-a-change-b-resume-a-v1",
+    "validation_level": "offline",
+    "runtime_validation_incomplete": true,
+    "semantic_parameter_schema": {
+      "domain_fields": [
+        "entity",
+        "field_a",
+        "field_b",
+        "a_status",
+        "b_status"
+      ],
+      "object_profiles": [
+        {
+          "id": "spa_assignment_incident",
+          "a": "browser/route:assignment",
+          "b": "browser/route:incident",
+          "schema": {
+            "route_pair": [
+              "assignment",
+              "incident"
+            ],
+            "field": "resolution"
+          }
+        },
+        {
+          "id": "spa_supplier_invoice",
+          "a": "browser/route:supplier",
+          "b": "browser/route:invoice",
+          "schema": {
+            "route_pair": [
+              "supplier",
+              "invoice"
+            ],
+            "field": "decision"
+          }
+        },
+        {
+          "id": "spa_inventory_audit",
+          "a": "browser/route:inventory",
+          "b": "browser/route:audit",
+          "schema": {
+            "route_pair": [
+              "inventory",
+              "audit"
+            ],
+            "field": "audit-state"
+          }
+        },
+        {
+          "id": "spa_safety_followup",
+          "a": "browser/route:safety",
+          "b": "browser/route:followup",
+          "schema": {
+            "route_pair": [
+              "safety",
+              "followup"
+            ],
+            "field": "clearance"
+          }
+        },
+        {
+          "id": "spa_release_change",
+          "a": "browser/route:release",
+          "b": "browser/route:change",
+          "schema": {
+            "route_pair": [
+              "release",
+              "change"
+            ],
+            "field": "approval"
+          }
+        }
+      ],
+      "layout_fields": [
+        "guard_placement",
+        "field_order",
+        "fixture_layout"
+      ],
+      "identity_excludes": [
+        "generation_seed",
+        "repeat",
+        "condition",
+        "model",
+        "window_coordinates"
+      ],
+      "actor_target_disjoint": true,
+      "no_op_goals_allowed": false
+    }
+  },
+  {
+    "workflow_id": "S-N1",
+    "family": "selection_active_object",
+    "task_domains": [
+      "Writer",
+      "Writer"
+    ],
+    "operation_graph": "writer_text_range_selection",
+    "description": "Apply formatting to two distinct text ranges in one Writer document.",
+    "goal_a": "Bold only range A.",
+    "goal_b": "Bold only range B.",
+    "schedule_policy_id": "range-select-a-select-b-resume-a-v1",
+    "validation_level": "offline",
+    "runtime_validation_incomplete": true,
+    "semantic_parameter_schema": {
+      "domain_fields": [
+        "entity",
+        "field_a",
+        "field_b",
+        "a_status",
+        "b_status"
+      ],
+      "object_profiles": [
+        {
+          "id": "range_word_pair",
+          "a": "writer/range:single-word-a",
+          "b": "writer/range:single-word-b",
+          "schema": {
+            "selection_kind": "word range",
+            "action": "bold"
+          }
+        },
+        {
+          "id": "range_phrase_pair",
+          "a": "writer/range:phrase-a",
+          "b": "writer/range:phrase-b",
+          "schema": {
+            "selection_kind": "phrase range",
+            "action": "bold"
+          }
+        },
+        {
+          "id": "range_sentence_pair",
+          "a": "writer/range:sentence-a",
+          "b": "writer/range:sentence-b",
+          "schema": {
+            "selection_kind": "sentence range",
+            "action": "bold"
+          }
+        },
+        {
+          "id": "range_list_item_pair",
+          "a": "writer/range:list-item-a",
+          "b": "writer/range:list-item-b",
+          "schema": {
+            "selection_kind": "list item range",
+            "action": "bold"
+          }
+        },
+        {
+          "id": "range_heading_pair",
+          "a": "writer/range:heading-a",
+          "b": "writer/range:heading-b",
+          "schema": {
+            "selection_kind": "heading text range",
+            "action": "bold"
+          }
+        }
+      ],
+      "layout_fields": [
+        "guard_placement",
+        "field_order",
+        "fixture_layout"
+      ],
+      "identity_excludes": [
+        "generation_seed",
+        "repeat",
+        "condition",
+        "model",
+        "window_coordinates"
+      ],
+      "actor_target_disjoint": true,
+      "no_op_goals_allowed": false
+    }
+  },
+  {
+    "workflow_id": "U-N1",
+    "family": "undo_redo_history",
+    "task_domains": [
+      "Writer",
+      "Writer"
+    ],
+    "operation_graph": "writer_document_history",
+    "description": "Undo A's temporary Writer edit after B's independent same-document edit.",
+    "goal_a": "Undo the temporary first-line edit and restore the seed.",
+    "goal_b": "Set the second-line goal without losing it to A's Undo.",
+    "schedule_policy_id": "edit-a-edit-b-undo-a-v1",
+    "validation_level": "offline",
+    "runtime_validation_incomplete": true,
+    "semantic_parameter_schema": {
+      "domain_fields": [
+        "entity",
+        "field_a",
+        "field_b",
+        "a_status",
+        "b_status"
+      ],
+      "object_profiles": [
+        {
+          "id": "writer_lines_0_1",
+          "a": "writer/paragraph[0]",
+          "b": "writer/paragraph[1]",
+          "schema": {
+            "object_type": "paragraph",
+            "undo_operation": "text replacement",
+            "undo_depth": 1
+          }
+        },
+        {
+          "id": "writer_lines_1_2",
+          "a": "writer/paragraph[1]",
+          "b": "writer/paragraph[2]",
+          "schema": {
+            "object_type": "paragraph",
+            "undo_operation": "text replacement",
+            "undo_depth": 1
+          }
+        },
+        {
+          "id": "writer_lines_0_2",
+          "a": "writer/paragraph[0]",
+          "b": "writer/paragraph[2]",
+          "schema": {
+            "object_type": "paragraph",
+            "undo_operation": "text replacement",
+            "undo_depth": 1
+          }
+        },
+        {
+          "id": "writer_lines_2_3",
+          "a": "writer/paragraph[2]",
+          "b": "writer/paragraph[3]",
+          "schema": {
+            "object_type": "paragraph",
+            "undo_operation": "text replacement",
+            "undo_depth": 1
+          }
+        },
+        {
+          "id": "writer_lines_1_3",
+          "a": "writer/paragraph[1]",
+          "b": "writer/paragraph[3]",
+          "schema": {
+            "object_type": "paragraph",
+            "undo_operation": "text replacement",
+            "undo_depth": 1
+          }
+        }
+      ],
+      "layout_fields": [
+        "guard_placement",
+        "field_order",
+        "fixture_layout"
+      ],
+      "identity_excludes": [
+        "generation_seed",
+        "repeat",
+        "condition",
+        "model",
+        "window_coordinates"
+      ],
+      "actor_target_disjoint": true,
+      "no_op_goals_allowed": false
+    }
+  }
+]

@@ -1,0 +1,270 @@
+{
+  "actor_goals": [
+    {
+      "actor_id": "A",
+      "expected_value": "Accepted: supplier record (HTML table)",
+      "goal": "Paste the structured table, preserving rows and cells.",
+      "initial_value": "Draft: supplier record",
+      "operation": "update writer/table-slot-1",
+      "target_objects": [
+        "writer/table-slot-1"
+      ],
+      "task_domain": "Browser"
+    },
+    {
+      "actor_id": "B",
+      "expected_value": "Verified: supplier record (HTML table)",
+      "goal": "Copy and submit the assigned URL.",
+      "initial_value": "Pending: supplier record",
+      "operation": "update browser/url-submit",
+      "target_objects": [
+        "browser/url-submit"
+      ],
+      "task_domain": "Writer"
+    }
+  ],
+  "benchmark_version": "codesk-v1.0",
+  "evaluator": {
+    "actor_paths": {
+      "A": "actors.A.value",
+      "B": "actors.B.value"
+    },
+    "adapter": "codesk_exact_state_v1",
+    "condition_semantics": {
+      "ma_id": "score each actor on equivalent independent desktop fixture",
+      "ma_sd": "score both actor goals and shared-state integrity",
+      "solo": "score selected actor; require inactive target and guards unchanged"
+    },
+    "expected_state": {
+      "actors": {
+        "A": {
+          "object": "writer/table-slot-1",
+          "value": "Accepted: supplier record (HTML table)"
+        },
+        "B": {
+          "object": "browser/url-submit",
+          "value": "Verified: supplier record (HTML table)"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "mime": [
+            "text/html",
+            "text/plain"
+          ],
+          "payload": "HTML table",
+          "shape": [
+            2,
+            2
+          ]
+        },
+        "resource": "clipboard_state"
+      }
+    },
+    "initial_state": {
+      "actors": {
+        "A": {
+          "object": "writer/table-slot-1",
+          "value": "Draft: supplier record"
+        },
+        "B": {
+          "object": "browser/url-submit",
+          "value": "Pending: supplier record"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "mime": [
+            "text/html",
+            "text/plain"
+          ],
+          "payload": "HTML table",
+          "shape": [
+            2,
+            2
+          ]
+        },
+        "resource": "clipboard_state"
+      }
+    },
+    "invariants": [
+      {
+        "equals": "PRESERVE",
+        "path": "actors.guards.main"
+      }
+    ],
+    "schedule_policy_id": "rich-copy-a-url-copy-b-resume-a-v1"
+  },
+  "evaluator_path": "evaluators/cdv1-cn1-e6babf1761d8e1bd.json",
+  "evaluator_sha256": "3abf05f53e4687138a42076eb7c4fb233d9438c213d4251a4b40e3ea6a955036",
+  "family": "clipboard_state",
+  "fixture_files": [
+    {
+      "path": "fixtures/cdv1-cn1-e6babf1761d8e1bd/browser-initial-state.json",
+      "sha256": "755c0dc54c049b24a4857367d3b2e2a8271b577e2a5a9f327eda3fefeeb7db98",
+      "size_bytes": 174
+    },
+    {
+      "path": "fixtures/cdv1-cn1-e6babf1761d8e1bd/document.fodt",
+      "sha256": "271f3960a4ba231a64a267b09698452c869b20b27cadc808614148c9cb4ed0f4",
+      "size_bytes": 428
+    },
+    {
+      "path": "fixtures/cdv1-cn1-e6babf1761d8e1bd/workspace.html",
+      "sha256": "5d0b8baa597a02f74054bf0cd76bc403020c9a53a25cf792d1e956b2b271533d",
+      "size_bytes": 415
+    }
+  ],
+  "generation_seed": 2026,
+  "initial_fixture_spec": {
+    "application_set": [
+      "Browser",
+      "Writer"
+    ],
+    "fixture_profile": "rich_table_2x2",
+    "layout_id": "guard_before",
+    "public_assets": [
+      {
+        "path": "fixtures/cdv1-cn1-e6babf1761d8e1bd/browser-initial-state.json",
+        "sha256": "755c0dc54c049b24a4857367d3b2e2a8271b577e2a5a9f327eda3fefeeb7db98",
+        "size_bytes": 174
+      },
+      {
+        "path": "fixtures/cdv1-cn1-e6babf1761d8e1bd/document.fodt",
+        "sha256": "271f3960a4ba231a64a267b09698452c869b20b27cadc808614148c9cb4ed0f4",
+        "size_bytes": 428
+      },
+      {
+        "path": "fixtures/cdv1-cn1-e6babf1761d8e1bd/workspace.html",
+        "sha256": "5d0b8baa597a02f74054bf0cd76bc403020c9a53a25cf792d1e956b2b271533d",
+        "size_bytes": 415
+      }
+    ]
+  },
+  "instance_id": "cdv1-cn1-e6babf1761d8e1bd",
+  "manifest_entry_sha256": "4b319e66a6bd3235acd4f7dd876cbd4d811bf44f1f26f0ebcae79660ea325e65",
+  "provenance": {
+    "fixture_sha256": "8af2dabaa1d64b6b15a6dc69f6ffaf2644b28e873abd091bbaf0df73ce1650a5",
+    "generation_seed": 2026,
+    "generator": "swcub.production_v1",
+    "seed_role": "deterministic profile ordering only; excluded from instance identity",
+    "semantic_spec_sha256": "e6babf1761d8e1bdc4009208302f04553bc0836d03ddf66c30583eb6e8c37c3e",
+    "source_code_sha256": "579c135b4b828886e972dbc72c0d8fd242dacbade19164e4f80b52194ae045f4",
+    "source_commit": "ac5801113da9bfbd96057c3cda51d13f722105fb"
+  },
+  "reset_metadata": {
+    "fixture_id": "cdv1-cn1-e6babf1761d8e1bd",
+    "fresh_guest_required": true,
+    "remove_prior_app_state": true,
+    "verify_fixture_hash": "8af2dabaa1d64b6b15a6dc69f6ffaf2644b28e873abd091bbaf0df73ce1650a5",
+    "verify_state": {
+      "actors": {
+        "A": {
+          "object": "writer/table-slot-1",
+          "value": "Draft: supplier record"
+        },
+        "B": {
+          "object": "browser/url-submit",
+          "value": "Pending: supplier record"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "mime": [
+            "text/html",
+            "text/plain"
+          ],
+          "payload": "HTML table",
+          "shape": [
+            2,
+            2
+          ]
+        },
+        "resource": "clipboard_state"
+      }
+    }
+  },
+  "schedule_policy_id": "rich-copy-a-url-copy-b-resume-a-v1",
+  "semantic_parameters": {
+    "domain_id": "supplier_onboarding",
+    "domain_schema": {
+      "entity": "supplier record",
+      "field_a": "Review decision",
+      "field_b": "Verification state"
+    },
+    "layout_id": "guard_before",
+    "object_profile_id": "rich_table_2x2",
+    "object_schema": {
+      "mime": [
+        "text/html",
+        "text/plain"
+      ],
+      "payload": "HTML table",
+      "shape": [
+        2,
+        2
+      ]
+    },
+    "operation_graph": "rich_html_table_transfer",
+    "workflow_id": "C-N1"
+  },
+  "signatures": {
+    "fixture": "8af2dabaa1d64b6b15a6dc69f6ffaf2644b28e873abd091bbaf0df73ce1650a5",
+    "goal": "826457a189551e5c8c542cb159f396ecda379819e7de9366ced6b6cadd73ada0",
+    "semantic": "e6babf1761d8e1bdc4009208302f04553bc0836d03ddf66c30583eb6e8c37c3e",
+    "structural": "8663f5aa77576c50e867bf1183c118434e337ad70b8b2483df6dbc5f38188c0c"
+  },
+  "target_objects": {
+    "A": [
+      "writer/table-slot-1"
+    ],
+    "B": [
+      "browser/url-submit"
+    ]
+  },
+  "task_domains": {
+    "A": "Browser",
+    "B": "Writer"
+  },
+  "topology_compatibility": {
+    "ma_id": {
+      "backend_binding": "same logical workspace seed; independent desktop sessions allowed",
+      "desktop_count": 2,
+      "fixtures": "byte-identical task-relevant clones"
+    },
+    "ma_sd": {
+      "actor_bindings": "A and B share desktop",
+      "desktop_count": 1
+    },
+    "solo": {
+      "actor_bindings": "A or B",
+      "desktop_count": 1
+    }
+  },
+  "treatment_relevant_state": {
+    "family_state": "clipboard_state",
+    "operation_graph": "rich_html_table_transfer",
+    "shared_resource": {
+      "mime": [
+        "text/html",
+        "text/plain"
+      ],
+      "payload": "HTML table",
+      "shape": [
+        2,
+        2
+      ]
+    }
+  },
+  "validation_level": "offline",
+  "workflow_id": "C-N1"
+}

@@ -1,0 +1,104 @@
+{
+  "workflow_id": "F-01",
+  "family": "focus_input_routing",
+  "task_domains": [
+    "Writer",
+    "Calc"
+  ],
+  "operation_graph": "writer_document_vs_calc_field",
+  "description": "Edit a Writer decision and a distinct Calc cell.",
+  "goal_a": "Save the exact decision in the assigned Writer document.",
+  "goal_b": "Set the assigned Calc field and preserve the remaining table.",
+  "schedule_policy_id": "action-boundary-round-robin-ab-v1",
+  "validation_level": "qwen_mechanism_evidence",
+  "runtime_validation_incomplete": false,
+  "semantic_parameter_schema": {
+    "domain_fields": [
+      "entity",
+      "field_a",
+      "field_b",
+      "a_status",
+      "b_status"
+    ],
+    "object_profiles": [
+      {
+        "id": "cell_b2",
+        "a": "writer/decision-paragraph",
+        "b": "calc/B2",
+        "schema": {
+          "headers": [
+            "Request",
+            "Decision"
+          ],
+          "target": "B2"
+        }
+      },
+      {
+        "id": "cell_c2",
+        "a": "writer/decision-paragraph",
+        "b": "calc/C2",
+        "schema": {
+          "headers": [
+            "Request",
+            "Owner",
+            "Decision"
+          ],
+          "target": "C2"
+        }
+      },
+      {
+        "id": "cell_b3",
+        "a": "writer/summary-paragraph",
+        "b": "calc/B3",
+        "schema": {
+          "headers": [
+            "Asset",
+            "Status"
+          ],
+          "target": "B3"
+        }
+      },
+      {
+        "id": "cell_c3",
+        "a": "writer/summary-paragraph",
+        "b": "calc/C3",
+        "schema": {
+          "headers": [
+            "Asset",
+            "Region",
+            "Status"
+          ],
+          "target": "C3"
+        }
+      },
+      {
+        "id": "cell_d2",
+        "a": "writer/approval-field",
+        "b": "calc/D2",
+        "schema": {
+          "headers": [
+            "Item",
+            "Owner",
+            "Region",
+            "Status"
+          ],
+          "target": "D2"
+        }
+      }
+    ],
+    "layout_fields": [
+      "guard_placement",
+      "field_order",
+      "fixture_layout"
+    ],
+    "identity_excludes": [
+      "generation_seed",
+      "repeat",
+      "condition",
+      "model",
+      "window_coordinates"
+    ],
+    "actor_target_disjoint": true,
+    "no_op_goals_allowed": false
+  }
+}

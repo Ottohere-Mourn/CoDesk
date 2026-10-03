@@ -1,0 +1,85 @@
+{
+  "workflow_id": "C-02",
+  "family": "clipboard_state",
+  "task_domains": [
+    "Browser",
+    "Writer"
+  ],
+  "operation_graph": "semantic_hyperlink_transfer",
+  "description": "Create a semantic hyperlink in Writer while an independent Browser URL is submitted.",
+  "goal_a": "Create a link with the exact label and href.",
+  "goal_b": "Submit the assigned Browser URL exactly once.",
+  "schedule_policy_id": "url-copy-confirm-link-copy-confirm-resume-v1",
+  "validation_level": "scripted_full",
+  "runtime_validation_incomplete": false,
+  "semantic_parameter_schema": {
+    "domain_fields": [
+      "entity",
+      "field_a",
+      "field_b",
+      "a_status",
+      "b_status"
+    ],
+    "object_profiles": [
+      {
+        "id": "href_reference",
+        "a": "writer/hyperlink:reference",
+        "b": "browser/url-field:case",
+        "schema": {
+          "link_label_kind": "reference label",
+          "destination_field": "case-url"
+        }
+      },
+      {
+        "id": "href_source",
+        "a": "writer/hyperlink:source",
+        "b": "browser/url-field:supplier",
+        "schema": {
+          "link_label_kind": "source label",
+          "destination_field": "supplier-url"
+        }
+      },
+      {
+        "id": "href_policy",
+        "a": "writer/hyperlink:policy",
+        "b": "browser/url-field:policy",
+        "schema": {
+          "link_label_kind": "policy label",
+          "destination_field": "policy-url"
+        }
+      },
+      {
+        "id": "href_evidence",
+        "a": "writer/hyperlink:evidence",
+        "b": "browser/url-field:evidence",
+        "schema": {
+          "link_label_kind": "evidence label",
+          "destination_field": "evidence-url"
+        }
+      },
+      {
+        "id": "href_ticket",
+        "a": "writer/hyperlink:ticket",
+        "b": "browser/url-field:ticket",
+        "schema": {
+          "link_label_kind": "ticket label",
+          "destination_field": "ticket-url"
+        }
+      }
+    ],
+    "layout_fields": [
+      "guard_placement",
+      "field_order",
+      "fixture_layout"
+    ],
+    "identity_excludes": [
+      "generation_seed",
+      "repeat",
+      "condition",
+      "model",
+      "window_coordinates"
+    ],
+    "actor_target_disjoint": true,
+    "no_op_goals_allowed": false
+  }
+}

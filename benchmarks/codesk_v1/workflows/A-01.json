@@ -1,0 +1,100 @@
+{
+  "workflow_id": "A-01",
+  "family": "application_context",
+  "task_domains": [
+    "Browser",
+    "Browser"
+  ],
+  "operation_graph": "two_tab_context",
+  "description": "Submit independent forms in two Browser tabs.",
+  "goal_a": "Submit the target value in tab A.",
+  "goal_b": "Submit the other target value in tab B.",
+  "schedule_policy_id": "observe-a-context-change-b-resume-a-v1",
+  "validation_level": "qwen_mechanism_evidence",
+  "runtime_validation_incomplete": false,
+  "semantic_parameter_schema": {
+    "domain_fields": [
+      "entity",
+      "field_a",
+      "field_b",
+      "a_status",
+      "b_status"
+    ],
+    "object_profiles": [
+      {
+        "id": "tabs_review_cases",
+        "a": "browser/tab-a/review-form",
+        "b": "browser/tab-b/case-form",
+        "schema": {
+          "context_kind": "independent tab forms",
+          "fields": [
+            "review",
+            "case"
+          ]
+        }
+      },
+      {
+        "id": "tabs_supplier_docs",
+        "a": "browser/tab-a/supplier-page",
+        "b": "browser/tab-b/document-page",
+        "schema": {
+          "context_kind": "tab-specific records",
+          "fields": [
+            "supplier",
+            "document"
+          ]
+        }
+      },
+      {
+        "id": "tabs_inventory",
+        "a": "browser/tab-a/stock-form",
+        "b": "browser/tab-b/audit-form",
+        "schema": {
+          "context_kind": "tab-specific inventory",
+          "fields": [
+            "stock",
+            "audit"
+          ]
+        }
+      },
+      {
+        "id": "tabs_safety",
+        "a": "browser/tab-a/inspection-form",
+        "b": "browser/tab-b/incident-form",
+        "schema": {
+          "context_kind": "tab-specific safety records",
+          "fields": [
+            "inspection",
+            "incident"
+          ]
+        }
+      },
+      {
+        "id": "tabs_release",
+        "a": "browser/tab-a/release-form",
+        "b": "browser/tab-b/approval-form",
+        "schema": {
+          "context_kind": "tab-specific release records",
+          "fields": [
+            "release",
+            "approval"
+          ]
+        }
+      }
+    ],
+    "layout_fields": [
+      "guard_placement",
+      "field_order",
+      "fixture_layout"
+    ],
+    "identity_excludes": [
+      "generation_seed",
+      "repeat",
+      "condition",
+      "model",
+      "window_coordinates"
+    ],
+    "actor_target_disjoint": true,
+    "no_op_goals_allowed": false
+  }
+}

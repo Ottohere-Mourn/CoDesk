@@ -1,0 +1,240 @@
+{
+  "actor_goals": [
+    {
+      "actor_id": "A",
+      "expected_value": "Cleared: inspection item (object)",
+      "goal": "Submit the target value in tab A.",
+      "initial_value": "Draft: inspection item",
+      "operation": "update browser/tab-a/release-form",
+      "target_objects": [
+        "browser/tab-a/release-form"
+      ],
+      "task_domain": "Browser"
+    },
+    {
+      "actor_id": "B",
+      "expected_value": "Inspected: inspection item (object)",
+      "goal": "Submit the other target value in tab B.",
+      "initial_value": "Pending: inspection item",
+      "operation": "update browser/tab-b/approval-form",
+      "target_objects": [
+        "browser/tab-b/approval-form"
+      ],
+      "task_domain": "Browser"
+    }
+  ],
+  "benchmark_version": "codesk-v1.0",
+  "evaluator": {
+    "actor_paths": {
+      "A": "actors.A.value",
+      "B": "actors.B.value"
+    },
+    "adapter": "codesk_exact_state_v1",
+    "condition_semantics": {
+      "ma_id": "score each actor on equivalent independent desktop fixture",
+      "ma_sd": "score both actor goals and shared-state integrity",
+      "solo": "score selected actor; require inactive target and guards unchanged"
+    },
+    "expected_state": {
+      "actors": {
+        "A": {
+          "object": "browser/tab-a/release-form",
+          "value": "Cleared: inspection item (object)"
+        },
+        "B": {
+          "object": "browser/tab-b/approval-form",
+          "value": "Inspected: inspection item (object)"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "context_kind": "tab-specific release records",
+          "fields": [
+            "release",
+            "approval"
+          ]
+        },
+        "resource": "application_context"
+      }
+    },
+    "initial_state": {
+      "actors": {
+        "A": {
+          "object": "browser/tab-a/release-form",
+          "value": "Draft: inspection item"
+        },
+        "B": {
+          "object": "browser/tab-b/approval-form",
+          "value": "Pending: inspection item"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "context_kind": "tab-specific release records",
+          "fields": [
+            "release",
+            "approval"
+          ]
+        },
+        "resource": "application_context"
+      }
+    },
+    "invariants": [
+      {
+        "equals": "PRESERVE",
+        "path": "actors.guards.main"
+      }
+    ],
+    "schedule_policy_id": "observe-a-context-change-b-resume-a-v1"
+  },
+  "evaluator_path": "evaluators/cdv1-a01-887b420b5e0cfe2b.json",
+  "evaluator_sha256": "7b4e59dd1f4afd459508b8b4295432ea1e7fa44edefc79d38797a3fa640d3c84",
+  "family": "application_context",
+  "fixture_files": [
+    {
+      "path": "fixtures/cdv1-a01-887b420b5e0cfe2b/browser-initial-state.json",
+      "sha256": "3e33d88eb9b54427c0212e106e1d1b3c014e2feb4ad35c84e0ff72aaf13b7dd0",
+      "size_bytes": 172
+    },
+    {
+      "path": "fixtures/cdv1-a01-887b420b5e0cfe2b/workspace.html",
+      "sha256": "e76ef0034d21c45bc55e2113cbcc39cdad11f3f0a48795ebfd724804e1f7b361",
+      "size_bytes": 372
+    }
+  ],
+  "generation_seed": 2026,
+  "initial_fixture_spec": {
+    "application_set": [
+      "Browser",
+      "Browser"
+    ],
+    "fixture_profile": "tabs_release",
+    "layout_id": "guard_before",
+    "public_assets": [
+      {
+        "path": "fixtures/cdv1-a01-887b420b5e0cfe2b/browser-initial-state.json",
+        "sha256": "3e33d88eb9b54427c0212e106e1d1b3c014e2feb4ad35c84e0ff72aaf13b7dd0",
+        "size_bytes": 172
+      },
+      {
+        "path": "fixtures/cdv1-a01-887b420b5e0cfe2b/workspace.html",
+        "sha256": "e76ef0034d21c45bc55e2113cbcc39cdad11f3f0a48795ebfd724804e1f7b361",
+        "size_bytes": 372
+      }
+    ]
+  },
+  "instance_id": "cdv1-a01-887b420b5e0cfe2b",
+  "manifest_entry_sha256": "8ece69ffaeb54746610b6a761d63512d1669b91b94218ee57e7dbff280a1646d",
+  "provenance": {
+    "fixture_sha256": "3979f5bd3cc766ecc4eace03b10bec7f7a91c9902a81907c68aba22b55d36a95",
+    "generation_seed": 2026,
+    "generator": "swcub.production_v1",
+    "seed_role": "deterministic profile ordering only; excluded from instance identity",
+    "semantic_spec_sha256": "887b420b5e0cfe2bfe89b8c677ef781ab4399d22f94cd342bdc42544bddce86f",
+    "source_code_sha256": "579c135b4b828886e972dbc72c0d8fd242dacbade19164e4f80b52194ae045f4",
+    "source_commit": "ac5801113da9bfbd96057c3cda51d13f722105fb"
+  },
+  "reset_metadata": {
+    "fixture_id": "cdv1-a01-887b420b5e0cfe2b",
+    "fresh_guest_required": true,
+    "remove_prior_app_state": true,
+    "verify_fixture_hash": "3979f5bd3cc766ecc4eace03b10bec7f7a91c9902a81907c68aba22b55d36a95",
+    "verify_state": {
+      "actors": {
+        "A": {
+          "object": "browser/tab-a/release-form",
+          "value": "Draft: inspection item"
+        },
+        "B": {
+          "object": "browser/tab-b/approval-form",
+          "value": "Pending: inspection item"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "context_kind": "tab-specific release records",
+          "fields": [
+            "release",
+            "approval"
+          ]
+        },
+        "resource": "application_context"
+      }
+    }
+  },
+  "schedule_policy_id": "observe-a-context-change-b-resume-a-v1",
+  "semantic_parameters": {
+    "domain_id": "safety_inspection",
+    "domain_schema": {
+      "entity": "inspection item",
+      "field_a": "Clearance",
+      "field_b": "Inspection state"
+    },
+    "layout_id": "guard_before",
+    "object_profile_id": "tabs_release",
+    "object_schema": {
+      "context_kind": "tab-specific release records",
+      "fields": [
+        "release",
+        "approval"
+      ]
+    },
+    "operation_graph": "two_tab_context",
+    "workflow_id": "A-01"
+  },
+  "signatures": {
+    "fixture": "3979f5bd3cc766ecc4eace03b10bec7f7a91c9902a81907c68aba22b55d36a95",
+    "goal": "b84f40c07fb0476eb6e338d7d6132c9a219e37d89661f88a1b1d85df62e99e37",
+    "semantic": "887b420b5e0cfe2bfe89b8c677ef781ab4399d22f94cd342bdc42544bddce86f",
+    "structural": "7ae22e643ab10372564fe8f5b756f317c68a312bebe5fe52449ddf32c74b07f3"
+  },
+  "target_objects": {
+    "A": [
+      "browser/tab-a/release-form"
+    ],
+    "B": [
+      "browser/tab-b/approval-form"
+    ]
+  },
+  "task_domains": {
+    "A": "Browser",
+    "B": "Browser"
+  },
+  "topology_compatibility": {
+    "ma_id": {
+      "backend_binding": "same logical workspace seed; independent desktop sessions allowed",
+      "desktop_count": 2,
+      "fixtures": "byte-identical task-relevant clones"
+    },
+    "ma_sd": {
+      "actor_bindings": "A and B share desktop",
+      "desktop_count": 1
+    },
+    "solo": {
+      "actor_bindings": "A or B",
+      "desktop_count": 1
+    }
+  },
+  "treatment_relevant_state": {
+    "family_state": "application_context",
+    "operation_graph": "two_tab_context",
+    "shared_resource": {
+      "context_kind": "tab-specific release records",
+      "fields": [
+        "release",
+        "approval"
+      ]
+    }
+  },
+  "validation_level": "qwen_mechanism_evidence",
+  "workflow_id": "A-01"
+}

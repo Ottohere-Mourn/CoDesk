@@ -1,0 +1,240 @@
+{
+  "actor_goals": [
+    {
+      "actor_id": "A",
+      "expected_value": "Reconciled: warehouse lot (object)",
+      "goal": "Submit route A's exact value.",
+      "initial_value": "Draft: warehouse lot",
+      "operation": "update browser/route:assignment",
+      "target_objects": [
+        "browser/route:assignment"
+      ],
+      "task_domain": "Browser"
+    },
+    {
+      "actor_id": "B",
+      "expected_value": "Counted: warehouse lot (object)",
+      "goal": "Submit route B's exact value.",
+      "initial_value": "Pending: warehouse lot",
+      "operation": "update browser/route:incident",
+      "target_objects": [
+        "browser/route:incident"
+      ],
+      "task_domain": "Browser"
+    }
+  ],
+  "benchmark_version": "codesk-v1.0",
+  "evaluator": {
+    "actor_paths": {
+      "A": "actors.A.value",
+      "B": "actors.B.value"
+    },
+    "adapter": "codesk_exact_state_v1",
+    "condition_semantics": {
+      "ma_id": "score each actor on equivalent independent desktop fixture",
+      "ma_sd": "score both actor goals and shared-state integrity",
+      "solo": "score selected actor; require inactive target and guards unchanged"
+    },
+    "expected_state": {
+      "actors": {
+        "A": {
+          "object": "browser/route:assignment",
+          "value": "Reconciled: warehouse lot (object)"
+        },
+        "B": {
+          "object": "browser/route:incident",
+          "value": "Counted: warehouse lot (object)"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "field": "resolution",
+          "route_pair": [
+            "assignment",
+            "incident"
+          ]
+        },
+        "resource": "application_context"
+      }
+    },
+    "initial_state": {
+      "actors": {
+        "A": {
+          "object": "browser/route:assignment",
+          "value": "Draft: warehouse lot"
+        },
+        "B": {
+          "object": "browser/route:incident",
+          "value": "Pending: warehouse lot"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "field": "resolution",
+          "route_pair": [
+            "assignment",
+            "incident"
+          ]
+        },
+        "resource": "application_context"
+      }
+    },
+    "invariants": [
+      {
+        "equals": "PRESERVE",
+        "path": "actors.guards.main"
+      }
+    ],
+    "schedule_policy_id": "route-observe-a-change-b-resume-a-v1"
+  },
+  "evaluator_path": "evaluators/cdv1-an1-dfb0363b1b309b87.json",
+  "evaluator_sha256": "77d156367d0453a42f27a3ea673a8c584857b228185bd824c7a3239f812f18a8",
+  "family": "application_context",
+  "fixture_files": [
+    {
+      "path": "fixtures/cdv1-an1-dfb0363b1b309b87/browser-initial-state.json",
+      "sha256": "66670b6f4786797b711ba557d40e34df1cc09b117ab512756f2bc7b24ed10f63",
+      "size_bytes": 175
+    },
+    {
+      "path": "fixtures/cdv1-an1-dfb0363b1b309b87/workspace.html",
+      "sha256": "09103ddb6488bcc7174eee1e74e3ae2d5acec29be0cfd8d742a1b20b3470aade",
+      "size_bytes": 271
+    }
+  ],
+  "generation_seed": 2026,
+  "initial_fixture_spec": {
+    "application_set": [
+      "Browser",
+      "Browser"
+    ],
+    "fixture_profile": "spa_assignment_incident",
+    "layout_id": "guard_after",
+    "public_assets": [
+      {
+        "path": "fixtures/cdv1-an1-dfb0363b1b309b87/browser-initial-state.json",
+        "sha256": "66670b6f4786797b711ba557d40e34df1cc09b117ab512756f2bc7b24ed10f63",
+        "size_bytes": 175
+      },
+      {
+        "path": "fixtures/cdv1-an1-dfb0363b1b309b87/workspace.html",
+        "sha256": "09103ddb6488bcc7174eee1e74e3ae2d5acec29be0cfd8d742a1b20b3470aade",
+        "size_bytes": 271
+      }
+    ]
+  },
+  "instance_id": "cdv1-an1-dfb0363b1b309b87",
+  "manifest_entry_sha256": "be87325707c05f4740f27d02183a17e944eadf1a87c7332e7496de123b523ae5",
+  "provenance": {
+    "fixture_sha256": "0bf7b895f6d7b6af28cb02d17011a4980a05584206fc544390ef4fe2786067d7",
+    "generation_seed": 2026,
+    "generator": "swcub.production_v1",
+    "seed_role": "deterministic profile ordering only; excluded from instance identity",
+    "semantic_spec_sha256": "dfb0363b1b309b8734f875ab222d054d85c13c26ecd1594afc0053a70225ebc4",
+    "source_code_sha256": "579c135b4b828886e972dbc72c0d8fd242dacbade19164e4f80b52194ae045f4",
+    "source_commit": "ac5801113da9bfbd96057c3cda51d13f722105fb"
+  },
+  "reset_metadata": {
+    "fixture_id": "cdv1-an1-dfb0363b1b309b87",
+    "fresh_guest_required": true,
+    "remove_prior_app_state": true,
+    "verify_fixture_hash": "0bf7b895f6d7b6af28cb02d17011a4980a05584206fc544390ef4fe2786067d7",
+    "verify_state": {
+      "actors": {
+        "A": {
+          "object": "browser/route:assignment",
+          "value": "Draft: warehouse lot"
+        },
+        "B": {
+          "object": "browser/route:incident",
+          "value": "Pending: warehouse lot"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "field": "resolution",
+          "route_pair": [
+            "assignment",
+            "incident"
+          ]
+        },
+        "resource": "application_context"
+      }
+    }
+  },
+  "schedule_policy_id": "route-observe-a-change-b-resume-a-v1",
+  "semantic_parameters": {
+    "domain_id": "warehouse_reconciliation",
+    "domain_schema": {
+      "entity": "warehouse lot",
+      "field_a": "Reconciliation",
+      "field_b": "Count status"
+    },
+    "layout_id": "guard_after",
+    "object_profile_id": "spa_assignment_incident",
+    "object_schema": {
+      "field": "resolution",
+      "route_pair": [
+        "assignment",
+        "incident"
+      ]
+    },
+    "operation_graph": "same_tab_spa_route",
+    "workflow_id": "A-N1"
+  },
+  "signatures": {
+    "fixture": "0bf7b895f6d7b6af28cb02d17011a4980a05584206fc544390ef4fe2786067d7",
+    "goal": "a2e5881a2a3edc8b7a73ab0229e8bd232eb69495479eb564e70d7e5caafff3b2",
+    "semantic": "dfb0363b1b309b8734f875ab222d054d85c13c26ecd1594afc0053a70225ebc4",
+    "structural": "8dff4ffa94d2cc4d7d4279ee1b9b953eecc45fe8205ced11ea63815b6fb68cd8"
+  },
+  "target_objects": {
+    "A": [
+      "browser/route:assignment"
+    ],
+    "B": [
+      "browser/route:incident"
+    ]
+  },
+  "task_domains": {
+    "A": "Browser",
+    "B": "Browser"
+  },
+  "topology_compatibility": {
+    "ma_id": {
+      "backend_binding": "same logical workspace seed; independent desktop sessions allowed",
+      "desktop_count": 2,
+      "fixtures": "byte-identical task-relevant clones"
+    },
+    "ma_sd": {
+      "actor_bindings": "A and B share desktop",
+      "desktop_count": 1
+    },
+    "solo": {
+      "actor_bindings": "A or B",
+      "desktop_count": 1
+    }
+  },
+  "treatment_relevant_state": {
+    "family_state": "application_context",
+    "operation_graph": "same_tab_spa_route",
+    "shared_resource": {
+      "field": "resolution",
+      "route_pair": [
+        "assignment",
+        "incident"
+      ]
+    }
+  },
+  "validation_level": "offline",
+  "workflow_id": "A-N1"
+}

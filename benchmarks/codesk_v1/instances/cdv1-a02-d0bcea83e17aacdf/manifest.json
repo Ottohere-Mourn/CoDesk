@@ -1,0 +1,225 @@
+{
+  "actor_goals": [
+    {
+      "actor_id": "A",
+      "expected_value": "Reconciled: warehouse lot (record row)",
+      "goal": "Update record A only.",
+      "initial_value": "Draft: warehouse lot",
+      "operation": "update browser/record:asset",
+      "target_objects": [
+        "browser/record:asset"
+      ],
+      "task_domain": "Browser"
+    },
+    {
+      "actor_id": "B",
+      "expected_value": "Counted: warehouse lot (record row)",
+      "goal": "Update record B only.",
+      "initial_value": "Pending: warehouse lot",
+      "operation": "update browser/record:maintenance",
+      "target_objects": [
+        "browser/record:maintenance"
+      ],
+      "task_domain": "Browser"
+    }
+  ],
+  "benchmark_version": "codesk-v1.0",
+  "evaluator": {
+    "actor_paths": {
+      "A": "actors.A.value",
+      "B": "actors.B.value"
+    },
+    "adapter": "codesk_exact_state_v1",
+    "condition_semantics": {
+      "ma_id": "score each actor on equivalent independent desktop fixture",
+      "ma_sd": "score both actor goals and shared-state integrity",
+      "solo": "score selected actor; require inactive target and guards unchanged"
+    },
+    "expected_state": {
+      "actors": {
+        "A": {
+          "object": "browser/record:asset",
+          "value": "Reconciled: warehouse lot (record row)"
+        },
+        "B": {
+          "object": "browser/record:maintenance",
+          "value": "Counted: warehouse lot (record row)"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "record_type": "asset/maintenance",
+          "selection": "record row"
+        },
+        "resource": "selection_active_object"
+      }
+    },
+    "initial_state": {
+      "actors": {
+        "A": {
+          "object": "browser/record:asset",
+          "value": "Draft: warehouse lot"
+        },
+        "B": {
+          "object": "browser/record:maintenance",
+          "value": "Pending: warehouse lot"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "record_type": "asset/maintenance",
+          "selection": "record row"
+        },
+        "resource": "selection_active_object"
+      }
+    },
+    "invariants": [
+      {
+        "equals": "PRESERVE",
+        "path": "actors.guards.main"
+      }
+    ],
+    "schedule_policy_id": "observe-selection-change-b-resume-a-v1"
+  },
+  "evaluator_path": "evaluators/cdv1-a02-d0bcea83e17aacdf.json",
+  "evaluator_sha256": "80ecc560c3532fabe60df79d9421f061d3463ca31df68079bcd0f8c2e75551af",
+  "family": "selection_active_object",
+  "fixture_files": [
+    {
+      "path": "fixtures/cdv1-a02-d0bcea83e17aacdf/browser-initial-state.json",
+      "sha256": "66670b6f4786797b711ba557d40e34df1cc09b117ab512756f2bc7b24ed10f63",
+      "size_bytes": 175
+    },
+    {
+      "path": "fixtures/cdv1-a02-d0bcea83e17aacdf/workspace.html",
+      "sha256": "603b143c1eb27caf92c6881211577c210d41bfbfb9921928b9b9d9c5185732ea",
+      "size_bytes": 253
+    }
+  ],
+  "generation_seed": 2026,
+  "initial_fixture_spec": {
+    "application_set": [
+      "Browser",
+      "Browser"
+    ],
+    "fixture_profile": "record_asset",
+    "layout_id": "guard_after",
+    "public_assets": [
+      {
+        "path": "fixtures/cdv1-a02-d0bcea83e17aacdf/browser-initial-state.json",
+        "sha256": "66670b6f4786797b711ba557d40e34df1cc09b117ab512756f2bc7b24ed10f63",
+        "size_bytes": 175
+      },
+      {
+        "path": "fixtures/cdv1-a02-d0bcea83e17aacdf/workspace.html",
+        "sha256": "603b143c1eb27caf92c6881211577c210d41bfbfb9921928b9b9d9c5185732ea",
+        "size_bytes": 253
+      }
+    ]
+  },
+  "instance_id": "cdv1-a02-d0bcea83e17aacdf",
+  "manifest_entry_sha256": "bc0dcd6967d4f90a0e11864b6b01ee24c1e97c7812aa90526f2494cc8d9d5fa0",
+  "provenance": {
+    "fixture_sha256": "120678859965aaaae7c4089d7859f39ed5820ecaa974e2edfbaa1451cad83189",
+    "generation_seed": 2026,
+    "generator": "swcub.production_v1",
+    "seed_role": "deterministic profile ordering only; excluded from instance identity",
+    "semantic_spec_sha256": "d0bcea83e17aacdf00cc3c966f2edc48d96ce68b068ebdb7a265c82af2d4bdd7",
+    "source_code_sha256": "579c135b4b828886e972dbc72c0d8fd242dacbade19164e4f80b52194ae045f4",
+    "source_commit": "ac5801113da9bfbd96057c3cda51d13f722105fb"
+  },
+  "reset_metadata": {
+    "fixture_id": "cdv1-a02-d0bcea83e17aacdf",
+    "fresh_guest_required": true,
+    "remove_prior_app_state": true,
+    "verify_fixture_hash": "120678859965aaaae7c4089d7859f39ed5820ecaa974e2edfbaa1451cad83189",
+    "verify_state": {
+      "actors": {
+        "A": {
+          "object": "browser/record:asset",
+          "value": "Draft: warehouse lot"
+        },
+        "B": {
+          "object": "browser/record:maintenance",
+          "value": "Pending: warehouse lot"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "record_type": "asset/maintenance",
+          "selection": "record row"
+        },
+        "resource": "selection_active_object"
+      }
+    }
+  },
+  "schedule_policy_id": "observe-selection-change-b-resume-a-v1",
+  "semantic_parameters": {
+    "domain_id": "warehouse_reconciliation",
+    "domain_schema": {
+      "entity": "warehouse lot",
+      "field_a": "Reconciliation",
+      "field_b": "Count status"
+    },
+    "layout_id": "guard_after",
+    "object_profile_id": "record_asset",
+    "object_schema": {
+      "record_type": "asset/maintenance",
+      "selection": "record row"
+    },
+    "operation_graph": "selected_record_context",
+    "workflow_id": "A-02"
+  },
+  "signatures": {
+    "fixture": "120678859965aaaae7c4089d7859f39ed5820ecaa974e2edfbaa1451cad83189",
+    "goal": "4d96f01955ab7b1a3b5614c89454ae5f4cb9cb137d60e9851c00ed30ecedf232",
+    "semantic": "d0bcea83e17aacdf00cc3c966f2edc48d96ce68b068ebdb7a265c82af2d4bdd7",
+    "structural": "d747dac8148b7c518c95f0a7227f29ac40fc46f586c17518e8b71b1b9f90a80d"
+  },
+  "target_objects": {
+    "A": [
+      "browser/record:asset"
+    ],
+    "B": [
+      "browser/record:maintenance"
+    ]
+  },
+  "task_domains": {
+    "A": "Browser",
+    "B": "Browser"
+  },
+  "topology_compatibility": {
+    "ma_id": {
+      "backend_binding": "same logical workspace seed; independent desktop sessions allowed",
+      "desktop_count": 2,
+      "fixtures": "byte-identical task-relevant clones"
+    },
+    "ma_sd": {
+      "actor_bindings": "A and B share desktop",
+      "desktop_count": 1
+    },
+    "solo": {
+      "actor_bindings": "A or B",
+      "desktop_count": 1
+    }
+  },
+  "treatment_relevant_state": {
+    "family_state": "selection_active_object",
+    "operation_graph": "selected_record_context",
+    "shared_resource": {
+      "record_type": "asset/maintenance",
+      "selection": "record row"
+    }
+  },
+  "validation_level": "scripted_full",
+  "workflow_id": "A-02"
+}

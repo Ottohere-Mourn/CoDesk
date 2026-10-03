@@ -1,0 +1,240 @@
+{
+  "actor_goals": [
+    {
+      "actor_id": "A",
+      "expected_value": "Cleared: inspection item (object)",
+      "goal": "Submit the target value in tab A.",
+      "initial_value": "Draft: inspection item",
+      "operation": "update browser/tab-a/inspection-form",
+      "target_objects": [
+        "browser/tab-a/inspection-form"
+      ],
+      "task_domain": "Browser"
+    },
+    {
+      "actor_id": "B",
+      "expected_value": "Inspected: inspection item (object)",
+      "goal": "Submit the other target value in tab B.",
+      "initial_value": "Pending: inspection item",
+      "operation": "update browser/tab-b/incident-form",
+      "target_objects": [
+        "browser/tab-b/incident-form"
+      ],
+      "task_domain": "Browser"
+    }
+  ],
+  "benchmark_version": "codesk-v1.0",
+  "evaluator": {
+    "actor_paths": {
+      "A": "actors.A.value",
+      "B": "actors.B.value"
+    },
+    "adapter": "codesk_exact_state_v1",
+    "condition_semantics": {
+      "ma_id": "score each actor on equivalent independent desktop fixture",
+      "ma_sd": "score both actor goals and shared-state integrity",
+      "solo": "score selected actor; require inactive target and guards unchanged"
+    },
+    "expected_state": {
+      "actors": {
+        "A": {
+          "object": "browser/tab-a/inspection-form",
+          "value": "Cleared: inspection item (object)"
+        },
+        "B": {
+          "object": "browser/tab-b/incident-form",
+          "value": "Inspected: inspection item (object)"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "context_kind": "tab-specific safety records",
+          "fields": [
+            "inspection",
+            "incident"
+          ]
+        },
+        "resource": "application_context"
+      }
+    },
+    "initial_state": {
+      "actors": {
+        "A": {
+          "object": "browser/tab-a/inspection-form",
+          "value": "Draft: inspection item"
+        },
+        "B": {
+          "object": "browser/tab-b/incident-form",
+          "value": "Pending: inspection item"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "context_kind": "tab-specific safety records",
+          "fields": [
+            "inspection",
+            "incident"
+          ]
+        },
+        "resource": "application_context"
+      }
+    },
+    "invariants": [
+      {
+        "equals": "PRESERVE",
+        "path": "actors.guards.main"
+      }
+    ],
+    "schedule_policy_id": "observe-a-context-change-b-resume-a-v1"
+  },
+  "evaluator_path": "evaluators/cdv1-a01-ad1103dead574919.json",
+  "evaluator_sha256": "71834be01e20a53a8db7bf44edb8f32b9d72c45320decfeac4c645a90ac20106",
+  "family": "application_context",
+  "fixture_files": [
+    {
+      "path": "fixtures/cdv1-a01-ad1103dead574919/browser-initial-state.json",
+      "sha256": "3e33d88eb9b54427c0212e106e1d1b3c014e2feb4ad35c84e0ff72aaf13b7dd0",
+      "size_bytes": 172
+    },
+    {
+      "path": "fixtures/cdv1-a01-ad1103dead574919/workspace.html",
+      "sha256": "e76ef0034d21c45bc55e2113cbcc39cdad11f3f0a48795ebfd724804e1f7b361",
+      "size_bytes": 372
+    }
+  ],
+  "generation_seed": 2026,
+  "initial_fixture_spec": {
+    "application_set": [
+      "Browser",
+      "Browser"
+    ],
+    "fixture_profile": "tabs_safety",
+    "layout_id": "guard_before",
+    "public_assets": [
+      {
+        "path": "fixtures/cdv1-a01-ad1103dead574919/browser-initial-state.json",
+        "sha256": "3e33d88eb9b54427c0212e106e1d1b3c014e2feb4ad35c84e0ff72aaf13b7dd0",
+        "size_bytes": 172
+      },
+      {
+        "path": "fixtures/cdv1-a01-ad1103dead574919/workspace.html",
+        "sha256": "e76ef0034d21c45bc55e2113cbcc39cdad11f3f0a48795ebfd724804e1f7b361",
+        "size_bytes": 372
+      }
+    ]
+  },
+  "instance_id": "cdv1-a01-ad1103dead574919",
+  "manifest_entry_sha256": "4b15fdf01c10c1d1be4752451c055cc893e0a11c6b0ef50daa8db4cc9b9b34c2",
+  "provenance": {
+    "fixture_sha256": "5b7c5e9700b904d2787098cf944487975e24bb0444878534db0bc37598a56e50",
+    "generation_seed": 2026,
+    "generator": "swcub.production_v1",
+    "seed_role": "deterministic profile ordering only; excluded from instance identity",
+    "semantic_spec_sha256": "ad1103dead57491911c672de9aee32377e61e1684137436eab744010c6b7dd20",
+    "source_code_sha256": "579c135b4b828886e972dbc72c0d8fd242dacbade19164e4f80b52194ae045f4",
+    "source_commit": "ac5801113da9bfbd96057c3cda51d13f722105fb"
+  },
+  "reset_metadata": {
+    "fixture_id": "cdv1-a01-ad1103dead574919",
+    "fresh_guest_required": true,
+    "remove_prior_app_state": true,
+    "verify_fixture_hash": "5b7c5e9700b904d2787098cf944487975e24bb0444878534db0bc37598a56e50",
+    "verify_state": {
+      "actors": {
+        "A": {
+          "object": "browser/tab-a/inspection-form",
+          "value": "Draft: inspection item"
+        },
+        "B": {
+          "object": "browser/tab-b/incident-form",
+          "value": "Pending: inspection item"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "context_kind": "tab-specific safety records",
+          "fields": [
+            "inspection",
+            "incident"
+          ]
+        },
+        "resource": "application_context"
+      }
+    }
+  },
+  "schedule_policy_id": "observe-a-context-change-b-resume-a-v1",
+  "semantic_parameters": {
+    "domain_id": "safety_inspection",
+    "domain_schema": {
+      "entity": "inspection item",
+      "field_a": "Clearance",
+      "field_b": "Inspection state"
+    },
+    "layout_id": "guard_before",
+    "object_profile_id": "tabs_safety",
+    "object_schema": {
+      "context_kind": "tab-specific safety records",
+      "fields": [
+        "inspection",
+        "incident"
+      ]
+    },
+    "operation_graph": "two_tab_context",
+    "workflow_id": "A-01"
+  },
+  "signatures": {
+    "fixture": "5b7c5e9700b904d2787098cf944487975e24bb0444878534db0bc37598a56e50",
+    "goal": "e492c1c4d1963c65dfc438e4b228e7b7b8f5b9fb011b64e571bfc0410bfdff5d",
+    "semantic": "ad1103dead57491911c672de9aee32377e61e1684137436eab744010c6b7dd20",
+    "structural": "043a6d14ae9a1bae864ff2da6ce7842063ce119514a3428a0917d464a7c2d92c"
+  },
+  "target_objects": {
+    "A": [
+      "browser/tab-a/inspection-form"
+    ],
+    "B": [
+      "browser/tab-b/incident-form"
+    ]
+  },
+  "task_domains": {
+    "A": "Browser",
+    "B": "Browser"
+  },
+  "topology_compatibility": {
+    "ma_id": {
+      "backend_binding": "same logical workspace seed; independent desktop sessions allowed",
+      "desktop_count": 2,
+      "fixtures": "byte-identical task-relevant clones"
+    },
+    "ma_sd": {
+      "actor_bindings": "A and B share desktop",
+      "desktop_count": 1
+    },
+    "solo": {
+      "actor_bindings": "A or B",
+      "desktop_count": 1
+    }
+  },
+  "treatment_relevant_state": {
+    "family_state": "application_context",
+    "operation_graph": "two_tab_context",
+    "shared_resource": {
+      "context_kind": "tab-specific safety records",
+      "fields": [
+        "inspection",
+        "incident"
+      ]
+    }
+  },
+  "validation_level": "qwen_mechanism_evidence",
+  "workflow_id": "A-01"
+}

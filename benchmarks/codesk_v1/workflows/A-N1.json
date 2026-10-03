@@ -1,0 +1,100 @@
+{
+  "workflow_id": "A-N1",
+  "family": "application_context",
+  "task_domains": [
+    "Browser",
+    "Browser"
+  ],
+  "operation_graph": "same_tab_spa_route",
+  "description": "Complete separate route-keyed transactions in one Browser tab.",
+  "goal_a": "Submit route A's exact value.",
+  "goal_b": "Submit route B's exact value.",
+  "schedule_policy_id": "route-observe-a-change-b-resume-a-v1",
+  "validation_level": "offline",
+  "runtime_validation_incomplete": true,
+  "semantic_parameter_schema": {
+    "domain_fields": [
+      "entity",
+      "field_a",
+      "field_b",
+      "a_status",
+      "b_status"
+    ],
+    "object_profiles": [
+      {
+        "id": "spa_assignment_incident",
+        "a": "browser/route:assignment",
+        "b": "browser/route:incident",
+        "schema": {
+          "route_pair": [
+            "assignment",
+            "incident"
+          ],
+          "field": "resolution"
+        }
+      },
+      {
+        "id": "spa_supplier_invoice",
+        "a": "browser/route:supplier",
+        "b": "browser/route:invoice",
+        "schema": {
+          "route_pair": [
+            "supplier",
+            "invoice"
+          ],
+          "field": "decision"
+        }
+      },
+      {
+        "id": "spa_inventory_audit",
+        "a": "browser/route:inventory",
+        "b": "browser/route:audit",
+        "schema": {
+          "route_pair": [
+            "inventory",
+            "audit"
+          ],
+          "field": "audit-state"
+        }
+      },
+      {
+        "id": "spa_safety_followup",
+        "a": "browser/route:safety",
+        "b": "browser/route:followup",
+        "schema": {
+          "route_pair": [
+            "safety",
+            "followup"
+          ],
+          "field": "clearance"
+        }
+      },
+      {
+        "id": "spa_release_change",
+        "a": "browser/route:release",
+        "b": "browser/route:change",
+        "schema": {
+          "route_pair": [
+            "release",
+            "change"
+          ],
+          "field": "approval"
+        }
+      }
+    ],
+    "layout_fields": [
+      "guard_placement",
+      "field_order",
+      "fixture_layout"
+    ],
+    "identity_excludes": [
+      "generation_seed",
+      "repeat",
+      "condition",
+      "model",
+      "window_coordinates"
+    ],
+    "actor_target_disjoint": true,
+    "no_op_goals_allowed": false
+  }
+}

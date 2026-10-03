@@ -1,0 +1,240 @@
+{
+  "actor_goals": [
+    {
+      "actor_id": "A",
+      "expected_value": "Accepted: supplier record (object)",
+      "goal": "Submit route A's exact value.",
+      "initial_value": "Draft: supplier record",
+      "operation": "update browser/route:assignment",
+      "target_objects": [
+        "browser/route:assignment"
+      ],
+      "task_domain": "Browser"
+    },
+    {
+      "actor_id": "B",
+      "expected_value": "Verified: supplier record (object)",
+      "goal": "Submit route B's exact value.",
+      "initial_value": "Pending: supplier record",
+      "operation": "update browser/route:incident",
+      "target_objects": [
+        "browser/route:incident"
+      ],
+      "task_domain": "Browser"
+    }
+  ],
+  "benchmark_version": "codesk-v1.0",
+  "evaluator": {
+    "actor_paths": {
+      "A": "actors.A.value",
+      "B": "actors.B.value"
+    },
+    "adapter": "codesk_exact_state_v1",
+    "condition_semantics": {
+      "ma_id": "score each actor on equivalent independent desktop fixture",
+      "ma_sd": "score both actor goals and shared-state integrity",
+      "solo": "score selected actor; require inactive target and guards unchanged"
+    },
+    "expected_state": {
+      "actors": {
+        "A": {
+          "object": "browser/route:assignment",
+          "value": "Accepted: supplier record (object)"
+        },
+        "B": {
+          "object": "browser/route:incident",
+          "value": "Verified: supplier record (object)"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "field": "resolution",
+          "route_pair": [
+            "assignment",
+            "incident"
+          ]
+        },
+        "resource": "application_context"
+      }
+    },
+    "initial_state": {
+      "actors": {
+        "A": {
+          "object": "browser/route:assignment",
+          "value": "Draft: supplier record"
+        },
+        "B": {
+          "object": "browser/route:incident",
+          "value": "Pending: supplier record"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "field": "resolution",
+          "route_pair": [
+            "assignment",
+            "incident"
+          ]
+        },
+        "resource": "application_context"
+      }
+    },
+    "invariants": [
+      {
+        "equals": "PRESERVE",
+        "path": "actors.guards.main"
+      }
+    ],
+    "schedule_policy_id": "route-observe-a-change-b-resume-a-v1"
+  },
+  "evaluator_path": "evaluators/cdv1-an1-4cee4d6c3d492d49.json",
+  "evaluator_sha256": "2dcb67ff7accb08d7b58d288c3c1772618af0a1dff9dba8980ca702e5077b4de",
+  "family": "application_context",
+  "fixture_files": [
+    {
+      "path": "fixtures/cdv1-an1-4cee4d6c3d492d49/browser-initial-state.json",
+      "sha256": "755c0dc54c049b24a4857367d3b2e2a8271b577e2a5a9f327eda3fefeeb7db98",
+      "size_bytes": 174
+    },
+    {
+      "path": "fixtures/cdv1-an1-4cee4d6c3d492d49/workspace.html",
+      "sha256": "726fd871906b123de38506feefa4ba91ee2286fcde7485ddebbd46240ba53812",
+      "size_bytes": 275
+    }
+  ],
+  "generation_seed": 2026,
+  "initial_fixture_spec": {
+    "application_set": [
+      "Browser",
+      "Browser"
+    ],
+    "fixture_profile": "spa_assignment_incident",
+    "layout_id": "guard_after",
+    "public_assets": [
+      {
+        "path": "fixtures/cdv1-an1-4cee4d6c3d492d49/browser-initial-state.json",
+        "sha256": "755c0dc54c049b24a4857367d3b2e2a8271b577e2a5a9f327eda3fefeeb7db98",
+        "size_bytes": 174
+      },
+      {
+        "path": "fixtures/cdv1-an1-4cee4d6c3d492d49/workspace.html",
+        "sha256": "726fd871906b123de38506feefa4ba91ee2286fcde7485ddebbd46240ba53812",
+        "size_bytes": 275
+      }
+    ]
+  },
+  "instance_id": "cdv1-an1-4cee4d6c3d492d49",
+  "manifest_entry_sha256": "44189ed446d7e7e2f7acf54f2a92d2dfb0e955388fe130a95f3775f9161e8645",
+  "provenance": {
+    "fixture_sha256": "6f1c507daef76ef14855a5a1fd0ef11c68857a863a8ca0a3bc31b9e092a3e3bc",
+    "generation_seed": 2026,
+    "generator": "swcub.production_v1",
+    "seed_role": "deterministic profile ordering only; excluded from instance identity",
+    "semantic_spec_sha256": "4cee4d6c3d492d49510059a43c6c346289d284ba2c303be2ee69399dd0b5d7e6",
+    "source_code_sha256": "579c135b4b828886e972dbc72c0d8fd242dacbade19164e4f80b52194ae045f4",
+    "source_commit": "ac5801113da9bfbd96057c3cda51d13f722105fb"
+  },
+  "reset_metadata": {
+    "fixture_id": "cdv1-an1-4cee4d6c3d492d49",
+    "fresh_guest_required": true,
+    "remove_prior_app_state": true,
+    "verify_fixture_hash": "6f1c507daef76ef14855a5a1fd0ef11c68857a863a8ca0a3bc31b9e092a3e3bc",
+    "verify_state": {
+      "actors": {
+        "A": {
+          "object": "browser/route:assignment",
+          "value": "Draft: supplier record"
+        },
+        "B": {
+          "object": "browser/route:incident",
+          "value": "Pending: supplier record"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "field": "resolution",
+          "route_pair": [
+            "assignment",
+            "incident"
+          ]
+        },
+        "resource": "application_context"
+      }
+    }
+  },
+  "schedule_policy_id": "route-observe-a-change-b-resume-a-v1",
+  "semantic_parameters": {
+    "domain_id": "supplier_onboarding",
+    "domain_schema": {
+      "entity": "supplier record",
+      "field_a": "Review decision",
+      "field_b": "Verification state"
+    },
+    "layout_id": "guard_after",
+    "object_profile_id": "spa_assignment_incident",
+    "object_schema": {
+      "field": "resolution",
+      "route_pair": [
+        "assignment",
+        "incident"
+      ]
+    },
+    "operation_graph": "same_tab_spa_route",
+    "workflow_id": "A-N1"
+  },
+  "signatures": {
+    "fixture": "6f1c507daef76ef14855a5a1fd0ef11c68857a863a8ca0a3bc31b9e092a3e3bc",
+    "goal": "3573c1431eb36fdc0b588010ddd963bc9ba34eddfa2d5d0723d79c83fa5de5df",
+    "semantic": "4cee4d6c3d492d49510059a43c6c346289d284ba2c303be2ee69399dd0b5d7e6",
+    "structural": "dbd89c68f6f815e4ed41e6cc120ce216d9a783ec5ac091de270bb61064d46cca"
+  },
+  "target_objects": {
+    "A": [
+      "browser/route:assignment"
+    ],
+    "B": [
+      "browser/route:incident"
+    ]
+  },
+  "task_domains": {
+    "A": "Browser",
+    "B": "Browser"
+  },
+  "topology_compatibility": {
+    "ma_id": {
+      "backend_binding": "same logical workspace seed; independent desktop sessions allowed",
+      "desktop_count": 2,
+      "fixtures": "byte-identical task-relevant clones"
+    },
+    "ma_sd": {
+      "actor_bindings": "A and B share desktop",
+      "desktop_count": 1
+    },
+    "solo": {
+      "actor_bindings": "A or B",
+      "desktop_count": 1
+    }
+  },
+  "treatment_relevant_state": {
+    "family_state": "application_context",
+    "operation_graph": "same_tab_spa_route",
+    "shared_resource": {
+      "field": "resolution",
+      "route_pair": [
+        "assignment",
+        "incident"
+      ]
+    }
+  },
+  "validation_level": "offline",
+  "workflow_id": "A-N1"
+}

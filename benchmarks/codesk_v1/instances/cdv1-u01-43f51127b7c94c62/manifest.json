@@ -1,0 +1,220 @@
+{
+  "actor_goals": [
+    {
+      "actor_id": "A",
+      "expected_value": "Cleared: inspection item (cell)",
+      "goal": "Undo the temporary value and restore the seeded cell.",
+      "initial_value": "Draft: inspection item",
+      "operation": "update calc/D2",
+      "target_objects": [
+        "calc/D2"
+      ],
+      "task_domain": "Calc"
+    },
+    {
+      "actor_id": "B",
+      "expected_value": "Inspected: inspection item (cell)",
+      "goal": "Set B's distinct Calc cell to its goal.",
+      "initial_value": "Pending: inspection item",
+      "operation": "update calc/E4",
+      "target_objects": [
+        "calc/E4"
+      ],
+      "task_domain": "Calc"
+    }
+  ],
+  "benchmark_version": "codesk-v1.0",
+  "evaluator": {
+    "actor_paths": {
+      "A": "actors.A.value",
+      "B": "actors.B.value"
+    },
+    "adapter": "codesk_exact_state_v1",
+    "condition_semantics": {
+      "ma_id": "score each actor on equivalent independent desktop fixture",
+      "ma_sd": "score both actor goals and shared-state integrity",
+      "solo": "score selected actor; require inactive target and guards unchanged"
+    },
+    "expected_state": {
+      "actors": {
+        "A": {
+          "object": "calc/D2",
+          "value": "Cleared: inspection item (cell)"
+        },
+        "B": {
+          "object": "calc/E4",
+          "value": "Inspected: inspection item (cell)"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "object_type": "cell",
+          "operation": "inventory value edit",
+          "undo_depth": 1
+        },
+        "resource": "undo_redo_history"
+      }
+    },
+    "initial_state": {
+      "actors": {
+        "A": {
+          "object": "calc/D2",
+          "value": "Draft: inspection item"
+        },
+        "B": {
+          "object": "calc/E4",
+          "value": "Pending: inspection item"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "object_type": "cell",
+          "operation": "inventory value edit",
+          "undo_depth": 1
+        },
+        "resource": "undo_redo_history"
+      }
+    },
+    "invariants": [
+      {
+        "equals": "PRESERVE",
+        "path": "actors.guards.main"
+      }
+    ],
+    "schedule_policy_id": "edit-a-edit-b-undo-a-v1"
+  },
+  "evaluator_path": "evaluators/cdv1-u01-43f51127b7c94c62.json",
+  "evaluator_sha256": "d648cfab4577973255c4fa23845d42c447f3b18a0f21abc4491ce54babd0f03c",
+  "family": "undo_redo_history",
+  "fixture_files": [
+    {
+      "path": "fixtures/cdv1-u01-43f51127b7c94c62/workbook.fods",
+      "sha256": "64d5964aea00a984254c8b7d01eb339eff8f220e1aa0d92e5080c96a47882b4d",
+      "size_bytes": 1924
+    }
+  ],
+  "generation_seed": 2026,
+  "initial_fixture_spec": {
+    "application_set": [
+      "Calc",
+      "Calc"
+    ],
+    "fixture_profile": "calc_inventory_cells",
+    "layout_id": "guard_after",
+    "public_assets": [
+      {
+        "path": "fixtures/cdv1-u01-43f51127b7c94c62/workbook.fods",
+        "sha256": "64d5964aea00a984254c8b7d01eb339eff8f220e1aa0d92e5080c96a47882b4d",
+        "size_bytes": 1924
+      }
+    ]
+  },
+  "instance_id": "cdv1-u01-43f51127b7c94c62",
+  "manifest_entry_sha256": "2595c9c770d32faca90a639bd7ff470cf466756fa611e3f155842bfed42ece40",
+  "provenance": {
+    "fixture_sha256": "f83cf400c6ac485c813b1b08b398ddf5cdba0b11a4ff902013fd1becf59170df",
+    "generation_seed": 2026,
+    "generator": "swcub.production_v1",
+    "seed_role": "deterministic profile ordering only; excluded from instance identity",
+    "semantic_spec_sha256": "43f51127b7c94c62ce99fd9c57d6acd81b9b0e250ef6d16644ae4294cfc1ac8e",
+    "source_code_sha256": "579c135b4b828886e972dbc72c0d8fd242dacbade19164e4f80b52194ae045f4",
+    "source_commit": "ac5801113da9bfbd96057c3cda51d13f722105fb"
+  },
+  "reset_metadata": {
+    "fixture_id": "cdv1-u01-43f51127b7c94c62",
+    "fresh_guest_required": true,
+    "remove_prior_app_state": true,
+    "verify_fixture_hash": "f83cf400c6ac485c813b1b08b398ddf5cdba0b11a4ff902013fd1becf59170df",
+    "verify_state": {
+      "actors": {
+        "A": {
+          "object": "calc/D2",
+          "value": "Draft: inspection item"
+        },
+        "B": {
+          "object": "calc/E4",
+          "value": "Pending: inspection item"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "object_type": "cell",
+          "operation": "inventory value edit",
+          "undo_depth": 1
+        },
+        "resource": "undo_redo_history"
+      }
+    }
+  },
+  "schedule_policy_id": "edit-a-edit-b-undo-a-v1",
+  "semantic_parameters": {
+    "domain_id": "safety_inspection",
+    "domain_schema": {
+      "entity": "inspection item",
+      "field_a": "Clearance",
+      "field_b": "Inspection state"
+    },
+    "layout_id": "guard_after",
+    "object_profile_id": "calc_inventory_cells",
+    "object_schema": {
+      "object_type": "cell",
+      "operation": "inventory value edit",
+      "undo_depth": 1
+    },
+    "operation_graph": "calc_document_history",
+    "workflow_id": "U-01"
+  },
+  "signatures": {
+    "fixture": "f83cf400c6ac485c813b1b08b398ddf5cdba0b11a4ff902013fd1becf59170df",
+    "goal": "edca8fef5fdd90910493d13d0015673c3b91142ac361049ac40e3a6a1031620d",
+    "semantic": "43f51127b7c94c62ce99fd9c57d6acd81b9b0e250ef6d16644ae4294cfc1ac8e",
+    "structural": "0eadc47f29988b822ac949b67fd1a00fcebab7eaf3d4e6a90293b54a5de34dbf"
+  },
+  "target_objects": {
+    "A": [
+      "calc/D2"
+    ],
+    "B": [
+      "calc/E4"
+    ]
+  },
+  "task_domains": {
+    "A": "Calc",
+    "B": "Calc"
+  },
+  "topology_compatibility": {
+    "ma_id": {
+      "backend_binding": "same logical workspace seed; independent desktop sessions allowed",
+      "desktop_count": 2,
+      "fixtures": "byte-identical task-relevant clones"
+    },
+    "ma_sd": {
+      "actor_bindings": "A and B share desktop",
+      "desktop_count": 1
+    },
+    "solo": {
+      "actor_bindings": "A or B",
+      "desktop_count": 1
+    }
+  },
+  "treatment_relevant_state": {
+    "family_state": "undo_redo_history",
+    "operation_graph": "calc_document_history",
+    "shared_resource": {
+      "object_type": "cell",
+      "operation": "inventory value edit",
+      "undo_depth": 1
+    }
+  },
+  "validation_level": "qwen_smoke",
+  "workflow_id": "U-01"
+}

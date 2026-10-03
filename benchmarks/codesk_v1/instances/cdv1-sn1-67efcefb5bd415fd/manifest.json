@@ -1,0 +1,215 @@
+{
+  "actor_goals": [
+    {
+      "actor_id": "A",
+      "expected_value": "Reconciled: warehouse lot (object)",
+      "goal": "Bold only range A.",
+      "initial_value": "Draft: warehouse lot",
+      "operation": "bold writer/range:phrase-a",
+      "target_objects": [
+        "writer/range:phrase-a"
+      ],
+      "task_domain": "Writer"
+    },
+    {
+      "actor_id": "B",
+      "expected_value": "Counted: warehouse lot (object)",
+      "goal": "Bold only range B.",
+      "initial_value": "Pending: warehouse lot",
+      "operation": "bold writer/range:phrase-b",
+      "target_objects": [
+        "writer/range:phrase-b"
+      ],
+      "task_domain": "Writer"
+    }
+  ],
+  "benchmark_version": "codesk-v1.0",
+  "evaluator": {
+    "actor_paths": {
+      "A": "actors.A.value",
+      "B": "actors.B.value"
+    },
+    "adapter": "codesk_exact_state_v1",
+    "condition_semantics": {
+      "ma_id": "score each actor on equivalent independent desktop fixture",
+      "ma_sd": "score both actor goals and shared-state integrity",
+      "solo": "score selected actor; require inactive target and guards unchanged"
+    },
+    "expected_state": {
+      "actors": {
+        "A": {
+          "object": "writer/range:phrase-a",
+          "value": "Reconciled: warehouse lot (object)"
+        },
+        "B": {
+          "object": "writer/range:phrase-b",
+          "value": "Counted: warehouse lot (object)"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "action": "bold",
+          "selection_kind": "phrase range"
+        },
+        "resource": "selection_active_object"
+      }
+    },
+    "initial_state": {
+      "actors": {
+        "A": {
+          "object": "writer/range:phrase-a",
+          "value": "Draft: warehouse lot"
+        },
+        "B": {
+          "object": "writer/range:phrase-b",
+          "value": "Pending: warehouse lot"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "action": "bold",
+          "selection_kind": "phrase range"
+        },
+        "resource": "selection_active_object"
+      }
+    },
+    "invariants": [
+      {
+        "equals": "PRESERVE",
+        "path": "actors.guards.main"
+      }
+    ],
+    "schedule_policy_id": "range-select-a-select-b-resume-a-v1"
+  },
+  "evaluator_path": "evaluators/cdv1-sn1-67efcefb5bd415fd.json",
+  "evaluator_sha256": "a2ddb611923bc700a498f32524cb8c6e592ea31f7a1fd40faf9e8a3f4e7de5db",
+  "family": "selection_active_object",
+  "fixture_files": [
+    {
+      "path": "fixtures/cdv1-sn1-67efcefb5bd415fd/document.fodt",
+      "sha256": "486817f6d1fb5986e24e34051029b363e0a91768c300e27b8e83ddd80f92cf51",
+      "size_bytes": 403
+    }
+  ],
+  "generation_seed": 2026,
+  "initial_fixture_spec": {
+    "application_set": [
+      "Writer",
+      "Writer"
+    ],
+    "fixture_profile": "range_phrase_pair",
+    "layout_id": "guard_before",
+    "public_assets": [
+      {
+        "path": "fixtures/cdv1-sn1-67efcefb5bd415fd/document.fodt",
+        "sha256": "486817f6d1fb5986e24e34051029b363e0a91768c300e27b8e83ddd80f92cf51",
+        "size_bytes": 403
+      }
+    ]
+  },
+  "instance_id": "cdv1-sn1-67efcefb5bd415fd",
+  "manifest_entry_sha256": "16f117fd7bc8536443d76fe53de2f897e571ed7e05567a04f038377979efea7c",
+  "provenance": {
+    "fixture_sha256": "09ab7650d9121c4d97a0fa9d7c0aee5a79958508f07d422f1007fdc77a952303",
+    "generation_seed": 2026,
+    "generator": "swcub.production_v1",
+    "seed_role": "deterministic profile ordering only; excluded from instance identity",
+    "semantic_spec_sha256": "67efcefb5bd415fd30e9f3e3bf75fd00466f8a23154358e65fb8947375717bc4",
+    "source_code_sha256": "579c135b4b828886e972dbc72c0d8fd242dacbade19164e4f80b52194ae045f4",
+    "source_commit": "ac5801113da9bfbd96057c3cda51d13f722105fb"
+  },
+  "reset_metadata": {
+    "fixture_id": "cdv1-sn1-67efcefb5bd415fd",
+    "fresh_guest_required": true,
+    "remove_prior_app_state": true,
+    "verify_fixture_hash": "09ab7650d9121c4d97a0fa9d7c0aee5a79958508f07d422f1007fdc77a952303",
+    "verify_state": {
+      "actors": {
+        "A": {
+          "object": "writer/range:phrase-a",
+          "value": "Draft: warehouse lot"
+        },
+        "B": {
+          "object": "writer/range:phrase-b",
+          "value": "Pending: warehouse lot"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "action": "bold",
+          "selection_kind": "phrase range"
+        },
+        "resource": "selection_active_object"
+      }
+    }
+  },
+  "schedule_policy_id": "range-select-a-select-b-resume-a-v1",
+  "semantic_parameters": {
+    "domain_id": "warehouse_reconciliation",
+    "domain_schema": {
+      "entity": "warehouse lot",
+      "field_a": "Reconciliation",
+      "field_b": "Count status"
+    },
+    "layout_id": "guard_before",
+    "object_profile_id": "range_phrase_pair",
+    "object_schema": {
+      "action": "bold",
+      "selection_kind": "phrase range"
+    },
+    "operation_graph": "writer_text_range_selection",
+    "workflow_id": "S-N1"
+  },
+  "signatures": {
+    "fixture": "09ab7650d9121c4d97a0fa9d7c0aee5a79958508f07d422f1007fdc77a952303",
+    "goal": "6d21570552ddf0698126105e636e34cf6ba2213a3f179f36f05dfe2ad4334999",
+    "semantic": "67efcefb5bd415fd30e9f3e3bf75fd00466f8a23154358e65fb8947375717bc4",
+    "structural": "cabdd765ce2ea57988cc41e0cc6f7f0d5dc84e6dd5bb376645d33f0ec7d03589"
+  },
+  "target_objects": {
+    "A": [
+      "writer/range:phrase-a"
+    ],
+    "B": [
+      "writer/range:phrase-b"
+    ]
+  },
+  "task_domains": {
+    "A": "Writer",
+    "B": "Writer"
+  },
+  "topology_compatibility": {
+    "ma_id": {
+      "backend_binding": "same logical workspace seed; independent desktop sessions allowed",
+      "desktop_count": 2,
+      "fixtures": "byte-identical task-relevant clones"
+    },
+    "ma_sd": {
+      "actor_bindings": "A and B share desktop",
+      "desktop_count": 1
+    },
+    "solo": {
+      "actor_bindings": "A or B",
+      "desktop_count": 1
+    }
+  },
+  "treatment_relevant_state": {
+    "family_state": "selection_active_object",
+    "operation_graph": "writer_text_range_selection",
+    "shared_resource": {
+      "action": "bold",
+      "selection_kind": "phrase range"
+    }
+  },
+  "validation_level": "offline",
+  "workflow_id": "S-N1"
+}

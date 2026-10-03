@@ -1,0 +1,100 @@
+{
+  "workflow_id": "F-N1",
+  "family": "focus_input_routing",
+  "task_domains": [
+    "Writer",
+    "Writer"
+  ],
+  "operation_graph": "two_writer_windows",
+  "description": "Edit distinct Writer documents through two top-level windows.",
+  "goal_a": "Replace the assigned paragraph in doc-A.",
+  "goal_b": "Replace the assigned paragraph in doc-B.",
+  "schedule_policy_id": "writer-window-a-window-b-resume-a-v1",
+  "validation_level": "guest_solo",
+  "runtime_validation_incomplete": true,
+  "semantic_parameter_schema": {
+    "domain_fields": [
+      "entity",
+      "field_a",
+      "field_b",
+      "a_status",
+      "b_status"
+    ],
+    "object_profiles": [
+      {
+        "id": "writer_doc_status",
+        "a": "writer/doc-a/status-paragraph",
+        "b": "writer/doc-b/status-paragraph",
+        "schema": {
+          "documents": [
+            "doc-a",
+            "doc-b"
+          ],
+          "target_kind": "status paragraph"
+        }
+      },
+      {
+        "id": "writer_doc_summary",
+        "a": "writer/doc-a/summary-paragraph",
+        "b": "writer/doc-b/summary-paragraph",
+        "schema": {
+          "documents": [
+            "doc-a",
+            "doc-b"
+          ],
+          "target_kind": "summary paragraph"
+        }
+      },
+      {
+        "id": "writer_doc_action",
+        "a": "writer/doc-a/action-item",
+        "b": "writer/doc-b/action-item",
+        "schema": {
+          "documents": [
+            "doc-a",
+            "doc-b"
+          ],
+          "target_kind": "action item"
+        }
+      },
+      {
+        "id": "writer_doc_decision",
+        "a": "writer/doc-a/decision-field",
+        "b": "writer/doc-b/decision-field",
+        "schema": {
+          "documents": [
+            "doc-a",
+            "doc-b"
+          ],
+          "target_kind": "decision field"
+        }
+      },
+      {
+        "id": "writer_doc_owner",
+        "a": "writer/doc-a/owner-line",
+        "b": "writer/doc-b/owner-line",
+        "schema": {
+          "documents": [
+            "doc-a",
+            "doc-b"
+          ],
+          "target_kind": "owner line"
+        }
+      }
+    ],
+    "layout_fields": [
+      "guard_placement",
+      "field_order",
+      "fixture_layout"
+    ],
+    "identity_excludes": [
+      "generation_seed",
+      "repeat",
+      "condition",
+      "model",
+      "window_coordinates"
+    ],
+    "actor_target_disjoint": true,
+    "no_op_goals_allowed": false
+  }
+}

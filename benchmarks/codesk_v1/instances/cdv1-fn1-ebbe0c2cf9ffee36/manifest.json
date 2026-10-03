@@ -1,0 +1,240 @@
+{
+  "actor_goals": [
+    {
+      "actor_id": "A",
+      "expected_value": "Cleared: inspection item (object)",
+      "goal": "Replace the assigned paragraph in doc-A.",
+      "initial_value": "Draft: inspection item",
+      "operation": "update writer/doc-a/status-paragraph",
+      "target_objects": [
+        "writer/doc-a/status-paragraph"
+      ],
+      "task_domain": "Writer"
+    },
+    {
+      "actor_id": "B",
+      "expected_value": "Inspected: inspection item (object)",
+      "goal": "Replace the assigned paragraph in doc-B.",
+      "initial_value": "Pending: inspection item",
+      "operation": "update writer/doc-b/status-paragraph",
+      "target_objects": [
+        "writer/doc-b/status-paragraph"
+      ],
+      "task_domain": "Writer"
+    }
+  ],
+  "benchmark_version": "codesk-v1.0",
+  "evaluator": {
+    "actor_paths": {
+      "A": "actors.A.value",
+      "B": "actors.B.value"
+    },
+    "adapter": "codesk_exact_state_v1",
+    "condition_semantics": {
+      "ma_id": "score each actor on equivalent independent desktop fixture",
+      "ma_sd": "score both actor goals and shared-state integrity",
+      "solo": "score selected actor; require inactive target and guards unchanged"
+    },
+    "expected_state": {
+      "actors": {
+        "A": {
+          "object": "writer/doc-a/status-paragraph",
+          "value": "Cleared: inspection item (object)"
+        },
+        "B": {
+          "object": "writer/doc-b/status-paragraph",
+          "value": "Inspected: inspection item (object)"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "documents": [
+            "doc-a",
+            "doc-b"
+          ],
+          "target_kind": "status paragraph"
+        },
+        "resource": "focus_input_routing"
+      }
+    },
+    "initial_state": {
+      "actors": {
+        "A": {
+          "object": "writer/doc-a/status-paragraph",
+          "value": "Draft: inspection item"
+        },
+        "B": {
+          "object": "writer/doc-b/status-paragraph",
+          "value": "Pending: inspection item"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "documents": [
+            "doc-a",
+            "doc-b"
+          ],
+          "target_kind": "status paragraph"
+        },
+        "resource": "focus_input_routing"
+      }
+    },
+    "invariants": [
+      {
+        "equals": "PRESERVE",
+        "path": "actors.guards.main"
+      }
+    ],
+    "schedule_policy_id": "writer-window-a-window-b-resume-a-v1"
+  },
+  "evaluator_path": "evaluators/cdv1-fn1-ebbe0c2cf9ffee36.json",
+  "evaluator_sha256": "c91a35df91748b1e8f3061172f1ec096bb9779ec44db35f87369eb3d1a27e4dd",
+  "family": "focus_input_routing",
+  "fixture_files": [
+    {
+      "path": "fixtures/cdv1-fn1-ebbe0c2cf9ffee36/doc-a.fodt",
+      "sha256": "a9337801460d07972bacb3aa4fedef67bfd7f578f74a2e209ed3c598106dd70a",
+      "size_bytes": 385
+    },
+    {
+      "path": "fixtures/cdv1-fn1-ebbe0c2cf9ffee36/doc-b.fodt",
+      "sha256": "cb07972fa93cb1714be53742e4e9fa57bcf478d2437a26babf89f5c2dc018028",
+      "size_bytes": 387
+    }
+  ],
+  "generation_seed": 2026,
+  "initial_fixture_spec": {
+    "application_set": [
+      "Writer",
+      "Writer"
+    ],
+    "fixture_profile": "writer_doc_status",
+    "layout_id": "guard_before",
+    "public_assets": [
+      {
+        "path": "fixtures/cdv1-fn1-ebbe0c2cf9ffee36/doc-a.fodt",
+        "sha256": "a9337801460d07972bacb3aa4fedef67bfd7f578f74a2e209ed3c598106dd70a",
+        "size_bytes": 385
+      },
+      {
+        "path": "fixtures/cdv1-fn1-ebbe0c2cf9ffee36/doc-b.fodt",
+        "sha256": "cb07972fa93cb1714be53742e4e9fa57bcf478d2437a26babf89f5c2dc018028",
+        "size_bytes": 387
+      }
+    ]
+  },
+  "instance_id": "cdv1-fn1-ebbe0c2cf9ffee36",
+  "manifest_entry_sha256": "c723103bf5aa4f3bb0771c341b29f86f67ff52197abf6d12226fccd430250c7d",
+  "provenance": {
+    "fixture_sha256": "5b0e3a2e2f6932ed7226ba1f8d948a52c8d3317bfd9d62fd785ef6133c6bbbcf",
+    "generation_seed": 2026,
+    "generator": "swcub.production_v1",
+    "seed_role": "deterministic profile ordering only; excluded from instance identity",
+    "semantic_spec_sha256": "ebbe0c2cf9ffee36f38f61b93d238d55141b81c7728defec176c7b738d0a8af8",
+    "source_code_sha256": "579c135b4b828886e972dbc72c0d8fd242dacbade19164e4f80b52194ae045f4",
+    "source_commit": "ac5801113da9bfbd96057c3cda51d13f722105fb"
+  },
+  "reset_metadata": {
+    "fixture_id": "cdv1-fn1-ebbe0c2cf9ffee36",
+    "fresh_guest_required": true,
+    "remove_prior_app_state": true,
+    "verify_fixture_hash": "5b0e3a2e2f6932ed7226ba1f8d948a52c8d3317bfd9d62fd785ef6133c6bbbcf",
+    "verify_state": {
+      "actors": {
+        "A": {
+          "object": "writer/doc-a/status-paragraph",
+          "value": "Draft: inspection item"
+        },
+        "B": {
+          "object": "writer/doc-b/status-paragraph",
+          "value": "Pending: inspection item"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "documents": [
+            "doc-a",
+            "doc-b"
+          ],
+          "target_kind": "status paragraph"
+        },
+        "resource": "focus_input_routing"
+      }
+    }
+  },
+  "schedule_policy_id": "writer-window-a-window-b-resume-a-v1",
+  "semantic_parameters": {
+    "domain_id": "safety_inspection",
+    "domain_schema": {
+      "entity": "inspection item",
+      "field_a": "Clearance",
+      "field_b": "Inspection state"
+    },
+    "layout_id": "guard_before",
+    "object_profile_id": "writer_doc_status",
+    "object_schema": {
+      "documents": [
+        "doc-a",
+        "doc-b"
+      ],
+      "target_kind": "status paragraph"
+    },
+    "operation_graph": "two_writer_windows",
+    "workflow_id": "F-N1"
+  },
+  "signatures": {
+    "fixture": "5b0e3a2e2f6932ed7226ba1f8d948a52c8d3317bfd9d62fd785ef6133c6bbbcf",
+    "goal": "94c98305d5cb4172c5fc7f2f994a247bc91bf2dcde11b941b40bf30f95823a49",
+    "semantic": "ebbe0c2cf9ffee36f38f61b93d238d55141b81c7728defec176c7b738d0a8af8",
+    "structural": "3c046d08891a9d0a069187fe9ec5cd62354b974b67bb117f4482fb84eb338a09"
+  },
+  "target_objects": {
+    "A": [
+      "writer/doc-a/status-paragraph"
+    ],
+    "B": [
+      "writer/doc-b/status-paragraph"
+    ]
+  },
+  "task_domains": {
+    "A": "Writer",
+    "B": "Writer"
+  },
+  "topology_compatibility": {
+    "ma_id": {
+      "backend_binding": "same logical workspace seed; independent desktop sessions allowed",
+      "desktop_count": 2,
+      "fixtures": "byte-identical task-relevant clones"
+    },
+    "ma_sd": {
+      "actor_bindings": "A and B share desktop",
+      "desktop_count": 1
+    },
+    "solo": {
+      "actor_bindings": "A or B",
+      "desktop_count": 1
+    }
+  },
+  "treatment_relevant_state": {
+    "family_state": "focus_input_routing",
+    "operation_graph": "two_writer_windows",
+    "shared_resource": {
+      "documents": [
+        "doc-a",
+        "doc-b"
+      ],
+      "target_kind": "status paragraph"
+    }
+  },
+  "validation_level": "guest_solo",
+  "workflow_id": "F-N1"
+}

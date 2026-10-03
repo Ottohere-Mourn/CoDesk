@@ -1,0 +1,240 @@
+{
+  "actor_goals": [
+    {
+      "actor_id": "A",
+      "expected_value": "Approved: capital request (object)",
+      "goal": "Replace the assigned paragraph in doc-A.",
+      "initial_value": "Draft: capital request",
+      "operation": "update writer/doc-a/summary-paragraph",
+      "target_objects": [
+        "writer/doc-a/summary-paragraph"
+      ],
+      "task_domain": "Writer"
+    },
+    {
+      "actor_id": "B",
+      "expected_value": "Recorded: capital request (object)",
+      "goal": "Replace the assigned paragraph in doc-B.",
+      "initial_value": "Pending: capital request",
+      "operation": "update writer/doc-b/summary-paragraph",
+      "target_objects": [
+        "writer/doc-b/summary-paragraph"
+      ],
+      "task_domain": "Writer"
+    }
+  ],
+  "benchmark_version": "codesk-v1.0",
+  "evaluator": {
+    "actor_paths": {
+      "A": "actors.A.value",
+      "B": "actors.B.value"
+    },
+    "adapter": "codesk_exact_state_v1",
+    "condition_semantics": {
+      "ma_id": "score each actor on equivalent independent desktop fixture",
+      "ma_sd": "score both actor goals and shared-state integrity",
+      "solo": "score selected actor; require inactive target and guards unchanged"
+    },
+    "expected_state": {
+      "actors": {
+        "A": {
+          "object": "writer/doc-a/summary-paragraph",
+          "value": "Approved: capital request (object)"
+        },
+        "B": {
+          "object": "writer/doc-b/summary-paragraph",
+          "value": "Recorded: capital request (object)"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "documents": [
+            "doc-a",
+            "doc-b"
+          ],
+          "target_kind": "summary paragraph"
+        },
+        "resource": "focus_input_routing"
+      }
+    },
+    "initial_state": {
+      "actors": {
+        "A": {
+          "object": "writer/doc-a/summary-paragraph",
+          "value": "Draft: capital request"
+        },
+        "B": {
+          "object": "writer/doc-b/summary-paragraph",
+          "value": "Pending: capital request"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "documents": [
+            "doc-a",
+            "doc-b"
+          ],
+          "target_kind": "summary paragraph"
+        },
+        "resource": "focus_input_routing"
+      }
+    },
+    "invariants": [
+      {
+        "equals": "PRESERVE",
+        "path": "actors.guards.main"
+      }
+    ],
+    "schedule_policy_id": "writer-window-a-window-b-resume-a-v1"
+  },
+  "evaluator_path": "evaluators/cdv1-fn1-24cacb5487e66a64.json",
+  "evaluator_sha256": "c52a3b3dd493c06b4b3f25f94d0665a41ea1b288aed2ce2f4d2ac4f5f1fd291a",
+  "family": "focus_input_routing",
+  "fixture_files": [
+    {
+      "path": "fixtures/cdv1-fn1-24cacb5487e66a64/doc-a.fodt",
+      "sha256": "ecc5c2b97acb41ef32f9b42dd866003495911bfc6460f9c24ffea174db4797bc",
+      "size_bytes": 384
+    },
+    {
+      "path": "fixtures/cdv1-fn1-24cacb5487e66a64/doc-b.fodt",
+      "sha256": "7d32e72eedea926cca838fa8160605d5c5ef88df04da4c77a5ee2b6d114de701",
+      "size_bytes": 386
+    }
+  ],
+  "generation_seed": 2026,
+  "initial_fixture_spec": {
+    "application_set": [
+      "Writer",
+      "Writer"
+    ],
+    "fixture_profile": "writer_doc_summary",
+    "layout_id": "guard_after",
+    "public_assets": [
+      {
+        "path": "fixtures/cdv1-fn1-24cacb5487e66a64/doc-a.fodt",
+        "sha256": "ecc5c2b97acb41ef32f9b42dd866003495911bfc6460f9c24ffea174db4797bc",
+        "size_bytes": 384
+      },
+      {
+        "path": "fixtures/cdv1-fn1-24cacb5487e66a64/doc-b.fodt",
+        "sha256": "7d32e72eedea926cca838fa8160605d5c5ef88df04da4c77a5ee2b6d114de701",
+        "size_bytes": 386
+      }
+    ]
+  },
+  "instance_id": "cdv1-fn1-24cacb5487e66a64",
+  "manifest_entry_sha256": "379bfecde019e6dc05ab4000623c26269cf9b32a48feba075acb4aa506e9aec7",
+  "provenance": {
+    "fixture_sha256": "1f9a47c55e2213067070171e5a8ebe3261d87307a4ed9f1e02bb1fe74dd6857f",
+    "generation_seed": 2026,
+    "generator": "swcub.production_v1",
+    "seed_role": "deterministic profile ordering only; excluded from instance identity",
+    "semantic_spec_sha256": "24cacb5487e66a642f43d7c3fce09d4bad167151311f7a4e94164c62f3781af9",
+    "source_code_sha256": "579c135b4b828886e972dbc72c0d8fd242dacbade19164e4f80b52194ae045f4",
+    "source_commit": "ac5801113da9bfbd96057c3cda51d13f722105fb"
+  },
+  "reset_metadata": {
+    "fixture_id": "cdv1-fn1-24cacb5487e66a64",
+    "fresh_guest_required": true,
+    "remove_prior_app_state": true,
+    "verify_fixture_hash": "1f9a47c55e2213067070171e5a8ebe3261d87307a4ed9f1e02bb1fe74dd6857f",
+    "verify_state": {
+      "actors": {
+        "A": {
+          "object": "writer/doc-a/summary-paragraph",
+          "value": "Draft: capital request"
+        },
+        "B": {
+          "object": "writer/doc-b/summary-paragraph",
+          "value": "Pending: capital request"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "documents": [
+            "doc-a",
+            "doc-b"
+          ],
+          "target_kind": "summary paragraph"
+        },
+        "resource": "focus_input_routing"
+      }
+    }
+  },
+  "schedule_policy_id": "writer-window-a-window-b-resume-a-v1",
+  "semantic_parameters": {
+    "domain_id": "capital_allocation",
+    "domain_schema": {
+      "entity": "capital request",
+      "field_a": "Decision",
+      "field_b": "Ledger state"
+    },
+    "layout_id": "guard_after",
+    "object_profile_id": "writer_doc_summary",
+    "object_schema": {
+      "documents": [
+        "doc-a",
+        "doc-b"
+      ],
+      "target_kind": "summary paragraph"
+    },
+    "operation_graph": "two_writer_windows",
+    "workflow_id": "F-N1"
+  },
+  "signatures": {
+    "fixture": "1f9a47c55e2213067070171e5a8ebe3261d87307a4ed9f1e02bb1fe74dd6857f",
+    "goal": "d1aa69f9f421da3fca1193b98b372abc1d7df3e59c1e6a731ba31239705cdb41",
+    "semantic": "24cacb5487e66a642f43d7c3fce09d4bad167151311f7a4e94164c62f3781af9",
+    "structural": "bcf55c00fd4bb2c2611a7f3ce431e2ccac5fabf1d008697356c345fa40c13cc8"
+  },
+  "target_objects": {
+    "A": [
+      "writer/doc-a/summary-paragraph"
+    ],
+    "B": [
+      "writer/doc-b/summary-paragraph"
+    ]
+  },
+  "task_domains": {
+    "A": "Writer",
+    "B": "Writer"
+  },
+  "topology_compatibility": {
+    "ma_id": {
+      "backend_binding": "same logical workspace seed; independent desktop sessions allowed",
+      "desktop_count": 2,
+      "fixtures": "byte-identical task-relevant clones"
+    },
+    "ma_sd": {
+      "actor_bindings": "A and B share desktop",
+      "desktop_count": 1
+    },
+    "solo": {
+      "actor_bindings": "A or B",
+      "desktop_count": 1
+    }
+  },
+  "treatment_relevant_state": {
+    "family_state": "focus_input_routing",
+    "operation_graph": "two_writer_windows",
+    "shared_resource": {
+      "documents": [
+        "doc-a",
+        "doc-b"
+      ],
+      "target_kind": "summary paragraph"
+    }
+  },
+  "validation_level": "guest_solo",
+  "workflow_id": "F-N1"
+}

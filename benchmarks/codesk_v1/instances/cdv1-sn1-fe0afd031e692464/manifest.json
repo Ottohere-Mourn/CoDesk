@@ -1,0 +1,215 @@
+{
+  "actor_goals": [
+    {
+      "actor_id": "A",
+      "expected_value": "Approved: capital request (object)",
+      "goal": "Bold only range A.",
+      "initial_value": "Draft: capital request",
+      "operation": "bold writer/range:sentence-a",
+      "target_objects": [
+        "writer/range:sentence-a"
+      ],
+      "task_domain": "Writer"
+    },
+    {
+      "actor_id": "B",
+      "expected_value": "Recorded: capital request (object)",
+      "goal": "Bold only range B.",
+      "initial_value": "Pending: capital request",
+      "operation": "bold writer/range:sentence-b",
+      "target_objects": [
+        "writer/range:sentence-b"
+      ],
+      "task_domain": "Writer"
+    }
+  ],
+  "benchmark_version": "codesk-v1.0",
+  "evaluator": {
+    "actor_paths": {
+      "A": "actors.A.value",
+      "B": "actors.B.value"
+    },
+    "adapter": "codesk_exact_state_v1",
+    "condition_semantics": {
+      "ma_id": "score each actor on equivalent independent desktop fixture",
+      "ma_sd": "score both actor goals and shared-state integrity",
+      "solo": "score selected actor; require inactive target and guards unchanged"
+    },
+    "expected_state": {
+      "actors": {
+        "A": {
+          "object": "writer/range:sentence-a",
+          "value": "Approved: capital request (object)"
+        },
+        "B": {
+          "object": "writer/range:sentence-b",
+          "value": "Recorded: capital request (object)"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "action": "bold",
+          "selection_kind": "sentence range"
+        },
+        "resource": "selection_active_object"
+      }
+    },
+    "initial_state": {
+      "actors": {
+        "A": {
+          "object": "writer/range:sentence-a",
+          "value": "Draft: capital request"
+        },
+        "B": {
+          "object": "writer/range:sentence-b",
+          "value": "Pending: capital request"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "action": "bold",
+          "selection_kind": "sentence range"
+        },
+        "resource": "selection_active_object"
+      }
+    },
+    "invariants": [
+      {
+        "equals": "PRESERVE",
+        "path": "actors.guards.main"
+      }
+    ],
+    "schedule_policy_id": "range-select-a-select-b-resume-a-v1"
+  },
+  "evaluator_path": "evaluators/cdv1-sn1-fe0afd031e692464.json",
+  "evaluator_sha256": "d0fdf1c1e9d7e50deac3b07b2ca96f96d93e001cd03859953d912d8e78d90004",
+  "family": "selection_active_object",
+  "fixture_files": [
+    {
+      "path": "fixtures/cdv1-sn1-fe0afd031e692464/document.fodt",
+      "sha256": "baebdfbe3c82db5ab2dbfe985a29740b0d1a063121246e2a1912dfc48f7ccee5",
+      "size_bytes": 408
+    }
+  ],
+  "generation_seed": 2026,
+  "initial_fixture_spec": {
+    "application_set": [
+      "Writer",
+      "Writer"
+    ],
+    "fixture_profile": "range_sentence_pair",
+    "layout_id": "guard_after",
+    "public_assets": [
+      {
+        "path": "fixtures/cdv1-sn1-fe0afd031e692464/document.fodt",
+        "sha256": "baebdfbe3c82db5ab2dbfe985a29740b0d1a063121246e2a1912dfc48f7ccee5",
+        "size_bytes": 408
+      }
+    ]
+  },
+  "instance_id": "cdv1-sn1-fe0afd031e692464",
+  "manifest_entry_sha256": "845fab369f7defd836c3ca11f4d8a19fdcf8b8203fa344856605492c3478707d",
+  "provenance": {
+    "fixture_sha256": "8396f2ef48b1d604f74ef42a3e52ee9bfc8cbc3011d86e68a35a82b4aef38935",
+    "generation_seed": 2026,
+    "generator": "swcub.production_v1",
+    "seed_role": "deterministic profile ordering only; excluded from instance identity",
+    "semantic_spec_sha256": "fe0afd031e69246408cb30f917ebd30fb097b352ea5dc167fac09d6d22ef6ece",
+    "source_code_sha256": "579c135b4b828886e972dbc72c0d8fd242dacbade19164e4f80b52194ae045f4",
+    "source_commit": "ac5801113da9bfbd96057c3cda51d13f722105fb"
+  },
+  "reset_metadata": {
+    "fixture_id": "cdv1-sn1-fe0afd031e692464",
+    "fresh_guest_required": true,
+    "remove_prior_app_state": true,
+    "verify_fixture_hash": "8396f2ef48b1d604f74ef42a3e52ee9bfc8cbc3011d86e68a35a82b4aef38935",
+    "verify_state": {
+      "actors": {
+        "A": {
+          "object": "writer/range:sentence-a",
+          "value": "Draft: capital request"
+        },
+        "B": {
+          "object": "writer/range:sentence-b",
+          "value": "Pending: capital request"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "action": "bold",
+          "selection_kind": "sentence range"
+        },
+        "resource": "selection_active_object"
+      }
+    }
+  },
+  "schedule_policy_id": "range-select-a-select-b-resume-a-v1",
+  "semantic_parameters": {
+    "domain_id": "capital_allocation",
+    "domain_schema": {
+      "entity": "capital request",
+      "field_a": "Decision",
+      "field_b": "Ledger state"
+    },
+    "layout_id": "guard_after",
+    "object_profile_id": "range_sentence_pair",
+    "object_schema": {
+      "action": "bold",
+      "selection_kind": "sentence range"
+    },
+    "operation_graph": "writer_text_range_selection",
+    "workflow_id": "S-N1"
+  },
+  "signatures": {
+    "fixture": "8396f2ef48b1d604f74ef42a3e52ee9bfc8cbc3011d86e68a35a82b4aef38935",
+    "goal": "2b1ef772fc1f962bcbf3d4ccdaec2fa4716d00d8b83560878756c0ed485be968",
+    "semantic": "fe0afd031e69246408cb30f917ebd30fb097b352ea5dc167fac09d6d22ef6ece",
+    "structural": "defaa7e423ed126799ac0a6820373ffc090a361f07bc33b2b0f1ba7ba023854c"
+  },
+  "target_objects": {
+    "A": [
+      "writer/range:sentence-a"
+    ],
+    "B": [
+      "writer/range:sentence-b"
+    ]
+  },
+  "task_domains": {
+    "A": "Writer",
+    "B": "Writer"
+  },
+  "topology_compatibility": {
+    "ma_id": {
+      "backend_binding": "same logical workspace seed; independent desktop sessions allowed",
+      "desktop_count": 2,
+      "fixtures": "byte-identical task-relevant clones"
+    },
+    "ma_sd": {
+      "actor_bindings": "A and B share desktop",
+      "desktop_count": 1
+    },
+    "solo": {
+      "actor_bindings": "A or B",
+      "desktop_count": 1
+    }
+  },
+  "treatment_relevant_state": {
+    "family_state": "selection_active_object",
+    "operation_graph": "writer_text_range_selection",
+    "shared_resource": {
+      "action": "bold",
+      "selection_kind": "sentence range"
+    }
+  },
+  "validation_level": "offline",
+  "workflow_id": "S-N1"
+}

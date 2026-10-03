@@ -1,0 +1,215 @@
+{
+  "actor_goals": [
+    {
+      "actor_id": "A",
+      "expected_value": "Reconciled: warehouse lot (object)",
+      "goal": "Bold only range A.",
+      "initial_value": "Draft: warehouse lot",
+      "operation": "bold writer/range:list-item-a",
+      "target_objects": [
+        "writer/range:list-item-a"
+      ],
+      "task_domain": "Writer"
+    },
+    {
+      "actor_id": "B",
+      "expected_value": "Counted: warehouse lot (object)",
+      "goal": "Bold only range B.",
+      "initial_value": "Pending: warehouse lot",
+      "operation": "bold writer/range:list-item-b",
+      "target_objects": [
+        "writer/range:list-item-b"
+      ],
+      "task_domain": "Writer"
+    }
+  ],
+  "benchmark_version": "codesk-v1.0",
+  "evaluator": {
+    "actor_paths": {
+      "A": "actors.A.value",
+      "B": "actors.B.value"
+    },
+    "adapter": "codesk_exact_state_v1",
+    "condition_semantics": {
+      "ma_id": "score each actor on equivalent independent desktop fixture",
+      "ma_sd": "score both actor goals and shared-state integrity",
+      "solo": "score selected actor; require inactive target and guards unchanged"
+    },
+    "expected_state": {
+      "actors": {
+        "A": {
+          "object": "writer/range:list-item-a",
+          "value": "Reconciled: warehouse lot (object)"
+        },
+        "B": {
+          "object": "writer/range:list-item-b",
+          "value": "Counted: warehouse lot (object)"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "action": "bold",
+          "selection_kind": "list item range"
+        },
+        "resource": "selection_active_object"
+      }
+    },
+    "initial_state": {
+      "actors": {
+        "A": {
+          "object": "writer/range:list-item-a",
+          "value": "Draft: warehouse lot"
+        },
+        "B": {
+          "object": "writer/range:list-item-b",
+          "value": "Pending: warehouse lot"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "action": "bold",
+          "selection_kind": "list item range"
+        },
+        "resource": "selection_active_object"
+      }
+    },
+    "invariants": [
+      {
+        "equals": "PRESERVE",
+        "path": "actors.guards.main"
+      }
+    ],
+    "schedule_policy_id": "range-select-a-select-b-resume-a-v1"
+  },
+  "evaluator_path": "evaluators/cdv1-sn1-2b7e16f959ab4ee9.json",
+  "evaluator_sha256": "bf0c4651528ddf02ab2dbeb6c7ec8d865666f6d7a0a5f764b53d91a4ff4836bc",
+  "family": "selection_active_object",
+  "fixture_files": [
+    {
+      "path": "fixtures/cdv1-sn1-2b7e16f959ab4ee9/document.fodt",
+      "sha256": "486817f6d1fb5986e24e34051029b363e0a91768c300e27b8e83ddd80f92cf51",
+      "size_bytes": 403
+    }
+  ],
+  "generation_seed": 2026,
+  "initial_fixture_spec": {
+    "application_set": [
+      "Writer",
+      "Writer"
+    ],
+    "fixture_profile": "range_list_item_pair",
+    "layout_id": "guard_before",
+    "public_assets": [
+      {
+        "path": "fixtures/cdv1-sn1-2b7e16f959ab4ee9/document.fodt",
+        "sha256": "486817f6d1fb5986e24e34051029b363e0a91768c300e27b8e83ddd80f92cf51",
+        "size_bytes": 403
+      }
+    ]
+  },
+  "instance_id": "cdv1-sn1-2b7e16f959ab4ee9",
+  "manifest_entry_sha256": "0d386987b71fa651b00e6f7012a43e9a494693700a4a2cad856fdaab7b746129",
+  "provenance": {
+    "fixture_sha256": "e30bab9a4344d1f69ac47237a8def43f3d222c8cb94b5f6759adf0b08ce3dd8a",
+    "generation_seed": 2026,
+    "generator": "swcub.production_v1",
+    "seed_role": "deterministic profile ordering only; excluded from instance identity",
+    "semantic_spec_sha256": "2b7e16f959ab4ee98cdb6d58e816db0d77d8366300dd645eb207226ee6150060",
+    "source_code_sha256": "579c135b4b828886e972dbc72c0d8fd242dacbade19164e4f80b52194ae045f4",
+    "source_commit": "ac5801113da9bfbd96057c3cda51d13f722105fb"
+  },
+  "reset_metadata": {
+    "fixture_id": "cdv1-sn1-2b7e16f959ab4ee9",
+    "fresh_guest_required": true,
+    "remove_prior_app_state": true,
+    "verify_fixture_hash": "e30bab9a4344d1f69ac47237a8def43f3d222c8cb94b5f6759adf0b08ce3dd8a",
+    "verify_state": {
+      "actors": {
+        "A": {
+          "object": "writer/range:list-item-a",
+          "value": "Draft: warehouse lot"
+        },
+        "B": {
+          "object": "writer/range:list-item-b",
+          "value": "Pending: warehouse lot"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "action": "bold",
+          "selection_kind": "list item range"
+        },
+        "resource": "selection_active_object"
+      }
+    }
+  },
+  "schedule_policy_id": "range-select-a-select-b-resume-a-v1",
+  "semantic_parameters": {
+    "domain_id": "warehouse_reconciliation",
+    "domain_schema": {
+      "entity": "warehouse lot",
+      "field_a": "Reconciliation",
+      "field_b": "Count status"
+    },
+    "layout_id": "guard_before",
+    "object_profile_id": "range_list_item_pair",
+    "object_schema": {
+      "action": "bold",
+      "selection_kind": "list item range"
+    },
+    "operation_graph": "writer_text_range_selection",
+    "workflow_id": "S-N1"
+  },
+  "signatures": {
+    "fixture": "e30bab9a4344d1f69ac47237a8def43f3d222c8cb94b5f6759adf0b08ce3dd8a",
+    "goal": "873d7eac2ac578e4b30847e181d8d519e858606a4655a8223bdbd9dbbae99628",
+    "semantic": "2b7e16f959ab4ee98cdb6d58e816db0d77d8366300dd645eb207226ee6150060",
+    "structural": "ce053adff4e659dada687ac912434bff4bdc4a34f23ceda4574970a50d1067e0"
+  },
+  "target_objects": {
+    "A": [
+      "writer/range:list-item-a"
+    ],
+    "B": [
+      "writer/range:list-item-b"
+    ]
+  },
+  "task_domains": {
+    "A": "Writer",
+    "B": "Writer"
+  },
+  "topology_compatibility": {
+    "ma_id": {
+      "backend_binding": "same logical workspace seed; independent desktop sessions allowed",
+      "desktop_count": 2,
+      "fixtures": "byte-identical task-relevant clones"
+    },
+    "ma_sd": {
+      "actor_bindings": "A and B share desktop",
+      "desktop_count": 1
+    },
+    "solo": {
+      "actor_bindings": "A or B",
+      "desktop_count": 1
+    }
+  },
+  "treatment_relevant_state": {
+    "family_state": "selection_active_object",
+    "operation_graph": "writer_text_range_selection",
+    "shared_resource": {
+      "action": "bold",
+      "selection_kind": "list item range"
+    }
+  },
+  "validation_level": "offline",
+  "workflow_id": "S-N1"
+}

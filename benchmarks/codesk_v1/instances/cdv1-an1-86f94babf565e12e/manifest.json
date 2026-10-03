@@ -1,0 +1,240 @@
+{
+  "actor_goals": [
+    {
+      "actor_id": "A",
+      "expected_value": "Approved: capital request (object)",
+      "goal": "Submit route A's exact value.",
+      "initial_value": "Draft: capital request",
+      "operation": "update browser/route:supplier",
+      "target_objects": [
+        "browser/route:supplier"
+      ],
+      "task_domain": "Browser"
+    },
+    {
+      "actor_id": "B",
+      "expected_value": "Recorded: capital request (object)",
+      "goal": "Submit route B's exact value.",
+      "initial_value": "Pending: capital request",
+      "operation": "update browser/route:invoice",
+      "target_objects": [
+        "browser/route:invoice"
+      ],
+      "task_domain": "Browser"
+    }
+  ],
+  "benchmark_version": "codesk-v1.0",
+  "evaluator": {
+    "actor_paths": {
+      "A": "actors.A.value",
+      "B": "actors.B.value"
+    },
+    "adapter": "codesk_exact_state_v1",
+    "condition_semantics": {
+      "ma_id": "score each actor on equivalent independent desktop fixture",
+      "ma_sd": "score both actor goals and shared-state integrity",
+      "solo": "score selected actor; require inactive target and guards unchanged"
+    },
+    "expected_state": {
+      "actors": {
+        "A": {
+          "object": "browser/route:supplier",
+          "value": "Approved: capital request (object)"
+        },
+        "B": {
+          "object": "browser/route:invoice",
+          "value": "Recorded: capital request (object)"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "field": "decision",
+          "route_pair": [
+            "supplier",
+            "invoice"
+          ]
+        },
+        "resource": "application_context"
+      }
+    },
+    "initial_state": {
+      "actors": {
+        "A": {
+          "object": "browser/route:supplier",
+          "value": "Draft: capital request"
+        },
+        "B": {
+          "object": "browser/route:invoice",
+          "value": "Pending: capital request"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "field": "decision",
+          "route_pair": [
+            "supplier",
+            "invoice"
+          ]
+        },
+        "resource": "application_context"
+      }
+    },
+    "invariants": [
+      {
+        "equals": "PRESERVE",
+        "path": "actors.guards.main"
+      }
+    ],
+    "schedule_policy_id": "route-observe-a-change-b-resume-a-v1"
+  },
+  "evaluator_path": "evaluators/cdv1-an1-86f94babf565e12e.json",
+  "evaluator_sha256": "0be09818f55d904162ee6ddbb069c9df1f97b018ad112cfa7f31d260ec3c6d3d",
+  "family": "application_context",
+  "fixture_files": [
+    {
+      "path": "fixtures/cdv1-an1-86f94babf565e12e/browser-initial-state.json",
+      "sha256": "be50e02c8484b0628edb8900605a94666333779c4eaa4481d458cebca0c87fae",
+      "size_bytes": 173
+    },
+    {
+      "path": "fixtures/cdv1-an1-86f94babf565e12e/workspace.html",
+      "sha256": "b9b01786380ecb5d61525a41559c7f4b2d5922ac1f72093026435070c68df403",
+      "size_bytes": 271
+    }
+  ],
+  "generation_seed": 2026,
+  "initial_fixture_spec": {
+    "application_set": [
+      "Browser",
+      "Browser"
+    ],
+    "fixture_profile": "spa_supplier_invoice",
+    "layout_id": "guard_before",
+    "public_assets": [
+      {
+        "path": "fixtures/cdv1-an1-86f94babf565e12e/browser-initial-state.json",
+        "sha256": "be50e02c8484b0628edb8900605a94666333779c4eaa4481d458cebca0c87fae",
+        "size_bytes": 173
+      },
+      {
+        "path": "fixtures/cdv1-an1-86f94babf565e12e/workspace.html",
+        "sha256": "b9b01786380ecb5d61525a41559c7f4b2d5922ac1f72093026435070c68df403",
+        "size_bytes": 271
+      }
+    ]
+  },
+  "instance_id": "cdv1-an1-86f94babf565e12e",
+  "manifest_entry_sha256": "d272f87455f16b3755f5cc91d2b355fa458802647b9a740a9a3ed3f6023648be",
+  "provenance": {
+    "fixture_sha256": "b8ca07c5205011e9af065921bd1b54aaef51708decd5613b53ad14ea2e12d10f",
+    "generation_seed": 2026,
+    "generator": "swcub.production_v1",
+    "seed_role": "deterministic profile ordering only; excluded from instance identity",
+    "semantic_spec_sha256": "86f94babf565e12eb789cd45c1eccc16aee30084ed0ec8b744d24004d5504790",
+    "source_code_sha256": "579c135b4b828886e972dbc72c0d8fd242dacbade19164e4f80b52194ae045f4",
+    "source_commit": "ac5801113da9bfbd96057c3cda51d13f722105fb"
+  },
+  "reset_metadata": {
+    "fixture_id": "cdv1-an1-86f94babf565e12e",
+    "fresh_guest_required": true,
+    "remove_prior_app_state": true,
+    "verify_fixture_hash": "b8ca07c5205011e9af065921bd1b54aaef51708decd5613b53ad14ea2e12d10f",
+    "verify_state": {
+      "actors": {
+        "A": {
+          "object": "browser/route:supplier",
+          "value": "Draft: capital request"
+        },
+        "B": {
+          "object": "browser/route:invoice",
+          "value": "Pending: capital request"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "field": "decision",
+          "route_pair": [
+            "supplier",
+            "invoice"
+          ]
+        },
+        "resource": "application_context"
+      }
+    }
+  },
+  "schedule_policy_id": "route-observe-a-change-b-resume-a-v1",
+  "semantic_parameters": {
+    "domain_id": "capital_allocation",
+    "domain_schema": {
+      "entity": "capital request",
+      "field_a": "Decision",
+      "field_b": "Ledger state"
+    },
+    "layout_id": "guard_before",
+    "object_profile_id": "spa_supplier_invoice",
+    "object_schema": {
+      "field": "decision",
+      "route_pair": [
+        "supplier",
+        "invoice"
+      ]
+    },
+    "operation_graph": "same_tab_spa_route",
+    "workflow_id": "A-N1"
+  },
+  "signatures": {
+    "fixture": "b8ca07c5205011e9af065921bd1b54aaef51708decd5613b53ad14ea2e12d10f",
+    "goal": "1f3774d4112ca0da48a6db55f810c14d5a6637938f5395dc66ea2122e18e2d5b",
+    "semantic": "86f94babf565e12eb789cd45c1eccc16aee30084ed0ec8b744d24004d5504790",
+    "structural": "62a1505b885b2c09dc8138423393110699cd4219939ab64803900da1e3b8db47"
+  },
+  "target_objects": {
+    "A": [
+      "browser/route:supplier"
+    ],
+    "B": [
+      "browser/route:invoice"
+    ]
+  },
+  "task_domains": {
+    "A": "Browser",
+    "B": "Browser"
+  },
+  "topology_compatibility": {
+    "ma_id": {
+      "backend_binding": "same logical workspace seed; independent desktop sessions allowed",
+      "desktop_count": 2,
+      "fixtures": "byte-identical task-relevant clones"
+    },
+    "ma_sd": {
+      "actor_bindings": "A and B share desktop",
+      "desktop_count": 1
+    },
+    "solo": {
+      "actor_bindings": "A or B",
+      "desktop_count": 1
+    }
+  },
+  "treatment_relevant_state": {
+    "family_state": "application_context",
+    "operation_graph": "same_tab_spa_route",
+    "shared_resource": {
+      "field": "decision",
+      "route_pair": [
+        "supplier",
+        "invoice"
+      ]
+    }
+  },
+  "validation_level": "offline",
+  "workflow_id": "A-N1"
+}

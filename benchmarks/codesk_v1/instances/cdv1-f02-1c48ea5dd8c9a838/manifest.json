@@ -1,0 +1,250 @@
+{
+  "actor_goals": [
+    {
+      "actor_id": "A",
+      "expected_value": "Accepted: supplier record (object)",
+      "goal": "Attach the assigned note to the target review anchor.",
+      "initial_value": "Draft: supplier record",
+      "operation": "update writer/comment-anchor:risk",
+      "target_objects": [
+        "writer/comment-anchor:risk"
+      ],
+      "task_domain": "Writer"
+    },
+    {
+      "actor_id": "B",
+      "expected_value": "Verified: supplier record (object)",
+      "goal": "Submit the independent review form exactly once.",
+      "initial_value": "Pending: supplier record",
+      "operation": "update browser/review/risk",
+      "target_objects": [
+        "browser/review/risk"
+      ],
+      "task_domain": "Browser"
+    }
+  ],
+  "benchmark_version": "codesk-v1.0",
+  "evaluator": {
+    "actor_paths": {
+      "A": "actors.A.value",
+      "B": "actors.B.value"
+    },
+    "adapter": "codesk_exact_state_v1",
+    "condition_semantics": {
+      "ma_id": "score each actor on equivalent independent desktop fixture",
+      "ma_sd": "score both actor goals and shared-state integrity",
+      "solo": "score selected actor; require inactive target and guards unchanged"
+    },
+    "expected_state": {
+      "actors": {
+        "A": {
+          "object": "writer/comment-anchor:risk",
+          "value": "Accepted: supplier record (object)"
+        },
+        "B": {
+          "object": "browser/review/risk",
+          "value": "Verified: supplier record (object)"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "anchor_kind": "risk sentence",
+          "form_fields": [
+            "risk_id",
+            "disposition"
+          ]
+        },
+        "resource": "focus_input_routing"
+      }
+    },
+    "initial_state": {
+      "actors": {
+        "A": {
+          "object": "writer/comment-anchor:risk",
+          "value": "Draft: supplier record"
+        },
+        "B": {
+          "object": "browser/review/risk",
+          "value": "Pending: supplier record"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "anchor_kind": "risk sentence",
+          "form_fields": [
+            "risk_id",
+            "disposition"
+          ]
+        },
+        "resource": "focus_input_routing"
+      }
+    },
+    "invariants": [
+      {
+        "equals": "PRESERVE",
+        "path": "actors.guards.main"
+      }
+    ],
+    "schedule_policy_id": "writer-anchor-browser-form-comment-v1"
+  },
+  "evaluator_path": "evaluators/cdv1-f02-1c48ea5dd8c9a838.json",
+  "evaluator_sha256": "557ff89c6e06375815f5b69c643425696d23b94251340224eed29c01d7baeabf",
+  "family": "focus_input_routing",
+  "fixture_files": [
+    {
+      "path": "fixtures/cdv1-f02-1c48ea5dd8c9a838/browser-initial-state.json",
+      "sha256": "755c0dc54c049b24a4857367d3b2e2a8271b577e2a5a9f327eda3fefeeb7db98",
+      "size_bytes": 174
+    },
+    {
+      "path": "fixtures/cdv1-f02-1c48ea5dd8c9a838/document.fodt",
+      "sha256": "271f3960a4ba231a64a267b09698452c869b20b27cadc808614148c9cb4ed0f4",
+      "size_bytes": 428
+    },
+    {
+      "path": "fixtures/cdv1-f02-1c48ea5dd8c9a838/workspace.html",
+      "sha256": "d2a2f8266149b39572b227193692d380764e1d47eeb4de9aa5fd992145748bfd",
+      "size_bytes": 268
+    }
+  ],
+  "generation_seed": 2026,
+  "initial_fixture_spec": {
+    "application_set": [
+      "Writer",
+      "Browser"
+    ],
+    "fixture_profile": "anchor_risk",
+    "layout_id": "guard_before",
+    "public_assets": [
+      {
+        "path": "fixtures/cdv1-f02-1c48ea5dd8c9a838/browser-initial-state.json",
+        "sha256": "755c0dc54c049b24a4857367d3b2e2a8271b577e2a5a9f327eda3fefeeb7db98",
+        "size_bytes": 174
+      },
+      {
+        "path": "fixtures/cdv1-f02-1c48ea5dd8c9a838/document.fodt",
+        "sha256": "271f3960a4ba231a64a267b09698452c869b20b27cadc808614148c9cb4ed0f4",
+        "size_bytes": 428
+      },
+      {
+        "path": "fixtures/cdv1-f02-1c48ea5dd8c9a838/workspace.html",
+        "sha256": "d2a2f8266149b39572b227193692d380764e1d47eeb4de9aa5fd992145748bfd",
+        "size_bytes": 268
+      }
+    ]
+  },
+  "instance_id": "cdv1-f02-1c48ea5dd8c9a838",
+  "manifest_entry_sha256": "13bbbd379ebbe08b74426f6f051bff2a3c68e458d91ceaf58f99f93f1eed0c3f",
+  "provenance": {
+    "fixture_sha256": "a61733413c5ad78027437bc3ba83052e388e74b1246fe6021b1350c91244262b",
+    "generation_seed": 2026,
+    "generator": "swcub.production_v1",
+    "seed_role": "deterministic profile ordering only; excluded from instance identity",
+    "semantic_spec_sha256": "1c48ea5dd8c9a8385bb85e72ae2c542aec48626ebd4ff689007968859d2244b4",
+    "source_code_sha256": "579c135b4b828886e972dbc72c0d8fd242dacbade19164e4f80b52194ae045f4",
+    "source_commit": "ac5801113da9bfbd96057c3cda51d13f722105fb"
+  },
+  "reset_metadata": {
+    "fixture_id": "cdv1-f02-1c48ea5dd8c9a838",
+    "fresh_guest_required": true,
+    "remove_prior_app_state": true,
+    "verify_fixture_hash": "a61733413c5ad78027437bc3ba83052e388e74b1246fe6021b1350c91244262b",
+    "verify_state": {
+      "actors": {
+        "A": {
+          "object": "writer/comment-anchor:risk",
+          "value": "Draft: supplier record"
+        },
+        "B": {
+          "object": "browser/review/risk",
+          "value": "Pending: supplier record"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "anchor_kind": "risk sentence",
+          "form_fields": [
+            "risk_id",
+            "disposition"
+          ]
+        },
+        "resource": "focus_input_routing"
+      }
+    }
+  },
+  "schedule_policy_id": "writer-anchor-browser-form-comment-v1",
+  "semantic_parameters": {
+    "domain_id": "supplier_onboarding",
+    "domain_schema": {
+      "entity": "supplier record",
+      "field_a": "Review decision",
+      "field_b": "Verification state"
+    },
+    "layout_id": "guard_before",
+    "object_profile_id": "anchor_risk",
+    "object_schema": {
+      "anchor_kind": "risk sentence",
+      "form_fields": [
+        "risk_id",
+        "disposition"
+      ]
+    },
+    "operation_graph": "writer_comment_vs_browser_form",
+    "workflow_id": "F-02"
+  },
+  "signatures": {
+    "fixture": "a61733413c5ad78027437bc3ba83052e388e74b1246fe6021b1350c91244262b",
+    "goal": "11763cd958b91c8aa42897ea388c57afaa18e00831cf6df53ea39fa9ea70d633",
+    "semantic": "1c48ea5dd8c9a8385bb85e72ae2c542aec48626ebd4ff689007968859d2244b4",
+    "structural": "6b0d06e7b1dc75731cfd3588389efe2fe020f685ffff7a7c4115c17c084c673e"
+  },
+  "target_objects": {
+    "A": [
+      "writer/comment-anchor:risk"
+    ],
+    "B": [
+      "browser/review/risk"
+    ]
+  },
+  "task_domains": {
+    "A": "Writer",
+    "B": "Browser"
+  },
+  "topology_compatibility": {
+    "ma_id": {
+      "backend_binding": "same logical workspace seed; independent desktop sessions allowed",
+      "desktop_count": 2,
+      "fixtures": "byte-identical task-relevant clones"
+    },
+    "ma_sd": {
+      "actor_bindings": "A and B share desktop",
+      "desktop_count": 1
+    },
+    "solo": {
+      "actor_bindings": "A or B",
+      "desktop_count": 1
+    }
+  },
+  "treatment_relevant_state": {
+    "family_state": "focus_input_routing",
+    "operation_graph": "writer_comment_vs_browser_form",
+    "shared_resource": {
+      "anchor_kind": "risk sentence",
+      "form_fields": [
+        "risk_id",
+        "disposition"
+      ]
+    }
+  },
+  "validation_level": "scripted_full",
+  "workflow_id": "F-02"
+}
