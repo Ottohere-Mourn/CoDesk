@@ -4,7 +4,7 @@ import json,tempfile,sys,subprocess
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 from swcub.production_v1 import (workflow_registry,build_instance,_profile_catalog,generate_workflow,
-  evaluate_oracle,_positive_state,_negative_state,read_manifest,audit_records,make_run_plan)
+  evaluate_oracle,_positive_state,_negative_state,read_manifest,audit_records,make_run_plan,sha256)
 
 with tempfile.TemporaryDirectory(prefix="codesk-v1-offline-") as tmp:
  root=Path(tmp);allrows=[]
@@ -23,6 +23,10 @@ with tempfile.TemporaryDirectory(prefix="codesk-v1-offline-") as tmp:
    hand.append(materialize(s,out));allrows.append(hand[-1])
   (out/"manifest.jsonl").write_text("".join(json.dumps(x,sort_keys=True,separators=(",",":"))+"\n" for x in hand))
   reread=read_manifest(out/"manifest.jsonl");assert len(reread)==3
+  for rec in reread:
+   for asset in rec["fixture_files"]:assert sha256((out/asset["path"]).read_bytes())==asset["sha256"]
+   ev=out/rec["evaluator_path"]
+   assert sha256(ev.read_bytes())==rec["evaluator_sha256"]
  assert len(allrows)==45
  audit=audit_records(allrows);assert audit["generated"]==45 and audit["duplicate_rejected"]==0,audit
  plan=make_run_plan(allrows[:1],["solo","ma_id","ma_sd"],"qwen3vl",2)
@@ -40,6 +44,7 @@ with tempfile.TemporaryDirectory(prefix="codesk-v1-offline-") as tmp:
  subprocess.run([sys.executable,str(Path(__file__).with_name("aggregate_benchmark_results.py")),str(results),"--output-dir",str(agg)],check=True,capture_output=True,text=True)
  summary=json.loads((agg/"summary.json").read_text());assert summary["invalid_infra_count"]==1
  assert summary["groups"][0]["episodes"]==1 and summary["groups"][0]["actual_exposure"]==0
+ assert summary["groups"][0]["invalid_infra_count"]==1
  print(json.dumps({"status":"PASS","workflows":len(workflow_registry()),"instances":len(allrows),
    "positive_oracles":45,"negative_oracles":45,"plan_rows_for_one_instance":len(plan),
    "aggregator_test":"PASS (synthetic test rows only)","audit":audit},indent=2))
