@@ -1,0 +1,78 @@
+{
+  "actor_paths": {
+    "A": "actors.A.value",
+    "B": "actors.B.value"
+  },
+  "adapter": "codesk_exact_state_v1",
+  "condition_semantics": {
+    "ma_id": "score each actor on equivalent independent desktop fixture",
+    "ma_sd": "score both actor goals and shared-state integrity",
+    "solo": "score selected actor; require inactive target and guards unchanged"
+  },
+  "expected_state": {
+    "actors": {
+      "A": {
+        "object": "browser/query/vendor-a",
+        "value": "FILTER-A-CAP-4821"
+      },
+      "B": {
+        "object": "browser/query/vendor-b",
+        "value": "FILTER-B-CAP-4821"
+      },
+      "guards": {
+        "main": "PRESERVE"
+      }
+    },
+    "treatment": {
+      "initial": {
+        "operation_kind": "browser_filter_context",
+        "operation_pair": [
+          "filter_result_select_edit",
+          "filter_result_select_edit"
+        ],
+        "profile_label": "filter_vendor"
+      },
+      "resource": "application_context"
+    }
+  },
+  "initial_state": {
+    "actors": {
+      "A": {
+        "object": "browser/query/vendor-a",
+        "value": ""
+      },
+      "B": {
+        "object": "browser/query/vendor-b",
+        "value": ""
+      },
+      "guards": {
+        "main": "PRESERVE"
+      }
+    },
+    "treatment": {
+      "initial": {
+        "operation_kind": "browser_filter_context",
+        "operation_pair": [
+          "filter_result_select_edit",
+          "filter_result_select_edit"
+        ],
+        "profile_label": "filter_vendor"
+      },
+      "resource": "application_context"
+    }
+  },
+  "invariants": [
+    {
+      "equals": "PRESERVE",
+      "path": "actors.guards.main"
+    }
+  ],
+  "operation_contract": {
+    "A": "browser/filter/result-record-a",
+    "B": "browser/filter/result-record-b",
+    "evidence_required": true,
+    "operation_graph": "browser_filter_result_context_and_record_transaction",
+    "shared_state": "active query and result-set context"
+  },
+  "schedule_policy_id": "browser-filter-context-change-resume-v1"
+}

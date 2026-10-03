@@ -1,0 +1,86 @@
+{
+  "actor_paths": {
+    "A": "actors.A.value",
+    "B": "actors.B.value"
+  },
+  "adapter": "codesk_exact_state_v1",
+  "condition_semantics": {
+    "ma_id": "score each actor on equivalent independent desktop fixture",
+    "ma_sd": "score both actor goals and shared-state integrity",
+    "solo": "score selected actor; require inactive target and guards unchanged"
+  },
+  "expected_state": {
+    "actors": {
+      "A": {
+        "object": "calc/C5:E6",
+        "value": "[[\"A00-SKU-7316\",\"A01-SKU-7316\",\"A02-SKU-7316\"],[\"A10-SKU-7316\",\"A11-SKU-7316\",\"A12-SKU-7316\"]]"
+      },
+      "B": {
+        "object": "calc/G5:I6",
+        "value": "[[\"B00-SKU-7316\",\"B01-SKU-7316\",\"B02-SKU-7316\"],[\"B10-SKU-7316\",\"B11-SKU-7316\",\"B12-SKU-7316\"]]"
+      },
+      "guards": {
+        "main": "PRESERVE"
+      }
+    },
+    "treatment": {
+      "initial": {
+        "operation_kind": "calc_range_fill",
+        "operation_pair": [
+          "range_selection_fill",
+          "range_selection_fill"
+        ],
+        "profile_label": "fill_de",
+        "shape": [
+          2,
+          3
+        ]
+      },
+      "resource": "selection_active_object"
+    }
+  },
+  "initial_state": {
+    "actors": {
+      "A": {
+        "object": "calc/C5:E6",
+        "value": "__EMPTY_RANGE__"
+      },
+      "B": {
+        "object": "calc/G5:I6",
+        "value": "__EMPTY_RANGE__"
+      },
+      "guards": {
+        "main": "PRESERVE"
+      }
+    },
+    "treatment": {
+      "initial": {
+        "operation_kind": "calc_range_fill",
+        "operation_pair": [
+          "range_selection_fill",
+          "range_selection_fill"
+        ],
+        "profile_label": "fill_de",
+        "shape": [
+          2,
+          3
+        ]
+      },
+      "resource": "selection_active_object"
+    }
+  },
+  "invariants": [
+    {
+      "equals": "PRESERVE",
+      "path": "actors.guards.main"
+    }
+  ],
+  "operation_contract": {
+    "A": "calc/range-fill-a",
+    "B": "calc/range-fill-b",
+    "evidence_required": true,
+    "operation_graph": "calc_rectangular_selection_fill_handle",
+    "shared_state": "active selected range"
+  },
+  "schedule_policy_id": "calc-range-selection-change-resume-v1"
+}

@@ -1,0 +1,255 @@
+{
+  "actor_goals": [
+    {
+      "actor_id": "A",
+      "expected_value": "TEMP style A CAP-4821",
+      "goal": "Apply the temporary style TEMP style A CAP-4821 to the assigned range. After Actor B's independent paragraph edit, use Undo once, then verify your range is back to its seeded unstyled state Seed style A CAP-4821.",
+      "initial_value": "Seed style A CAP-4821",
+      "operation": "temporary Writer character style followed by cross-actor Undo",
+      "target_objects": [
+        "writer/range/title"
+      ],
+      "task_domain": "Writer"
+    },
+    {
+      "actor_id": "B",
+      "expected_value": "Final line B CAP-4821",
+      "goal": "Insert Final line B CAP-4821 into the assigned Writer paragraph; after Actor A's Undo, re-observe and restore the paragraph if it was reverted.",
+      "initial_value": "Seed line B CAP-4821",
+      "operation": "Writer text insertion followed by post-Undo recovery",
+      "target_objects": [
+        "writer/paragraph[3]"
+      ],
+      "task_domain": "Writer"
+    }
+  ],
+  "benchmark_version": "codesk-v1.0",
+  "evaluator": {
+    "actor_paths": {
+      "A": "actors.A.value",
+      "B": "actors.B.value"
+    },
+    "adapter": "codesk_exact_state_v1",
+    "condition_semantics": {
+      "ma_id": "score each actor on equivalent independent desktop fixture",
+      "ma_sd": "score both actor goals and shared-state integrity",
+      "solo": "score selected actor; require inactive target and guards unchanged"
+    },
+    "expected_state": {
+      "actors": {
+        "A": {
+          "object": "writer/range/title",
+          "value": "Seed style A CAP-4821"
+        },
+        "B": {
+          "object": "writer/paragraph[3]",
+          "value": "Final line B CAP-4821"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "operation_kind": "writer_style_undo",
+          "operation_pair": [
+            "temporary_style_apply_undo",
+            "independent_text_insert"
+          ],
+          "profile_label": "undo_style_title"
+        },
+        "resource": "undo_redo_history"
+      }
+    },
+    "history_contract": {
+      "actor_a_requires": [
+        "temporary_edit_or_operation_observed",
+        "undo_action_after_actor_b_commit",
+        "recovery_verified"
+      ],
+      "actor_b_requires": [
+        "target_edit_committed"
+      ],
+      "final_state_is_not_sufficient": true,
+      "operation_schema_revision": 1
+    },
+    "initial_state": {
+      "actors": {
+        "A": {
+          "object": "writer/range/title",
+          "value": "Seed style A CAP-4821"
+        },
+        "B": {
+          "object": "writer/paragraph[3]",
+          "value": "Seed line B CAP-4821"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "operation_kind": "writer_style_undo",
+          "operation_pair": [
+            "temporary_style_apply_undo",
+            "independent_text_insert"
+          ],
+          "profile_label": "undo_style_title"
+        },
+        "resource": "undo_redo_history"
+      }
+    },
+    "invariants": [
+      {
+        "equals": "PRESERVE",
+        "path": "actors.guards.main"
+      }
+    ],
+    "operation_contract": {
+      "A": "writer/history/style",
+      "B": "writer/paragraph[2]",
+      "evidence_required": true,
+      "operation_graph": "writer_character_format_then_cross_actor_undo",
+      "shared_state": "Writer document undo stack"
+    },
+    "schedule_policy_id": "writer-style-edit-b-undo-recover-v1"
+  },
+  "evaluator_path": "evaluators/cdv1-u02-e20eb1bffbba8d67.json",
+  "evaluator_sha256": "34133b42f964714448b8d1e938d011089b86fa5d315bbd3ef5f62efb037d6c58",
+  "family": "undo_redo_history",
+  "fixture_files": [
+    {
+      "path": "fixtures/cdv1-u02-e20eb1bffbba8d67/document.fodt",
+      "sha256": "580ad139db7382f2f18a9c1eaf8f64c05f79d9fdadbfd9b6266dbe8f4c0d6bba",
+      "size_bytes": 1132
+    }
+  ],
+  "generation_seed": 2026,
+  "initial_fixture_spec": {
+    "application_set": [
+      "Writer",
+      "Writer"
+    ],
+    "fixture_profile": "undo_style_title",
+    "layout_id": "guard_after",
+    "public_assets": [
+      {
+        "path": "fixtures/cdv1-u02-e20eb1bffbba8d67/document.fodt",
+        "sha256": "580ad139db7382f2f18a9c1eaf8f64c05f79d9fdadbfd9b6266dbe8f4c0d6bba",
+        "size_bytes": 1132
+      }
+    ]
+  },
+  "instance_id": "cdv1-u02-e20eb1bffbba8d67",
+  "manifest_entry_sha256": "f3e8955220a08ba38d65fe51577ab5ea1b9d2ce708100956e81059cf873c192e",
+  "provenance": {
+    "fixture_sha256": "9b6f3cd0ba37967408db302efc1ccae2911a2921e5b7bf439cab6309cc4f2fe0",
+    "generation_seed": 2026,
+    "generator": "swcub.production_v1",
+    "seed_role": "deterministic profile ordering only; excluded from instance identity",
+    "semantic_spec_sha256": "e20eb1bffbba8d67a0d492acf6d391a9f886aa1f05a8a14995293b9da5f3e8f5",
+    "source_code_sha256": "a1e97d04c75f6d7e1ccb6f87adffdca7fa59d7c3f9d83747279e0e85db58d1eb",
+    "source_commit": "1036de483efe0040e9fb6ba0452c0cd968c1984b"
+  },
+  "reset_metadata": {
+    "fixture_id": "cdv1-u02-e20eb1bffbba8d67",
+    "fresh_guest_required": true,
+    "remove_prior_app_state": true,
+    "verify_fixture_hash": "9b6f3cd0ba37967408db302efc1ccae2911a2921e5b7bf439cab6309cc4f2fe0",
+    "verify_state": {
+      "actors": {
+        "A": {
+          "object": "writer/range/title",
+          "value": "Seed style A CAP-4821"
+        },
+        "B": {
+          "object": "writer/paragraph[3]",
+          "value": "Seed line B CAP-4821"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "operation_kind": "writer_style_undo",
+          "operation_pair": [
+            "temporary_style_apply_undo",
+            "independent_text_insert"
+          ],
+          "profile_label": "undo_style_title"
+        },
+        "resource": "undo_redo_history"
+      }
+    }
+  },
+  "schedule_policy_id": "writer-style-edit-b-undo-recover-v1",
+  "semantic_parameters": {
+    "domain_id": "capital_allocation",
+    "domain_schema": {
+      "entity": "capital request",
+      "field_a": "Decision",
+      "field_b": "Ledger state"
+    },
+    "layout_id": "guard_after",
+    "object_profile_id": "undo_style_title",
+    "object_schema": {
+      "operation_kind": "writer_style_undo",
+      "operation_pair": [
+        "temporary_style_apply_undo",
+        "independent_text_insert"
+      ],
+      "profile_label": "undo_style_title"
+    },
+    "operation_graph": "writer_character_format_then_cross_actor_undo",
+    "operation_schema_revision": 1,
+    "workflow_id": "U-02"
+  },
+  "signatures": {
+    "fixture": "9b6f3cd0ba37967408db302efc1ccae2911a2921e5b7bf439cab6309cc4f2fe0",
+    "goal": "987e66ca21e1f1046e58309af3a951deb4a740bbf4451ab9f5ad0a307b272bd3",
+    "semantic": "e20eb1bffbba8d67a0d492acf6d391a9f886aa1f05a8a14995293b9da5f3e8f5",
+    "structural": "fdca49ba7e35bb1431a379777016cc9288ff03c11d27e03bfa0bedde00db5dac"
+  },
+  "target_objects": {
+    "A": [
+      "writer/range/title"
+    ],
+    "B": [
+      "writer/paragraph[3]"
+    ]
+  },
+  "task_domains": {
+    "A": "Writer",
+    "B": "Writer"
+  },
+  "topology_compatibility": {
+    "ma_id": {
+      "backend_binding": "same logical workspace seed; independent desktop sessions allowed",
+      "desktop_count": 2,
+      "fixtures": "byte-identical task-relevant clones"
+    },
+    "ma_sd": {
+      "actor_bindings": "A and B share desktop",
+      "desktop_count": 1
+    },
+    "solo": {
+      "actor_bindings": "A or B",
+      "desktop_count": 1
+    }
+  },
+  "treatment_relevant_state": {
+    "family_state": "undo_redo_history",
+    "operation_graph": "writer_character_format_then_cross_actor_undo",
+    "shared_resource": {
+      "operation_kind": "writer_style_undo",
+      "operation_pair": [
+        "temporary_style_apply_undo",
+        "independent_text_insert"
+      ],
+      "profile_label": "undo_style_title"
+    }
+  },
+  "validation_level": "offline_operation_template",
+  "workflow_id": "U-02"
+}

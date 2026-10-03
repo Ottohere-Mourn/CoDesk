@@ -1,0 +1,226 @@
+{
+  "actor_goals": [
+    {
+      "actor_id": "A",
+      "expected_value": "SAFE-1193",
+      "goal": "Copy Writer source SAFE-1193 into the destination placeholder paragraph and save.",
+      "initial_value": "INSERT COPIED VALUE",
+      "operation": "copy Writer source paragraph and paste into the assigned destination paragraph",
+      "target_objects": [
+        "writer/paragraph[1]"
+      ],
+      "task_domain": "Writer"
+    },
+    {
+      "actor_id": "B",
+      "expected_value": "INSPECTED-1193",
+      "goal": "Copy Calc A1 value INSPECTED-1193 into C3 and save.",
+      "initial_value": "__EMPTY_CELL__",
+      "operation": "update calc/C3",
+      "target_objects": [
+        "calc/C3"
+      ],
+      "task_domain": "Calc"
+    }
+  ],
+  "benchmark_version": "codesk-v1.0",
+  "evaluator": {
+    "actor_paths": {
+      "A": "actors.A.value",
+      "B": "actors.B.value"
+    },
+    "adapter": "codesk_exact_state_v1",
+    "condition_semantics": {
+      "ma_id": "score each actor on equivalent independent desktop fixture",
+      "ma_sd": "score both actor goals and shared-state integrity",
+      "solo": "score selected actor; require inactive target and guards unchanged"
+    },
+    "expected_state": {
+      "actors": {
+        "A": {
+          "object": "writer/paragraph[1]",
+          "value": "SAFE-1193"
+        },
+        "B": {
+          "object": "calc/C3",
+          "value": "INSPECTED-1193"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "destination": "single cell",
+          "payload_kind": "action phrase"
+        },
+        "resource": "clipboard_state"
+      }
+    },
+    "initial_state": {
+      "actors": {
+        "A": {
+          "object": "writer/paragraph[1]",
+          "value": "INSERT COPIED VALUE"
+        },
+        "B": {
+          "object": "calc/C3",
+          "value": "__EMPTY_CELL__"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "destination": "single cell",
+          "payload_kind": "action phrase"
+        },
+        "resource": "clipboard_state"
+      }
+    },
+    "invariants": [
+      {
+        "equals": "PRESERVE",
+        "path": "actors.guards.main"
+      }
+    ],
+    "schedule_policy_id": "copy-confirm-b-copy-confirm-resume-a-v1"
+  },
+  "evaluator_path": "evaluators/cdv1-c01-169621c8ef1efcf7.json",
+  "evaluator_sha256": "ef7941ca94e15e078e65f430d88dccb6dc2a8f138da6e4db283672c9bdbc4d40",
+  "family": "clipboard_state",
+  "fixture_files": [
+    {
+      "path": "fixtures/cdv1-c01-169621c8ef1efcf7/document.fodt",
+      "sha256": "eb158cc3420d97864222c6f6878845d69b9aa56e208b6870b6d7fe963e1f9b2b",
+      "size_bytes": 335
+    },
+    {
+      "path": "fixtures/cdv1-c01-169621c8ef1efcf7/workbook.fods",
+      "sha256": "5f7d65e7f27491db0b91eb92010df0fcb5620a95e47418c41d02cdbc5648c223",
+      "size_bytes": 887
+    }
+  ],
+  "generation_seed": 2026,
+  "initial_fixture_spec": {
+    "application_set": [
+      "Writer",
+      "Calc"
+    ],
+    "fixture_profile": "writer_action_calc_cell",
+    "layout_id": "guard_after",
+    "public_assets": [
+      {
+        "path": "fixtures/cdv1-c01-169621c8ef1efcf7/document.fodt",
+        "sha256": "eb158cc3420d97864222c6f6878845d69b9aa56e208b6870b6d7fe963e1f9b2b",
+        "size_bytes": 335
+      },
+      {
+        "path": "fixtures/cdv1-c01-169621c8ef1efcf7/workbook.fods",
+        "sha256": "5f7d65e7f27491db0b91eb92010df0fcb5620a95e47418c41d02cdbc5648c223",
+        "size_bytes": 887
+      }
+    ]
+  },
+  "instance_id": "cdv1-c01-169621c8ef1efcf7",
+  "manifest_entry_sha256": "d3d7377dddd5a31e3659841addcb1b5cb1ce7039e14e88cdfc66d40e6216d3f8",
+  "provenance": {
+    "fixture_sha256": "2f4319f421a88a262703c1e33fb7545cbc6d9105cb6dbbb5550a09f958583b01",
+    "generation_seed": 2026,
+    "generator": "swcub.production_v1",
+    "seed_role": "deterministic profile ordering only; excluded from instance identity",
+    "semantic_spec_sha256": "169621c8ef1efcf73651db2ef05148d051768d23c8d6c161706c5d5d324f7a0b",
+    "source_code_sha256": "a1e97d04c75f6d7e1ccb6f87adffdca7fa59d7c3f9d83747279e0e85db58d1eb",
+    "source_commit": "1036de483efe0040e9fb6ba0452c0cd968c1984b"
+  },
+  "reset_metadata": {
+    "fixture_id": "cdv1-c01-169621c8ef1efcf7",
+    "fresh_guest_required": true,
+    "remove_prior_app_state": true,
+    "verify_fixture_hash": "2f4319f421a88a262703c1e33fb7545cbc6d9105cb6dbbb5550a09f958583b01",
+    "verify_state": {
+      "actors": {
+        "A": {
+          "object": "writer/paragraph[1]",
+          "value": "INSERT COPIED VALUE"
+        },
+        "B": {
+          "object": "calc/C3",
+          "value": "__EMPTY_CELL__"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "destination": "single cell",
+          "payload_kind": "action phrase"
+        },
+        "resource": "clipboard_state"
+      }
+    }
+  },
+  "schedule_policy_id": "copy-confirm-b-copy-confirm-resume-a-v1",
+  "semantic_parameters": {
+    "domain_id": "safety_inspection",
+    "domain_schema": {
+      "entity": "inspection item",
+      "field_a": "Clearance",
+      "field_b": "Inspection state"
+    },
+    "layout_id": "guard_after",
+    "object_profile_id": "writer_action_calc_cell",
+    "object_schema": {
+      "destination": "single cell",
+      "payload_kind": "action phrase"
+    },
+    "operation_graph": "plain_text_transfer",
+    "operation_schema_revision": 4,
+    "workflow_id": "C-01"
+  },
+  "signatures": {
+    "fixture": "2f4319f421a88a262703c1e33fb7545cbc6d9105cb6dbbb5550a09f958583b01",
+    "goal": "e0c6619681edfd772eb82325e7565b67de18b678452a9980ef07f4522dd6bfe9",
+    "semantic": "169621c8ef1efcf73651db2ef05148d051768d23c8d6c161706c5d5d324f7a0b",
+    "structural": "81bb178526fc253903147ebbe0649f9ae4a099e236c055acc93c48bc5d98c26b"
+  },
+  "target_objects": {
+    "A": [
+      "writer/paragraph[1]"
+    ],
+    "B": [
+      "calc/C3"
+    ]
+  },
+  "task_domains": {
+    "A": "Writer",
+    "B": "Calc"
+  },
+  "topology_compatibility": {
+    "ma_id": {
+      "backend_binding": "same logical workspace seed; independent desktop sessions allowed",
+      "desktop_count": 2,
+      "fixtures": "byte-identical task-relevant clones"
+    },
+    "ma_sd": {
+      "actor_bindings": "A and B share desktop",
+      "desktop_count": 1
+    },
+    "solo": {
+      "actor_bindings": "A or B",
+      "desktop_count": 1
+    }
+  },
+  "treatment_relevant_state": {
+    "family_state": "clipboard_state",
+    "operation_graph": "plain_text_transfer",
+    "shared_resource": {
+      "destination": "single cell",
+      "payload_kind": "action phrase"
+    }
+  },
+  "validation_level": "qwen_smoke",
+  "workflow_id": "C-01"
+}

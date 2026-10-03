@@ -1,0 +1,96 @@
+{
+  "actor_paths": {
+    "A": "actors.A.value",
+    "B": "actors.B.value"
+  },
+  "adapter": "codesk_exact_state_v1",
+  "condition_semantics": {
+    "ma_id": "score each actor on equivalent independent desktop fixture",
+    "ma_sd": "score both actor goals and shared-state integrity",
+    "solo": "score selected actor; require inactive target and guards unchanged"
+  },
+  "expected_state": {
+    "actors": {
+      "A": {
+        "object": "calc/B2",
+        "value": "=HYPERLINK(\"https://example.org/codesk/capital_allocation/CAP-4821\",\"Open capital request\")"
+      },
+      "B": {
+        "object": "calc/A8:B9",
+        "value": "[[\"Approved-1.1\",\"Approved-1.2\"],[\"Approved-2.1\",\"Approved-2.2\"]]"
+      },
+      "guards": {
+        "main": "PRESERVE"
+      }
+    },
+    "treatment": {
+      "initial": {
+        "destination_range": "A8:B9",
+        "operation_kind": "url_hyperlink_range_copy",
+        "operation_pair": [
+          "url_copy_hyperlink_insert",
+          "range_copy_paste"
+        ],
+        "profile_label": "link_case",
+        "range": [
+          "A5:B6",
+          "A8:B9"
+        ],
+        "shape": [
+          2,
+          2
+        ]
+      },
+      "resource": "clipboard_state"
+    }
+  },
+  "initial_state": {
+    "actors": {
+      "A": {
+        "object": "calc/B2",
+        "value": ""
+      },
+      "B": {
+        "object": "calc/A8:B9",
+        "value": "__EMPTY_RANGE__"
+      },
+      "guards": {
+        "main": "PRESERVE"
+      }
+    },
+    "treatment": {
+      "initial": {
+        "destination_range": "A8:B9",
+        "operation_kind": "url_hyperlink_range_copy",
+        "operation_pair": [
+          "url_copy_hyperlink_insert",
+          "range_copy_paste"
+        ],
+        "profile_label": "link_case",
+        "range": [
+          "A5:B6",
+          "A8:B9"
+        ],
+        "shape": [
+          2,
+          2
+        ]
+      },
+      "resource": "clipboard_state"
+    }
+  },
+  "invariants": [
+    {
+      "equals": "PRESERVE",
+      "path": "actors.guards.main"
+    }
+  ],
+  "operation_contract": {
+    "A": "browser/url-to-calc-hyperlink",
+    "B": "calc/range-copy",
+    "evidence_required": true,
+    "operation_graph": "browser_url_copy_to_calc_hyperlink_formula_and_calc_range_copy",
+    "shared_state": "X11 clipboard selection"
+  },
+  "schedule_policy_id": "browser-url-calc-range-copy-confirm-v1"
+}

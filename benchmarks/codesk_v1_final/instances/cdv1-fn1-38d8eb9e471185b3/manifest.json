@@ -1,0 +1,241 @@
+{
+  "actor_goals": [
+    {
+      "actor_id": "A",
+      "expected_value": "Cleared: inspection item (object)",
+      "goal": "Replace the assigned paragraph in doc-A.",
+      "initial_value": "Draft: inspection item",
+      "operation": "update writer/doc-a/decision-field",
+      "target_objects": [
+        "writer/doc-a/decision-field"
+      ],
+      "task_domain": "Writer"
+    },
+    {
+      "actor_id": "B",
+      "expected_value": "Inspected: inspection item (object)",
+      "goal": "Replace the assigned paragraph in doc-B.",
+      "initial_value": "Pending: inspection item",
+      "operation": "update writer/doc-b/decision-field",
+      "target_objects": [
+        "writer/doc-b/decision-field"
+      ],
+      "task_domain": "Writer"
+    }
+  ],
+  "benchmark_version": "codesk-v1.0",
+  "evaluator": {
+    "actor_paths": {
+      "A": "actors.A.value",
+      "B": "actors.B.value"
+    },
+    "adapter": "codesk_exact_state_v1",
+    "condition_semantics": {
+      "ma_id": "score each actor on equivalent independent desktop fixture",
+      "ma_sd": "score both actor goals and shared-state integrity",
+      "solo": "score selected actor; require inactive target and guards unchanged"
+    },
+    "expected_state": {
+      "actors": {
+        "A": {
+          "object": "writer/doc-a/decision-field",
+          "value": "Cleared: inspection item (object)"
+        },
+        "B": {
+          "object": "writer/doc-b/decision-field",
+          "value": "Inspected: inspection item (object)"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "documents": [
+            "doc-a",
+            "doc-b"
+          ],
+          "target_kind": "decision field"
+        },
+        "resource": "focus_input_routing"
+      }
+    },
+    "initial_state": {
+      "actors": {
+        "A": {
+          "object": "writer/doc-a/decision-field",
+          "value": "Draft: inspection item"
+        },
+        "B": {
+          "object": "writer/doc-b/decision-field",
+          "value": "Pending: inspection item"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "documents": [
+            "doc-a",
+            "doc-b"
+          ],
+          "target_kind": "decision field"
+        },
+        "resource": "focus_input_routing"
+      }
+    },
+    "invariants": [
+      {
+        "equals": "PRESERVE",
+        "path": "actors.guards.main"
+      }
+    ],
+    "schedule_policy_id": "writer-window-a-window-b-resume-a-v1"
+  },
+  "evaluator_path": "evaluators/cdv1-fn1-38d8eb9e471185b3.json",
+  "evaluator_sha256": "0704a18609cbd77b31c525568cdcea0374efef1bd6ef1688bddd990dce3cbe8e",
+  "family": "focus_input_routing",
+  "fixture_files": [
+    {
+      "path": "fixtures/cdv1-fn1-38d8eb9e471185b3/doc-a.fodt",
+      "sha256": "e3e8663cd09f1acb3762e902e194fd132d07689290434cfb2921934ec6e2c680",
+      "size_bytes": 385
+    },
+    {
+      "path": "fixtures/cdv1-fn1-38d8eb9e471185b3/doc-b.fodt",
+      "sha256": "d1eb1185401cbebad494ec6c61af8d662f316f979f1e2ad269c51487d28188b1",
+      "size_bytes": 387
+    }
+  ],
+  "generation_seed": 2026,
+  "initial_fixture_spec": {
+    "application_set": [
+      "Writer",
+      "Writer"
+    ],
+    "fixture_profile": "writer_doc_decision",
+    "layout_id": "guard_after",
+    "public_assets": [
+      {
+        "path": "fixtures/cdv1-fn1-38d8eb9e471185b3/doc-a.fodt",
+        "sha256": "e3e8663cd09f1acb3762e902e194fd132d07689290434cfb2921934ec6e2c680",
+        "size_bytes": 385
+      },
+      {
+        "path": "fixtures/cdv1-fn1-38d8eb9e471185b3/doc-b.fodt",
+        "sha256": "d1eb1185401cbebad494ec6c61af8d662f316f979f1e2ad269c51487d28188b1",
+        "size_bytes": 387
+      }
+    ]
+  },
+  "instance_id": "cdv1-fn1-38d8eb9e471185b3",
+  "manifest_entry_sha256": "66ad5494249edebf93a966555fd401a02fe755fc616c7ff86fa2f1e21803fb0c",
+  "provenance": {
+    "fixture_sha256": "5fbe2f675e8f68a1dd427c9f62fed09bf22b9ef54a94bfc4f46b5273c6fc44ba",
+    "generation_seed": 2026,
+    "generator": "swcub.production_v1",
+    "seed_role": "deterministic profile ordering only; excluded from instance identity",
+    "semantic_spec_sha256": "38d8eb9e471185b3776052ac09ef2e8832cebc767f8df1131b3cbddc5435cb3d",
+    "source_code_sha256": "a1e97d04c75f6d7e1ccb6f87adffdca7fa59d7c3f9d83747279e0e85db58d1eb",
+    "source_commit": "1036de483efe0040e9fb6ba0452c0cd968c1984b"
+  },
+  "reset_metadata": {
+    "fixture_id": "cdv1-fn1-38d8eb9e471185b3",
+    "fresh_guest_required": true,
+    "remove_prior_app_state": true,
+    "verify_fixture_hash": "5fbe2f675e8f68a1dd427c9f62fed09bf22b9ef54a94bfc4f46b5273c6fc44ba",
+    "verify_state": {
+      "actors": {
+        "A": {
+          "object": "writer/doc-a/decision-field",
+          "value": "Draft: inspection item"
+        },
+        "B": {
+          "object": "writer/doc-b/decision-field",
+          "value": "Pending: inspection item"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "documents": [
+            "doc-a",
+            "doc-b"
+          ],
+          "target_kind": "decision field"
+        },
+        "resource": "focus_input_routing"
+      }
+    }
+  },
+  "schedule_policy_id": "writer-window-a-window-b-resume-a-v1",
+  "semantic_parameters": {
+    "domain_id": "safety_inspection",
+    "domain_schema": {
+      "entity": "inspection item",
+      "field_a": "Clearance",
+      "field_b": "Inspection state"
+    },
+    "layout_id": "guard_after",
+    "object_profile_id": "writer_doc_decision",
+    "object_schema": {
+      "documents": [
+        "doc-a",
+        "doc-b"
+      ],
+      "target_kind": "decision field"
+    },
+    "operation_graph": "two_writer_windows",
+    "operation_schema_revision": 1,
+    "workflow_id": "F-N1"
+  },
+  "signatures": {
+    "fixture": "5fbe2f675e8f68a1dd427c9f62fed09bf22b9ef54a94bfc4f46b5273c6fc44ba",
+    "goal": "cb3f0066f1e5cc694d3fc602d7410cd1c0c46d7d8d73eef465a089b6bf3b2416",
+    "semantic": "38d8eb9e471185b3776052ac09ef2e8832cebc767f8df1131b3cbddc5435cb3d",
+    "structural": "5316357b013e63c6a01a8659693c1f34e4a6eaa3d794ddf8fb39d4c5ae6c5caf"
+  },
+  "target_objects": {
+    "A": [
+      "writer/doc-a/decision-field"
+    ],
+    "B": [
+      "writer/doc-b/decision-field"
+    ]
+  },
+  "task_domains": {
+    "A": "Writer",
+    "B": "Writer"
+  },
+  "topology_compatibility": {
+    "ma_id": {
+      "backend_binding": "same logical workspace seed; independent desktop sessions allowed",
+      "desktop_count": 2,
+      "fixtures": "byte-identical task-relevant clones"
+    },
+    "ma_sd": {
+      "actor_bindings": "A and B share desktop",
+      "desktop_count": 1
+    },
+    "solo": {
+      "actor_bindings": "A or B",
+      "desktop_count": 1
+    }
+  },
+  "treatment_relevant_state": {
+    "family_state": "focus_input_routing",
+    "operation_graph": "two_writer_windows",
+    "shared_resource": {
+      "documents": [
+        "doc-a",
+        "doc-b"
+      ],
+      "target_kind": "decision field"
+    }
+  },
+  "validation_level": "guest_solo",
+  "workflow_id": "F-N1"
+}

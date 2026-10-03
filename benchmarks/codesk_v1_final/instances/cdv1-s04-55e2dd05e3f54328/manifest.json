@@ -1,0 +1,313 @@
+{
+  "actor_goals": [
+    {
+      "actor_id": "A",
+      "expected_value": "{\"rows\": [1, 4], \"status\": \"Approved\"}",
+      "goal": "Select all assigned A rows and apply the exact bulk status to those rows only. Target browser/rows/high; initial '[]'; required final '{\"rows\": [1, 4], \"status\": \"Approved\"}'.",
+      "initial_value": "[]",
+      "operation": "update browser/rows/high",
+      "target_objects": [
+        "browser/rows/high"
+      ],
+      "task_domain": "Browser"
+    },
+    {
+      "actor_id": "B",
+      "expected_value": "{\"rows\": [2, 3], \"status\": \"Recorded\"}",
+      "goal": "Select all assigned B rows and apply the independent bulk status to those rows only. Target browser/rows/normal; initial '[]'; required final '{\"rows\": [2, 3], \"status\": \"Recorded\"}'.",
+      "initial_value": "[]",
+      "operation": "update browser/rows/normal",
+      "target_objects": [
+        "browser/rows/normal"
+      ],
+      "task_domain": "Browser"
+    }
+  ],
+  "benchmark_version": "codesk-v1.0",
+  "evaluator": {
+    "actor_paths": {
+      "A": "actors.A.value",
+      "B": "actors.B.value"
+    },
+    "adapter": "codesk_exact_state_v1",
+    "condition_semantics": {
+      "ma_id": "score each actor on equivalent independent desktop fixture",
+      "ma_sd": "score both actor goals and shared-state integrity",
+      "solo": "score selected actor; require inactive target and guards unchanged"
+    },
+    "expected_state": {
+      "actors": {
+        "A": {
+          "object": "browser/rows/high",
+          "value": "{\"rows\": [1, 4], \"status\": \"Approved\"}"
+        },
+        "B": {
+          "object": "browser/rows/normal",
+          "value": "{\"rows\": [2, 3], \"status\": \"Recorded\"}"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "operation_kind": "browser_multiselect_bulk",
+          "operation_pair": [
+            "multirow_select_bulk_status",
+            "multirow_select_bulk_status"
+          ],
+          "profile_label": "rows_priority",
+          "rows_a": [
+            1,
+            4
+          ],
+          "rows_b": [
+            2,
+            3
+          ]
+        },
+        "resource": "selection_active_object"
+      }
+    },
+    "initial_state": {
+      "actors": {
+        "A": {
+          "object": "browser/rows/high",
+          "value": "[]"
+        },
+        "B": {
+          "object": "browser/rows/normal",
+          "value": "[]"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "operation_kind": "browser_multiselect_bulk",
+          "operation_pair": [
+            "multirow_select_bulk_status",
+            "multirow_select_bulk_status"
+          ],
+          "profile_label": "rows_priority",
+          "rows_a": [
+            1,
+            4
+          ],
+          "rows_b": [
+            2,
+            3
+          ]
+        },
+        "resource": "selection_active_object"
+      }
+    },
+    "invariants": [
+      {
+        "equals": "PRESERVE",
+        "path": "actors.guards.main"
+      }
+    ],
+    "operation_contract": {
+      "A": "browser/table/rows-a",
+      "B": "browser/table/rows-b",
+      "evidence_required": true,
+      "operation_graph": "browser_multirow_selection_bulk_update",
+      "shared_state": "selected row set"
+    },
+    "schedule_policy_id": "browser-row-selection-bulk-action-resume-v1"
+  },
+  "evaluator_path": "evaluators/cdv1-s04-55e2dd05e3f54328.json",
+  "evaluator_sha256": "7890fc13654300300817ff55f81767d1e8e358d1ae25fbc78a12db4b33b3c346",
+  "family": "selection_active_object",
+  "fixture_files": [
+    {
+      "path": "fixtures/cdv1-s04-55e2dd05e3f54328/browser-events.jsonl",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size_bytes": 0
+    },
+    {
+      "path": "fixtures/cdv1-s04-55e2dd05e3f54328/browser-initial-state.json",
+      "sha256": "b219d5e7f525248d5c772afc75b8873d78f267f0595f20e0cdf41264261a7c3b",
+      "size_bytes": 489
+    },
+    {
+      "path": "fixtures/cdv1-s04-55e2dd05e3f54328/browser-server.py",
+      "sha256": "1b3016e8722b16e4f6a39acb9486ce6850c04dcee59e2c0e6ba0e859378b0906",
+      "size_bytes": 3224
+    },
+    {
+      "path": "fixtures/cdv1-s04-55e2dd05e3f54328/workspace.html",
+      "sha256": "ee4743bb455e3c596a1b771701f4fc1f93677ca7f8675115ca8d8f3dd60b7432",
+      "size_bytes": 1903
+    }
+  ],
+  "generation_seed": 2026,
+  "initial_fixture_spec": {
+    "application_set": [
+      "Browser",
+      "Browser"
+    ],
+    "fixture_profile": "rows_priority",
+    "layout_id": "guard_after",
+    "public_assets": [
+      {
+        "path": "fixtures/cdv1-s04-55e2dd05e3f54328/browser-events.jsonl",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size_bytes": 0
+      },
+      {
+        "path": "fixtures/cdv1-s04-55e2dd05e3f54328/browser-initial-state.json",
+        "sha256": "b219d5e7f525248d5c772afc75b8873d78f267f0595f20e0cdf41264261a7c3b",
+        "size_bytes": 489
+      },
+      {
+        "path": "fixtures/cdv1-s04-55e2dd05e3f54328/browser-server.py",
+        "sha256": "1b3016e8722b16e4f6a39acb9486ce6850c04dcee59e2c0e6ba0e859378b0906",
+        "size_bytes": 3224
+      },
+      {
+        "path": "fixtures/cdv1-s04-55e2dd05e3f54328/workspace.html",
+        "sha256": "ee4743bb455e3c596a1b771701f4fc1f93677ca7f8675115ca8d8f3dd60b7432",
+        "size_bytes": 1903
+      }
+    ]
+  },
+  "instance_id": "cdv1-s04-55e2dd05e3f54328",
+  "manifest_entry_sha256": "2521d459459a8eabee337b6b840ef081b213e13c6556b57de125b88ab84658ac",
+  "provenance": {
+    "fixture_sha256": "3631f5c527147ea947a61e906ea440c46b2b9ad2e6743e3f91f3f68766cb52f1",
+    "generation_seed": 2026,
+    "generator": "swcub.production_v1",
+    "seed_role": "deterministic profile ordering only; excluded from instance identity",
+    "semantic_spec_sha256": "55e2dd05e3f543284b792e61a8acf799806be879191ea6f8fe38bcb59077a603",
+    "source_code_sha256": "a1e97d04c75f6d7e1ccb6f87adffdca7fa59d7c3f9d83747279e0e85db58d1eb",
+    "source_commit": "1036de483efe0040e9fb6ba0452c0cd968c1984b"
+  },
+  "reset_metadata": {
+    "fixture_id": "cdv1-s04-55e2dd05e3f54328",
+    "fresh_guest_required": true,
+    "remove_prior_app_state": true,
+    "verify_fixture_hash": "3631f5c527147ea947a61e906ea440c46b2b9ad2e6743e3f91f3f68766cb52f1",
+    "verify_state": {
+      "actors": {
+        "A": {
+          "object": "browser/rows/high",
+          "value": "[]"
+        },
+        "B": {
+          "object": "browser/rows/normal",
+          "value": "[]"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "operation_kind": "browser_multiselect_bulk",
+          "operation_pair": [
+            "multirow_select_bulk_status",
+            "multirow_select_bulk_status"
+          ],
+          "profile_label": "rows_priority",
+          "rows_a": [
+            1,
+            4
+          ],
+          "rows_b": [
+            2,
+            3
+          ]
+        },
+        "resource": "selection_active_object"
+      }
+    }
+  },
+  "schedule_policy_id": "browser-row-selection-bulk-action-resume-v1",
+  "semantic_parameters": {
+    "domain_id": "capital_allocation",
+    "domain_schema": {
+      "entity": "capital request",
+      "field_a": "Decision",
+      "field_b": "Ledger state"
+    },
+    "layout_id": "guard_after",
+    "object_profile_id": "rows_priority",
+    "object_schema": {
+      "operation_kind": "browser_multiselect_bulk",
+      "operation_pair": [
+        "multirow_select_bulk_status",
+        "multirow_select_bulk_status"
+      ],
+      "profile_label": "rows_priority",
+      "rows_a": [
+        1,
+        4
+      ],
+      "rows_b": [
+        2,
+        3
+      ]
+    },
+    "operation_graph": "browser_multirow_selection_bulk_update",
+    "operation_schema_revision": 1,
+    "workflow_id": "S-04"
+  },
+  "signatures": {
+    "fixture": "3631f5c527147ea947a61e906ea440c46b2b9ad2e6743e3f91f3f68766cb52f1",
+    "goal": "c35bcbaef8918e77201951cc1834f50423befd01a578848318ddc1df3288d617",
+    "semantic": "55e2dd05e3f543284b792e61a8acf799806be879191ea6f8fe38bcb59077a603",
+    "structural": "a28b5d779a3f149fbc07e5f9c7ad0f0ddd2b76f5e2ed6da309211f13acd8e0a9"
+  },
+  "target_objects": {
+    "A": [
+      "browser/rows/high"
+    ],
+    "B": [
+      "browser/rows/normal"
+    ]
+  },
+  "task_domains": {
+    "A": "Browser",
+    "B": "Browser"
+  },
+  "topology_compatibility": {
+    "ma_id": {
+      "backend_binding": "same logical workspace seed; independent desktop sessions allowed",
+      "desktop_count": 2,
+      "fixtures": "byte-identical task-relevant clones"
+    },
+    "ma_sd": {
+      "actor_bindings": "A and B share desktop",
+      "desktop_count": 1
+    },
+    "solo": {
+      "actor_bindings": "A or B",
+      "desktop_count": 1
+    }
+  },
+  "treatment_relevant_state": {
+    "family_state": "selection_active_object",
+    "operation_graph": "browser_multirow_selection_bulk_update",
+    "shared_resource": {
+      "operation_kind": "browser_multiselect_bulk",
+      "operation_pair": [
+        "multirow_select_bulk_status",
+        "multirow_select_bulk_status"
+      ],
+      "profile_label": "rows_priority",
+      "rows_a": [
+        1,
+        4
+      ],
+      "rows_b": [
+        2,
+        3
+      ]
+    }
+  },
+  "validation_level": "offline_operation_template",
+  "workflow_id": "S-04"
+}

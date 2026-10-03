@@ -1,0 +1,285 @@
+{
+  "actor_goals": [
+    {
+      "actor_id": "A",
+      "expected_value": "TEMP-SAFE-1193",
+      "goal": "Insert TEMP-SAFE-1193 into the shared editor. After Actor B's edit, use Undo once and restore both assigned phrases so TEMP-SAFE-1193 and FINAL-SAFE-1193 are present.",
+      "initial_value": "Seed A",
+      "operation": "temporary rich-text insertion, cross-actor Undo, then restoration",
+      "target_objects": [
+        "browser/editor/range/owner-a"
+      ],
+      "task_domain": "Browser"
+    },
+    {
+      "actor_id": "B",
+      "expected_value": "FINAL-SAFE-1193",
+      "goal": "Insert FINAL-SAFE-1193 into the shared editor after Actor A's first edit and preserve both phrases.",
+      "initial_value": "Seed B",
+      "operation": "rich-text insertion into shared editor history",
+      "target_objects": [
+        "browser/editor/range/owner-b"
+      ],
+      "task_domain": "Browser"
+    }
+  ],
+  "benchmark_version": "codesk-v1.0",
+  "evaluator": {
+    "actor_paths": {
+      "A": "actors.A.value",
+      "B": "actors.B.value"
+    },
+    "adapter": "codesk_exact_state_v1",
+    "condition_semantics": {
+      "ma_id": "score each actor on equivalent independent desktop fixture",
+      "ma_sd": "score both actor goals and shared-state integrity",
+      "solo": "score selected actor; require inactive target and guards unchanged"
+    },
+    "expected_state": {
+      "actors": {
+        "A": {
+          "object": "browser/editor/range/owner-a",
+          "value": "TEMP-SAFE-1193"
+        },
+        "B": {
+          "object": "browser/editor/range/owner-b",
+          "value": "FINAL-SAFE-1193"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "operation_kind": "browser_contenteditable_undo",
+          "operation_pair": [
+            "rich_editor_insert_undo",
+            "rich_editor_insert_undo"
+          ],
+          "profile_label": "editor_owner"
+        },
+        "resource": "undo_redo_history"
+      }
+    },
+    "history_contract": {
+      "actor_a_requires": [
+        "temporary_edit_or_operation_observed",
+        "undo_action_after_actor_b_commit",
+        "recovery_verified"
+      ],
+      "actor_b_requires": [
+        "target_edit_committed"
+      ],
+      "final_state_is_not_sufficient": true,
+      "operation_schema_revision": 1
+    },
+    "initial_state": {
+      "actors": {
+        "A": {
+          "object": "browser/editor/range/owner-a",
+          "value": "Seed A"
+        },
+        "B": {
+          "object": "browser/editor/range/owner-b",
+          "value": "Seed B"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "operation_kind": "browser_contenteditable_undo",
+          "operation_pair": [
+            "rich_editor_insert_undo",
+            "rich_editor_insert_undo"
+          ],
+          "profile_label": "editor_owner"
+        },
+        "resource": "undo_redo_history"
+      }
+    },
+    "invariants": [
+      {
+        "equals": "PRESERVE",
+        "path": "actors.guards.main"
+      }
+    ],
+    "operation_contract": {
+      "A": "browser/editor/phrase-a",
+      "B": "browser/editor/phrase-b",
+      "evidence_required": true,
+      "operation_graph": "browser_rich_editor_shared_undo_stack",
+      "shared_state": "contenteditable undo history"
+    },
+    "schedule_policy_id": "browser-editor-a-b-undo-recover-v1"
+  },
+  "evaluator_path": "evaluators/cdv1-u04-c3d5e9174332a16b.json",
+  "evaluator_sha256": "2a029c603376e557c359d47a4ef5744b7c1385c9650a08c20f8f2ac9ce401567",
+  "family": "undo_redo_history",
+  "fixture_files": [
+    {
+      "path": "fixtures/cdv1-u04-c3d5e9174332a16b/browser-events.jsonl",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size_bytes": 0
+    },
+    {
+      "path": "fixtures/cdv1-u04-c3d5e9174332a16b/browser-initial-state.json",
+      "sha256": "764f98c2a40739e6b05e61a08f6fa5feed67c76f4595e30d3cfb4399ccf81fd8",
+      "size_bytes": 236
+    },
+    {
+      "path": "fixtures/cdv1-u04-c3d5e9174332a16b/browser-server.py",
+      "sha256": "2629a1edbdf3cacf05a99a51eef4c10cb2e2b68d18f236b6a0d7c8da5929102b",
+      "size_bytes": 3224
+    },
+    {
+      "path": "fixtures/cdv1-u04-c3d5e9174332a16b/workspace.html",
+      "sha256": "21f8c9c47a96dbaf1c42fac6dc77f282b9781651e92aee93a7afb301102a45dc",
+      "size_bytes": 1222
+    }
+  ],
+  "generation_seed": 2026,
+  "initial_fixture_spec": {
+    "application_set": [
+      "Browser",
+      "Browser"
+    ],
+    "fixture_profile": "editor_owner",
+    "layout_id": "guard_after",
+    "public_assets": [
+      {
+        "path": "fixtures/cdv1-u04-c3d5e9174332a16b/browser-events.jsonl",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size_bytes": 0
+      },
+      {
+        "path": "fixtures/cdv1-u04-c3d5e9174332a16b/browser-initial-state.json",
+        "sha256": "764f98c2a40739e6b05e61a08f6fa5feed67c76f4595e30d3cfb4399ccf81fd8",
+        "size_bytes": 236
+      },
+      {
+        "path": "fixtures/cdv1-u04-c3d5e9174332a16b/browser-server.py",
+        "sha256": "2629a1edbdf3cacf05a99a51eef4c10cb2e2b68d18f236b6a0d7c8da5929102b",
+        "size_bytes": 3224
+      },
+      {
+        "path": "fixtures/cdv1-u04-c3d5e9174332a16b/workspace.html",
+        "sha256": "21f8c9c47a96dbaf1c42fac6dc77f282b9781651e92aee93a7afb301102a45dc",
+        "size_bytes": 1222
+      }
+    ]
+  },
+  "instance_id": "cdv1-u04-c3d5e9174332a16b",
+  "manifest_entry_sha256": "40009f71880e584b3c20ca8ec4d2fd3a418f92952da98799f33b82e18039d97b",
+  "provenance": {
+    "fixture_sha256": "27865cb4bff81b00b0b71a837dac9fb37e8fe8fe6b76fc85fd06f5c303259b9e",
+    "generation_seed": 2026,
+    "generator": "swcub.production_v1",
+    "seed_role": "deterministic profile ordering only; excluded from instance identity",
+    "semantic_spec_sha256": "c3d5e9174332a16baa2f7e00462513f73eadb140b569bcef6d9418fedfc3b20f",
+    "source_code_sha256": "a1e97d04c75f6d7e1ccb6f87adffdca7fa59d7c3f9d83747279e0e85db58d1eb",
+    "source_commit": "1036de483efe0040e9fb6ba0452c0cd968c1984b"
+  },
+  "reset_metadata": {
+    "fixture_id": "cdv1-u04-c3d5e9174332a16b",
+    "fresh_guest_required": true,
+    "remove_prior_app_state": true,
+    "verify_fixture_hash": "27865cb4bff81b00b0b71a837dac9fb37e8fe8fe6b76fc85fd06f5c303259b9e",
+    "verify_state": {
+      "actors": {
+        "A": {
+          "object": "browser/editor/range/owner-a",
+          "value": "Seed A"
+        },
+        "B": {
+          "object": "browser/editor/range/owner-b",
+          "value": "Seed B"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "operation_kind": "browser_contenteditable_undo",
+          "operation_pair": [
+            "rich_editor_insert_undo",
+            "rich_editor_insert_undo"
+          ],
+          "profile_label": "editor_owner"
+        },
+        "resource": "undo_redo_history"
+      }
+    }
+  },
+  "schedule_policy_id": "browser-editor-a-b-undo-recover-v1",
+  "semantic_parameters": {
+    "domain_id": "safety_inspection",
+    "domain_schema": {
+      "entity": "inspection item",
+      "field_a": "Clearance",
+      "field_b": "Inspection state"
+    },
+    "layout_id": "guard_after",
+    "object_profile_id": "editor_owner",
+    "object_schema": {
+      "operation_kind": "browser_contenteditable_undo",
+      "operation_pair": [
+        "rich_editor_insert_undo",
+        "rich_editor_insert_undo"
+      ],
+      "profile_label": "editor_owner"
+    },
+    "operation_graph": "browser_rich_editor_shared_undo_stack",
+    "operation_schema_revision": 1,
+    "workflow_id": "U-04"
+  },
+  "signatures": {
+    "fixture": "27865cb4bff81b00b0b71a837dac9fb37e8fe8fe6b76fc85fd06f5c303259b9e",
+    "goal": "925a9bff1baf0fc7c8a80a989caf1cc318de5725816cbd8c2ab8d1efcdc06197",
+    "semantic": "c3d5e9174332a16baa2f7e00462513f73eadb140b569bcef6d9418fedfc3b20f",
+    "structural": "0d1a6705417fbc4dc0b38f45fa3f9dcaf5a243a38fbe98b365693dd794a1f45f"
+  },
+  "target_objects": {
+    "A": [
+      "browser/editor/range/owner-a"
+    ],
+    "B": [
+      "browser/editor/range/owner-b"
+    ]
+  },
+  "task_domains": {
+    "A": "Browser",
+    "B": "Browser"
+  },
+  "topology_compatibility": {
+    "ma_id": {
+      "backend_binding": "same logical workspace seed; independent desktop sessions allowed",
+      "desktop_count": 2,
+      "fixtures": "byte-identical task-relevant clones"
+    },
+    "ma_sd": {
+      "actor_bindings": "A and B share desktop",
+      "desktop_count": 1
+    },
+    "solo": {
+      "actor_bindings": "A or B",
+      "desktop_count": 1
+    }
+  },
+  "treatment_relevant_state": {
+    "family_state": "undo_redo_history",
+    "operation_graph": "browser_rich_editor_shared_undo_stack",
+    "shared_resource": {
+      "operation_kind": "browser_contenteditable_undo",
+      "operation_pair": [
+        "rich_editor_insert_undo",
+        "rich_editor_insert_undo"
+      ],
+      "profile_label": "editor_owner"
+    }
+  },
+  "validation_level": "offline_operation_template",
+  "workflow_id": "U-04"
+}

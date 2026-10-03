@@ -1,0 +1,90 @@
+{
+  "actor_paths": {
+    "A": "actors.A.value",
+    "B": "actors.B.value"
+  },
+  "adapter": "codesk_exact_state_v1",
+  "condition_semantics": {
+    "ma_id": "score each actor on equivalent independent desktop fixture",
+    "ma_sd": "score both actor goals and shared-state integrity",
+    "solo": "score selected actor; require inactive target and guards unchanged"
+  },
+  "expected_state": {
+    "actors": {
+      "A": {
+        "object": "writer/table[0]",
+        "value": "[[\"supplier record-1.1\",\"supplier record-1.2\",\"supplier record-1.3\"],[\"supplier record-2.1\",\"supplier record-2.2\",\"supplier record-2.3\"],[\"supplier record-3.1\",\"supplier record-3.2\",\"supplier record-3.3\"]]"
+      },
+      "B": {
+        "object": "writer/paragraph[5]",
+        "value": "NOTE-SUP-2048"
+      },
+      "guards": {
+        "main": "PRESERVE"
+      }
+    },
+    "treatment": {
+      "initial": {
+        "operation_kind": "calc_to_writer_structured_copy",
+        "operation_pair": [
+          "range_copy_structured_paste",
+          "paragraph_copy_paste"
+        ],
+        "payload": "displayed_cell_values",
+        "profile_label": "table_3x3",
+        "shape": [
+          3,
+          3
+        ],
+        "source_range": "A1:C3"
+      },
+      "resource": "clipboard_state"
+    }
+  },
+  "initial_state": {
+    "actors": {
+      "A": {
+        "object": "writer/table[0]",
+        "value": "__EMPTY_TABLE__"
+      },
+      "B": {
+        "object": "writer/paragraph[5]",
+        "value": "INSERT COPIED VALUE"
+      },
+      "guards": {
+        "main": "PRESERVE"
+      }
+    },
+    "treatment": {
+      "initial": {
+        "operation_kind": "calc_to_writer_structured_copy",
+        "operation_pair": [
+          "range_copy_structured_paste",
+          "paragraph_copy_paste"
+        ],
+        "payload": "displayed_cell_values",
+        "profile_label": "table_3x3",
+        "shape": [
+          3,
+          3
+        ],
+        "source_range": "A1:C3"
+      },
+      "resource": "clipboard_state"
+    }
+  },
+  "invariants": [
+    {
+      "equals": "PRESERVE",
+      "path": "actors.guards.main"
+    }
+  ],
+  "operation_contract": {
+    "A": "calc/range-to-writer-table",
+    "B": "writer/paragraph-copy",
+    "evidence_required": true,
+    "operation_graph": "calc_formula_range_to_writer_table_and_writer_text_copy",
+    "shared_state": "X11 clipboard selection"
+  },
+  "schedule_policy_id": "calc-table-writer-paragraph-copy-confirm-v1"
+}

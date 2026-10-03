@@ -1,0 +1,243 @@
+{
+  "actor_goals": [
+    {
+      "actor_id": "A",
+      "expected_value": "Final section A CAP-4821",
+      "goal": "Use Navigator to update the assigned field in section A only. Target writer/section[Risk]/paragraph[1]; initial 'Draft section A CAP-4821'; required final 'Final section A CAP-4821'.",
+      "initial_value": "Draft section A CAP-4821",
+      "operation": "update writer/section[Risk]/paragraph[1]",
+      "target_objects": [
+        "writer/section[Risk]/paragraph[1]"
+      ],
+      "task_domain": "Writer"
+    },
+    {
+      "actor_id": "B",
+      "expected_value": "Final section B CAP-4821",
+      "goal": "Use Navigator to update the assigned field in section B only. Target writer/section[Owners]/paragraph[1]; initial 'Draft section B CAP-4821'; required final 'Final section B CAP-4821'.",
+      "initial_value": "Draft section B CAP-4821",
+      "operation": "update writer/section[Owners]/paragraph[1]",
+      "target_objects": [
+        "writer/section[Owners]/paragraph[1]"
+      ],
+      "task_domain": "Writer"
+    }
+  ],
+  "benchmark_version": "codesk-v1.0",
+  "evaluator": {
+    "actor_paths": {
+      "A": "actors.A.value",
+      "B": "actors.B.value"
+    },
+    "adapter": "codesk_exact_state_v1",
+    "condition_semantics": {
+      "ma_id": "score each actor on equivalent independent desktop fixture",
+      "ma_sd": "score both actor goals and shared-state integrity",
+      "solo": "score selected actor; require inactive target and guards unchanged"
+    },
+    "expected_state": {
+      "actors": {
+        "A": {
+          "object": "writer/section[Risk]/paragraph[1]",
+          "value": "Final section A CAP-4821"
+        },
+        "B": {
+          "object": "writer/section[Owners]/paragraph[1]",
+          "value": "Final section B CAP-4821"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "operation_kind": "writer_navigator_context",
+          "operation_pair": [
+            "navigator_section_edit",
+            "navigator_section_edit"
+          ],
+          "profile_label": "section_risk"
+        },
+        "resource": "application_context"
+      }
+    },
+    "initial_state": {
+      "actors": {
+        "A": {
+          "object": "writer/section[Risk]/paragraph[1]",
+          "value": "Draft section A CAP-4821"
+        },
+        "B": {
+          "object": "writer/section[Owners]/paragraph[1]",
+          "value": "Draft section B CAP-4821"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "operation_kind": "writer_navigator_context",
+          "operation_pair": [
+            "navigator_section_edit",
+            "navigator_section_edit"
+          ],
+          "profile_label": "section_risk"
+        },
+        "resource": "application_context"
+      }
+    },
+    "invariants": [
+      {
+        "equals": "PRESERVE",
+        "path": "actors.guards.main"
+      }
+    ],
+    "operation_contract": {
+      "A": "writer/section-a/field",
+      "B": "writer/section-b/field",
+      "evidence_required": true,
+      "operation_graph": "writer_document_navigator_section_context",
+      "shared_state": "active document section/navigation context"
+    },
+    "schedule_policy_id": "writer-section-context-change-resume-v1"
+  },
+  "evaluator_path": "evaluators/cdv1-a05-775c2dd5e0ca4a63.json",
+  "evaluator_sha256": "32cf69f67b5bf2ea0a51304c344980047bcbe5c39bac7452850c8e721ee1053f",
+  "family": "application_context",
+  "fixture_files": [
+    {
+      "path": "fixtures/cdv1-a05-775c2dd5e0ca4a63/document.fodt",
+      "sha256": "24128590804cc41920b2dd52392d88b96b93814c5d58ba17853083ed7d1b60dc",
+      "size_bytes": 520
+    }
+  ],
+  "generation_seed": 2026,
+  "initial_fixture_spec": {
+    "application_set": [
+      "Writer",
+      "Writer"
+    ],
+    "fixture_profile": "section_risk",
+    "layout_id": "guard_after",
+    "public_assets": [
+      {
+        "path": "fixtures/cdv1-a05-775c2dd5e0ca4a63/document.fodt",
+        "sha256": "24128590804cc41920b2dd52392d88b96b93814c5d58ba17853083ed7d1b60dc",
+        "size_bytes": 520
+      }
+    ]
+  },
+  "instance_id": "cdv1-a05-775c2dd5e0ca4a63",
+  "manifest_entry_sha256": "bb9ce66528da4af04cfb335c559fa441a7e40a5505dc3dedb2852bb7e8316267",
+  "provenance": {
+    "fixture_sha256": "ee2f712f54499f5628e083147a18991e066798981efdf0255be4e0629025c277",
+    "generation_seed": 2026,
+    "generator": "swcub.production_v1",
+    "seed_role": "deterministic profile ordering only; excluded from instance identity",
+    "semantic_spec_sha256": "775c2dd5e0ca4a63ef0aec17f54ba0661cff4f035a6a9bc487d421f54b9e5f21",
+    "source_code_sha256": "a1e97d04c75f6d7e1ccb6f87adffdca7fa59d7c3f9d83747279e0e85db58d1eb",
+    "source_commit": "1036de483efe0040e9fb6ba0452c0cd968c1984b"
+  },
+  "reset_metadata": {
+    "fixture_id": "cdv1-a05-775c2dd5e0ca4a63",
+    "fresh_guest_required": true,
+    "remove_prior_app_state": true,
+    "verify_fixture_hash": "ee2f712f54499f5628e083147a18991e066798981efdf0255be4e0629025c277",
+    "verify_state": {
+      "actors": {
+        "A": {
+          "object": "writer/section[Risk]/paragraph[1]",
+          "value": "Draft section A CAP-4821"
+        },
+        "B": {
+          "object": "writer/section[Owners]/paragraph[1]",
+          "value": "Draft section B CAP-4821"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "operation_kind": "writer_navigator_context",
+          "operation_pair": [
+            "navigator_section_edit",
+            "navigator_section_edit"
+          ],
+          "profile_label": "section_risk"
+        },
+        "resource": "application_context"
+      }
+    }
+  },
+  "schedule_policy_id": "writer-section-context-change-resume-v1",
+  "semantic_parameters": {
+    "domain_id": "capital_allocation",
+    "domain_schema": {
+      "entity": "capital request",
+      "field_a": "Decision",
+      "field_b": "Ledger state"
+    },
+    "layout_id": "guard_after",
+    "object_profile_id": "section_risk",
+    "object_schema": {
+      "operation_kind": "writer_navigator_context",
+      "operation_pair": [
+        "navigator_section_edit",
+        "navigator_section_edit"
+      ],
+      "profile_label": "section_risk"
+    },
+    "operation_graph": "writer_document_navigator_section_context",
+    "operation_schema_revision": 1,
+    "workflow_id": "A-05"
+  },
+  "signatures": {
+    "fixture": "ee2f712f54499f5628e083147a18991e066798981efdf0255be4e0629025c277",
+    "goal": "4b40c8da6d9fed3050095fc41962965735660b6c8b2646f7689b6c7e40ea6765",
+    "semantic": "775c2dd5e0ca4a63ef0aec17f54ba0661cff4f035a6a9bc487d421f54b9e5f21",
+    "structural": "0d7a3f7206187a4a25c35e9e23be4b145987772a1fde6639bd7020f90c056ad0"
+  },
+  "target_objects": {
+    "A": [
+      "writer/section[Risk]/paragraph[1]"
+    ],
+    "B": [
+      "writer/section[Owners]/paragraph[1]"
+    ]
+  },
+  "task_domains": {
+    "A": "Writer",
+    "B": "Writer"
+  },
+  "topology_compatibility": {
+    "ma_id": {
+      "backend_binding": "same logical workspace seed; independent desktop sessions allowed",
+      "desktop_count": 2,
+      "fixtures": "byte-identical task-relevant clones"
+    },
+    "ma_sd": {
+      "actor_bindings": "A and B share desktop",
+      "desktop_count": 1
+    },
+    "solo": {
+      "actor_bindings": "A or B",
+      "desktop_count": 1
+    }
+  },
+  "treatment_relevant_state": {
+    "family_state": "application_context",
+    "operation_graph": "writer_document_navigator_section_context",
+    "shared_resource": {
+      "operation_kind": "writer_navigator_context",
+      "operation_pair": [
+        "navigator_section_edit",
+        "navigator_section_edit"
+      ],
+      "profile_label": "section_risk"
+    }
+  },
+  "validation_level": "offline_operation_template",
+  "workflow_id": "A-05"
+}

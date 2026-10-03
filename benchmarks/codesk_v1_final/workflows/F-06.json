@@ -1,0 +1,134 @@
+{
+  "description": "Complete a two-field Browser transaction and independently edit/run a shell command.",
+  "family": "focus_input_routing",
+  "goal_a": "Fill the assigned Browser record fields and submit exactly once.",
+  "goal_b": "Edit the assigned shell command, run it, and produce the exact output file without changing other files.",
+  "operation_graph": "browser_multifield_submit_and_terminal_command_edit",
+  "required_apps": [
+    "Browser",
+    "Terminal"
+  ],
+  "runtime_validation_incomplete": true,
+  "schedule_policy_id": "browser-terminal-edit-submit-action-boundary-v1",
+  "semantic_parameter_schema": {
+    "actor_target_disjoint": true,
+    "domain_fields": [
+      "entity",
+      "field_a",
+      "field_b",
+      "a_status",
+      "b_status"
+    ],
+    "identity_excludes": [
+      "generation_seed",
+      "repeat",
+      "condition",
+      "model",
+      "window_coordinates"
+    ],
+    "layout_fields": [
+      "guard_placement",
+      "field_order",
+      "fixture_layout"
+    ],
+    "no_op_goals_allowed": false,
+    "object_profiles": [
+      {
+        "a": "browser/record/review",
+        "b": "terminal/output/review",
+        "id": "form_review",
+        "schema": {
+          "fields": [
+            "record_id",
+            "status"
+          ],
+          "operation_kind": "browser_terminal_transaction",
+          "operation_pair": [
+            "multi_field_submit",
+            "command_edit_execute"
+          ],
+          "profile_label": "form_review"
+        }
+      },
+      {
+        "a": "browser/record/vendor",
+        "b": "terminal/output/vendor",
+        "id": "form_vendor",
+        "schema": {
+          "fields": [
+            "record_id",
+            "status"
+          ],
+          "operation_kind": "browser_terminal_transaction",
+          "operation_pair": [
+            "multi_field_submit",
+            "command_edit_execute"
+          ],
+          "profile_label": "form_vendor"
+        }
+      },
+      {
+        "a": "browser/record/asset",
+        "b": "terminal/output/asset",
+        "id": "form_asset",
+        "schema": {
+          "fields": [
+            "record_id",
+            "status"
+          ],
+          "operation_kind": "browser_terminal_transaction",
+          "operation_pair": [
+            "multi_field_submit",
+            "command_edit_execute"
+          ],
+          "profile_label": "form_asset"
+        }
+      },
+      {
+        "a": "browser/record/safety",
+        "b": "terminal/output/safety",
+        "id": "form_safety",
+        "schema": {
+          "fields": [
+            "record_id",
+            "status"
+          ],
+          "operation_kind": "browser_terminal_transaction",
+          "operation_pair": [
+            "multi_field_submit",
+            "command_edit_execute"
+          ],
+          "profile_label": "form_safety"
+        }
+      },
+      {
+        "a": "browser/record/release",
+        "b": "terminal/output/release",
+        "id": "form_release",
+        "schema": {
+          "fields": [
+            "record_id",
+            "status"
+          ],
+          "operation_kind": "browser_terminal_transaction",
+          "operation_pair": [
+            "multi_field_submit",
+            "command_edit_execute"
+          ],
+          "profile_label": "form_release"
+        }
+      }
+    ],
+    "operation_schema": {
+      "A": "browser/form-transaction",
+      "B": "terminal/command-line",
+      "shared": "foreground window and keyboard target"
+    }
+  },
+  "task_domains": [
+    "Browser",
+    "Terminal"
+  ],
+  "validation_level": "offline_operation_template",
+  "workflow_id": "F-06"
+}

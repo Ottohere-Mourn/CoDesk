@@ -1,0 +1,94 @@
+{
+  "actor_paths": {
+    "A": "actors.A.value",
+    "B": "actors.B.value"
+  },
+  "adapter": "codesk_exact_state_v1",
+  "condition_semantics": {
+    "ma_id": "score each actor on equivalent independent desktop fixture",
+    "ma_sd": "score both actor goals and shared-state integrity",
+    "solo": "score selected actor; require inactive target and guards unchanged"
+  },
+  "expected_state": {
+    "actors": {
+      "A": {
+        "object": "browser/rows/1,2",
+        "value": "{\"rows\": [1, 2], \"status\": \"Reconciled\"}"
+      },
+      "B": {
+        "object": "browser/rows/3,4",
+        "value": "{\"rows\": [3, 4], \"status\": \"Counted\"}"
+      },
+      "guards": {
+        "main": "PRESERVE"
+      }
+    },
+    "treatment": {
+      "initial": {
+        "operation_kind": "browser_multiselect_bulk",
+        "operation_pair": [
+          "multirow_select_bulk_status",
+          "multirow_select_bulk_status"
+        ],
+        "profile_label": "rows_left",
+        "rows_a": [
+          1,
+          2
+        ],
+        "rows_b": [
+          3,
+          4
+        ]
+      },
+      "resource": "selection_active_object"
+    }
+  },
+  "initial_state": {
+    "actors": {
+      "A": {
+        "object": "browser/rows/1,2",
+        "value": "[]"
+      },
+      "B": {
+        "object": "browser/rows/3,4",
+        "value": "[]"
+      },
+      "guards": {
+        "main": "PRESERVE"
+      }
+    },
+    "treatment": {
+      "initial": {
+        "operation_kind": "browser_multiselect_bulk",
+        "operation_pair": [
+          "multirow_select_bulk_status",
+          "multirow_select_bulk_status"
+        ],
+        "profile_label": "rows_left",
+        "rows_a": [
+          1,
+          2
+        ],
+        "rows_b": [
+          3,
+          4
+        ]
+      },
+      "resource": "selection_active_object"
+    }
+  },
+  "invariants": [
+    {
+      "equals": "PRESERVE",
+      "path": "actors.guards.main"
+    }
+  ],
+  "operation_contract": {
+    "A": "browser/table/rows-a",
+    "B": "browser/table/rows-b",
+    "evidence_required": true,
+    "operation_graph": "browser_multirow_selection_bulk_update",
+    "shared_state": "selected row set"
+  },
+  "schedule_policy_id": "browser-row-selection-bulk-action-resume-v1"
+}

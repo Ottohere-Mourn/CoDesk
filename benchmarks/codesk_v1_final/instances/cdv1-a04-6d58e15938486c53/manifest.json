@@ -1,0 +1,273 @@
+{
+  "actor_goals": [
+    {
+      "actor_id": "A",
+      "expected_value": "FILTER-A-SAFE-1193",
+      "goal": "Open the assigned filter and update the exact matching result record. Target browser/query/high-priority; initial ''; required final 'FILTER-A-SAFE-1193'.",
+      "initial_value": "",
+      "operation": "update browser/query/high-priority",
+      "target_objects": [
+        "browser/query/high-priority"
+      ],
+      "task_domain": "Browser"
+    },
+    {
+      "actor_id": "B",
+      "expected_value": "FILTER-B-SAFE-1193",
+      "goal": "Change to the independent filter and update its matching result record. Target browser/query/standard-priority; initial ''; required final 'FILTER-B-SAFE-1193'.",
+      "initial_value": "",
+      "operation": "update browser/query/standard-priority",
+      "target_objects": [
+        "browser/query/standard-priority"
+      ],
+      "task_domain": "Browser"
+    }
+  ],
+  "benchmark_version": "codesk-v1.0",
+  "evaluator": {
+    "actor_paths": {
+      "A": "actors.A.value",
+      "B": "actors.B.value"
+    },
+    "adapter": "codesk_exact_state_v1",
+    "condition_semantics": {
+      "ma_id": "score each actor on equivalent independent desktop fixture",
+      "ma_sd": "score both actor goals and shared-state integrity",
+      "solo": "score selected actor; require inactive target and guards unchanged"
+    },
+    "expected_state": {
+      "actors": {
+        "A": {
+          "object": "browser/query/high-priority",
+          "value": "FILTER-A-SAFE-1193"
+        },
+        "B": {
+          "object": "browser/query/standard-priority",
+          "value": "FILTER-B-SAFE-1193"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "operation_kind": "browser_filter_context",
+          "operation_pair": [
+            "filter_result_select_edit",
+            "filter_result_select_edit"
+          ],
+          "profile_label": "filter_priority"
+        },
+        "resource": "application_context"
+      }
+    },
+    "initial_state": {
+      "actors": {
+        "A": {
+          "object": "browser/query/high-priority",
+          "value": ""
+        },
+        "B": {
+          "object": "browser/query/standard-priority",
+          "value": ""
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "operation_kind": "browser_filter_context",
+          "operation_pair": [
+            "filter_result_select_edit",
+            "filter_result_select_edit"
+          ],
+          "profile_label": "filter_priority"
+        },
+        "resource": "application_context"
+      }
+    },
+    "invariants": [
+      {
+        "equals": "PRESERVE",
+        "path": "actors.guards.main"
+      }
+    ],
+    "operation_contract": {
+      "A": "browser/filter/result-record-a",
+      "B": "browser/filter/result-record-b",
+      "evidence_required": true,
+      "operation_graph": "browser_filter_result_context_and_record_transaction",
+      "shared_state": "active query and result-set context"
+    },
+    "schedule_policy_id": "browser-filter-context-change-resume-v1"
+  },
+  "evaluator_path": "evaluators/cdv1-a04-6d58e15938486c53.json",
+  "evaluator_sha256": "00c9a625de21acdfebb15b1775cffcc5d2e249bfc1d39dcd9659399543d6c2a9",
+  "family": "application_context",
+  "fixture_files": [
+    {
+      "path": "fixtures/cdv1-a04-6d58e15938486c53/browser-events.jsonl",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size_bytes": 0
+    },
+    {
+      "path": "fixtures/cdv1-a04-6d58e15938486c53/browser-initial-state.json",
+      "sha256": "13f0a10fb736ec810448bf109785e66c579d3d952d3112458fbbe9385c8f0bec",
+      "size_bytes": 193
+    },
+    {
+      "path": "fixtures/cdv1-a04-6d58e15938486c53/browser-server.py",
+      "sha256": "2da4fb4ccfcb0b9dc7a68942e624fb2a236176eb50fee62b9882b9d8cb598bb6",
+      "size_bytes": 3224
+    },
+    {
+      "path": "fixtures/cdv1-a04-6d58e15938486c53/workspace.html",
+      "sha256": "b431b6babd494ea16d73c9f9caa78a920fa82574147d4e1c71a3ad189a16e384",
+      "size_bytes": 1315
+    }
+  ],
+  "generation_seed": 2026,
+  "initial_fixture_spec": {
+    "application_set": [
+      "Browser",
+      "Browser"
+    ],
+    "fixture_profile": "filter_priority",
+    "layout_id": "guard_after",
+    "public_assets": [
+      {
+        "path": "fixtures/cdv1-a04-6d58e15938486c53/browser-events.jsonl",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size_bytes": 0
+      },
+      {
+        "path": "fixtures/cdv1-a04-6d58e15938486c53/browser-initial-state.json",
+        "sha256": "13f0a10fb736ec810448bf109785e66c579d3d952d3112458fbbe9385c8f0bec",
+        "size_bytes": 193
+      },
+      {
+        "path": "fixtures/cdv1-a04-6d58e15938486c53/browser-server.py",
+        "sha256": "2da4fb4ccfcb0b9dc7a68942e624fb2a236176eb50fee62b9882b9d8cb598bb6",
+        "size_bytes": 3224
+      },
+      {
+        "path": "fixtures/cdv1-a04-6d58e15938486c53/workspace.html",
+        "sha256": "b431b6babd494ea16d73c9f9caa78a920fa82574147d4e1c71a3ad189a16e384",
+        "size_bytes": 1315
+      }
+    ]
+  },
+  "instance_id": "cdv1-a04-6d58e15938486c53",
+  "manifest_entry_sha256": "e8fef721972a3856bd8594eff7a9b6cbb37597804617f1745768cb008f4a4fc2",
+  "provenance": {
+    "fixture_sha256": "302952636a452b38cd1e193b604ced6d4cefa5b34853074965ccdfd0c132e503",
+    "generation_seed": 2026,
+    "generator": "swcub.production_v1",
+    "seed_role": "deterministic profile ordering only; excluded from instance identity",
+    "semantic_spec_sha256": "6d58e15938486c53ac1078533ec57d0692a81841a775b142f37a085ed5800eee",
+    "source_code_sha256": "a1e97d04c75f6d7e1ccb6f87adffdca7fa59d7c3f9d83747279e0e85db58d1eb",
+    "source_commit": "1036de483efe0040e9fb6ba0452c0cd968c1984b"
+  },
+  "reset_metadata": {
+    "fixture_id": "cdv1-a04-6d58e15938486c53",
+    "fresh_guest_required": true,
+    "remove_prior_app_state": true,
+    "verify_fixture_hash": "302952636a452b38cd1e193b604ced6d4cefa5b34853074965ccdfd0c132e503",
+    "verify_state": {
+      "actors": {
+        "A": {
+          "object": "browser/query/high-priority",
+          "value": ""
+        },
+        "B": {
+          "object": "browser/query/standard-priority",
+          "value": ""
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "operation_kind": "browser_filter_context",
+          "operation_pair": [
+            "filter_result_select_edit",
+            "filter_result_select_edit"
+          ],
+          "profile_label": "filter_priority"
+        },
+        "resource": "application_context"
+      }
+    }
+  },
+  "schedule_policy_id": "browser-filter-context-change-resume-v1",
+  "semantic_parameters": {
+    "domain_id": "safety_inspection",
+    "domain_schema": {
+      "entity": "inspection item",
+      "field_a": "Clearance",
+      "field_b": "Inspection state"
+    },
+    "layout_id": "guard_after",
+    "object_profile_id": "filter_priority",
+    "object_schema": {
+      "operation_kind": "browser_filter_context",
+      "operation_pair": [
+        "filter_result_select_edit",
+        "filter_result_select_edit"
+      ],
+      "profile_label": "filter_priority"
+    },
+    "operation_graph": "browser_filter_result_context_and_record_transaction",
+    "operation_schema_revision": 1,
+    "workflow_id": "A-04"
+  },
+  "signatures": {
+    "fixture": "302952636a452b38cd1e193b604ced6d4cefa5b34853074965ccdfd0c132e503",
+    "goal": "6104c2537c383d307274f85d9572bcea4d6dad563850dd2a3c3201096458a620",
+    "semantic": "6d58e15938486c53ac1078533ec57d0692a81841a775b142f37a085ed5800eee",
+    "structural": "71e72582f248d04b9de99b24c99e1aec36dfd77ddd99989d661cdc2ef6a71d43"
+  },
+  "target_objects": {
+    "A": [
+      "browser/query/high-priority"
+    ],
+    "B": [
+      "browser/query/standard-priority"
+    ]
+  },
+  "task_domains": {
+    "A": "Browser",
+    "B": "Browser"
+  },
+  "topology_compatibility": {
+    "ma_id": {
+      "backend_binding": "same logical workspace seed; independent desktop sessions allowed",
+      "desktop_count": 2,
+      "fixtures": "byte-identical task-relevant clones"
+    },
+    "ma_sd": {
+      "actor_bindings": "A and B share desktop",
+      "desktop_count": 1
+    },
+    "solo": {
+      "actor_bindings": "A or B",
+      "desktop_count": 1
+    }
+  },
+  "treatment_relevant_state": {
+    "family_state": "application_context",
+    "operation_graph": "browser_filter_result_context_and_record_transaction",
+    "shared_resource": {
+      "operation_kind": "browser_filter_context",
+      "operation_pair": [
+        "filter_result_select_edit",
+        "filter_result_select_edit"
+      ],
+      "profile_label": "filter_priority"
+    }
+  },
+  "validation_level": "offline_operation_template",
+  "workflow_id": "A-04"
+}

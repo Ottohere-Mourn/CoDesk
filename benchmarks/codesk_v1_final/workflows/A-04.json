@@ -1,0 +1,114 @@
+{
+  "description": "Complete independent records after the other actor changes the single-page filter result set.",
+  "family": "application_context",
+  "goal_a": "Open the assigned filter and update the exact matching result record.",
+  "goal_b": "Change to the independent filter and update its matching result record.",
+  "operation_graph": "browser_filter_result_context_and_record_transaction",
+  "required_apps": [
+    "Browser",
+    "Browser"
+  ],
+  "runtime_validation_incomplete": true,
+  "schedule_policy_id": "browser-filter-context-change-resume-v1",
+  "semantic_parameter_schema": {
+    "actor_target_disjoint": true,
+    "domain_fields": [
+      "entity",
+      "field_a",
+      "field_b",
+      "a_status",
+      "b_status"
+    ],
+    "identity_excludes": [
+      "generation_seed",
+      "repeat",
+      "condition",
+      "model",
+      "window_coordinates"
+    ],
+    "layout_fields": [
+      "guard_placement",
+      "field_order",
+      "fixture_layout"
+    ],
+    "no_op_goals_allowed": false,
+    "object_profiles": [
+      {
+        "a": "browser/query/open-record",
+        "b": "browser/query/closed-record",
+        "id": "filter_open",
+        "schema": {
+          "operation_kind": "browser_filter_context",
+          "operation_pair": [
+            "filter_result_select_edit",
+            "filter_result_select_edit"
+          ],
+          "profile_label": "filter_open"
+        }
+      },
+      {
+        "a": "browser/query/pending-record",
+        "b": "browser/query/approved-record",
+        "id": "filter_pending",
+        "schema": {
+          "operation_kind": "browser_filter_context",
+          "operation_pair": [
+            "filter_result_select_edit",
+            "filter_result_select_edit"
+          ],
+          "profile_label": "filter_pending"
+        }
+      },
+      {
+        "a": "browser/query/owner-a",
+        "b": "browser/query/owner-b",
+        "id": "filter_owner",
+        "schema": {
+          "operation_kind": "browser_filter_context",
+          "operation_pair": [
+            "filter_result_select_edit",
+            "filter_result_select_edit"
+          ],
+          "profile_label": "filter_owner"
+        }
+      },
+      {
+        "a": "browser/query/vendor-a",
+        "b": "browser/query/vendor-b",
+        "id": "filter_vendor",
+        "schema": {
+          "operation_kind": "browser_filter_context",
+          "operation_pair": [
+            "filter_result_select_edit",
+            "filter_result_select_edit"
+          ],
+          "profile_label": "filter_vendor"
+        }
+      },
+      {
+        "a": "browser/query/high-priority",
+        "b": "browser/query/standard-priority",
+        "id": "filter_priority",
+        "schema": {
+          "operation_kind": "browser_filter_context",
+          "operation_pair": [
+            "filter_result_select_edit",
+            "filter_result_select_edit"
+          ],
+          "profile_label": "filter_priority"
+        }
+      }
+    ],
+    "operation_schema": {
+      "A": "browser/filter/result-record-a",
+      "B": "browser/filter/result-record-b",
+      "shared": "active query and result-set context"
+    }
+  },
+  "task_domains": [
+    "Browser",
+    "Browser"
+  ],
+  "validation_level": "offline_operation_template",
+  "workflow_id": "A-04"
+}

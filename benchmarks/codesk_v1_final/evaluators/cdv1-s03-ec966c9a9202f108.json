@@ -1,0 +1,78 @@
+{
+  "actor_paths": {
+    "A": "actors.A.value",
+    "B": "actors.B.value"
+  },
+  "adapter": "codesk_exact_state_v1",
+  "condition_semantics": {
+    "ma_id": "score each actor on equivalent independent desktop fixture",
+    "ma_sd": "score both actor goals and shared-state integrity",
+    "solo": "score selected actor; require inactive target and guards unchanged"
+  },
+  "expected_state": {
+    "actors": {
+      "A": {
+        "object": "writer/range/date-a",
+        "value": "Replaced phrase A SAFE-1193"
+      },
+      "B": {
+        "object": "writer/range/date-b",
+        "value": "Replaced phrase B SAFE-1193"
+      },
+      "guards": {
+        "main": "PRESERVE"
+      }
+    },
+    "treatment": {
+      "initial": {
+        "operation_kind": "writer_selected_phrase_replace",
+        "operation_pair": [
+          "select_replace_exact_phrase",
+          "select_replace_exact_phrase"
+        ],
+        "profile_label": "replace_dates"
+      },
+      "resource": "selection_active_object"
+    }
+  },
+  "initial_state": {
+    "actors": {
+      "A": {
+        "object": "writer/range/date-a",
+        "value": "Select phrase A SAFE-1193"
+      },
+      "B": {
+        "object": "writer/range/date-b",
+        "value": "Select phrase B SAFE-1193"
+      },
+      "guards": {
+        "main": "PRESERVE"
+      }
+    },
+    "treatment": {
+      "initial": {
+        "operation_kind": "writer_selected_phrase_replace",
+        "operation_pair": [
+          "select_replace_exact_phrase",
+          "select_replace_exact_phrase"
+        ],
+        "profile_label": "replace_dates"
+      },
+      "resource": "selection_active_object"
+    }
+  },
+  "invariants": [
+    {
+      "equals": "PRESERVE",
+      "path": "actors.guards.main"
+    }
+  ],
+  "operation_contract": {
+    "A": "writer/selection/phrase-a",
+    "B": "writer/selection/phrase-b",
+    "evidence_required": true,
+    "operation_graph": "writer_text_selection_replacement",
+    "shared_state": "active text selection and caret"
+  },
+  "schedule_policy_id": "writer-range-replacement-selection-resume-v1"
+}

@@ -1,0 +1,241 @@
+{
+  "actor_goals": [
+    {
+      "actor_id": "A",
+      "expected_value": "Approved: capital request (object)",
+      "goal": "Replace the assigned paragraph in doc-A.",
+      "initial_value": "Draft: capital request",
+      "operation": "update writer/doc-a/status-paragraph",
+      "target_objects": [
+        "writer/doc-a/status-paragraph"
+      ],
+      "task_domain": "Writer"
+    },
+    {
+      "actor_id": "B",
+      "expected_value": "Recorded: capital request (object)",
+      "goal": "Replace the assigned paragraph in doc-B.",
+      "initial_value": "Pending: capital request",
+      "operation": "update writer/doc-b/status-paragraph",
+      "target_objects": [
+        "writer/doc-b/status-paragraph"
+      ],
+      "task_domain": "Writer"
+    }
+  ],
+  "benchmark_version": "codesk-v1.0",
+  "evaluator": {
+    "actor_paths": {
+      "A": "actors.A.value",
+      "B": "actors.B.value"
+    },
+    "adapter": "codesk_exact_state_v1",
+    "condition_semantics": {
+      "ma_id": "score each actor on equivalent independent desktop fixture",
+      "ma_sd": "score both actor goals and shared-state integrity",
+      "solo": "score selected actor; require inactive target and guards unchanged"
+    },
+    "expected_state": {
+      "actors": {
+        "A": {
+          "object": "writer/doc-a/status-paragraph",
+          "value": "Approved: capital request (object)"
+        },
+        "B": {
+          "object": "writer/doc-b/status-paragraph",
+          "value": "Recorded: capital request (object)"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "documents": [
+            "doc-a",
+            "doc-b"
+          ],
+          "target_kind": "status paragraph"
+        },
+        "resource": "focus_input_routing"
+      }
+    },
+    "initial_state": {
+      "actors": {
+        "A": {
+          "object": "writer/doc-a/status-paragraph",
+          "value": "Draft: capital request"
+        },
+        "B": {
+          "object": "writer/doc-b/status-paragraph",
+          "value": "Pending: capital request"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "documents": [
+            "doc-a",
+            "doc-b"
+          ],
+          "target_kind": "status paragraph"
+        },
+        "resource": "focus_input_routing"
+      }
+    },
+    "invariants": [
+      {
+        "equals": "PRESERVE",
+        "path": "actors.guards.main"
+      }
+    ],
+    "schedule_policy_id": "writer-window-a-window-b-resume-a-v1"
+  },
+  "evaluator_path": "evaluators/cdv1-fn1-ab611ad1023248a9.json",
+  "evaluator_sha256": "c00ccfda40c6f5b2b42dd0a9bbb79343c3d92b476d5ba350fb5158e81bd0f1b8",
+  "family": "focus_input_routing",
+  "fixture_files": [
+    {
+      "path": "fixtures/cdv1-fn1-ab611ad1023248a9/doc-a.fodt",
+      "sha256": "ecc5c2b97acb41ef32f9b42dd866003495911bfc6460f9c24ffea174db4797bc",
+      "size_bytes": 384
+    },
+    {
+      "path": "fixtures/cdv1-fn1-ab611ad1023248a9/doc-b.fodt",
+      "sha256": "7d32e72eedea926cca838fa8160605d5c5ef88df04da4c77a5ee2b6d114de701",
+      "size_bytes": 386
+    }
+  ],
+  "generation_seed": 2026,
+  "initial_fixture_spec": {
+    "application_set": [
+      "Writer",
+      "Writer"
+    ],
+    "fixture_profile": "writer_doc_status",
+    "layout_id": "guard_after",
+    "public_assets": [
+      {
+        "path": "fixtures/cdv1-fn1-ab611ad1023248a9/doc-a.fodt",
+        "sha256": "ecc5c2b97acb41ef32f9b42dd866003495911bfc6460f9c24ffea174db4797bc",
+        "size_bytes": 384
+      },
+      {
+        "path": "fixtures/cdv1-fn1-ab611ad1023248a9/doc-b.fodt",
+        "sha256": "7d32e72eedea926cca838fa8160605d5c5ef88df04da4c77a5ee2b6d114de701",
+        "size_bytes": 386
+      }
+    ]
+  },
+  "instance_id": "cdv1-fn1-ab611ad1023248a9",
+  "manifest_entry_sha256": "29cc7c50852050abd09ff5a69e10a3d0865ed48c6f44caf96eda95ec07c3413b",
+  "provenance": {
+    "fixture_sha256": "d6275e42d27c8f2f01aa579a64a221027b46b4cc58b0ff6a6c25ac980eeb3897",
+    "generation_seed": 2026,
+    "generator": "swcub.production_v1",
+    "seed_role": "deterministic profile ordering only; excluded from instance identity",
+    "semantic_spec_sha256": "ab611ad1023248a91e0d88999718ee564affdb86aa62e9adc93408367760ae2a",
+    "source_code_sha256": "a1e97d04c75f6d7e1ccb6f87adffdca7fa59d7c3f9d83747279e0e85db58d1eb",
+    "source_commit": "1036de483efe0040e9fb6ba0452c0cd968c1984b"
+  },
+  "reset_metadata": {
+    "fixture_id": "cdv1-fn1-ab611ad1023248a9",
+    "fresh_guest_required": true,
+    "remove_prior_app_state": true,
+    "verify_fixture_hash": "d6275e42d27c8f2f01aa579a64a221027b46b4cc58b0ff6a6c25ac980eeb3897",
+    "verify_state": {
+      "actors": {
+        "A": {
+          "object": "writer/doc-a/status-paragraph",
+          "value": "Draft: capital request"
+        },
+        "B": {
+          "object": "writer/doc-b/status-paragraph",
+          "value": "Pending: capital request"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "documents": [
+            "doc-a",
+            "doc-b"
+          ],
+          "target_kind": "status paragraph"
+        },
+        "resource": "focus_input_routing"
+      }
+    }
+  },
+  "schedule_policy_id": "writer-window-a-window-b-resume-a-v1",
+  "semantic_parameters": {
+    "domain_id": "capital_allocation",
+    "domain_schema": {
+      "entity": "capital request",
+      "field_a": "Decision",
+      "field_b": "Ledger state"
+    },
+    "layout_id": "guard_after",
+    "object_profile_id": "writer_doc_status",
+    "object_schema": {
+      "documents": [
+        "doc-a",
+        "doc-b"
+      ],
+      "target_kind": "status paragraph"
+    },
+    "operation_graph": "two_writer_windows",
+    "operation_schema_revision": 1,
+    "workflow_id": "F-N1"
+  },
+  "signatures": {
+    "fixture": "d6275e42d27c8f2f01aa579a64a221027b46b4cc58b0ff6a6c25ac980eeb3897",
+    "goal": "8879b0e5f3da39c1f5e7fb8dbc02fb0b1dcaf8aa1ffb3d308db5ae025e7d792c",
+    "semantic": "ab611ad1023248a91e0d88999718ee564affdb86aa62e9adc93408367760ae2a",
+    "structural": "e489c25a098d07989e3ee5a8b07e7800d2bc6f1deb961e367311d53e9eec9ab7"
+  },
+  "target_objects": {
+    "A": [
+      "writer/doc-a/status-paragraph"
+    ],
+    "B": [
+      "writer/doc-b/status-paragraph"
+    ]
+  },
+  "task_domains": {
+    "A": "Writer",
+    "B": "Writer"
+  },
+  "topology_compatibility": {
+    "ma_id": {
+      "backend_binding": "same logical workspace seed; independent desktop sessions allowed",
+      "desktop_count": 2,
+      "fixtures": "byte-identical task-relevant clones"
+    },
+    "ma_sd": {
+      "actor_bindings": "A and B share desktop",
+      "desktop_count": 1
+    },
+    "solo": {
+      "actor_bindings": "A or B",
+      "desktop_count": 1
+    }
+  },
+  "treatment_relevant_state": {
+    "family_state": "focus_input_routing",
+    "operation_graph": "two_writer_windows",
+    "shared_resource": {
+      "documents": [
+        "doc-a",
+        "doc-b"
+      ],
+      "target_kind": "status paragraph"
+    }
+  },
+  "validation_level": "guest_solo",
+  "workflow_id": "F-N1"
+}

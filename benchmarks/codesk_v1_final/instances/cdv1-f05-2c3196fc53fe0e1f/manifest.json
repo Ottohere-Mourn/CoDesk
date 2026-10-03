@@ -1,0 +1,258 @@
+{
+  "actor_goals": [
+    {
+      "actor_id": "A",
+      "expected_value": "Final phrase SUP-2048",
+      "goal": "Use Writer Find/Replace to replace the assigned phrase exactly once; preserve all other paragraphs. Target writer/paragraph[5]; initial 'Draft phrase SUP-2048'; required final 'Final phrase SUP-2048'.",
+      "initial_value": "Draft phrase SUP-2048",
+      "operation": "update writer/paragraph[5]",
+      "target_objects": [
+        "writer/paragraph[5]"
+      ],
+      "task_domain": "Writer"
+    },
+    {
+      "actor_id": "B",
+      "expected_value": "=SUM(B4:B6)",
+      "goal": "Enter the assigned formula in the Calc target cell and preserve neighboring cells. Target calc/C3; initial ''; required final '=SUM(B4:B6)'.",
+      "initial_value": "",
+      "operation": "update calc/C3",
+      "target_objects": [
+        "calc/C3"
+      ],
+      "task_domain": "Calc"
+    }
+  ],
+  "benchmark_version": "codesk-v1.0",
+  "evaluator": {
+    "actor_paths": {
+      "A": "actors.A.value",
+      "B": "actors.B.value"
+    },
+    "adapter": "codesk_exact_state_v1",
+    "condition_semantics": {
+      "ma_id": "score each actor on equivalent independent desktop fixture",
+      "ma_sd": "score both actor goals and shared-state integrity",
+      "solo": "score selected actor; require inactive target and guards unchanged"
+    },
+    "expected_state": {
+      "actors": {
+        "A": {
+          "object": "writer/paragraph[5]",
+          "value": "Final phrase SUP-2048"
+        },
+        "B": {
+          "object": "calc/C3",
+          "value": "=SUM(B4:B6)"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "formula": "=SUM(B4:B6)",
+          "operation_kind": "find_replace_formula",
+          "operation_pair": [
+            "exact_phrase_replace",
+            "formula_entry"
+          ],
+          "profile_label": "phrase_title"
+        },
+        "resource": "focus_input_routing"
+      }
+    },
+    "initial_state": {
+      "actors": {
+        "A": {
+          "object": "writer/paragraph[5]",
+          "value": "Draft phrase SUP-2048"
+        },
+        "B": {
+          "object": "calc/C3",
+          "value": ""
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "formula": "=SUM(B4:B6)",
+          "operation_kind": "find_replace_formula",
+          "operation_pair": [
+            "exact_phrase_replace",
+            "formula_entry"
+          ],
+          "profile_label": "phrase_title"
+        },
+        "resource": "focus_input_routing"
+      }
+    },
+    "invariants": [
+      {
+        "equals": "PRESERVE",
+        "path": "actors.guards.main"
+      }
+    ],
+    "operation_contract": {
+      "A": "writer/find-replace",
+      "B": "calc/formula-cell",
+      "evidence_required": true,
+      "operation_graph": "writer_find_replace_then_calc_formula_entry",
+      "shared_state": "foreground window and keyboard target"
+    },
+    "schedule_policy_id": "writer-find-calc-formula-action-boundary-v1"
+  },
+  "evaluator_path": "evaluators/cdv1-f05-2c3196fc53fe0e1f.json",
+  "evaluator_sha256": "eefd6df6465ccba58230c89c380223ed529f513d2b33a519c82d3c5b79b6e1ea",
+  "family": "focus_input_routing",
+  "fixture_files": [
+    {
+      "path": "fixtures/cdv1-f05-2c3196fc53fe0e1f/document.fodt",
+      "sha256": "1ac9efe99c5274c0f21a91317db5652ef631d78fe5eafc8abfed096396777b1c",
+      "size_bytes": 1058
+    },
+    {
+      "path": "fixtures/cdv1-f05-2c3196fc53fe0e1f/workbook.fods",
+      "sha256": "d53d65a8745e568cc85668683df1790ff24eecc28f0824edeac20d2fa9028814",
+      "size_bytes": 15251
+    }
+  ],
+  "generation_seed": 2026,
+  "initial_fixture_spec": {
+    "application_set": [
+      "Writer",
+      "Calc"
+    ],
+    "fixture_profile": "phrase_title",
+    "layout_id": "guard_after",
+    "public_assets": [
+      {
+        "path": "fixtures/cdv1-f05-2c3196fc53fe0e1f/document.fodt",
+        "sha256": "1ac9efe99c5274c0f21a91317db5652ef631d78fe5eafc8abfed096396777b1c",
+        "size_bytes": 1058
+      },
+      {
+        "path": "fixtures/cdv1-f05-2c3196fc53fe0e1f/workbook.fods",
+        "sha256": "d53d65a8745e568cc85668683df1790ff24eecc28f0824edeac20d2fa9028814",
+        "size_bytes": 15251
+      }
+    ]
+  },
+  "instance_id": "cdv1-f05-2c3196fc53fe0e1f",
+  "manifest_entry_sha256": "ce543a8f356704e52a0876b325b770c6ad4a2075ee08fa7460825babd886d6a4",
+  "provenance": {
+    "fixture_sha256": "a3b756ce2b68c354f7eda7ac0fd278e1f46ec8e89802a7bf5308985fe3de9003",
+    "generation_seed": 2026,
+    "generator": "swcub.production_v1",
+    "seed_role": "deterministic profile ordering only; excluded from instance identity",
+    "semantic_spec_sha256": "2c3196fc53fe0e1f5b0073536b3c62dfbf58a028b4ba0ef1664f06770c71433d",
+    "source_code_sha256": "a1e97d04c75f6d7e1ccb6f87adffdca7fa59d7c3f9d83747279e0e85db58d1eb",
+    "source_commit": "1036de483efe0040e9fb6ba0452c0cd968c1984b"
+  },
+  "reset_metadata": {
+    "fixture_id": "cdv1-f05-2c3196fc53fe0e1f",
+    "fresh_guest_required": true,
+    "remove_prior_app_state": true,
+    "verify_fixture_hash": "a3b756ce2b68c354f7eda7ac0fd278e1f46ec8e89802a7bf5308985fe3de9003",
+    "verify_state": {
+      "actors": {
+        "A": {
+          "object": "writer/paragraph[5]",
+          "value": "Draft phrase SUP-2048"
+        },
+        "B": {
+          "object": "calc/C3",
+          "value": ""
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "formula": "=SUM(B4:B6)",
+          "operation_kind": "find_replace_formula",
+          "operation_pair": [
+            "exact_phrase_replace",
+            "formula_entry"
+          ],
+          "profile_label": "phrase_title"
+        },
+        "resource": "focus_input_routing"
+      }
+    }
+  },
+  "schedule_policy_id": "writer-find-calc-formula-action-boundary-v1",
+  "semantic_parameters": {
+    "domain_id": "supplier_onboarding",
+    "domain_schema": {
+      "entity": "supplier record",
+      "field_a": "Review decision",
+      "field_b": "Verification state"
+    },
+    "layout_id": "guard_after",
+    "object_profile_id": "phrase_title",
+    "object_schema": {
+      "formula": "=SUM(B4:B6)",
+      "operation_kind": "find_replace_formula",
+      "operation_pair": [
+        "exact_phrase_replace",
+        "formula_entry"
+      ],
+      "profile_label": "phrase_title"
+    },
+    "operation_graph": "writer_find_replace_then_calc_formula_entry",
+    "operation_schema_revision": 1,
+    "workflow_id": "F-05"
+  },
+  "signatures": {
+    "fixture": "a3b756ce2b68c354f7eda7ac0fd278e1f46ec8e89802a7bf5308985fe3de9003",
+    "goal": "eabb1d764360b7d9e20fe3bf310dfe9aea7c53db0b99a7f6592d56fb926ae057",
+    "semantic": "2c3196fc53fe0e1f5b0073536b3c62dfbf58a028b4ba0ef1664f06770c71433d",
+    "structural": "25d2fd6b9eac1bd7e7dbb4710cba147dc198f8d14a1e5249a602f1817b5d0f50"
+  },
+  "target_objects": {
+    "A": [
+      "writer/paragraph[5]"
+    ],
+    "B": [
+      "calc/C3"
+    ]
+  },
+  "task_domains": {
+    "A": "Writer",
+    "B": "Calc"
+  },
+  "topology_compatibility": {
+    "ma_id": {
+      "backend_binding": "same logical workspace seed; independent desktop sessions allowed",
+      "desktop_count": 2,
+      "fixtures": "byte-identical task-relevant clones"
+    },
+    "ma_sd": {
+      "actor_bindings": "A and B share desktop",
+      "desktop_count": 1
+    },
+    "solo": {
+      "actor_bindings": "A or B",
+      "desktop_count": 1
+    }
+  },
+  "treatment_relevant_state": {
+    "family_state": "focus_input_routing",
+    "operation_graph": "writer_find_replace_then_calc_formula_entry",
+    "shared_resource": {
+      "formula": "=SUM(B4:B6)",
+      "operation_kind": "find_replace_formula",
+      "operation_pair": [
+        "exact_phrase_replace",
+        "formula_entry"
+      ],
+      "profile_label": "phrase_title"
+    }
+  },
+  "validation_level": "offline_operation_template",
+  "workflow_id": "F-05"
+}

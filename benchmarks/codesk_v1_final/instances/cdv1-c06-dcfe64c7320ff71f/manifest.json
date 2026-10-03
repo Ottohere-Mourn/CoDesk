@@ -1,0 +1,293 @@
+{
+  "actor_goals": [
+    {
+      "actor_id": "A",
+      "expected_value": "OUTPUT-SAFE-1193",
+      "goal": "Select and copy the exact command output, paste it into the assigned Browser search, and submit the search. Target browser/search/vendor; initial ''; required final 'OUTPUT-SAFE-1193'.",
+      "initial_value": "",
+      "operation": "update browser/search/vendor",
+      "target_objects": [
+        "browser/search/vendor"
+      ],
+      "task_domain": "Browser"
+    },
+    {
+      "actor_id": "B",
+      "expected_value": "SEARCH-SAFE-1193",
+      "goal": "Copy the assigned Browser text token and paste it into the independent destination field. Target browser/destination/vendor; initial '__EMPTY__'; required final 'SEARCH-SAFE-1193'.",
+      "initial_value": "__EMPTY__",
+      "operation": "update browser/destination/vendor",
+      "target_objects": [
+        "browser/destination/vendor"
+      ],
+      "task_domain": "Browser"
+    }
+  ],
+  "benchmark_version": "codesk-v1.0",
+  "evaluator": {
+    "actor_paths": {
+      "A": "actors.A.value",
+      "B": "actors.B.value"
+    },
+    "adapter": "codesk_exact_state_v1",
+    "condition_semantics": {
+      "ma_id": "score each actor on equivalent independent desktop fixture",
+      "ma_sd": "score both actor goals and shared-state integrity",
+      "solo": "score selected actor; require inactive target and guards unchanged"
+    },
+    "expected_state": {
+      "actors": {
+        "A": {
+          "object": "browser/search/vendor",
+          "value": "OUTPUT-SAFE-1193"
+        },
+        "B": {
+          "object": "browser/destination/vendor",
+          "value": "SEARCH-SAFE-1193"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "operation_kind": "terminal_browser_text_transfer",
+          "operation_pair": [
+            "terminal_output_copy_search",
+            "browser_text_copy_paste"
+          ],
+          "profile_label": "search_vendor"
+        },
+        "resource": "clipboard_state"
+      }
+    },
+    "initial_state": {
+      "actors": {
+        "A": {
+          "object": "browser/search/vendor",
+          "value": ""
+        },
+        "B": {
+          "object": "browser/destination/vendor",
+          "value": "__EMPTY__"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "operation_kind": "terminal_browser_text_transfer",
+          "operation_pair": [
+            "terminal_output_copy_search",
+            "browser_text_copy_paste"
+          ],
+          "profile_label": "search_vendor"
+        },
+        "resource": "clipboard_state"
+      }
+    },
+    "invariants": [
+      {
+        "equals": "PRESERVE",
+        "path": "actors.guards.main"
+      }
+    ],
+    "operation_contract": {
+      "A": "terminal/selection-to-browser-search",
+      "B": "browser/text-copy-paste",
+      "evidence_required": true,
+      "operation_graph": "terminal_selected_output_to_browser_search_and_browser_text_copy",
+      "shared_state": "X11 clipboard selection"
+    },
+    "schedule_policy_id": "terminal-output-browser-copy-confirm-resume-v1"
+  },
+  "evaluator_path": "evaluators/cdv1-c06-dcfe64c7320ff71f.json",
+  "evaluator_sha256": "a9f3deffb3efe75cdfd4c70229ab5ba2afea273268bcaacd8ab74e158ac92536",
+  "family": "clipboard_state",
+  "fixture_files": [
+    {
+      "path": "fixtures/cdv1-c06-dcfe64c7320ff71f/browser-events.jsonl",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size_bytes": 0
+    },
+    {
+      "path": "fixtures/cdv1-c06-dcfe64c7320ff71f/browser-initial-state.json",
+      "sha256": "d4c14df5c0b6519feef6c9fbd61216c6f26e98c4e4f2d1ebb0e4ce10e40b74c7",
+      "size_bytes": 202
+    },
+    {
+      "path": "fixtures/cdv1-c06-dcfe64c7320ff71f/browser-server.py",
+      "sha256": "1df6101488e5f410a998219ca60a819749267ac60415118c07e4ff839feeb918",
+      "size_bytes": 3224
+    },
+    {
+      "path": "fixtures/cdv1-c06-dcfe64c7320ff71f/terminal-state.json",
+      "sha256": "83caef4b02c536134018156c67f29d727b81f1aa339faf2efa763b755ccb55bb",
+      "size_bytes": 53
+    },
+    {
+      "path": "fixtures/cdv1-c06-dcfe64c7320ff71f/terminal-task.sh",
+      "sha256": "f0d12b77f8b0d5b700f94af93020a98f764599ed083e025ffd66961bd7c4543b",
+      "size_bytes": 71
+    },
+    {
+      "path": "fixtures/cdv1-c06-dcfe64c7320ff71f/workspace.html",
+      "sha256": "aba30df6b93d992994ab31c78485d4a367a0e8390cc412febf74184431661dcd",
+      "size_bytes": 785
+    }
+  ],
+  "generation_seed": 2026,
+  "initial_fixture_spec": {
+    "application_set": [
+      "Terminal",
+      "Browser"
+    ],
+    "fixture_profile": "search_vendor",
+    "layout_id": "guard_after",
+    "public_assets": [
+      {
+        "path": "fixtures/cdv1-c06-dcfe64c7320ff71f/browser-events.jsonl",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size_bytes": 0
+      },
+      {
+        "path": "fixtures/cdv1-c06-dcfe64c7320ff71f/browser-initial-state.json",
+        "sha256": "d4c14df5c0b6519feef6c9fbd61216c6f26e98c4e4f2d1ebb0e4ce10e40b74c7",
+        "size_bytes": 202
+      },
+      {
+        "path": "fixtures/cdv1-c06-dcfe64c7320ff71f/browser-server.py",
+        "sha256": "1df6101488e5f410a998219ca60a819749267ac60415118c07e4ff839feeb918",
+        "size_bytes": 3224
+      },
+      {
+        "path": "fixtures/cdv1-c06-dcfe64c7320ff71f/terminal-state.json",
+        "sha256": "83caef4b02c536134018156c67f29d727b81f1aa339faf2efa763b755ccb55bb",
+        "size_bytes": 53
+      },
+      {
+        "path": "fixtures/cdv1-c06-dcfe64c7320ff71f/terminal-task.sh",
+        "sha256": "f0d12b77f8b0d5b700f94af93020a98f764599ed083e025ffd66961bd7c4543b",
+        "size_bytes": 71
+      },
+      {
+        "path": "fixtures/cdv1-c06-dcfe64c7320ff71f/workspace.html",
+        "sha256": "aba30df6b93d992994ab31c78485d4a367a0e8390cc412febf74184431661dcd",
+        "size_bytes": 785
+      }
+    ]
+  },
+  "instance_id": "cdv1-c06-dcfe64c7320ff71f",
+  "manifest_entry_sha256": "feb39e682e7e4616e0a9971a82cc45ade16bfd820c317036d7484aaf6d8af0a3",
+  "provenance": {
+    "fixture_sha256": "db8bfdece2d459aefdb0117d654885428b6de39670e42ab6ac380e446de28a72",
+    "generation_seed": 2026,
+    "generator": "swcub.production_v1",
+    "seed_role": "deterministic profile ordering only; excluded from instance identity",
+    "semantic_spec_sha256": "dcfe64c7320ff71fb30f36ea20b9156ec178f85e7f734a9ad65483a1e4e4ad44",
+    "source_code_sha256": "a1e97d04c75f6d7e1ccb6f87adffdca7fa59d7c3f9d83747279e0e85db58d1eb",
+    "source_commit": "1036de483efe0040e9fb6ba0452c0cd968c1984b"
+  },
+  "reset_metadata": {
+    "fixture_id": "cdv1-c06-dcfe64c7320ff71f",
+    "fresh_guest_required": true,
+    "remove_prior_app_state": true,
+    "verify_fixture_hash": "db8bfdece2d459aefdb0117d654885428b6de39670e42ab6ac380e446de28a72",
+    "verify_state": {
+      "actors": {
+        "A": {
+          "object": "browser/search/vendor",
+          "value": ""
+        },
+        "B": {
+          "object": "browser/destination/vendor",
+          "value": "__EMPTY__"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "operation_kind": "terminal_browser_text_transfer",
+          "operation_pair": [
+            "terminal_output_copy_search",
+            "browser_text_copy_paste"
+          ],
+          "profile_label": "search_vendor"
+        },
+        "resource": "clipboard_state"
+      }
+    }
+  },
+  "schedule_policy_id": "terminal-output-browser-copy-confirm-resume-v1",
+  "semantic_parameters": {
+    "domain_id": "safety_inspection",
+    "domain_schema": {
+      "entity": "inspection item",
+      "field_a": "Clearance",
+      "field_b": "Inspection state"
+    },
+    "layout_id": "guard_after",
+    "object_profile_id": "search_vendor",
+    "object_schema": {
+      "operation_kind": "terminal_browser_text_transfer",
+      "operation_pair": [
+        "terminal_output_copy_search",
+        "browser_text_copy_paste"
+      ],
+      "profile_label": "search_vendor"
+    },
+    "operation_graph": "terminal_selected_output_to_browser_search_and_browser_text_copy",
+    "operation_schema_revision": 1,
+    "workflow_id": "C-06"
+  },
+  "signatures": {
+    "fixture": "db8bfdece2d459aefdb0117d654885428b6de39670e42ab6ac380e446de28a72",
+    "goal": "022f3c37368998f16583bc1a0e0a1244ec0d134014c7bd6b4247fd052c03e808",
+    "semantic": "dcfe64c7320ff71fb30f36ea20b9156ec178f85e7f734a9ad65483a1e4e4ad44",
+    "structural": "f8de95cd70a66b1bd605a7e2a7366c783a5c5e1bd396ccb212a5c0eadf6c40a9"
+  },
+  "target_objects": {
+    "A": [
+      "browser/search/vendor"
+    ],
+    "B": [
+      "browser/destination/vendor"
+    ]
+  },
+  "task_domains": {
+    "A": "Browser",
+    "B": "Browser"
+  },
+  "topology_compatibility": {
+    "ma_id": {
+      "backend_binding": "same logical workspace seed; independent desktop sessions allowed",
+      "desktop_count": 2,
+      "fixtures": "byte-identical task-relevant clones"
+    },
+    "ma_sd": {
+      "actor_bindings": "A and B share desktop",
+      "desktop_count": 1
+    },
+    "solo": {
+      "actor_bindings": "A or B",
+      "desktop_count": 1
+    }
+  },
+  "treatment_relevant_state": {
+    "family_state": "clipboard_state",
+    "operation_graph": "terminal_selected_output_to_browser_search_and_browser_text_copy",
+    "shared_resource": {
+      "operation_kind": "terminal_browser_text_transfer",
+      "operation_pair": [
+        "terminal_output_copy_search",
+        "browser_text_copy_paste"
+      ],
+      "profile_label": "search_vendor"
+    }
+  },
+  "validation_level": "offline_operation_template",
+  "workflow_id": "C-06"
+}

@@ -1,0 +1,100 @@
+{
+  "description": "Submit independent forms in two Browser tabs.",
+  "family": "application_context",
+  "goal_a": "Submit the target value in tab A.",
+  "goal_b": "Submit the other target value in tab B.",
+  "operation_graph": "two_tab_context",
+  "runtime_validation_incomplete": false,
+  "schedule_policy_id": "observe-a-context-change-b-resume-a-v1",
+  "semantic_parameter_schema": {
+    "actor_target_disjoint": true,
+    "domain_fields": [
+      "entity",
+      "field_a",
+      "field_b",
+      "a_status",
+      "b_status"
+    ],
+    "identity_excludes": [
+      "generation_seed",
+      "repeat",
+      "condition",
+      "model",
+      "window_coordinates"
+    ],
+    "layout_fields": [
+      "guard_placement",
+      "field_order",
+      "fixture_layout"
+    ],
+    "no_op_goals_allowed": false,
+    "object_profiles": [
+      {
+        "a": "browser/tab-a/review-form",
+        "b": "browser/tab-b/case-form",
+        "id": "tabs_review_cases",
+        "schema": {
+          "context_kind": "independent tab forms",
+          "fields": [
+            "review",
+            "case"
+          ]
+        }
+      },
+      {
+        "a": "browser/tab-a/supplier-page",
+        "b": "browser/tab-b/document-page",
+        "id": "tabs_supplier_docs",
+        "schema": {
+          "context_kind": "tab-specific records",
+          "fields": [
+            "supplier",
+            "document"
+          ]
+        }
+      },
+      {
+        "a": "browser/tab-a/stock-form",
+        "b": "browser/tab-b/audit-form",
+        "id": "tabs_inventory",
+        "schema": {
+          "context_kind": "tab-specific inventory",
+          "fields": [
+            "stock",
+            "audit"
+          ]
+        }
+      },
+      {
+        "a": "browser/tab-a/inspection-form",
+        "b": "browser/tab-b/incident-form",
+        "id": "tabs_safety",
+        "schema": {
+          "context_kind": "tab-specific safety records",
+          "fields": [
+            "inspection",
+            "incident"
+          ]
+        }
+      },
+      {
+        "a": "browser/tab-a/release-form",
+        "b": "browser/tab-b/approval-form",
+        "id": "tabs_release",
+        "schema": {
+          "context_kind": "tab-specific release records",
+          "fields": [
+            "release",
+            "approval"
+          ]
+        }
+      }
+    ]
+  },
+  "task_domains": [
+    "Browser",
+    "Browser"
+  ],
+  "validation_level": "qwen_mechanism_evidence",
+  "workflow_id": "A-01"
+}

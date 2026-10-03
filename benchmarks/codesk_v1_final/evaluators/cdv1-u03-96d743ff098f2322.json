@@ -1,0 +1,90 @@
+{
+  "actor_paths": {
+    "A": "actors.A.value",
+    "B": "actors.B.value"
+  },
+  "adapter": "codesk_exact_state_v1",
+  "condition_semantics": {
+    "ma_id": "score each actor on equivalent independent desktop fixture",
+    "ma_sd": "score both actor goals and shared-state integrity",
+    "solo": "score selected actor; require inactive target and guards unchanged"
+  },
+  "expected_state": {
+    "actors": {
+      "A": {
+        "object": "calc/B2",
+        "value": "=SUM(C2:C4)"
+      },
+      "B": {
+        "object": "calc/C3",
+        "value": "Peer final"
+      },
+      "guards": {
+        "main": "PRESERVE"
+      }
+    },
+    "treatment": {
+      "initial": {
+        "operation_kind": "calc_formula_undo",
+        "operation_pair": [
+          "formula_entry_undo_recovery",
+          "cell_value_commit"
+        ],
+        "profile_label": "undo_formula_a"
+      },
+      "resource": "undo_redo_history"
+    }
+  },
+  "history_contract": {
+    "actor_a_requires": [
+      "temporary_edit_or_operation_observed",
+      "undo_action_after_actor_b_commit",
+      "recovery_verified"
+    ],
+    "actor_b_requires": [
+      "target_edit_committed"
+    ],
+    "final_state_is_not_sufficient": true,
+    "operation_schema_revision": 1
+  },
+  "initial_state": {
+    "actors": {
+      "A": {
+        "object": "calc/B2",
+        "value": "=SUM(B2:B4)"
+      },
+      "B": {
+        "object": "calc/C3",
+        "value": "Seed B"
+      },
+      "guards": {
+        "main": "PRESERVE"
+      }
+    },
+    "treatment": {
+      "initial": {
+        "operation_kind": "calc_formula_undo",
+        "operation_pair": [
+          "formula_entry_undo_recovery",
+          "cell_value_commit"
+        ],
+        "profile_label": "undo_formula_a"
+      },
+      "resource": "undo_redo_history"
+    }
+  },
+  "invariants": [
+    {
+      "equals": "PRESERVE",
+      "path": "actors.guards.main"
+    }
+  ],
+  "operation_contract": {
+    "A": "calc/formula-cell",
+    "B": "calc/value-cell",
+    "evidence_required": true,
+    "operation_graph": "calc_formula_edit_peer_commit_undo_recovery",
+    "shared_state": "Calc document undo stack"
+  },
+  "schedule_policy_id": "calc-formula-edit-b-undo-recover-v1"
+}

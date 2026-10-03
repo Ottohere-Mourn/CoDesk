@@ -1,0 +1,243 @@
+{
+  "actor_goals": [
+    {
+      "actor_id": "A",
+      "expected_value": "Replaced phrase A SUP-2048",
+      "goal": "Find and select the exact target phrase A, replace it, and preserve neighboring text. Target writer/range/alpha; initial 'Select phrase A SUP-2048'; required final 'Replaced phrase A SUP-2048'.",
+      "initial_value": "Select phrase A SUP-2048",
+      "operation": "update writer/range/alpha",
+      "target_objects": [
+        "writer/range/alpha"
+      ],
+      "task_domain": "Writer"
+    },
+    {
+      "actor_id": "B",
+      "expected_value": "Replaced phrase B SUP-2048",
+      "goal": "Find and select the exact target phrase B, replace it, and preserve neighboring text. Target writer/range/beta; initial 'Select phrase B SUP-2048'; required final 'Replaced phrase B SUP-2048'.",
+      "initial_value": "Select phrase B SUP-2048",
+      "operation": "update writer/range/beta",
+      "target_objects": [
+        "writer/range/beta"
+      ],
+      "task_domain": "Writer"
+    }
+  ],
+  "benchmark_version": "codesk-v1.0",
+  "evaluator": {
+    "actor_paths": {
+      "A": "actors.A.value",
+      "B": "actors.B.value"
+    },
+    "adapter": "codesk_exact_state_v1",
+    "condition_semantics": {
+      "ma_id": "score each actor on equivalent independent desktop fixture",
+      "ma_sd": "score both actor goals and shared-state integrity",
+      "solo": "score selected actor; require inactive target and guards unchanged"
+    },
+    "expected_state": {
+      "actors": {
+        "A": {
+          "object": "writer/range/alpha",
+          "value": "Replaced phrase A SUP-2048"
+        },
+        "B": {
+          "object": "writer/range/beta",
+          "value": "Replaced phrase B SUP-2048"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "operation_kind": "writer_selected_phrase_replace",
+          "operation_pair": [
+            "select_replace_exact_phrase",
+            "select_replace_exact_phrase"
+          ],
+          "profile_label": "replace_alpha"
+        },
+        "resource": "selection_active_object"
+      }
+    },
+    "initial_state": {
+      "actors": {
+        "A": {
+          "object": "writer/range/alpha",
+          "value": "Select phrase A SUP-2048"
+        },
+        "B": {
+          "object": "writer/range/beta",
+          "value": "Select phrase B SUP-2048"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "operation_kind": "writer_selected_phrase_replace",
+          "operation_pair": [
+            "select_replace_exact_phrase",
+            "select_replace_exact_phrase"
+          ],
+          "profile_label": "replace_alpha"
+        },
+        "resource": "selection_active_object"
+      }
+    },
+    "invariants": [
+      {
+        "equals": "PRESERVE",
+        "path": "actors.guards.main"
+      }
+    ],
+    "operation_contract": {
+      "A": "writer/selection/phrase-a",
+      "B": "writer/selection/phrase-b",
+      "evidence_required": true,
+      "operation_graph": "writer_text_selection_replacement",
+      "shared_state": "active text selection and caret"
+    },
+    "schedule_policy_id": "writer-range-replacement-selection-resume-v1"
+  },
+  "evaluator_path": "evaluators/cdv1-s03-1fc354c594c71bb5.json",
+  "evaluator_sha256": "9e74c15e36f70dda35960d4f9524916965278c94e56ab90a11709b7a0186f459",
+  "family": "selection_active_object",
+  "fixture_files": [
+    {
+      "path": "fixtures/cdv1-s03-1fc354c594c71bb5/document.fodt",
+      "sha256": "c28fc2a301b9f6a7908df6a15b230a0d03202fce44d678fbf431c8e7689b4dff",
+      "size_bytes": 1092
+    }
+  ],
+  "generation_seed": 2026,
+  "initial_fixture_spec": {
+    "application_set": [
+      "Writer",
+      "Writer"
+    ],
+    "fixture_profile": "replace_alpha",
+    "layout_id": "guard_after",
+    "public_assets": [
+      {
+        "path": "fixtures/cdv1-s03-1fc354c594c71bb5/document.fodt",
+        "sha256": "c28fc2a301b9f6a7908df6a15b230a0d03202fce44d678fbf431c8e7689b4dff",
+        "size_bytes": 1092
+      }
+    ]
+  },
+  "instance_id": "cdv1-s03-1fc354c594c71bb5",
+  "manifest_entry_sha256": "d8d0fd617475585509f3441fc7d45f1e20760a25c40301d3201b87d5fe6db724",
+  "provenance": {
+    "fixture_sha256": "d1b70341f36e82508c89a1a098fb12db857fa3d2795cb4ad200815ed0bb20ff3",
+    "generation_seed": 2026,
+    "generator": "swcub.production_v1",
+    "seed_role": "deterministic profile ordering only; excluded from instance identity",
+    "semantic_spec_sha256": "1fc354c594c71bb51278000326ad49a944753932487404bdc5568b2b5d4e8bf2",
+    "source_code_sha256": "a1e97d04c75f6d7e1ccb6f87adffdca7fa59d7c3f9d83747279e0e85db58d1eb",
+    "source_commit": "1036de483efe0040e9fb6ba0452c0cd968c1984b"
+  },
+  "reset_metadata": {
+    "fixture_id": "cdv1-s03-1fc354c594c71bb5",
+    "fresh_guest_required": true,
+    "remove_prior_app_state": true,
+    "verify_fixture_hash": "d1b70341f36e82508c89a1a098fb12db857fa3d2795cb4ad200815ed0bb20ff3",
+    "verify_state": {
+      "actors": {
+        "A": {
+          "object": "writer/range/alpha",
+          "value": "Select phrase A SUP-2048"
+        },
+        "B": {
+          "object": "writer/range/beta",
+          "value": "Select phrase B SUP-2048"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "operation_kind": "writer_selected_phrase_replace",
+          "operation_pair": [
+            "select_replace_exact_phrase",
+            "select_replace_exact_phrase"
+          ],
+          "profile_label": "replace_alpha"
+        },
+        "resource": "selection_active_object"
+      }
+    }
+  },
+  "schedule_policy_id": "writer-range-replacement-selection-resume-v1",
+  "semantic_parameters": {
+    "domain_id": "supplier_onboarding",
+    "domain_schema": {
+      "entity": "supplier record",
+      "field_a": "Review decision",
+      "field_b": "Verification state"
+    },
+    "layout_id": "guard_after",
+    "object_profile_id": "replace_alpha",
+    "object_schema": {
+      "operation_kind": "writer_selected_phrase_replace",
+      "operation_pair": [
+        "select_replace_exact_phrase",
+        "select_replace_exact_phrase"
+      ],
+      "profile_label": "replace_alpha"
+    },
+    "operation_graph": "writer_text_selection_replacement",
+    "operation_schema_revision": 1,
+    "workflow_id": "S-03"
+  },
+  "signatures": {
+    "fixture": "d1b70341f36e82508c89a1a098fb12db857fa3d2795cb4ad200815ed0bb20ff3",
+    "goal": "eb42f54c2c3fadb6fb0ef7640e843572553d03b4193fa5e7d0f73fa933c87309",
+    "semantic": "1fc354c594c71bb51278000326ad49a944753932487404bdc5568b2b5d4e8bf2",
+    "structural": "4ee039421f23553f7ae4b23711c5c600ea4df883c382de342a6fa482b59afe13"
+  },
+  "target_objects": {
+    "A": [
+      "writer/range/alpha"
+    ],
+    "B": [
+      "writer/range/beta"
+    ]
+  },
+  "task_domains": {
+    "A": "Writer",
+    "B": "Writer"
+  },
+  "topology_compatibility": {
+    "ma_id": {
+      "backend_binding": "same logical workspace seed; independent desktop sessions allowed",
+      "desktop_count": 2,
+      "fixtures": "byte-identical task-relevant clones"
+    },
+    "ma_sd": {
+      "actor_bindings": "A and B share desktop",
+      "desktop_count": 1
+    },
+    "solo": {
+      "actor_bindings": "A or B",
+      "desktop_count": 1
+    }
+  },
+  "treatment_relevant_state": {
+    "family_state": "selection_active_object",
+    "operation_graph": "writer_text_selection_replacement",
+    "shared_resource": {
+      "operation_kind": "writer_selected_phrase_replace",
+      "operation_pair": [
+        "select_replace_exact_phrase",
+        "select_replace_exact_phrase"
+      ],
+      "profile_label": "replace_alpha"
+    }
+  },
+  "validation_level": "offline_operation_template",
+  "workflow_id": "S-03"
+}

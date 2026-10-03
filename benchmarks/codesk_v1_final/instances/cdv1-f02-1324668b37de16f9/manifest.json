@@ -1,0 +1,251 @@
+{
+  "actor_goals": [
+    {
+      "actor_id": "A",
+      "expected_value": "{\"anchor\":\"Clearance for inspection item\",\"comment\":\"Review note 482\"}",
+      "goal": "Attach the exact comment Review note 482 to the Writer anchor Clearance for inspection item; preserve the document text and guard.",
+      "initial_value": "Clearance for inspection item",
+      "operation": "attach comment to exact Writer anchor without changing visible text",
+      "target_objects": [
+        "writer/comment-anchor:risk"
+      ],
+      "task_domain": "Writer"
+    },
+    {
+      "actor_id": "B",
+      "expected_value": "{\"case\":\"CASE-1193\",\"decision\":\"CLEARED\"}",
+      "goal": "Fill the Browser case CASE-1193 and decision CLEARED and submit exactly once.",
+      "initial_value": "__UNSUBMITTED__",
+      "operation": "update browser/review/risk",
+      "target_objects": [
+        "browser/review/risk"
+      ],
+      "task_domain": "Browser"
+    }
+  ],
+  "benchmark_version": "codesk-v1.0",
+  "evaluator": {
+    "actor_paths": {
+      "A": "actors.A.value",
+      "B": "actors.B.value"
+    },
+    "adapter": "codesk_exact_state_v1",
+    "condition_semantics": {
+      "ma_id": "score each actor on equivalent independent desktop fixture",
+      "ma_sd": "score both actor goals and shared-state integrity",
+      "solo": "score selected actor; require inactive target and guards unchanged"
+    },
+    "expected_state": {
+      "actors": {
+        "A": {
+          "object": "writer/comment-anchor:risk",
+          "value": "{\"anchor\":\"Clearance for inspection item\",\"comment\":\"Review note 482\"}"
+        },
+        "B": {
+          "object": "browser/review/risk",
+          "value": "{\"case\":\"CASE-1193\",\"decision\":\"CLEARED\"}"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "anchor_kind": "risk sentence",
+          "form_fields": [
+            "risk_id",
+            "disposition"
+          ]
+        },
+        "resource": "focus_input_routing"
+      }
+    },
+    "initial_state": {
+      "actors": {
+        "A": {
+          "object": "writer/comment-anchor:risk",
+          "value": "Clearance for inspection item"
+        },
+        "B": {
+          "object": "browser/review/risk",
+          "value": "__UNSUBMITTED__"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "anchor_kind": "risk sentence",
+          "form_fields": [
+            "risk_id",
+            "disposition"
+          ]
+        },
+        "resource": "focus_input_routing"
+      }
+    },
+    "invariants": [
+      {
+        "equals": "PRESERVE",
+        "path": "actors.guards.main"
+      }
+    ],
+    "schedule_policy_id": "writer-anchor-browser-form-comment-v1"
+  },
+  "evaluator_path": "evaluators/cdv1-f02-1324668b37de16f9.json",
+  "evaluator_sha256": "896d20deeb80cbc67f1597f6ab17e4fdc3d817db3ea5a597948da1d9671a7bb3",
+  "family": "focus_input_routing",
+  "fixture_files": [
+    {
+      "path": "fixtures/cdv1-f02-1324668b37de16f9/browser-initial-state.json",
+      "sha256": "e2e28dfd2ee2acd67aa5f7c5439e6ba096fea81ff01562bef00ff641f8ce805d",
+      "size_bytes": 34
+    },
+    {
+      "path": "fixtures/cdv1-f02-1324668b37de16f9/document.fodt",
+      "sha256": "e04040ec4ff786bdfbac6e42a2323efc759b754102e66e6c495578e8f1b03d56",
+      "size_bytes": 351
+    },
+    {
+      "path": "fixtures/cdv1-f02-1324668b37de16f9/workspace.html",
+      "sha256": "f5aabc279c45359e51fa365f4b4e1bdb6ea4816e15767d35b76de63bec60d5c6",
+      "size_bytes": 614
+    }
+  ],
+  "generation_seed": 2026,
+  "initial_fixture_spec": {
+    "application_set": [
+      "Writer",
+      "Browser"
+    ],
+    "fixture_profile": "anchor_risk",
+    "layout_id": "guard_after",
+    "public_assets": [
+      {
+        "path": "fixtures/cdv1-f02-1324668b37de16f9/browser-initial-state.json",
+        "sha256": "e2e28dfd2ee2acd67aa5f7c5439e6ba096fea81ff01562bef00ff641f8ce805d",
+        "size_bytes": 34
+      },
+      {
+        "path": "fixtures/cdv1-f02-1324668b37de16f9/document.fodt",
+        "sha256": "e04040ec4ff786bdfbac6e42a2323efc759b754102e66e6c495578e8f1b03d56",
+        "size_bytes": 351
+      },
+      {
+        "path": "fixtures/cdv1-f02-1324668b37de16f9/workspace.html",
+        "sha256": "f5aabc279c45359e51fa365f4b4e1bdb6ea4816e15767d35b76de63bec60d5c6",
+        "size_bytes": 614
+      }
+    ]
+  },
+  "instance_id": "cdv1-f02-1324668b37de16f9",
+  "manifest_entry_sha256": "b8c4ee022236b75fbc51e97994825881fbfef4f4085b3fd321056ba91ff7f564",
+  "provenance": {
+    "fixture_sha256": "bac5aa14b0c4e61184bf5f6cf14d8291d60fb582d243c27636dc68ad832f0d39",
+    "generation_seed": 2026,
+    "generator": "swcub.production_v1",
+    "seed_role": "deterministic profile ordering only; excluded from instance identity",
+    "semantic_spec_sha256": "1324668b37de16f9ca5f69996d0fc28edc38ca67869a17fe654c83d52fb1094e",
+    "source_code_sha256": "a1e97d04c75f6d7e1ccb6f87adffdca7fa59d7c3f9d83747279e0e85db58d1eb",
+    "source_commit": "1036de483efe0040e9fb6ba0452c0cd968c1984b"
+  },
+  "reset_metadata": {
+    "fixture_id": "cdv1-f02-1324668b37de16f9",
+    "fresh_guest_required": true,
+    "remove_prior_app_state": true,
+    "verify_fixture_hash": "bac5aa14b0c4e61184bf5f6cf14d8291d60fb582d243c27636dc68ad832f0d39",
+    "verify_state": {
+      "actors": {
+        "A": {
+          "object": "writer/comment-anchor:risk",
+          "value": "Clearance for inspection item"
+        },
+        "B": {
+          "object": "browser/review/risk",
+          "value": "__UNSUBMITTED__"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "anchor_kind": "risk sentence",
+          "form_fields": [
+            "risk_id",
+            "disposition"
+          ]
+        },
+        "resource": "focus_input_routing"
+      }
+    }
+  },
+  "schedule_policy_id": "writer-anchor-browser-form-comment-v1",
+  "semantic_parameters": {
+    "domain_id": "safety_inspection",
+    "domain_schema": {
+      "entity": "inspection item",
+      "field_a": "Clearance",
+      "field_b": "Inspection state"
+    },
+    "layout_id": "guard_after",
+    "object_profile_id": "anchor_risk",
+    "object_schema": {
+      "anchor_kind": "risk sentence",
+      "form_fields": [
+        "risk_id",
+        "disposition"
+      ]
+    },
+    "operation_graph": "writer_comment_vs_browser_form",
+    "operation_schema_revision": 3,
+    "workflow_id": "F-02"
+  },
+  "signatures": {
+    "fixture": "bac5aa14b0c4e61184bf5f6cf14d8291d60fb582d243c27636dc68ad832f0d39",
+    "goal": "520248101db18cfb3a74106dd5b20986181730d95882ff43cfb1b9d0d6bd4ce0",
+    "semantic": "1324668b37de16f9ca5f69996d0fc28edc38ca67869a17fe654c83d52fb1094e",
+    "structural": "0ec22af2a4074eeefa32e041677dc6598e48be0b2e2d8a46504e2dd5feb5616a"
+  },
+  "target_objects": {
+    "A": [
+      "writer/comment-anchor:risk"
+    ],
+    "B": [
+      "browser/review/risk"
+    ]
+  },
+  "task_domains": {
+    "A": "Writer",
+    "B": "Browser"
+  },
+  "topology_compatibility": {
+    "ma_id": {
+      "backend_binding": "same logical workspace seed; independent desktop sessions allowed",
+      "desktop_count": 2,
+      "fixtures": "byte-identical task-relevant clones"
+    },
+    "ma_sd": {
+      "actor_bindings": "A and B share desktop",
+      "desktop_count": 1
+    },
+    "solo": {
+      "actor_bindings": "A or B",
+      "desktop_count": 1
+    }
+  },
+  "treatment_relevant_state": {
+    "family_state": "focus_input_routing",
+    "operation_graph": "writer_comment_vs_browser_form",
+    "shared_resource": {
+      "anchor_kind": "risk sentence",
+      "form_fields": [
+        "risk_id",
+        "disposition"
+      ]
+    }
+  },
+  "validation_level": "scripted_full",
+  "workflow_id": "F-02"
+}

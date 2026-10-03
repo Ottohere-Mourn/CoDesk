@@ -1,0 +1,243 @@
+{
+  "actor_goals": [
+    {
+      "actor_id": "A",
+      "expected_value": "Final section A SUP-2048",
+      "goal": "Use Navigator to update the assigned field in section A only. Target writer/section[Release]/paragraph[1]; initial 'Draft section A SUP-2048'; required final 'Final section A SUP-2048'.",
+      "initial_value": "Draft section A SUP-2048",
+      "operation": "update writer/section[Release]/paragraph[1]",
+      "target_objects": [
+        "writer/section[Release]/paragraph[1]"
+      ],
+      "task_domain": "Writer"
+    },
+    {
+      "actor_id": "B",
+      "expected_value": "Final section B SUP-2048",
+      "goal": "Use Navigator to update the assigned field in section B only. Target writer/section[Rollback]/paragraph[1]; initial 'Draft section B SUP-2048'; required final 'Final section B SUP-2048'.",
+      "initial_value": "Draft section B SUP-2048",
+      "operation": "update writer/section[Rollback]/paragraph[1]",
+      "target_objects": [
+        "writer/section[Rollback]/paragraph[1]"
+      ],
+      "task_domain": "Writer"
+    }
+  ],
+  "benchmark_version": "codesk-v1.0",
+  "evaluator": {
+    "actor_paths": {
+      "A": "actors.A.value",
+      "B": "actors.B.value"
+    },
+    "adapter": "codesk_exact_state_v1",
+    "condition_semantics": {
+      "ma_id": "score each actor on equivalent independent desktop fixture",
+      "ma_sd": "score both actor goals and shared-state integrity",
+      "solo": "score selected actor; require inactive target and guards unchanged"
+    },
+    "expected_state": {
+      "actors": {
+        "A": {
+          "object": "writer/section[Release]/paragraph[1]",
+          "value": "Final section A SUP-2048"
+        },
+        "B": {
+          "object": "writer/section[Rollback]/paragraph[1]",
+          "value": "Final section B SUP-2048"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "operation_kind": "writer_navigator_context",
+          "operation_pair": [
+            "navigator_section_edit",
+            "navigator_section_edit"
+          ],
+          "profile_label": "section_release"
+        },
+        "resource": "application_context"
+      }
+    },
+    "initial_state": {
+      "actors": {
+        "A": {
+          "object": "writer/section[Release]/paragraph[1]",
+          "value": "Draft section A SUP-2048"
+        },
+        "B": {
+          "object": "writer/section[Rollback]/paragraph[1]",
+          "value": "Draft section B SUP-2048"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "operation_kind": "writer_navigator_context",
+          "operation_pair": [
+            "navigator_section_edit",
+            "navigator_section_edit"
+          ],
+          "profile_label": "section_release"
+        },
+        "resource": "application_context"
+      }
+    },
+    "invariants": [
+      {
+        "equals": "PRESERVE",
+        "path": "actors.guards.main"
+      }
+    ],
+    "operation_contract": {
+      "A": "writer/section-a/field",
+      "B": "writer/section-b/field",
+      "evidence_required": true,
+      "operation_graph": "writer_document_navigator_section_context",
+      "shared_state": "active document section/navigation context"
+    },
+    "schedule_policy_id": "writer-section-context-change-resume-v1"
+  },
+  "evaluator_path": "evaluators/cdv1-a05-1f670f7fb9cc0490.json",
+  "evaluator_sha256": "b075f3c566790acc1a598062efa271d908590ddcf66a46f426f0a870f62e04bc",
+  "family": "application_context",
+  "fixture_files": [
+    {
+      "path": "fixtures/cdv1-a05-1f670f7fb9cc0490/document.fodt",
+      "sha256": "18100fd51cc585d1b5cd2a9d87b103a6cd626541228748a5c47d4ad05d6831ef",
+      "size_bytes": 525
+    }
+  ],
+  "generation_seed": 2026,
+  "initial_fixture_spec": {
+    "application_set": [
+      "Writer",
+      "Writer"
+    ],
+    "fixture_profile": "section_release",
+    "layout_id": "guard_after",
+    "public_assets": [
+      {
+        "path": "fixtures/cdv1-a05-1f670f7fb9cc0490/document.fodt",
+        "sha256": "18100fd51cc585d1b5cd2a9d87b103a6cd626541228748a5c47d4ad05d6831ef",
+        "size_bytes": 525
+      }
+    ]
+  },
+  "instance_id": "cdv1-a05-1f670f7fb9cc0490",
+  "manifest_entry_sha256": "725ea93f38122e33285ba8c53bab9b29ae86bf7bcbf3aa255cec8e212ae0d944",
+  "provenance": {
+    "fixture_sha256": "2bcdf0388a67d11ce4898ca2c1bdf088f6e947bd60b80d33d42d2585325c0ba0",
+    "generation_seed": 2026,
+    "generator": "swcub.production_v1",
+    "seed_role": "deterministic profile ordering only; excluded from instance identity",
+    "semantic_spec_sha256": "1f670f7fb9cc0490ab9b32ee8fabb9bea83a1d12899ee33a314beb9ea1e5a9c5",
+    "source_code_sha256": "a1e97d04c75f6d7e1ccb6f87adffdca7fa59d7c3f9d83747279e0e85db58d1eb",
+    "source_commit": "1036de483efe0040e9fb6ba0452c0cd968c1984b"
+  },
+  "reset_metadata": {
+    "fixture_id": "cdv1-a05-1f670f7fb9cc0490",
+    "fresh_guest_required": true,
+    "remove_prior_app_state": true,
+    "verify_fixture_hash": "2bcdf0388a67d11ce4898ca2c1bdf088f6e947bd60b80d33d42d2585325c0ba0",
+    "verify_state": {
+      "actors": {
+        "A": {
+          "object": "writer/section[Release]/paragraph[1]",
+          "value": "Draft section A SUP-2048"
+        },
+        "B": {
+          "object": "writer/section[Rollback]/paragraph[1]",
+          "value": "Draft section B SUP-2048"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "operation_kind": "writer_navigator_context",
+          "operation_pair": [
+            "navigator_section_edit",
+            "navigator_section_edit"
+          ],
+          "profile_label": "section_release"
+        },
+        "resource": "application_context"
+      }
+    }
+  },
+  "schedule_policy_id": "writer-section-context-change-resume-v1",
+  "semantic_parameters": {
+    "domain_id": "supplier_onboarding",
+    "domain_schema": {
+      "entity": "supplier record",
+      "field_a": "Review decision",
+      "field_b": "Verification state"
+    },
+    "layout_id": "guard_after",
+    "object_profile_id": "section_release",
+    "object_schema": {
+      "operation_kind": "writer_navigator_context",
+      "operation_pair": [
+        "navigator_section_edit",
+        "navigator_section_edit"
+      ],
+      "profile_label": "section_release"
+    },
+    "operation_graph": "writer_document_navigator_section_context",
+    "operation_schema_revision": 1,
+    "workflow_id": "A-05"
+  },
+  "signatures": {
+    "fixture": "2bcdf0388a67d11ce4898ca2c1bdf088f6e947bd60b80d33d42d2585325c0ba0",
+    "goal": "f86053c68beb91a6da651b07e1e5be3078582b332dc714c853efa79fcbbda17d",
+    "semantic": "1f670f7fb9cc0490ab9b32ee8fabb9bea83a1d12899ee33a314beb9ea1e5a9c5",
+    "structural": "1c83cee06aebf7aa96223129ef7e06c3aa404e874146a91f618d7928e896bb49"
+  },
+  "target_objects": {
+    "A": [
+      "writer/section[Release]/paragraph[1]"
+    ],
+    "B": [
+      "writer/section[Rollback]/paragraph[1]"
+    ]
+  },
+  "task_domains": {
+    "A": "Writer",
+    "B": "Writer"
+  },
+  "topology_compatibility": {
+    "ma_id": {
+      "backend_binding": "same logical workspace seed; independent desktop sessions allowed",
+      "desktop_count": 2,
+      "fixtures": "byte-identical task-relevant clones"
+    },
+    "ma_sd": {
+      "actor_bindings": "A and B share desktop",
+      "desktop_count": 1
+    },
+    "solo": {
+      "actor_bindings": "A or B",
+      "desktop_count": 1
+    }
+  },
+  "treatment_relevant_state": {
+    "family_state": "application_context",
+    "operation_graph": "writer_document_navigator_section_context",
+    "shared_resource": {
+      "operation_kind": "writer_navigator_context",
+      "operation_pair": [
+        "navigator_section_edit",
+        "navigator_section_edit"
+      ],
+      "profile_label": "section_release"
+    }
+  },
+  "validation_level": "offline_operation_template",
+  "workflow_id": "A-05"
+}

@@ -1,0 +1,263 @@
+{
+  "actor_goals": [
+    {
+      "actor_id": "A",
+      "expected_value": "[[\"A00-SKU-7316\",\"A01-SKU-7316\",\"A02-SKU-7316\"],[\"A10-SKU-7316\",\"A11-SKU-7316\",\"A12-SKU-7316\"]]",
+      "goal": "Select and fill the assigned 2-by-3 range with the requested row/column pattern. Target calc/B2:D3; initial '__EMPTY_RANGE__'; required final '[[\"A00-SKU-7316\",\"A01-SKU-7316\",\"A02-SKU-7316\"],[\"A10-SKU-7316\",\"A11-SKU-7316\",\"A12-SKU-7316\"]]'.",
+      "initial_value": "__EMPTY_RANGE__",
+      "operation": "update calc/B2:D3",
+      "target_objects": [
+        "calc/B2:D3"
+      ],
+      "task_domain": "Calc"
+    },
+    {
+      "actor_id": "B",
+      "expected_value": "[[\"B00-SKU-7316\",\"B01-SKU-7316\",\"B02-SKU-7316\"],[\"B10-SKU-7316\",\"B11-SKU-7316\",\"B12-SKU-7316\"]]",
+      "goal": "Select and fill the other 2-by-3 range with its independent pattern. Target calc/F2:H3; initial '__EMPTY_RANGE__'; required final '[[\"B00-SKU-7316\",\"B01-SKU-7316\",\"B02-SKU-7316\"],[\"B10-SKU-7316\",\"B11-SKU-7316\",\"B12-SKU-7316\"]]'.",
+      "initial_value": "__EMPTY_RANGE__",
+      "operation": "update calc/F2:H3",
+      "target_objects": [
+        "calc/F2:H3"
+      ],
+      "task_domain": "Calc"
+    }
+  ],
+  "benchmark_version": "codesk-v1.0",
+  "evaluator": {
+    "actor_paths": {
+      "A": "actors.A.value",
+      "B": "actors.B.value"
+    },
+    "adapter": "codesk_exact_state_v1",
+    "condition_semantics": {
+      "ma_id": "score each actor on equivalent independent desktop fixture",
+      "ma_sd": "score both actor goals and shared-state integrity",
+      "solo": "score selected actor; require inactive target and guards unchanged"
+    },
+    "expected_state": {
+      "actors": {
+        "A": {
+          "object": "calc/B2:D3",
+          "value": "[[\"A00-SKU-7316\",\"A01-SKU-7316\",\"A02-SKU-7316\"],[\"A10-SKU-7316\",\"A11-SKU-7316\",\"A12-SKU-7316\"]]"
+        },
+        "B": {
+          "object": "calc/F2:H3",
+          "value": "[[\"B00-SKU-7316\",\"B01-SKU-7316\",\"B02-SKU-7316\"],[\"B10-SKU-7316\",\"B11-SKU-7316\",\"B12-SKU-7316\"]]"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "operation_kind": "calc_range_fill",
+          "operation_pair": [
+            "range_selection_fill",
+            "range_selection_fill"
+          ],
+          "profile_label": "fill_ab",
+          "shape": [
+            2,
+            3
+          ]
+        },
+        "resource": "selection_active_object"
+      }
+    },
+    "initial_state": {
+      "actors": {
+        "A": {
+          "object": "calc/B2:D3",
+          "value": "__EMPTY_RANGE__"
+        },
+        "B": {
+          "object": "calc/F2:H3",
+          "value": "__EMPTY_RANGE__"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "operation_kind": "calc_range_fill",
+          "operation_pair": [
+            "range_selection_fill",
+            "range_selection_fill"
+          ],
+          "profile_label": "fill_ab",
+          "shape": [
+            2,
+            3
+          ]
+        },
+        "resource": "selection_active_object"
+      }
+    },
+    "invariants": [
+      {
+        "equals": "PRESERVE",
+        "path": "actors.guards.main"
+      }
+    ],
+    "operation_contract": {
+      "A": "calc/range-fill-a",
+      "B": "calc/range-fill-b",
+      "evidence_required": true,
+      "operation_graph": "calc_rectangular_selection_fill_handle",
+      "shared_state": "active selected range"
+    },
+    "schedule_policy_id": "calc-range-selection-change-resume-v1"
+  },
+  "evaluator_path": "evaluators/cdv1-s02-a8725a0f21ce07e1.json",
+  "evaluator_sha256": "9196639c9cf37e9b95cabbedfed9dd664d6ade5c9eb16ac04279aa835fd58444",
+  "family": "selection_active_object",
+  "fixture_files": [
+    {
+      "path": "fixtures/cdv1-s02-a8725a0f21ce07e1/workbook.fods",
+      "sha256": "85550a363c2803d3aa17b7e1f68424ee73da955c562c803e5fe7b66219bf9e3b",
+      "size_bytes": 14404
+    }
+  ],
+  "generation_seed": 2026,
+  "initial_fixture_spec": {
+    "application_set": [
+      "Calc",
+      "Calc"
+    ],
+    "fixture_profile": "fill_ab",
+    "layout_id": "guard_after",
+    "public_assets": [
+      {
+        "path": "fixtures/cdv1-s02-a8725a0f21ce07e1/workbook.fods",
+        "sha256": "85550a363c2803d3aa17b7e1f68424ee73da955c562c803e5fe7b66219bf9e3b",
+        "size_bytes": 14404
+      }
+    ]
+  },
+  "instance_id": "cdv1-s02-a8725a0f21ce07e1",
+  "manifest_entry_sha256": "baa2d1823c7031ab03b83d2c96bc78405906aa0e46d0a6712c130bb1bf15ab11",
+  "provenance": {
+    "fixture_sha256": "ba858497d5897165efa721e1a76af130b1a6af53d79f5cc098df57cb87caaec5",
+    "generation_seed": 2026,
+    "generator": "swcub.production_v1",
+    "seed_role": "deterministic profile ordering only; excluded from instance identity",
+    "semantic_spec_sha256": "a8725a0f21ce07e1159c8a6c312eb865ec54b2d34161e034ec8bca6dfd9c9f93",
+    "source_code_sha256": "a1e97d04c75f6d7e1ccb6f87adffdca7fa59d7c3f9d83747279e0e85db58d1eb",
+    "source_commit": "1036de483efe0040e9fb6ba0452c0cd968c1984b"
+  },
+  "reset_metadata": {
+    "fixture_id": "cdv1-s02-a8725a0f21ce07e1",
+    "fresh_guest_required": true,
+    "remove_prior_app_state": true,
+    "verify_fixture_hash": "ba858497d5897165efa721e1a76af130b1a6af53d79f5cc098df57cb87caaec5",
+    "verify_state": {
+      "actors": {
+        "A": {
+          "object": "calc/B2:D3",
+          "value": "__EMPTY_RANGE__"
+        },
+        "B": {
+          "object": "calc/F2:H3",
+          "value": "__EMPTY_RANGE__"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "operation_kind": "calc_range_fill",
+          "operation_pair": [
+            "range_selection_fill",
+            "range_selection_fill"
+          ],
+          "profile_label": "fill_ab",
+          "shape": [
+            2,
+            3
+          ]
+        },
+        "resource": "selection_active_object"
+      }
+    }
+  },
+  "schedule_policy_id": "calc-range-selection-change-resume-v1",
+  "semantic_parameters": {
+    "domain_id": "warehouse_reconciliation",
+    "domain_schema": {
+      "entity": "warehouse lot",
+      "field_a": "Reconciliation",
+      "field_b": "Count status"
+    },
+    "layout_id": "guard_after",
+    "object_profile_id": "fill_ab",
+    "object_schema": {
+      "operation_kind": "calc_range_fill",
+      "operation_pair": [
+        "range_selection_fill",
+        "range_selection_fill"
+      ],
+      "profile_label": "fill_ab",
+      "shape": [
+        2,
+        3
+      ]
+    },
+    "operation_graph": "calc_rectangular_selection_fill_handle",
+    "operation_schema_revision": 1,
+    "workflow_id": "S-02"
+  },
+  "signatures": {
+    "fixture": "ba858497d5897165efa721e1a76af130b1a6af53d79f5cc098df57cb87caaec5",
+    "goal": "f99e1aa7149a09d25d6bcb4ad63a8c92a230e585b8d4887d018175ec44cb5cd9",
+    "semantic": "a8725a0f21ce07e1159c8a6c312eb865ec54b2d34161e034ec8bca6dfd9c9f93",
+    "structural": "ea563300513e87ea4f63b96cce187b1138c162f9e8465bfa42fa76a81368b352"
+  },
+  "target_objects": {
+    "A": [
+      "calc/B2:D3"
+    ],
+    "B": [
+      "calc/F2:H3"
+    ]
+  },
+  "task_domains": {
+    "A": "Calc",
+    "B": "Calc"
+  },
+  "topology_compatibility": {
+    "ma_id": {
+      "backend_binding": "same logical workspace seed; independent desktop sessions allowed",
+      "desktop_count": 2,
+      "fixtures": "byte-identical task-relevant clones"
+    },
+    "ma_sd": {
+      "actor_bindings": "A and B share desktop",
+      "desktop_count": 1
+    },
+    "solo": {
+      "actor_bindings": "A or B",
+      "desktop_count": 1
+    }
+  },
+  "treatment_relevant_state": {
+    "family_state": "selection_active_object",
+    "operation_graph": "calc_rectangular_selection_fill_handle",
+    "shared_resource": {
+      "operation_kind": "calc_range_fill",
+      "operation_pair": [
+        "range_selection_fill",
+        "range_selection_fill"
+      ],
+      "profile_label": "fill_ab",
+      "shape": [
+        2,
+        3
+      ]
+    }
+  },
+  "validation_level": "offline_operation_template",
+  "workflow_id": "S-02"
+}

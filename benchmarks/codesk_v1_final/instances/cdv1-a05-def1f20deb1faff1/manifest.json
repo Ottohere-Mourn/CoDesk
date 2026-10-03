@@ -1,0 +1,243 @@
+{
+  "actor_goals": [
+    {
+      "actor_id": "A",
+      "expected_value": "Final section A CAP-4821",
+      "goal": "Use Navigator to update the assigned field in section A only. Target writer/section[Vendor]/paragraph[1]; initial 'Draft section A CAP-4821'; required final 'Final section A CAP-4821'.",
+      "initial_value": "Draft section A CAP-4821",
+      "operation": "update writer/section[Vendor]/paragraph[1]",
+      "target_objects": [
+        "writer/section[Vendor]/paragraph[1]"
+      ],
+      "task_domain": "Writer"
+    },
+    {
+      "actor_id": "B",
+      "expected_value": "Final section B CAP-4821",
+      "goal": "Use Navigator to update the assigned field in section B only. Target writer/section[Decision]/paragraph[1]; initial 'Draft section B CAP-4821'; required final 'Final section B CAP-4821'.",
+      "initial_value": "Draft section B CAP-4821",
+      "operation": "update writer/section[Decision]/paragraph[1]",
+      "target_objects": [
+        "writer/section[Decision]/paragraph[1]"
+      ],
+      "task_domain": "Writer"
+    }
+  ],
+  "benchmark_version": "codesk-v1.0",
+  "evaluator": {
+    "actor_paths": {
+      "A": "actors.A.value",
+      "B": "actors.B.value"
+    },
+    "adapter": "codesk_exact_state_v1",
+    "condition_semantics": {
+      "ma_id": "score each actor on equivalent independent desktop fixture",
+      "ma_sd": "score both actor goals and shared-state integrity",
+      "solo": "score selected actor; require inactive target and guards unchanged"
+    },
+    "expected_state": {
+      "actors": {
+        "A": {
+          "object": "writer/section[Vendor]/paragraph[1]",
+          "value": "Final section A CAP-4821"
+        },
+        "B": {
+          "object": "writer/section[Decision]/paragraph[1]",
+          "value": "Final section B CAP-4821"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "operation_kind": "writer_navigator_context",
+          "operation_pair": [
+            "navigator_section_edit",
+            "navigator_section_edit"
+          ],
+          "profile_label": "section_vendor"
+        },
+        "resource": "application_context"
+      }
+    },
+    "initial_state": {
+      "actors": {
+        "A": {
+          "object": "writer/section[Vendor]/paragraph[1]",
+          "value": "Draft section A CAP-4821"
+        },
+        "B": {
+          "object": "writer/section[Decision]/paragraph[1]",
+          "value": "Draft section B CAP-4821"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "operation_kind": "writer_navigator_context",
+          "operation_pair": [
+            "navigator_section_edit",
+            "navigator_section_edit"
+          ],
+          "profile_label": "section_vendor"
+        },
+        "resource": "application_context"
+      }
+    },
+    "invariants": [
+      {
+        "equals": "PRESERVE",
+        "path": "actors.guards.main"
+      }
+    ],
+    "operation_contract": {
+      "A": "writer/section-a/field",
+      "B": "writer/section-b/field",
+      "evidence_required": true,
+      "operation_graph": "writer_document_navigator_section_context",
+      "shared_state": "active document section/navigation context"
+    },
+    "schedule_policy_id": "writer-section-context-change-resume-v1"
+  },
+  "evaluator_path": "evaluators/cdv1-a05-def1f20deb1faff1.json",
+  "evaluator_sha256": "881e1a737414df67d4d13ad57d18bf46ac6a9312308ff438553f7459c278625c",
+  "family": "application_context",
+  "fixture_files": [
+    {
+      "path": "fixtures/cdv1-a05-def1f20deb1faff1/document.fodt",
+      "sha256": "374e9798849c907daa9a8232d1cbb81f94f2031e98ac0583ba095cad440b92ec",
+      "size_bytes": 524
+    }
+  ],
+  "generation_seed": 2026,
+  "initial_fixture_spec": {
+    "application_set": [
+      "Writer",
+      "Writer"
+    ],
+    "fixture_profile": "section_vendor",
+    "layout_id": "guard_after",
+    "public_assets": [
+      {
+        "path": "fixtures/cdv1-a05-def1f20deb1faff1/document.fodt",
+        "sha256": "374e9798849c907daa9a8232d1cbb81f94f2031e98ac0583ba095cad440b92ec",
+        "size_bytes": 524
+      }
+    ]
+  },
+  "instance_id": "cdv1-a05-def1f20deb1faff1",
+  "manifest_entry_sha256": "dbc175b521a90d396d702f3108f7a9d8df94325affbfb9ac24b74b125cc9c72b",
+  "provenance": {
+    "fixture_sha256": "208511a79da43a7f614fdb42dbdd3f68b65beba6d2164694ada65397b0a3aae5",
+    "generation_seed": 2026,
+    "generator": "swcub.production_v1",
+    "seed_role": "deterministic profile ordering only; excluded from instance identity",
+    "semantic_spec_sha256": "def1f20deb1faff14b0e1a82f2dd9581c7b0e0bd60a9bab6127d543a637c1b66",
+    "source_code_sha256": "a1e97d04c75f6d7e1ccb6f87adffdca7fa59d7c3f9d83747279e0e85db58d1eb",
+    "source_commit": "1036de483efe0040e9fb6ba0452c0cd968c1984b"
+  },
+  "reset_metadata": {
+    "fixture_id": "cdv1-a05-def1f20deb1faff1",
+    "fresh_guest_required": true,
+    "remove_prior_app_state": true,
+    "verify_fixture_hash": "208511a79da43a7f614fdb42dbdd3f68b65beba6d2164694ada65397b0a3aae5",
+    "verify_state": {
+      "actors": {
+        "A": {
+          "object": "writer/section[Vendor]/paragraph[1]",
+          "value": "Draft section A CAP-4821"
+        },
+        "B": {
+          "object": "writer/section[Decision]/paragraph[1]",
+          "value": "Draft section B CAP-4821"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "operation_kind": "writer_navigator_context",
+          "operation_pair": [
+            "navigator_section_edit",
+            "navigator_section_edit"
+          ],
+          "profile_label": "section_vendor"
+        },
+        "resource": "application_context"
+      }
+    }
+  },
+  "schedule_policy_id": "writer-section-context-change-resume-v1",
+  "semantic_parameters": {
+    "domain_id": "capital_allocation",
+    "domain_schema": {
+      "entity": "capital request",
+      "field_a": "Decision",
+      "field_b": "Ledger state"
+    },
+    "layout_id": "guard_after",
+    "object_profile_id": "section_vendor",
+    "object_schema": {
+      "operation_kind": "writer_navigator_context",
+      "operation_pair": [
+        "navigator_section_edit",
+        "navigator_section_edit"
+      ],
+      "profile_label": "section_vendor"
+    },
+    "operation_graph": "writer_document_navigator_section_context",
+    "operation_schema_revision": 1,
+    "workflow_id": "A-05"
+  },
+  "signatures": {
+    "fixture": "208511a79da43a7f614fdb42dbdd3f68b65beba6d2164694ada65397b0a3aae5",
+    "goal": "c7d314255962839cc456f2120b76040948c4412801a5a07b5da0a9704cc2d0dd",
+    "semantic": "def1f20deb1faff14b0e1a82f2dd9581c7b0e0bd60a9bab6127d543a637c1b66",
+    "structural": "026c75631dae3359498b96df7e5498c0574f432dfb925ea2ca02c57b860af55d"
+  },
+  "target_objects": {
+    "A": [
+      "writer/section[Vendor]/paragraph[1]"
+    ],
+    "B": [
+      "writer/section[Decision]/paragraph[1]"
+    ]
+  },
+  "task_domains": {
+    "A": "Writer",
+    "B": "Writer"
+  },
+  "topology_compatibility": {
+    "ma_id": {
+      "backend_binding": "same logical workspace seed; independent desktop sessions allowed",
+      "desktop_count": 2,
+      "fixtures": "byte-identical task-relevant clones"
+    },
+    "ma_sd": {
+      "actor_bindings": "A and B share desktop",
+      "desktop_count": 1
+    },
+    "solo": {
+      "actor_bindings": "A or B",
+      "desktop_count": 1
+    }
+  },
+  "treatment_relevant_state": {
+    "family_state": "application_context",
+    "operation_graph": "writer_document_navigator_section_context",
+    "shared_resource": {
+      "operation_kind": "writer_navigator_context",
+      "operation_pair": [
+        "navigator_section_edit",
+        "navigator_section_edit"
+      ],
+      "profile_label": "section_vendor"
+    }
+  },
+  "validation_level": "offline_operation_template",
+  "workflow_id": "A-05"
+}

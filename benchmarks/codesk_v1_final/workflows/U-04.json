@@ -1,0 +1,114 @@
+{
+  "description": "Edit a shared rich-text field in one Browser tab; the second actor's insertion becomes the next Ctrl+Z history item.",
+  "family": "undo_redo_history",
+  "goal_a": "Insert the assigned phrase into the rich-text editor and verify the final editor contents after any shared Undo.",
+  "goal_b": "Insert the independent phrase into the same editor and preserve both assigned phrases.",
+  "operation_graph": "browser_rich_editor_shared_undo_stack",
+  "required_apps": [
+    "Browser",
+    "Browser"
+  ],
+  "runtime_validation_incomplete": true,
+  "schedule_policy_id": "browser-editor-a-b-undo-recover-v1",
+  "semantic_parameter_schema": {
+    "actor_target_disjoint": true,
+    "domain_fields": [
+      "entity",
+      "field_a",
+      "field_b",
+      "a_status",
+      "b_status"
+    ],
+    "identity_excludes": [
+      "generation_seed",
+      "repeat",
+      "condition",
+      "model",
+      "window_coordinates"
+    ],
+    "layout_fields": [
+      "guard_placement",
+      "field_order",
+      "fixture_layout"
+    ],
+    "no_op_goals_allowed": false,
+    "object_profiles": [
+      {
+        "a": "browser/editor/range/review-a",
+        "b": "browser/editor/range/review-b",
+        "id": "editor_review",
+        "schema": {
+          "operation_kind": "browser_contenteditable_undo",
+          "operation_pair": [
+            "rich_editor_insert_undo",
+            "rich_editor_insert_undo"
+          ],
+          "profile_label": "editor_review"
+        }
+      },
+      {
+        "a": "browser/editor/range/risk-a",
+        "b": "browser/editor/range/risk-b",
+        "id": "editor_risk",
+        "schema": {
+          "operation_kind": "browser_contenteditable_undo",
+          "operation_pair": [
+            "rich_editor_insert_undo",
+            "rich_editor_insert_undo"
+          ],
+          "profile_label": "editor_risk"
+        }
+      },
+      {
+        "a": "browser/editor/range/owner-a",
+        "b": "browser/editor/range/owner-b",
+        "id": "editor_owner",
+        "schema": {
+          "operation_kind": "browser_contenteditable_undo",
+          "operation_pair": [
+            "rich_editor_insert_undo",
+            "rich_editor_insert_undo"
+          ],
+          "profile_label": "editor_owner"
+        }
+      },
+      {
+        "a": "browser/editor/range/budget-a",
+        "b": "browser/editor/range/budget-b",
+        "id": "editor_budget",
+        "schema": {
+          "operation_kind": "browser_contenteditable_undo",
+          "operation_pair": [
+            "rich_editor_insert_undo",
+            "rich_editor_insert_undo"
+          ],
+          "profile_label": "editor_budget"
+        }
+      },
+      {
+        "a": "browser/editor/range/release-a",
+        "b": "browser/editor/range/release-b",
+        "id": "editor_release",
+        "schema": {
+          "operation_kind": "browser_contenteditable_undo",
+          "operation_pair": [
+            "rich_editor_insert_undo",
+            "rich_editor_insert_undo"
+          ],
+          "profile_label": "editor_release"
+        }
+      }
+    ],
+    "operation_schema": {
+      "A": "browser/editor/phrase-a",
+      "B": "browser/editor/phrase-b",
+      "shared": "contenteditable undo history"
+    }
+  },
+  "task_domains": [
+    "Browser",
+    "Browser"
+  ],
+  "validation_level": "offline_operation_template",
+  "workflow_id": "U-04"
+}

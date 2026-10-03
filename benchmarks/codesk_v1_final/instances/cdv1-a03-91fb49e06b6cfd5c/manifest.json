@@ -1,0 +1,243 @@
+{
+  "actor_goals": [
+    {
+      "actor_id": "A",
+      "expected_value": "SHEET-A-SAFE-1193",
+      "goal": "Enter the assigned value in the named cell on Sheet A and preserve its guard cells. Target calc/SheetA.B2; initial ''; required final 'SHEET-A-SAFE-1193'.",
+      "initial_value": "",
+      "operation": "update calc/SheetA.B2",
+      "target_objects": [
+        "calc/SheetA.B2"
+      ],
+      "task_domain": "Calc"
+    },
+    {
+      "actor_id": "B",
+      "expected_value": "SHEET-B-SAFE-1193",
+      "goal": "Enter the assigned value in the named cell on Sheet B and preserve its guard cells. Target calc/SheetB.C3; initial ''; required final 'SHEET-B-SAFE-1193'.",
+      "initial_value": "",
+      "operation": "update calc/SheetB.C3",
+      "target_objects": [
+        "calc/SheetB.C3"
+      ],
+      "task_domain": "Calc"
+    }
+  ],
+  "benchmark_version": "codesk-v1.0",
+  "evaluator": {
+    "actor_paths": {
+      "A": "actors.A.value",
+      "B": "actors.B.value"
+    },
+    "adapter": "codesk_exact_state_v1",
+    "condition_semantics": {
+      "ma_id": "score each actor on equivalent independent desktop fixture",
+      "ma_sd": "score both actor goals and shared-state integrity",
+      "solo": "score selected actor; require inactive target and guards unchanged"
+    },
+    "expected_state": {
+      "actors": {
+        "A": {
+          "object": "calc/SheetA.B2",
+          "value": "SHEET-A-SAFE-1193"
+        },
+        "B": {
+          "object": "calc/SheetB.C3",
+          "value": "SHEET-B-SAFE-1193"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "operation_kind": "calc_sheet_context",
+          "operation_pair": [
+            "sheet_scoped_cell_edit",
+            "sheet_scoped_cell_edit"
+          ],
+          "profile_label": "sheet_review"
+        },
+        "resource": "application_context"
+      }
+    },
+    "initial_state": {
+      "actors": {
+        "A": {
+          "object": "calc/SheetA.B2",
+          "value": ""
+        },
+        "B": {
+          "object": "calc/SheetB.C3",
+          "value": ""
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "operation_kind": "calc_sheet_context",
+          "operation_pair": [
+            "sheet_scoped_cell_edit",
+            "sheet_scoped_cell_edit"
+          ],
+          "profile_label": "sheet_review"
+        },
+        "resource": "application_context"
+      }
+    },
+    "invariants": [
+      {
+        "equals": "PRESERVE",
+        "path": "actors.guards.main"
+      }
+    ],
+    "operation_contract": {
+      "A": "calc/sheet-a/cell",
+      "B": "calc/sheet-b/cell",
+      "evidence_required": true,
+      "operation_graph": "calc_sheet_switch_and_sheet_scoped_edit",
+      "shared_state": "active worksheet context"
+    },
+    "schedule_policy_id": "calc-sheet-context-change-observe-resume-v1"
+  },
+  "evaluator_path": "evaluators/cdv1-a03-91fb49e06b6cfd5c.json",
+  "evaluator_sha256": "0b2816e9280bf80823a42357a0d9ca3a2d18d246eeb5056255c0f78ba183c971",
+  "family": "application_context",
+  "fixture_files": [
+    {
+      "path": "fixtures/cdv1-a03-91fb49e06b6cfd5c/workbook.fods",
+      "sha256": "dc912278ab3318a7eef4aea76097868cb1e7cc2b41f7b58910a40ba08b4004d6",
+      "size_bytes": 30137
+    }
+  ],
+  "generation_seed": 2026,
+  "initial_fixture_spec": {
+    "application_set": [
+      "Calc",
+      "Calc"
+    ],
+    "fixture_profile": "sheet_review",
+    "layout_id": "guard_after",
+    "public_assets": [
+      {
+        "path": "fixtures/cdv1-a03-91fb49e06b6cfd5c/workbook.fods",
+        "sha256": "dc912278ab3318a7eef4aea76097868cb1e7cc2b41f7b58910a40ba08b4004d6",
+        "size_bytes": 30137
+      }
+    ]
+  },
+  "instance_id": "cdv1-a03-91fb49e06b6cfd5c",
+  "manifest_entry_sha256": "89a2c6d80a8c6bc284d32408062347b6c89956d9b0e41b4a1e7349035d12b987",
+  "provenance": {
+    "fixture_sha256": "39990e48ff65303ec1c9cde1de320392eee342e7dcf7a4bd8761da43ba517a64",
+    "generation_seed": 2026,
+    "generator": "swcub.production_v1",
+    "seed_role": "deterministic profile ordering only; excluded from instance identity",
+    "semantic_spec_sha256": "91fb49e06b6cfd5ca02ebe9494d11b7ca41624d3f573e73acbcc6f3da2fdd40e",
+    "source_code_sha256": "a1e97d04c75f6d7e1ccb6f87adffdca7fa59d7c3f9d83747279e0e85db58d1eb",
+    "source_commit": "1036de483efe0040e9fb6ba0452c0cd968c1984b"
+  },
+  "reset_metadata": {
+    "fixture_id": "cdv1-a03-91fb49e06b6cfd5c",
+    "fresh_guest_required": true,
+    "remove_prior_app_state": true,
+    "verify_fixture_hash": "39990e48ff65303ec1c9cde1de320392eee342e7dcf7a4bd8761da43ba517a64",
+    "verify_state": {
+      "actors": {
+        "A": {
+          "object": "calc/SheetA.B2",
+          "value": ""
+        },
+        "B": {
+          "object": "calc/SheetB.C3",
+          "value": ""
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "operation_kind": "calc_sheet_context",
+          "operation_pair": [
+            "sheet_scoped_cell_edit",
+            "sheet_scoped_cell_edit"
+          ],
+          "profile_label": "sheet_review"
+        },
+        "resource": "application_context"
+      }
+    }
+  },
+  "schedule_policy_id": "calc-sheet-context-change-observe-resume-v1",
+  "semantic_parameters": {
+    "domain_id": "safety_inspection",
+    "domain_schema": {
+      "entity": "inspection item",
+      "field_a": "Clearance",
+      "field_b": "Inspection state"
+    },
+    "layout_id": "guard_after",
+    "object_profile_id": "sheet_review",
+    "object_schema": {
+      "operation_kind": "calc_sheet_context",
+      "operation_pair": [
+        "sheet_scoped_cell_edit",
+        "sheet_scoped_cell_edit"
+      ],
+      "profile_label": "sheet_review"
+    },
+    "operation_graph": "calc_sheet_switch_and_sheet_scoped_edit",
+    "operation_schema_revision": 1,
+    "workflow_id": "A-03"
+  },
+  "signatures": {
+    "fixture": "39990e48ff65303ec1c9cde1de320392eee342e7dcf7a4bd8761da43ba517a64",
+    "goal": "af380ee027a91db5625ec7ae2d8d5425a5b5385da33db2a5a4f61922bb0347ac",
+    "semantic": "91fb49e06b6cfd5ca02ebe9494d11b7ca41624d3f573e73acbcc6f3da2fdd40e",
+    "structural": "ae6662b551c0c4d612cc5e62978456b2b4ea9db7249c0a23332f73c8bbe5f26e"
+  },
+  "target_objects": {
+    "A": [
+      "calc/SheetA.B2"
+    ],
+    "B": [
+      "calc/SheetB.C3"
+    ]
+  },
+  "task_domains": {
+    "A": "Calc",
+    "B": "Calc"
+  },
+  "topology_compatibility": {
+    "ma_id": {
+      "backend_binding": "same logical workspace seed; independent desktop sessions allowed",
+      "desktop_count": 2,
+      "fixtures": "byte-identical task-relevant clones"
+    },
+    "ma_sd": {
+      "actor_bindings": "A and B share desktop",
+      "desktop_count": 1
+    },
+    "solo": {
+      "actor_bindings": "A or B",
+      "desktop_count": 1
+    }
+  },
+  "treatment_relevant_state": {
+    "family_state": "application_context",
+    "operation_graph": "calc_sheet_switch_and_sheet_scoped_edit",
+    "shared_resource": {
+      "operation_kind": "calc_sheet_context",
+      "operation_pair": [
+        "sheet_scoped_cell_edit",
+        "sheet_scoped_cell_edit"
+      ],
+      "profile_label": "sheet_review"
+    }
+  },
+  "validation_level": "offline_operation_template",
+  "workflow_id": "A-03"
+}

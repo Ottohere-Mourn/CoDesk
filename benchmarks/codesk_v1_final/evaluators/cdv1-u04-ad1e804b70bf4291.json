@@ -1,0 +1,90 @@
+{
+  "actor_paths": {
+    "A": "actors.A.value",
+    "B": "actors.B.value"
+  },
+  "adapter": "codesk_exact_state_v1",
+  "condition_semantics": {
+    "ma_id": "score each actor on equivalent independent desktop fixture",
+    "ma_sd": "score both actor goals and shared-state integrity",
+    "solo": "score selected actor; require inactive target and guards unchanged"
+  },
+  "expected_state": {
+    "actors": {
+      "A": {
+        "object": "browser/editor/range/risk-a",
+        "value": "TEMP-CAP-4821"
+      },
+      "B": {
+        "object": "browser/editor/range/risk-b",
+        "value": "FINAL-CAP-4821"
+      },
+      "guards": {
+        "main": "PRESERVE"
+      }
+    },
+    "treatment": {
+      "initial": {
+        "operation_kind": "browser_contenteditable_undo",
+        "operation_pair": [
+          "rich_editor_insert_undo",
+          "rich_editor_insert_undo"
+        ],
+        "profile_label": "editor_risk"
+      },
+      "resource": "undo_redo_history"
+    }
+  },
+  "history_contract": {
+    "actor_a_requires": [
+      "temporary_edit_or_operation_observed",
+      "undo_action_after_actor_b_commit",
+      "recovery_verified"
+    ],
+    "actor_b_requires": [
+      "target_edit_committed"
+    ],
+    "final_state_is_not_sufficient": true,
+    "operation_schema_revision": 1
+  },
+  "initial_state": {
+    "actors": {
+      "A": {
+        "object": "browser/editor/range/risk-a",
+        "value": "Seed A"
+      },
+      "B": {
+        "object": "browser/editor/range/risk-b",
+        "value": "Seed B"
+      },
+      "guards": {
+        "main": "PRESERVE"
+      }
+    },
+    "treatment": {
+      "initial": {
+        "operation_kind": "browser_contenteditable_undo",
+        "operation_pair": [
+          "rich_editor_insert_undo",
+          "rich_editor_insert_undo"
+        ],
+        "profile_label": "editor_risk"
+      },
+      "resource": "undo_redo_history"
+    }
+  },
+  "invariants": [
+    {
+      "equals": "PRESERVE",
+      "path": "actors.guards.main"
+    }
+  ],
+  "operation_contract": {
+    "A": "browser/editor/phrase-a",
+    "B": "browser/editor/phrase-b",
+    "evidence_required": true,
+    "operation_graph": "browser_rich_editor_shared_undo_stack",
+    "shared_state": "contenteditable undo history"
+  },
+  "schedule_policy_id": "browser-editor-a-b-undo-recover-v1"
+}

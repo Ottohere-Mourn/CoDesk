@@ -1,0 +1,6 @@
+<!doctype html><meta charset='utf-8'><title>CoDesk operation task</title><main data-layout='target-before-guard'><h1>CoDesk operation task</h1><p>Complete the two independent assigned GUI operations.</p>
+<button type='button' data-context='filter-a'>Filter A</button><button type='button' data-context='filter-b'>Filter B</button>
+<form data-actor='A' data-result-context='filter-a'><h2>Filter A result</h2><input name='value'><button>Save A result</button></form>
+<form data-actor='B' data-result-context='filter-b' hidden><h2>Filter B result</h2><input name='value'><button>Save B result</button></form>
+<script>document.querySelectorAll('[data-context]').forEach(b=>b.onclick=()=>fetch('/context',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({actor:b.dataset.context==='filter-a'?'A':'B',context:b.dataset.context})}).then(()=>document.querySelectorAll('form[data-result-context]').forEach(f=>f.hidden=f.dataset.resultContext!==b.dataset.context)));</script>
+<script>document.querySelectorAll('form').forEach(f=>f.addEventListener('submit',async e=>{e.preventDefault();const actor=f.dataset.actor;const value=f.querySelector('input').value;await fetch('/submit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({actor,value})});}));</script></main>

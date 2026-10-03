@@ -1,0 +1,114 @@
+{
+  "description": "Apply a temporary Writer character style, let B make an independent edit, then have A Undo and recover both goals.",
+  "family": "undo_redo_history",
+  "goal_a": "Apply the temporary style, then after B's edit undo the latest history entry and restore both final document goals.",
+  "goal_b": "Insert the assigned independent phrase in the second paragraph and save.",
+  "operation_graph": "writer_character_format_then_cross_actor_undo",
+  "required_apps": [
+    "Writer",
+    "Writer"
+  ],
+  "runtime_validation_incomplete": true,
+  "schedule_policy_id": "writer-style-edit-b-undo-recover-v1",
+  "semantic_parameter_schema": {
+    "actor_target_disjoint": true,
+    "domain_fields": [
+      "entity",
+      "field_a",
+      "field_b",
+      "a_status",
+      "b_status"
+    ],
+    "identity_excludes": [
+      "generation_seed",
+      "repeat",
+      "condition",
+      "model",
+      "window_coordinates"
+    ],
+    "layout_fields": [
+      "guard_placement",
+      "field_order",
+      "fixture_layout"
+    ],
+    "no_op_goals_allowed": false,
+    "object_profiles": [
+      {
+        "a": "writer/range/alpha",
+        "b": "writer/paragraph[2]",
+        "id": "undo_style_a",
+        "schema": {
+          "operation_kind": "writer_style_undo",
+          "operation_pair": [
+            "temporary_style_apply_undo",
+            "independent_text_insert"
+          ],
+          "profile_label": "undo_style_a"
+        }
+      },
+      {
+        "a": "writer/range/beta",
+        "b": "writer/paragraph[3]",
+        "id": "undo_style_b",
+        "schema": {
+          "operation_kind": "writer_style_undo",
+          "operation_pair": [
+            "temporary_style_apply_undo",
+            "independent_text_insert"
+          ],
+          "profile_label": "undo_style_b"
+        }
+      },
+      {
+        "a": "writer/range/title",
+        "b": "writer/paragraph[3]",
+        "id": "undo_style_title",
+        "schema": {
+          "operation_kind": "writer_style_undo",
+          "operation_pair": [
+            "temporary_style_apply_undo",
+            "independent_text_insert"
+          ],
+          "profile_label": "undo_style_title"
+        }
+      },
+      {
+        "a": "writer/range/risk",
+        "b": "writer/paragraph[3]",
+        "id": "undo_style_risk",
+        "schema": {
+          "operation_kind": "writer_style_undo",
+          "operation_pair": [
+            "temporary_style_apply_undo",
+            "independent_text_insert"
+          ],
+          "profile_label": "undo_style_risk"
+        }
+      },
+      {
+        "a": "writer/range/owner",
+        "b": "writer/paragraph[4]",
+        "id": "undo_style_owner",
+        "schema": {
+          "operation_kind": "writer_style_undo",
+          "operation_pair": [
+            "temporary_style_apply_undo",
+            "independent_text_insert"
+          ],
+          "profile_label": "undo_style_owner"
+        }
+      }
+    ],
+    "operation_schema": {
+      "A": "writer/history/style",
+      "B": "writer/paragraph[2]",
+      "shared": "Writer document undo stack"
+    }
+  },
+  "task_domains": [
+    "Writer",
+    "Writer"
+  ],
+  "validation_level": "offline_operation_template",
+  "workflow_id": "U-02"
+}

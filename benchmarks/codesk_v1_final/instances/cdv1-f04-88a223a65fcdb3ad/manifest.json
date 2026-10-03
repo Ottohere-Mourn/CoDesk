@@ -1,0 +1,256 @@
+{
+  "actor_goals": [
+    {
+      "actor_id": "A",
+      "expected_value": "[[\"Accepted-11\",\"Accepted-12\",\"Accepted-13\"],[\"Accepted-21\",\"Accepted-22\",\"Accepted-23\"]]",
+      "goal": "Fill Calc range C3:E4 row-wise with [[\"Accepted-11\",\"Accepted-12\",\"Accepted-13\"],[\"Accepted-21\",\"Accepted-22\",\"Accepted-23\"]] and save.",
+      "initial_value": "__EMPTY_RANGE__",
+      "operation": "fill calc/C3:E4 row-wise",
+      "target_objects": [
+        "calc/C3:E4"
+      ],
+      "task_domain": "Calc"
+    },
+    {
+      "actor_id": "B",
+      "expected_value": "Verified: supplier record (object)",
+      "goal": "Replace the assigned Writer paragraph.",
+      "initial_value": "Pending: supplier record",
+      "operation": "update writer/document-content",
+      "target_objects": [
+        "writer/document-content"
+      ],
+      "task_domain": "Writer"
+    }
+  ],
+  "benchmark_version": "codesk-v1.0",
+  "evaluator": {
+    "actor_paths": {
+      "A": "actors.A.value",
+      "B": "actors.B.value"
+    },
+    "adapter": "codesk_exact_state_v1",
+    "condition_semantics": {
+      "ma_id": "score each actor on equivalent independent desktop fixture",
+      "ma_sd": "score both actor goals and shared-state integrity",
+      "solo": "score selected actor; require inactive target and guards unchanged"
+    },
+    "expected_state": {
+      "actors": {
+        "A": {
+          "object": "calc/C3:E4",
+          "value": "[[\"Accepted-11\",\"Accepted-12\",\"Accepted-13\"],[\"Accepted-21\",\"Accepted-22\",\"Accepted-23\"]]"
+        },
+        "B": {
+          "object": "writer/document-content",
+          "value": "Verified: supplier record (object)"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "range": [
+            "C3",
+            "E4"
+          ],
+          "shape": [
+            2,
+            3
+          ]
+        },
+        "resource": "focus_input_routing"
+      }
+    },
+    "initial_state": {
+      "actors": {
+        "A": {
+          "object": "calc/C3:E4",
+          "value": "__EMPTY_RANGE__"
+        },
+        "B": {
+          "object": "writer/document-content",
+          "value": "Pending: supplier record"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "range": [
+            "C3",
+            "E4"
+          ],
+          "shape": [
+            2,
+            3
+          ]
+        },
+        "resource": "focus_input_routing"
+      }
+    },
+    "invariants": [
+      {
+        "equals": "PRESERVE",
+        "path": "actors.guards.main"
+      }
+    ],
+    "schedule_policy_id": "action-boundary-round-robin-ab-v1"
+  },
+  "evaluator_path": "evaluators/cdv1-f04-88a223a65fcdb3ad.json",
+  "evaluator_sha256": "c530cb92ac3f25fd21786b613c7277643a4181ece9b1723539c203d5cc3473e2",
+  "family": "focus_input_routing",
+  "fixture_files": [
+    {
+      "path": "fixtures/cdv1-f04-88a223a65fcdb3ad/document.fodt",
+      "sha256": "6e823bf287ef8275299cf1ffc9e3505189b83dab8a408888ee62db66b77e15a1",
+      "size_bytes": 314
+    },
+    {
+      "path": "fixtures/cdv1-f04-88a223a65fcdb3ad/workbook.fods",
+      "sha256": "a9b3084ceae6bccc72fdd28617dd1aa568b2e7205a32e7255216f453de8682ef",
+      "size_bytes": 1946
+    }
+  ],
+  "generation_seed": 2026,
+  "initial_fixture_spec": {
+    "application_set": [
+      "Calc",
+      "Writer"
+    ],
+    "fixture_profile": "range_c3_e4",
+    "layout_id": "guard_after",
+    "public_assets": [
+      {
+        "path": "fixtures/cdv1-f04-88a223a65fcdb3ad/document.fodt",
+        "sha256": "6e823bf287ef8275299cf1ffc9e3505189b83dab8a408888ee62db66b77e15a1",
+        "size_bytes": 314
+      },
+      {
+        "path": "fixtures/cdv1-f04-88a223a65fcdb3ad/workbook.fods",
+        "sha256": "a9b3084ceae6bccc72fdd28617dd1aa568b2e7205a32e7255216f453de8682ef",
+        "size_bytes": 1946
+      }
+    ]
+  },
+  "instance_id": "cdv1-f04-88a223a65fcdb3ad",
+  "manifest_entry_sha256": "d50864ad28a8b8c75912f4c3a27c28ffef774f3f0c8ede2d188c110af4905b17",
+  "provenance": {
+    "fixture_sha256": "cd7214b73a5299d57477cc70b265268fd24780889c267b62ed085ae6315edd85",
+    "generation_seed": 2026,
+    "generator": "swcub.production_v1",
+    "seed_role": "deterministic profile ordering only; excluded from instance identity",
+    "semantic_spec_sha256": "88a223a65fcdb3add54fce16691911e6ff2beac9c8fa4aa4c285485ac9418c2b",
+    "source_code_sha256": "a1e97d04c75f6d7e1ccb6f87adffdca7fa59d7c3f9d83747279e0e85db58d1eb",
+    "source_commit": "1036de483efe0040e9fb6ba0452c0cd968c1984b"
+  },
+  "reset_metadata": {
+    "fixture_id": "cdv1-f04-88a223a65fcdb3ad",
+    "fresh_guest_required": true,
+    "remove_prior_app_state": true,
+    "verify_fixture_hash": "cd7214b73a5299d57477cc70b265268fd24780889c267b62ed085ae6315edd85",
+    "verify_state": {
+      "actors": {
+        "A": {
+          "object": "calc/C3:E4",
+          "value": "__EMPTY_RANGE__"
+        },
+        "B": {
+          "object": "writer/document-content",
+          "value": "Pending: supplier record"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "range": [
+            "C3",
+            "E4"
+          ],
+          "shape": [
+            2,
+            3
+          ]
+        },
+        "resource": "focus_input_routing"
+      }
+    }
+  },
+  "schedule_policy_id": "action-boundary-round-robin-ab-v1",
+  "semantic_parameters": {
+    "domain_id": "supplier_onboarding",
+    "domain_schema": {
+      "entity": "supplier record",
+      "field_a": "Review decision",
+      "field_b": "Verification state"
+    },
+    "layout_id": "guard_after",
+    "object_profile_id": "range_c3_e4",
+    "object_schema": {
+      "range": [
+        "C3",
+        "E4"
+      ],
+      "shape": [
+        2,
+        3
+      ]
+    },
+    "operation_graph": "calc_range_vs_writer_document",
+    "operation_schema_revision": 4,
+    "workflow_id": "F-04"
+  },
+  "signatures": {
+    "fixture": "cd7214b73a5299d57477cc70b265268fd24780889c267b62ed085ae6315edd85",
+    "goal": "793df6896bb096b83d0090a7dbf69d85578fba822e4ad064b10586bf98815619",
+    "semantic": "88a223a65fcdb3add54fce16691911e6ff2beac9c8fa4aa4c285485ac9418c2b",
+    "structural": "cbf1ac6d86bf48dead770f544967fe2b1a5070eef333ad17ea7b5665528f6015"
+  },
+  "target_objects": {
+    "A": [
+      "calc/C3:E4"
+    ],
+    "B": [
+      "writer/document-content"
+    ]
+  },
+  "task_domains": {
+    "A": "Calc",
+    "B": "Writer"
+  },
+  "topology_compatibility": {
+    "ma_id": {
+      "backend_binding": "same logical workspace seed; independent desktop sessions allowed",
+      "desktop_count": 2,
+      "fixtures": "byte-identical task-relevant clones"
+    },
+    "ma_sd": {
+      "actor_bindings": "A and B share desktop",
+      "desktop_count": 1
+    },
+    "solo": {
+      "actor_bindings": "A or B",
+      "desktop_count": 1
+    }
+  },
+  "treatment_relevant_state": {
+    "family_state": "focus_input_routing",
+    "operation_graph": "calc_range_vs_writer_document",
+    "shared_resource": {
+      "range": [
+        "C3",
+        "E4"
+      ],
+      "shape": [
+        2,
+        3
+      ]
+    }
+  },
+  "validation_level": "scripted_full",
+  "workflow_id": "F-04"
+}

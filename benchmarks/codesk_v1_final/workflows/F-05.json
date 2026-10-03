@@ -1,0 +1,119 @@
+{
+  "description": "Replace one exact Writer phrase while entering an independent Calc formula.",
+  "family": "focus_input_routing",
+  "goal_a": "Use Writer Find/Replace to replace the assigned phrase exactly once; preserve all other paragraphs.",
+  "goal_b": "Enter the assigned formula in the Calc target cell and preserve neighboring cells.",
+  "operation_graph": "writer_find_replace_then_calc_formula_entry",
+  "required_apps": [
+    "Writer",
+    "Calc"
+  ],
+  "runtime_validation_incomplete": true,
+  "schedule_policy_id": "writer-find-calc-formula-action-boundary-v1",
+  "semantic_parameter_schema": {
+    "actor_target_disjoint": true,
+    "domain_fields": [
+      "entity",
+      "field_a",
+      "field_b",
+      "a_status",
+      "b_status"
+    ],
+    "identity_excludes": [
+      "generation_seed",
+      "repeat",
+      "condition",
+      "model",
+      "window_coordinates"
+    ],
+    "layout_fields": [
+      "guard_placement",
+      "field_order",
+      "fixture_layout"
+    ],
+    "no_op_goals_allowed": false,
+    "object_profiles": [
+      {
+        "a": "writer/paragraph[1]",
+        "b": "calc/B2",
+        "id": "phrase_summary",
+        "schema": {
+          "formula": "=SUM(B4:B6)",
+          "operation_kind": "find_replace_formula",
+          "operation_pair": [
+            "exact_phrase_replace",
+            "formula_entry"
+          ],
+          "profile_label": "phrase_summary"
+        }
+      },
+      {
+        "a": "writer/paragraph[2]",
+        "b": "calc/C2",
+        "id": "phrase_risk",
+        "schema": {
+          "formula": "=SUM(B4:B6)",
+          "operation_kind": "find_replace_formula",
+          "operation_pair": [
+            "exact_phrase_replace",
+            "formula_entry"
+          ],
+          "profile_label": "phrase_risk"
+        }
+      },
+      {
+        "a": "writer/paragraph[3]",
+        "b": "calc/D2",
+        "id": "phrase_owner",
+        "schema": {
+          "formula": "=SUM(B4:B6)",
+          "operation_kind": "find_replace_formula",
+          "operation_pair": [
+            "exact_phrase_replace",
+            "formula_entry"
+          ],
+          "profile_label": "phrase_owner"
+        }
+      },
+      {
+        "a": "writer/paragraph[4]",
+        "b": "calc/B3",
+        "id": "phrase_action",
+        "schema": {
+          "formula": "=SUM(B4:B6)",
+          "operation_kind": "find_replace_formula",
+          "operation_pair": [
+            "exact_phrase_replace",
+            "formula_entry"
+          ],
+          "profile_label": "phrase_action"
+        }
+      },
+      {
+        "a": "writer/paragraph[5]",
+        "b": "calc/C3",
+        "id": "phrase_title",
+        "schema": {
+          "formula": "=SUM(B4:B6)",
+          "operation_kind": "find_replace_formula",
+          "operation_pair": [
+            "exact_phrase_replace",
+            "formula_entry"
+          ],
+          "profile_label": "phrase_title"
+        }
+      }
+    ],
+    "operation_schema": {
+      "A": "writer/find-replace",
+      "B": "calc/formula-cell",
+      "shared": "foreground window and keyboard target"
+    }
+  },
+  "task_domains": [
+    "Writer",
+    "Calc"
+  ],
+  "validation_level": "offline_operation_template",
+  "workflow_id": "F-05"
+}

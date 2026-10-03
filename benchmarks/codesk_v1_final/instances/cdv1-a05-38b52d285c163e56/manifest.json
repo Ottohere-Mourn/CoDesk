@@ -1,0 +1,243 @@
+{
+  "actor_goals": [
+    {
+      "actor_id": "A",
+      "expected_value": "Final section A SAFE-1193",
+      "goal": "Use Navigator to update the assigned field in section A only. Target writer/section[Release]/paragraph[1]; initial 'Draft section A SAFE-1193'; required final 'Final section A SAFE-1193'.",
+      "initial_value": "Draft section A SAFE-1193",
+      "operation": "update writer/section[Release]/paragraph[1]",
+      "target_objects": [
+        "writer/section[Release]/paragraph[1]"
+      ],
+      "task_domain": "Writer"
+    },
+    {
+      "actor_id": "B",
+      "expected_value": "Final section B SAFE-1193",
+      "goal": "Use Navigator to update the assigned field in section B only. Target writer/section[Rollback]/paragraph[1]; initial 'Draft section B SAFE-1193'; required final 'Final section B SAFE-1193'.",
+      "initial_value": "Draft section B SAFE-1193",
+      "operation": "update writer/section[Rollback]/paragraph[1]",
+      "target_objects": [
+        "writer/section[Rollback]/paragraph[1]"
+      ],
+      "task_domain": "Writer"
+    }
+  ],
+  "benchmark_version": "codesk-v1.0",
+  "evaluator": {
+    "actor_paths": {
+      "A": "actors.A.value",
+      "B": "actors.B.value"
+    },
+    "adapter": "codesk_exact_state_v1",
+    "condition_semantics": {
+      "ma_id": "score each actor on equivalent independent desktop fixture",
+      "ma_sd": "score both actor goals and shared-state integrity",
+      "solo": "score selected actor; require inactive target and guards unchanged"
+    },
+    "expected_state": {
+      "actors": {
+        "A": {
+          "object": "writer/section[Release]/paragraph[1]",
+          "value": "Final section A SAFE-1193"
+        },
+        "B": {
+          "object": "writer/section[Rollback]/paragraph[1]",
+          "value": "Final section B SAFE-1193"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "operation_kind": "writer_navigator_context",
+          "operation_pair": [
+            "navigator_section_edit",
+            "navigator_section_edit"
+          ],
+          "profile_label": "section_release"
+        },
+        "resource": "application_context"
+      }
+    },
+    "initial_state": {
+      "actors": {
+        "A": {
+          "object": "writer/section[Release]/paragraph[1]",
+          "value": "Draft section A SAFE-1193"
+        },
+        "B": {
+          "object": "writer/section[Rollback]/paragraph[1]",
+          "value": "Draft section B SAFE-1193"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "operation_kind": "writer_navigator_context",
+          "operation_pair": [
+            "navigator_section_edit",
+            "navigator_section_edit"
+          ],
+          "profile_label": "section_release"
+        },
+        "resource": "application_context"
+      }
+    },
+    "invariants": [
+      {
+        "equals": "PRESERVE",
+        "path": "actors.guards.main"
+      }
+    ],
+    "operation_contract": {
+      "A": "writer/section-a/field",
+      "B": "writer/section-b/field",
+      "evidence_required": true,
+      "operation_graph": "writer_document_navigator_section_context",
+      "shared_state": "active document section/navigation context"
+    },
+    "schedule_policy_id": "writer-section-context-change-resume-v1"
+  },
+  "evaluator_path": "evaluators/cdv1-a05-38b52d285c163e56.json",
+  "evaluator_sha256": "da8cd31a2c00549008bbf1375849ee5f825dc29f9bee2467ea65a0d309c4e7de",
+  "family": "application_context",
+  "fixture_files": [
+    {
+      "path": "fixtures/cdv1-a05-38b52d285c163e56/document.fodt",
+      "sha256": "ddc5bd67cbc8ef47427ca5dafdead997a10ff52e182a8eeba3ae9402773afa29",
+      "size_bytes": 527
+    }
+  ],
+  "generation_seed": 2026,
+  "initial_fixture_spec": {
+    "application_set": [
+      "Writer",
+      "Writer"
+    ],
+    "fixture_profile": "section_release",
+    "layout_id": "guard_after",
+    "public_assets": [
+      {
+        "path": "fixtures/cdv1-a05-38b52d285c163e56/document.fodt",
+        "sha256": "ddc5bd67cbc8ef47427ca5dafdead997a10ff52e182a8eeba3ae9402773afa29",
+        "size_bytes": 527
+      }
+    ]
+  },
+  "instance_id": "cdv1-a05-38b52d285c163e56",
+  "manifest_entry_sha256": "f92d05db0adbe3eca496118c589d9451fa304a8e7ab99e5a9586e0c5690dadd4",
+  "provenance": {
+    "fixture_sha256": "71fdbc796e56082dd5fcd0cb9f56ef63d385c012987d5713abb5ad4999f85488",
+    "generation_seed": 2026,
+    "generator": "swcub.production_v1",
+    "seed_role": "deterministic profile ordering only; excluded from instance identity",
+    "semantic_spec_sha256": "38b52d285c163e5631c1f69b01befd15720cc49cbd18217cb7fd84e1a2ee65ee",
+    "source_code_sha256": "a1e97d04c75f6d7e1ccb6f87adffdca7fa59d7c3f9d83747279e0e85db58d1eb",
+    "source_commit": "1036de483efe0040e9fb6ba0452c0cd968c1984b"
+  },
+  "reset_metadata": {
+    "fixture_id": "cdv1-a05-38b52d285c163e56",
+    "fresh_guest_required": true,
+    "remove_prior_app_state": true,
+    "verify_fixture_hash": "71fdbc796e56082dd5fcd0cb9f56ef63d385c012987d5713abb5ad4999f85488",
+    "verify_state": {
+      "actors": {
+        "A": {
+          "object": "writer/section[Release]/paragraph[1]",
+          "value": "Draft section A SAFE-1193"
+        },
+        "B": {
+          "object": "writer/section[Rollback]/paragraph[1]",
+          "value": "Draft section B SAFE-1193"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "operation_kind": "writer_navigator_context",
+          "operation_pair": [
+            "navigator_section_edit",
+            "navigator_section_edit"
+          ],
+          "profile_label": "section_release"
+        },
+        "resource": "application_context"
+      }
+    }
+  },
+  "schedule_policy_id": "writer-section-context-change-resume-v1",
+  "semantic_parameters": {
+    "domain_id": "safety_inspection",
+    "domain_schema": {
+      "entity": "inspection item",
+      "field_a": "Clearance",
+      "field_b": "Inspection state"
+    },
+    "layout_id": "guard_after",
+    "object_profile_id": "section_release",
+    "object_schema": {
+      "operation_kind": "writer_navigator_context",
+      "operation_pair": [
+        "navigator_section_edit",
+        "navigator_section_edit"
+      ],
+      "profile_label": "section_release"
+    },
+    "operation_graph": "writer_document_navigator_section_context",
+    "operation_schema_revision": 1,
+    "workflow_id": "A-05"
+  },
+  "signatures": {
+    "fixture": "71fdbc796e56082dd5fcd0cb9f56ef63d385c012987d5713abb5ad4999f85488",
+    "goal": "dd3b9a1bd158aae1de8d001e4222208c56afcd79bdbc8019070947c5927d154a",
+    "semantic": "38b52d285c163e5631c1f69b01befd15720cc49cbd18217cb7fd84e1a2ee65ee",
+    "structural": "45a9f10652ab4677f3388a9ee8ccfb57a009d9b4a3b7b0bb5d26cab691aa72dc"
+  },
+  "target_objects": {
+    "A": [
+      "writer/section[Release]/paragraph[1]"
+    ],
+    "B": [
+      "writer/section[Rollback]/paragraph[1]"
+    ]
+  },
+  "task_domains": {
+    "A": "Writer",
+    "B": "Writer"
+  },
+  "topology_compatibility": {
+    "ma_id": {
+      "backend_binding": "same logical workspace seed; independent desktop sessions allowed",
+      "desktop_count": 2,
+      "fixtures": "byte-identical task-relevant clones"
+    },
+    "ma_sd": {
+      "actor_bindings": "A and B share desktop",
+      "desktop_count": 1
+    },
+    "solo": {
+      "actor_bindings": "A or B",
+      "desktop_count": 1
+    }
+  },
+  "treatment_relevant_state": {
+    "family_state": "application_context",
+    "operation_graph": "writer_document_navigator_section_context",
+    "shared_resource": {
+      "operation_kind": "writer_navigator_context",
+      "operation_pair": [
+        "navigator_section_edit",
+        "navigator_section_edit"
+      ],
+      "profile_label": "section_release"
+    }
+  },
+  "validation_level": "offline_operation_template",
+  "workflow_id": "A-05"
+}

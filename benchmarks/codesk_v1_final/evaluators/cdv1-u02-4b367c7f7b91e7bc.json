@@ -1,0 +1,90 @@
+{
+  "actor_paths": {
+    "A": "actors.A.value",
+    "B": "actors.B.value"
+  },
+  "adapter": "codesk_exact_state_v1",
+  "condition_semantics": {
+    "ma_id": "score each actor on equivalent independent desktop fixture",
+    "ma_sd": "score both actor goals and shared-state integrity",
+    "solo": "score selected actor; require inactive target and guards unchanged"
+  },
+  "expected_state": {
+    "actors": {
+      "A": {
+        "object": "writer/range/alpha",
+        "value": "Seed style A SAFE-1193"
+      },
+      "B": {
+        "object": "writer/paragraph[2]",
+        "value": "Final line B SAFE-1193"
+      },
+      "guards": {
+        "main": "PRESERVE"
+      }
+    },
+    "treatment": {
+      "initial": {
+        "operation_kind": "writer_style_undo",
+        "operation_pair": [
+          "temporary_style_apply_undo",
+          "independent_text_insert"
+        ],
+        "profile_label": "undo_style_a"
+      },
+      "resource": "undo_redo_history"
+    }
+  },
+  "history_contract": {
+    "actor_a_requires": [
+      "temporary_edit_or_operation_observed",
+      "undo_action_after_actor_b_commit",
+      "recovery_verified"
+    ],
+    "actor_b_requires": [
+      "target_edit_committed"
+    ],
+    "final_state_is_not_sufficient": true,
+    "operation_schema_revision": 1
+  },
+  "initial_state": {
+    "actors": {
+      "A": {
+        "object": "writer/range/alpha",
+        "value": "Seed style A SAFE-1193"
+      },
+      "B": {
+        "object": "writer/paragraph[2]",
+        "value": "Seed line B SAFE-1193"
+      },
+      "guards": {
+        "main": "PRESERVE"
+      }
+    },
+    "treatment": {
+      "initial": {
+        "operation_kind": "writer_style_undo",
+        "operation_pair": [
+          "temporary_style_apply_undo",
+          "independent_text_insert"
+        ],
+        "profile_label": "undo_style_a"
+      },
+      "resource": "undo_redo_history"
+    }
+  },
+  "invariants": [
+    {
+      "equals": "PRESERVE",
+      "path": "actors.guards.main"
+    }
+  ],
+  "operation_contract": {
+    "A": "writer/history/style",
+    "B": "writer/paragraph[2]",
+    "evidence_required": true,
+    "operation_graph": "writer_character_format_then_cross_actor_undo",
+    "shared_state": "Writer document undo stack"
+  },
+  "schedule_policy_id": "writer-style-edit-b-undo-recover-v1"
+}

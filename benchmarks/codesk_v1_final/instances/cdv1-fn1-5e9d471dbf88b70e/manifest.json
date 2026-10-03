@@ -1,0 +1,241 @@
+{
+  "actor_goals": [
+    {
+      "actor_id": "A",
+      "expected_value": "Approved: capital request (object)",
+      "goal": "Replace the assigned paragraph in doc-A.",
+      "initial_value": "Draft: capital request",
+      "operation": "update writer/doc-a/owner-line",
+      "target_objects": [
+        "writer/doc-a/owner-line"
+      ],
+      "task_domain": "Writer"
+    },
+    {
+      "actor_id": "B",
+      "expected_value": "Recorded: capital request (object)",
+      "goal": "Replace the assigned paragraph in doc-B.",
+      "initial_value": "Pending: capital request",
+      "operation": "update writer/doc-b/owner-line",
+      "target_objects": [
+        "writer/doc-b/owner-line"
+      ],
+      "task_domain": "Writer"
+    }
+  ],
+  "benchmark_version": "codesk-v1.0",
+  "evaluator": {
+    "actor_paths": {
+      "A": "actors.A.value",
+      "B": "actors.B.value"
+    },
+    "adapter": "codesk_exact_state_v1",
+    "condition_semantics": {
+      "ma_id": "score each actor on equivalent independent desktop fixture",
+      "ma_sd": "score both actor goals and shared-state integrity",
+      "solo": "score selected actor; require inactive target and guards unchanged"
+    },
+    "expected_state": {
+      "actors": {
+        "A": {
+          "object": "writer/doc-a/owner-line",
+          "value": "Approved: capital request (object)"
+        },
+        "B": {
+          "object": "writer/doc-b/owner-line",
+          "value": "Recorded: capital request (object)"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "documents": [
+            "doc-a",
+            "doc-b"
+          ],
+          "target_kind": "owner line"
+        },
+        "resource": "focus_input_routing"
+      }
+    },
+    "initial_state": {
+      "actors": {
+        "A": {
+          "object": "writer/doc-a/owner-line",
+          "value": "Draft: capital request"
+        },
+        "B": {
+          "object": "writer/doc-b/owner-line",
+          "value": "Pending: capital request"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "documents": [
+            "doc-a",
+            "doc-b"
+          ],
+          "target_kind": "owner line"
+        },
+        "resource": "focus_input_routing"
+      }
+    },
+    "invariants": [
+      {
+        "equals": "PRESERVE",
+        "path": "actors.guards.main"
+      }
+    ],
+    "schedule_policy_id": "writer-window-a-window-b-resume-a-v1"
+  },
+  "evaluator_path": "evaluators/cdv1-fn1-5e9d471dbf88b70e.json",
+  "evaluator_sha256": "ebff9b89f112ffa86ffbdd50371e804ff7e602b12c6529de2f560add78bb6da3",
+  "family": "focus_input_routing",
+  "fixture_files": [
+    {
+      "path": "fixtures/cdv1-fn1-5e9d471dbf88b70e/doc-a.fodt",
+      "sha256": "ecc5c2b97acb41ef32f9b42dd866003495911bfc6460f9c24ffea174db4797bc",
+      "size_bytes": 384
+    },
+    {
+      "path": "fixtures/cdv1-fn1-5e9d471dbf88b70e/doc-b.fodt",
+      "sha256": "7d32e72eedea926cca838fa8160605d5c5ef88df04da4c77a5ee2b6d114de701",
+      "size_bytes": 386
+    }
+  ],
+  "generation_seed": 2026,
+  "initial_fixture_spec": {
+    "application_set": [
+      "Writer",
+      "Writer"
+    ],
+    "fixture_profile": "writer_doc_owner",
+    "layout_id": "guard_after",
+    "public_assets": [
+      {
+        "path": "fixtures/cdv1-fn1-5e9d471dbf88b70e/doc-a.fodt",
+        "sha256": "ecc5c2b97acb41ef32f9b42dd866003495911bfc6460f9c24ffea174db4797bc",
+        "size_bytes": 384
+      },
+      {
+        "path": "fixtures/cdv1-fn1-5e9d471dbf88b70e/doc-b.fodt",
+        "sha256": "7d32e72eedea926cca838fa8160605d5c5ef88df04da4c77a5ee2b6d114de701",
+        "size_bytes": 386
+      }
+    ]
+  },
+  "instance_id": "cdv1-fn1-5e9d471dbf88b70e",
+  "manifest_entry_sha256": "b59b60678bdf054540f163214753f3d6e7a9bd0275432aeb642660b8dc85b602",
+  "provenance": {
+    "fixture_sha256": "7837494e54d1fd07842880dc3b0ea4bc583891189b95a5ff79c7a1c361e2f0d6",
+    "generation_seed": 2026,
+    "generator": "swcub.production_v1",
+    "seed_role": "deterministic profile ordering only; excluded from instance identity",
+    "semantic_spec_sha256": "5e9d471dbf88b70e26b4ea054cc3ae5fe1072727da54a5aa8ceb19ea45629bec",
+    "source_code_sha256": "a1e97d04c75f6d7e1ccb6f87adffdca7fa59d7c3f9d83747279e0e85db58d1eb",
+    "source_commit": "1036de483efe0040e9fb6ba0452c0cd968c1984b"
+  },
+  "reset_metadata": {
+    "fixture_id": "cdv1-fn1-5e9d471dbf88b70e",
+    "fresh_guest_required": true,
+    "remove_prior_app_state": true,
+    "verify_fixture_hash": "7837494e54d1fd07842880dc3b0ea4bc583891189b95a5ff79c7a1c361e2f0d6",
+    "verify_state": {
+      "actors": {
+        "A": {
+          "object": "writer/doc-a/owner-line",
+          "value": "Draft: capital request"
+        },
+        "B": {
+          "object": "writer/doc-b/owner-line",
+          "value": "Pending: capital request"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "documents": [
+            "doc-a",
+            "doc-b"
+          ],
+          "target_kind": "owner line"
+        },
+        "resource": "focus_input_routing"
+      }
+    }
+  },
+  "schedule_policy_id": "writer-window-a-window-b-resume-a-v1",
+  "semantic_parameters": {
+    "domain_id": "capital_allocation",
+    "domain_schema": {
+      "entity": "capital request",
+      "field_a": "Decision",
+      "field_b": "Ledger state"
+    },
+    "layout_id": "guard_after",
+    "object_profile_id": "writer_doc_owner",
+    "object_schema": {
+      "documents": [
+        "doc-a",
+        "doc-b"
+      ],
+      "target_kind": "owner line"
+    },
+    "operation_graph": "two_writer_windows",
+    "operation_schema_revision": 1,
+    "workflow_id": "F-N1"
+  },
+  "signatures": {
+    "fixture": "7837494e54d1fd07842880dc3b0ea4bc583891189b95a5ff79c7a1c361e2f0d6",
+    "goal": "93a2ccab2b0ced6f042fc0079749caee0419fec1e81b3cdb0f6c4a4305afbb2f",
+    "semantic": "5e9d471dbf88b70e26b4ea054cc3ae5fe1072727da54a5aa8ceb19ea45629bec",
+    "structural": "108e30a74044b1c6c92346005a5346362711079dad079455df09c0630ef990eb"
+  },
+  "target_objects": {
+    "A": [
+      "writer/doc-a/owner-line"
+    ],
+    "B": [
+      "writer/doc-b/owner-line"
+    ]
+  },
+  "task_domains": {
+    "A": "Writer",
+    "B": "Writer"
+  },
+  "topology_compatibility": {
+    "ma_id": {
+      "backend_binding": "same logical workspace seed; independent desktop sessions allowed",
+      "desktop_count": 2,
+      "fixtures": "byte-identical task-relevant clones"
+    },
+    "ma_sd": {
+      "actor_bindings": "A and B share desktop",
+      "desktop_count": 1
+    },
+    "solo": {
+      "actor_bindings": "A or B",
+      "desktop_count": 1
+    }
+  },
+  "treatment_relevant_state": {
+    "family_state": "focus_input_routing",
+    "operation_graph": "two_writer_windows",
+    "shared_resource": {
+      "documents": [
+        "doc-a",
+        "doc-b"
+      ],
+      "target_kind": "owner line"
+    }
+  },
+  "validation_level": "guest_solo",
+  "workflow_id": "F-N1"
+}

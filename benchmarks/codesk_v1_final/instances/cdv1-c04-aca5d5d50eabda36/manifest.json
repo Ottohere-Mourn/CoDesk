@@ -1,0 +1,328 @@
+{
+  "actor_goals": [
+    {
+      "actor_id": "A",
+      "expected_value": "=HYPERLINK(\"https://example.org/codesk/warehouse_reconciliation/SKU-7316\",\"Open warehouse lot\")",
+      "goal": "Create a Calc hyperlink in calc/C2 with the assigned Browser URL and exact visible label warehouse lot.",
+      "initial_value": "",
+      "operation": "update calc/C2",
+      "target_objects": [
+        "calc/C2"
+      ],
+      "task_domain": "Calc"
+    },
+    {
+      "actor_id": "B",
+      "expected_value": "[[\"Reconciled-1.1\",\"Reconciled-1.2\"],[\"Reconciled-2.1\",\"Reconciled-2.2\"]]",
+      "goal": "Copy the assigned Calc rectangle to its paired destination, preserving source and guards. Target calc/C8:D9; initial '__EMPTY_RANGE__'; required final '[[\"Reconciled-1.1\",\"Reconciled-1.2\"],[\"Reconciled-2.1\",\"Reconciled-2.2\"]]'.",
+      "initial_value": "__EMPTY_RANGE__",
+      "operation": "update calc/C8:D9",
+      "target_objects": [
+        "calc/C8:D9"
+      ],
+      "task_domain": "Calc"
+    }
+  ],
+  "benchmark_version": "codesk-v1.0",
+  "evaluator": {
+    "actor_paths": {
+      "A": "actors.A.value",
+      "B": "actors.B.value"
+    },
+    "adapter": "codesk_exact_state_v1",
+    "condition_semantics": {
+      "ma_id": "score each actor on equivalent independent desktop fixture",
+      "ma_sd": "score both actor goals and shared-state integrity",
+      "solo": "score selected actor; require inactive target and guards unchanged"
+    },
+    "expected_state": {
+      "actors": {
+        "A": {
+          "object": "calc/C2",
+          "value": "=HYPERLINK(\"https://example.org/codesk/warehouse_reconciliation/SKU-7316\",\"Open warehouse lot\")"
+        },
+        "B": {
+          "object": "calc/C8:D9",
+          "value": "[[\"Reconciled-1.1\",\"Reconciled-1.2\"],[\"Reconciled-2.1\",\"Reconciled-2.2\"]]"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "destination_range": "C8:D9",
+          "operation_kind": "url_hyperlink_range_copy",
+          "operation_pair": [
+            "url_copy_hyperlink_insert",
+            "range_copy_paste"
+          ],
+          "profile_label": "link_policy",
+          "range": [
+            "A5:B6",
+            "A8:B9"
+          ],
+          "shape": [
+            2,
+            2
+          ]
+        },
+        "resource": "clipboard_state"
+      }
+    },
+    "initial_state": {
+      "actors": {
+        "A": {
+          "object": "calc/C2",
+          "value": ""
+        },
+        "B": {
+          "object": "calc/C8:D9",
+          "value": "__EMPTY_RANGE__"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "destination_range": "C8:D9",
+          "operation_kind": "url_hyperlink_range_copy",
+          "operation_pair": [
+            "url_copy_hyperlink_insert",
+            "range_copy_paste"
+          ],
+          "profile_label": "link_policy",
+          "range": [
+            "A5:B6",
+            "A8:B9"
+          ],
+          "shape": [
+            2,
+            2
+          ]
+        },
+        "resource": "clipboard_state"
+      }
+    },
+    "invariants": [
+      {
+        "equals": "PRESERVE",
+        "path": "actors.guards.main"
+      }
+    ],
+    "operation_contract": {
+      "A": "browser/url-to-calc-hyperlink",
+      "B": "calc/range-copy",
+      "evidence_required": true,
+      "operation_graph": "browser_url_copy_to_calc_hyperlink_formula_and_calc_range_copy",
+      "shared_state": "X11 clipboard selection"
+    },
+    "schedule_policy_id": "browser-url-calc-range-copy-confirm-v1"
+  },
+  "evaluator_path": "evaluators/cdv1-c04-aca5d5d50eabda36.json",
+  "evaluator_sha256": "c825c72cf6d4c42cba0954da777a94f7745598ae16b6f170be3a17e48753cab0",
+  "family": "clipboard_state",
+  "fixture_files": [
+    {
+      "path": "fixtures/cdv1-c04-aca5d5d50eabda36/browser-events.jsonl",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size_bytes": 0
+    },
+    {
+      "path": "fixtures/cdv1-c04-aca5d5d50eabda36/browser-initial-state.json",
+      "sha256": "011b0bf5036895675cf783f57a5921622bfb5d9573910450f35f2d56dbb22554",
+      "size_bytes": 208
+    },
+    {
+      "path": "fixtures/cdv1-c04-aca5d5d50eabda36/browser-server.py",
+      "sha256": "47c844b09fff00c430b63b619dfd08f8d725d9e4bc50fa085ec54698ea1e0399",
+      "size_bytes": 3224
+    },
+    {
+      "path": "fixtures/cdv1-c04-aca5d5d50eabda36/workbook.fods",
+      "sha256": "8b274a87bdc641ce8a34700d7029af5d80b770589fd5d3779f55790a42b52a58",
+      "size_bytes": 14749
+    },
+    {
+      "path": "fixtures/cdv1-c04-aca5d5d50eabda36/workspace.html",
+      "sha256": "97245c1be8f08938936dcc942c99189a6ff43f87ccd185499441d1f0854d0f54",
+      "size_bytes": 695
+    }
+  ],
+  "generation_seed": 2026,
+  "initial_fixture_spec": {
+    "application_set": [
+      "Browser",
+      "Calc"
+    ],
+    "fixture_profile": "link_policy",
+    "layout_id": "guard_after",
+    "public_assets": [
+      {
+        "path": "fixtures/cdv1-c04-aca5d5d50eabda36/browser-events.jsonl",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size_bytes": 0
+      },
+      {
+        "path": "fixtures/cdv1-c04-aca5d5d50eabda36/browser-initial-state.json",
+        "sha256": "011b0bf5036895675cf783f57a5921622bfb5d9573910450f35f2d56dbb22554",
+        "size_bytes": 208
+      },
+      {
+        "path": "fixtures/cdv1-c04-aca5d5d50eabda36/browser-server.py",
+        "sha256": "47c844b09fff00c430b63b619dfd08f8d725d9e4bc50fa085ec54698ea1e0399",
+        "size_bytes": 3224
+      },
+      {
+        "path": "fixtures/cdv1-c04-aca5d5d50eabda36/workbook.fods",
+        "sha256": "8b274a87bdc641ce8a34700d7029af5d80b770589fd5d3779f55790a42b52a58",
+        "size_bytes": 14749
+      },
+      {
+        "path": "fixtures/cdv1-c04-aca5d5d50eabda36/workspace.html",
+        "sha256": "97245c1be8f08938936dcc942c99189a6ff43f87ccd185499441d1f0854d0f54",
+        "size_bytes": 695
+      }
+    ]
+  },
+  "instance_id": "cdv1-c04-aca5d5d50eabda36",
+  "manifest_entry_sha256": "a79e3eb12a3ee187c678a1eb6ebf4d992997b7eb228dce7725c9641a8a07e5fa",
+  "provenance": {
+    "fixture_sha256": "699adb4bea22d58834a190dfaa480545b9f867a282cd097ea2e91f0621564b57",
+    "generation_seed": 2026,
+    "generator": "swcub.production_v1",
+    "seed_role": "deterministic profile ordering only; excluded from instance identity",
+    "semantic_spec_sha256": "aca5d5d50eabda36d5cfd1e84ddeb6539eba9606f04da08181c31d3fbad49d42",
+    "source_code_sha256": "a1e97d04c75f6d7e1ccb6f87adffdca7fa59d7c3f9d83747279e0e85db58d1eb",
+    "source_commit": "1036de483efe0040e9fb6ba0452c0cd968c1984b"
+  },
+  "reset_metadata": {
+    "fixture_id": "cdv1-c04-aca5d5d50eabda36",
+    "fresh_guest_required": true,
+    "remove_prior_app_state": true,
+    "verify_fixture_hash": "699adb4bea22d58834a190dfaa480545b9f867a282cd097ea2e91f0621564b57",
+    "verify_state": {
+      "actors": {
+        "A": {
+          "object": "calc/C2",
+          "value": ""
+        },
+        "B": {
+          "object": "calc/C8:D9",
+          "value": "__EMPTY_RANGE__"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "destination_range": "C8:D9",
+          "operation_kind": "url_hyperlink_range_copy",
+          "operation_pair": [
+            "url_copy_hyperlink_insert",
+            "range_copy_paste"
+          ],
+          "profile_label": "link_policy",
+          "range": [
+            "A5:B6",
+            "A8:B9"
+          ],
+          "shape": [
+            2,
+            2
+          ]
+        },
+        "resource": "clipboard_state"
+      }
+    }
+  },
+  "schedule_policy_id": "browser-url-calc-range-copy-confirm-v1",
+  "semantic_parameters": {
+    "domain_id": "warehouse_reconciliation",
+    "domain_schema": {
+      "entity": "warehouse lot",
+      "field_a": "Reconciliation",
+      "field_b": "Count status"
+    },
+    "layout_id": "guard_after",
+    "object_profile_id": "link_policy",
+    "object_schema": {
+      "destination_range": "C8:D9",
+      "operation_kind": "url_hyperlink_range_copy",
+      "operation_pair": [
+        "url_copy_hyperlink_insert",
+        "range_copy_paste"
+      ],
+      "profile_label": "link_policy",
+      "range": [
+        "A5:B6",
+        "A8:B9"
+      ],
+      "shape": [
+        2,
+        2
+      ]
+    },
+    "operation_graph": "browser_url_copy_to_calc_hyperlink_formula_and_calc_range_copy",
+    "operation_schema_revision": 1,
+    "workflow_id": "C-04"
+  },
+  "signatures": {
+    "fixture": "699adb4bea22d58834a190dfaa480545b9f867a282cd097ea2e91f0621564b57",
+    "goal": "d3a0b91d43e3c035662d1ac1e314450125ae72702e2571238fdc0ef54ce9d729",
+    "semantic": "aca5d5d50eabda36d5cfd1e84ddeb6539eba9606f04da08181c31d3fbad49d42",
+    "structural": "abc3f33789972c869076169a32a0f6daf6dc141fa1055df41cfa1d9b5a021c70"
+  },
+  "target_objects": {
+    "A": [
+      "calc/C2"
+    ],
+    "B": [
+      "calc/C8:D9"
+    ]
+  },
+  "task_domains": {
+    "A": "Calc",
+    "B": "Calc"
+  },
+  "topology_compatibility": {
+    "ma_id": {
+      "backend_binding": "same logical workspace seed; independent desktop sessions allowed",
+      "desktop_count": 2,
+      "fixtures": "byte-identical task-relevant clones"
+    },
+    "ma_sd": {
+      "actor_bindings": "A and B share desktop",
+      "desktop_count": 1
+    },
+    "solo": {
+      "actor_bindings": "A or B",
+      "desktop_count": 1
+    }
+  },
+  "treatment_relevant_state": {
+    "family_state": "clipboard_state",
+    "operation_graph": "browser_url_copy_to_calc_hyperlink_formula_and_calc_range_copy",
+    "shared_resource": {
+      "destination_range": "C8:D9",
+      "operation_kind": "url_hyperlink_range_copy",
+      "operation_pair": [
+        "url_copy_hyperlink_insert",
+        "range_copy_paste"
+      ],
+      "profile_label": "link_policy",
+      "range": [
+        "A5:B6",
+        "A8:B9"
+      ],
+      "shape": [
+        2,
+        2
+      ]
+    }
+  },
+  "validation_level": "offline_operation_template",
+  "workflow_id": "C-04"
+}

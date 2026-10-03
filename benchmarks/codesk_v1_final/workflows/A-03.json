@@ -1,0 +1,114 @@
+{
+  "description": "Edit a target on each sheet while another actor changes the active sheet in the same Calc window.",
+  "family": "application_context",
+  "goal_a": "Enter the assigned value in the named cell on Sheet A and preserve its guard cells.",
+  "goal_b": "Enter the assigned value in the named cell on Sheet B and preserve its guard cells.",
+  "operation_graph": "calc_sheet_switch_and_sheet_scoped_edit",
+  "required_apps": [
+    "Calc",
+    "Calc"
+  ],
+  "runtime_validation_incomplete": true,
+  "schedule_policy_id": "calc-sheet-context-change-observe-resume-v1",
+  "semantic_parameter_schema": {
+    "actor_target_disjoint": true,
+    "domain_fields": [
+      "entity",
+      "field_a",
+      "field_b",
+      "a_status",
+      "b_status"
+    ],
+    "identity_excludes": [
+      "generation_seed",
+      "repeat",
+      "condition",
+      "model",
+      "window_coordinates"
+    ],
+    "layout_fields": [
+      "guard_placement",
+      "field_order",
+      "fixture_layout"
+    ],
+    "no_op_goals_allowed": false,
+    "object_profiles": [
+      {
+        "a": "calc/SheetA.B2",
+        "b": "calc/SheetB.C3",
+        "id": "sheet_review",
+        "schema": {
+          "operation_kind": "calc_sheet_context",
+          "operation_pair": [
+            "sheet_scoped_cell_edit",
+            "sheet_scoped_cell_edit"
+          ],
+          "profile_label": "sheet_review"
+        }
+      },
+      {
+        "a": "calc/SheetA.C2",
+        "b": "calc/SheetB.D3",
+        "id": "sheet_inventory",
+        "schema": {
+          "operation_kind": "calc_sheet_context",
+          "operation_pair": [
+            "sheet_scoped_cell_edit",
+            "sheet_scoped_cell_edit"
+          ],
+          "profile_label": "sheet_inventory"
+        }
+      },
+      {
+        "a": "calc/SheetA.D2",
+        "b": "calc/SheetB.B4",
+        "id": "sheet_safety",
+        "schema": {
+          "operation_kind": "calc_sheet_context",
+          "operation_pair": [
+            "sheet_scoped_cell_edit",
+            "sheet_scoped_cell_edit"
+          ],
+          "profile_label": "sheet_safety"
+        }
+      },
+      {
+        "a": "calc/SheetA.B3",
+        "b": "calc/SheetB.C4",
+        "id": "sheet_release",
+        "schema": {
+          "operation_kind": "calc_sheet_context",
+          "operation_pair": [
+            "sheet_scoped_cell_edit",
+            "sheet_scoped_cell_edit"
+          ],
+          "profile_label": "sheet_release"
+        }
+      },
+      {
+        "a": "calc/SheetA.C3",
+        "b": "calc/SheetB.D4",
+        "id": "sheet_budget",
+        "schema": {
+          "operation_kind": "calc_sheet_context",
+          "operation_pair": [
+            "sheet_scoped_cell_edit",
+            "sheet_scoped_cell_edit"
+          ],
+          "profile_label": "sheet_budget"
+        }
+      }
+    ],
+    "operation_schema": {
+      "A": "calc/sheet-a/cell",
+      "B": "calc/sheet-b/cell",
+      "shared": "active worksheet context"
+    }
+  },
+  "task_domains": [
+    "Calc",
+    "Calc"
+  ],
+  "validation_level": "offline_operation_template",
+  "workflow_id": "A-03"
+}

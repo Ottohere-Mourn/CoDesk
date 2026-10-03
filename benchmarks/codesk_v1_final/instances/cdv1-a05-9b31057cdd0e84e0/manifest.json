@@ -1,0 +1,243 @@
+{
+  "actor_goals": [
+    {
+      "actor_id": "A",
+      "expected_value": "Final section A CAP-4821",
+      "goal": "Use Navigator to update the assigned field in section A only. Target writer/section[Release]/paragraph[1]; initial 'Draft section A CAP-4821'; required final 'Final section A CAP-4821'.",
+      "initial_value": "Draft section A CAP-4821",
+      "operation": "update writer/section[Release]/paragraph[1]",
+      "target_objects": [
+        "writer/section[Release]/paragraph[1]"
+      ],
+      "task_domain": "Writer"
+    },
+    {
+      "actor_id": "B",
+      "expected_value": "Final section B CAP-4821",
+      "goal": "Use Navigator to update the assigned field in section B only. Target writer/section[Rollback]/paragraph[1]; initial 'Draft section B CAP-4821'; required final 'Final section B CAP-4821'.",
+      "initial_value": "Draft section B CAP-4821",
+      "operation": "update writer/section[Rollback]/paragraph[1]",
+      "target_objects": [
+        "writer/section[Rollback]/paragraph[1]"
+      ],
+      "task_domain": "Writer"
+    }
+  ],
+  "benchmark_version": "codesk-v1.0",
+  "evaluator": {
+    "actor_paths": {
+      "A": "actors.A.value",
+      "B": "actors.B.value"
+    },
+    "adapter": "codesk_exact_state_v1",
+    "condition_semantics": {
+      "ma_id": "score each actor on equivalent independent desktop fixture",
+      "ma_sd": "score both actor goals and shared-state integrity",
+      "solo": "score selected actor; require inactive target and guards unchanged"
+    },
+    "expected_state": {
+      "actors": {
+        "A": {
+          "object": "writer/section[Release]/paragraph[1]",
+          "value": "Final section A CAP-4821"
+        },
+        "B": {
+          "object": "writer/section[Rollback]/paragraph[1]",
+          "value": "Final section B CAP-4821"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "operation_kind": "writer_navigator_context",
+          "operation_pair": [
+            "navigator_section_edit",
+            "navigator_section_edit"
+          ],
+          "profile_label": "section_release"
+        },
+        "resource": "application_context"
+      }
+    },
+    "initial_state": {
+      "actors": {
+        "A": {
+          "object": "writer/section[Release]/paragraph[1]",
+          "value": "Draft section A CAP-4821"
+        },
+        "B": {
+          "object": "writer/section[Rollback]/paragraph[1]",
+          "value": "Draft section B CAP-4821"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "operation_kind": "writer_navigator_context",
+          "operation_pair": [
+            "navigator_section_edit",
+            "navigator_section_edit"
+          ],
+          "profile_label": "section_release"
+        },
+        "resource": "application_context"
+      }
+    },
+    "invariants": [
+      {
+        "equals": "PRESERVE",
+        "path": "actors.guards.main"
+      }
+    ],
+    "operation_contract": {
+      "A": "writer/section-a/field",
+      "B": "writer/section-b/field",
+      "evidence_required": true,
+      "operation_graph": "writer_document_navigator_section_context",
+      "shared_state": "active document section/navigation context"
+    },
+    "schedule_policy_id": "writer-section-context-change-resume-v1"
+  },
+  "evaluator_path": "evaluators/cdv1-a05-9b31057cdd0e84e0.json",
+  "evaluator_sha256": "65b257241923125ae54d31857e37d7c7696b2897626c724c6deb2d9a50497d45",
+  "family": "application_context",
+  "fixture_files": [
+    {
+      "path": "fixtures/cdv1-a05-9b31057cdd0e84e0/document.fodt",
+      "sha256": "005700d57f4963ab17c22ada3c818332a6be4faa289762651e590aa08cdbf023",
+      "size_bytes": 525
+    }
+  ],
+  "generation_seed": 2026,
+  "initial_fixture_spec": {
+    "application_set": [
+      "Writer",
+      "Writer"
+    ],
+    "fixture_profile": "section_release",
+    "layout_id": "guard_after",
+    "public_assets": [
+      {
+        "path": "fixtures/cdv1-a05-9b31057cdd0e84e0/document.fodt",
+        "sha256": "005700d57f4963ab17c22ada3c818332a6be4faa289762651e590aa08cdbf023",
+        "size_bytes": 525
+      }
+    ]
+  },
+  "instance_id": "cdv1-a05-9b31057cdd0e84e0",
+  "manifest_entry_sha256": "df0b25f77f14aa670a78fd5ded86fc3107292de07a99ec1a38d97cf19914461c",
+  "provenance": {
+    "fixture_sha256": "c38851740fe1f425a122df121dfb38918f381f859a41f4109e1595d2e830494e",
+    "generation_seed": 2026,
+    "generator": "swcub.production_v1",
+    "seed_role": "deterministic profile ordering only; excluded from instance identity",
+    "semantic_spec_sha256": "9b31057cdd0e84e06b1c14a58add85d85eeca39cc5c0c25302154caa019cfa60",
+    "source_code_sha256": "a1e97d04c75f6d7e1ccb6f87adffdca7fa59d7c3f9d83747279e0e85db58d1eb",
+    "source_commit": "1036de483efe0040e9fb6ba0452c0cd968c1984b"
+  },
+  "reset_metadata": {
+    "fixture_id": "cdv1-a05-9b31057cdd0e84e0",
+    "fresh_guest_required": true,
+    "remove_prior_app_state": true,
+    "verify_fixture_hash": "c38851740fe1f425a122df121dfb38918f381f859a41f4109e1595d2e830494e",
+    "verify_state": {
+      "actors": {
+        "A": {
+          "object": "writer/section[Release]/paragraph[1]",
+          "value": "Draft section A CAP-4821"
+        },
+        "B": {
+          "object": "writer/section[Rollback]/paragraph[1]",
+          "value": "Draft section B CAP-4821"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "initial": {
+          "operation_kind": "writer_navigator_context",
+          "operation_pair": [
+            "navigator_section_edit",
+            "navigator_section_edit"
+          ],
+          "profile_label": "section_release"
+        },
+        "resource": "application_context"
+      }
+    }
+  },
+  "schedule_policy_id": "writer-section-context-change-resume-v1",
+  "semantic_parameters": {
+    "domain_id": "capital_allocation",
+    "domain_schema": {
+      "entity": "capital request",
+      "field_a": "Decision",
+      "field_b": "Ledger state"
+    },
+    "layout_id": "guard_after",
+    "object_profile_id": "section_release",
+    "object_schema": {
+      "operation_kind": "writer_navigator_context",
+      "operation_pair": [
+        "navigator_section_edit",
+        "navigator_section_edit"
+      ],
+      "profile_label": "section_release"
+    },
+    "operation_graph": "writer_document_navigator_section_context",
+    "operation_schema_revision": 1,
+    "workflow_id": "A-05"
+  },
+  "signatures": {
+    "fixture": "c38851740fe1f425a122df121dfb38918f381f859a41f4109e1595d2e830494e",
+    "goal": "751faa8b56018531dbbe803151ef8ba9440da73bf68e94069dc0371a15fbc16d",
+    "semantic": "9b31057cdd0e84e06b1c14a58add85d85eeca39cc5c0c25302154caa019cfa60",
+    "structural": "b5fe168e412e033c26c6524e7622d2a390761fc7bad4ace5b2de2eb5c969821b"
+  },
+  "target_objects": {
+    "A": [
+      "writer/section[Release]/paragraph[1]"
+    ],
+    "B": [
+      "writer/section[Rollback]/paragraph[1]"
+    ]
+  },
+  "task_domains": {
+    "A": "Writer",
+    "B": "Writer"
+  },
+  "topology_compatibility": {
+    "ma_id": {
+      "backend_binding": "same logical workspace seed; independent desktop sessions allowed",
+      "desktop_count": 2,
+      "fixtures": "byte-identical task-relevant clones"
+    },
+    "ma_sd": {
+      "actor_bindings": "A and B share desktop",
+      "desktop_count": 1
+    },
+    "solo": {
+      "actor_bindings": "A or B",
+      "desktop_count": 1
+    }
+  },
+  "treatment_relevant_state": {
+    "family_state": "application_context",
+    "operation_graph": "writer_document_navigator_section_context",
+    "shared_resource": {
+      "operation_kind": "writer_navigator_context",
+      "operation_pair": [
+        "navigator_section_edit",
+        "navigator_section_edit"
+      ],
+      "profile_label": "section_release"
+    }
+  },
+  "validation_level": "offline_operation_template",
+  "workflow_id": "A-05"
+}
