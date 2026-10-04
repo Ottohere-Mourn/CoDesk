@@ -70,7 +70,21 @@ python scripts/run_benchmark.py \
 
 To resume the same result root using the implemented `--resume` flag, rerun the command with `--resume` added before `--execute`. The runner skips terminal statuses and tracks bounded `INVALID_INFRA` retries according to `--max-infra-retries`. Confirm the plan and result root before any live run.
 
-A full 600-instance × topology evaluation is intentionally not given as a ready-to-launch command: the 30-workflow real Guest gate and resource plan are outstanding.
+### Full V1 suite invocation
+
+**PENDING REAL-GUEST VALIDATION. Do not launch until the 5-family/30-workflow smoke, runtime binding review, and resource plan pass.** The current CLI accepts this full-suite shape; it expands the 600 fixed instances across all three topologies at one repeat each and can create a large run tree:
+
+```bash
+python scripts/run_benchmark.py \
+  --manifest benchmarks/codesk_v1_final/manifest.jsonl \
+  --suite-root benchmarks/codesk_v1_final \
+  --topology solo --topology ma_id --topology ma_sd \
+  --model qwen3vl --repeats 1 \
+  --results runs/v1-qwen --plan runs/v1-qwen/plan.jsonl \
+  --execute --backend a6000
+```
+
+This command is documented from the parser and is not a claim that every workflow has a validated live executor. Stage the suite through the bounded gates above before considering this run.
 
 ## 6. Aggregate results
 
