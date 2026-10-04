@@ -104,4 +104,4 @@ No item below was implemented in this audit.
 
 ## Reproduction data
 
-The episode set and aggregate results are listed in [`TRACK_A_RESULTS.md`](TRACK_A_RESULTS.md). Source inspected for this audit: `scripts/run_track_a_v1.py`, `swcub/osworld_adapter.py`, `swcub/core.py`, `swcub/tasks/track_a.py`, and the pinned OSWorld V2.1 `desktop_env/desktop_env.py` and Docker provider. No pipeline or benchmark code was changed.
+The episode set and aggregate results are listed in [`TRACK_A_RESULTS.md`](../experiments/TRACK_A_RESULTS.md). Source inspected for this audit: `scripts/run_track_a_v1.py`, `swcub/osworld_adapter.py`, `swcub/core.py`, `swcub/tasks/track_a.py`, and the pinned OSWorld V2.1 `desktop_env/desktop_env.py` and Docker provider. No pipeline or benchmark code was changed.

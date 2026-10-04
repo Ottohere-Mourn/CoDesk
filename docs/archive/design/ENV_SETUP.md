@@ -5,7 +5,7 @@ This setup adds a real OSWorld V2.1 Ubuntu Guest to the existing V0 scripted wor
 ## Pinned inputs and storage
 
 - OSWorld-V2 source tag: `osworld-v2.1`, commit `3d778a3c9a34a079316f70df023b166700445792`.
-- Release manifest: [`outputs/osworld-v2.1/environment/release_manifest.json`](outputs/osworld-v2.1/environment/release_manifest.json).
+- Release manifest: [`outputs/osworld-v2.1/environment/release_manifest.json`](../../../outputs/osworld-v2.1/environment/release_manifest.json).
 - Official Guest archive: `osworld-v2-ubuntu-x86.qcow2.zip`, 14,891,811,084 bytes, SHA-256 `14b08aa7ba6c023ecb91d46de8df5de32af4d1d6bd75ea925519caf9677fc8b3`.
 - Extracted Guest: `/mnt/raid1/mjh/Projects/_deps/osworld-v2.1/docker_vm_data/osworld-v2-ubuntu-x86.qcow2` (50 GiB virtual size; 13.9 GiB allocated; `qemu-img` reports `corrupt: false`).
 - OSWorld checkout: `/home/mjh/Projects/_deps/OSWorld-V2-osworld-v2.1`; its `docker_vm_data` points to the RAID1 cache.
@@ -68,11 +68,11 @@ The focus setup opens two real GNOME Terminal windows at fixed positions, each r
 ## Verified execution
 
 - Official OSWorld `quickstart.py` ran against the pinned Guest: reset, visible screenshot/API startup, PyAutoGUI right-click, successful action and close all completed.
-- Real shared CSV report: [`outputs/osworld-v2.1/shared-csv/report.json`](outputs/osworld-v2.1/shared-csv/report.json). Both actors completed in environment `osworld-7313b75158b0`; the report records the same Guest container ID for the shared task. Exact expected rows passed with no missing/duplicate rows.
-- Independent repeat report: [`outputs/osworld-v2.1/shared-csv-repeat-02/report.json`](outputs/osworld-v2.1/shared-csv-repeat-02/report.json) records the same final CSV SHA-256 from a separate Guest/container.
-- Real stale-overwrite negative control: [`outputs/osworld-v2.1/stale-overwrite/report.json`](outputs/osworld-v2.1/stale-overwrite/report.json) shows CLI row missing after the GUI actor commits its stale snapshot. The evaluator correctly rejects joint completion; the control succeeds by detecting the conflict and the subsequent reset passes.
-- Real GUI+Human Replay focus: [`focus-gui-solo`](outputs/osworld-v2.1/focus-gui-solo/report.json), [`focus-human-solo`](outputs/osworld-v2.1/focus-human-solo/report.json), [`focus-recovery-attempt-01`](outputs/osworld-v2.1/focus-recovery-attempt-01/report.json), and [`focus-stale-attempt-01`](outputs/osworld-v2.1/focus-stale-attempt-01/report.json) preserve both individual goals, joint recovery and a negative control. The focus evaluator reads exact file state; screenshots show both real windows and the misdirected text in the stale control.
-- Actual Guest screenshots and intermediate GUI observations are under [`outputs/osworld-v2.1/shared-csv/`](outputs/osworld-v2.1/shared-csv/); the actor-attributed JSONL trace is `events.jsonl`.
+- Real shared CSV report: [`outputs/osworld-v2.1/shared-csv/report.json`](../../../outputs/osworld-v2.1/shared-csv/report.json). Both actors completed in environment `osworld-7313b75158b0`; the report records the same Guest container ID for the shared task. Exact expected rows passed with no missing/duplicate rows.
+- Independent repeat report: [`outputs/osworld-v2.1/shared-csv-repeat-02/report.json`](../../../outputs/osworld-v2.1/shared-csv-repeat-02/report.json) records the same final CSV SHA-256 from a separate Guest/container.
+- Real stale-overwrite negative control: [`outputs/osworld-v2.1/stale-overwrite/report.json`](../../../outputs/osworld-v2.1/stale-overwrite/report.json) shows CLI row missing after the GUI actor commits its stale snapshot. The evaluator correctly rejects joint completion; the control succeeds by detecting the conflict and the subsequent reset passes.
+- Real GUI+Human Replay focus: [`focus-gui-solo`](../../../outputs/osworld-v2.1/focus-gui-solo/report.json), [`focus-human-solo`](../../../outputs/osworld-v2.1/focus-human-solo/report.json), [`focus-recovery-attempt-01`](../../../outputs/osworld-v2.1/focus-recovery-attempt-01/report.json), and [`focus-stale-attempt-01`](../../../outputs/osworld-v2.1/focus-stale-attempt-01/report.json) preserve both individual goals, joint recovery and a negative control. The focus evaluator reads exact file state; screenshots show both real windows and the misdirected text in the stale control.
+- Actual Guest screenshots and intermediate GUI observations are under [`outputs/osworld-v2.1/shared-csv/`](../../../outputs/osworld-v2.1/shared-csv); the actor-attributed JSONL trace is `events.jsonl`.
 - Reset check passed: the fresh Guest had a different container ID and `/tmp/swcub_shared.csv` was absent.
 - Earlier failed GUI attempts and the upstream readiness timeout are retained in `shared-csv-attempt-01` through `shared-csv-attempt-04`; they are not counted as passes.
 

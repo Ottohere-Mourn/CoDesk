@@ -6,8 +6,8 @@ Runner V1 expands a frozen experiment config into an ordered episode queue, runs
 
 The current prototype has two entry points:
 
-- [`scripts/run_codesk_experiment.py`](scripts/run_codesk_experiment.py): JSON-configured coordinator, queue, Guest-slot allocation, worker launch, result/hash verification, and aggregation.
-- [`scripts/run_track_a_v1.py`](scripts/run_track_a_v1.py): Track A V1 episode-family implementation: Guest lifecycle, actor bindings/order, evaluator, reset, event log, and provenance.
+- [`scripts/run_codesk_experiment.py`](../../../scripts/run_codesk_experiment.py): JSON-configured coordinator, queue, Guest-slot allocation, worker launch, result/hash verification, and aggregation.
+- [`scripts/run_track_a_v1.py`](../../../scripts/run_track_a_v1.py): Track A V1 episode-family implementation: Guest lifecycle, actor bindings/order, evaluator, reset, event log, and provenance.
 
 The coordinator currently registers `track_a_v1` only. Its family dispatch is intentionally a small condition-to-existing-runner mapping, not yet a general plugin API. The existing fixed pilot wrapper remains useful for paired sequential/two-worker throughput measurements.
 
@@ -28,7 +28,7 @@ aggregator ── ordered episode table, outcomes, reset, integrity, health
 
 ## Configuration contract
 
-The checked-in minimal example is [`configs/track_a_smoke_v1.json`](configs/track_a_smoke_v1.json). Current config keys:
+The checked-in minimal example is [`configs/track_a_smoke_v1.json`](../../../configs/track_a_smoke_v1.json). Current config keys:
 
 ```json
 {

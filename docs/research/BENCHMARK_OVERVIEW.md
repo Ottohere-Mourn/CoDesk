@@ -44,4 +44,4 @@ These are planned analyses; no formal results are asserted here.
 3. **Multi-agent/model leaderboard:** matched protocols and per-model/per-family results, with invalid infrastructure episodes reported separately.
 4. **Actor-count scaling:** a small subset comparing increasing actor counts after the core two-condition protocol is validated.
 
-For causal interpretation, task version, backend, actor goals, schedule, budgets, application state, evaluator, and reset must remain fixed between MA-ID and MA-SD. See [CODESK_PROTOCOL_V1.md](../../CODESK_PROTOCOL_V1.md) and [EVALUATION.md](../../docs/EVALUATION.md).
+For causal interpretation, task version, backend, actor goals, schedule, budgets, application state, evaluator, and reset must remain fixed between MA-ID and MA-SD. See [CODESK_PROTOCOL_V1.md](CODESK_PROTOCOL_V1.md) and [EVALUATION.md](../EVALUATION.md).

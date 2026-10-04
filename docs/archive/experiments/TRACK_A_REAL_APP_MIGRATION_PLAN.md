@@ -2,7 +2,7 @@
 
 ## Current position
 
-The real-app prototype already exists as `OFFICE-GUI-GUI-001` in [`tasks/instances/office_writer_calc.json`](tasks/instances/office_writer_calc.json), with Writer/Calc scripted actors, a Flat ODF evaluator, and OSWorld V2.1 runner. Historical real-Guest results cover Writer Solo, Calc Solo, sequential shared, naive interleaving, and focus-aware interleaving. Preserve those artifacts and evaluator predicates.
+The real-app prototype already exists as `OFFICE-GUI-GUI-001` in [`tasks/instances/office_writer_calc.json`](../../../tasks/instances/office_writer_calc.json), with Writer/Calc scripted actors, a Flat ODF evaluator, and OSWorld V2.1 runner. Historical real-Guest results cover Writer Solo, Calc Solo, sequential shared, naive interleaving, and focus-aware interleaving. Preserve those artifacts and evaluator predicates.
 
 The current night's Track A stability regression passed with two parallel MA-SD episodes, but that does not by itself validate the office runner. This turn routes the office runner through the same screenshot-plus-accessibility Guest readiness check and adds programmatic focus/input event summaries. Historical office reports remain unchanged.
 

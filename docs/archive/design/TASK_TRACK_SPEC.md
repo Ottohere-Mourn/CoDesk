@@ -1,6 +1,6 @@
 # CoDesk V1 Task Track Specification
 
-This document defines the three V1 tracks under [`CODESK_PROTOCOL_V1.md`](CODESK_PROTOCOL_V1.md). Status labels mean:
+This document defines the three V1 tracks under [`CODESK_PROTOCOL_V1.md`](../../research/CODESK_PROTOCOL_V1.md). Status labels mean:
 
 - **Core:** required in the compact V1 evaluation; an existing validated anchor may be reused without changing its task definition or evaluator.
 - **Extension:** belongs to the benchmark scope, but requires a new task specification and scripted validation before inclusion in a model matrix.

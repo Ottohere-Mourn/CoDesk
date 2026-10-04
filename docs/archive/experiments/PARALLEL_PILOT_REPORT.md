@@ -4,7 +4,7 @@
 
 This pilot compares the existing scripted Track A `ma_sd` episode under sequential execution and two independent worker processes. Both modes ran the same two repeat indices (1 and 2), with task version `1.0.0`, the existing evaluator, and the unchanged actor schedule `document_actor → chat_actor → document_actor`. No model was used. Each job had a unique run ID and artifact root; the workers created independent OSWorld V2.1 Guest containers. The coordinator did not alter the task, actor ordering, or evaluator.
 
-Coordinator: [`scripts/run_track_a_parallel_pilot.py`](scripts/run_track_a_parallel_pilot.py)
+Coordinator: [`scripts/run_track_a_parallel_pilot.py`](../../../scripts/run_track_a_parallel_pilot.py)
 
 Reproduction command:
 

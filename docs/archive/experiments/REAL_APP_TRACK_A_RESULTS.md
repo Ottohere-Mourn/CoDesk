@@ -2,7 +2,7 @@
 
 ## Protocol
 
-Task `CODESK-TA-OFFICE-001` version `1.0.0`, pinned OSWorld V2.1 Guest and LibreOffice 7.3.7.2. Scripted actors only; no model was loaded or run. The formal run configuration is [`configs/writer_calc_v1_validation.json`](configs/writer_calc_v1_validation.json): five repeats each for paired Solo, MA-ID, and MA-SD; two workers; four Guest slots; 15-second startup stagger. Artifacts are written to `/mnt/raid1/mjh/CoDesk-V1-artifacts/real-app-track-a/writer-calc-v1-20260929/`.
+Task `CODESK-TA-OFFICE-001` version `1.0.0`, pinned OSWorld V2.1 Guest and LibreOffice 7.3.7.2. Scripted actors only; no model was loaded or run. The formal run configuration is [`configs/writer_calc_v1_validation.json`](../../../configs/writer_calc_v1_validation.json): five repeats each for paired Solo, MA-ID, and MA-SD; two workers; four Guest slots; 15-second startup stagger. Artifacts are written to `/mnt/raid1/mjh/CoDesk-V1-artifacts/real-app-track-a/writer-calc-v1-20260929/`.
 
 Paired Solo consists of two independent single-actor Guest controls within each repeat: Writer alone on `writer_desktop`, Calc alone on `calc_desktop`. MA-ID runs both actors on separate Guests. MA-SD runs both on the same Guest using `writer_actor → calc_actor → writer_actor`.
 

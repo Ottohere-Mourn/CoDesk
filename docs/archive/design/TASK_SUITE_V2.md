@@ -9,7 +9,7 @@ V2 contains two mechanism-focused tasks and eight validated real-Guest episodes.
 | `SWCUB-FOCUS-ROUTING-001` | GUI control contention over one desktop's active window and keyboard focus | GUI writes `Approved` to Document; Human Replay writes `Review note` to Chat | GUI observes Document; Human Replay takes Chat focus and writes; GUI types without reacquiring focus | GUI reselects Document after Human Replay's turn, then types | `GuestFocusEvaluator`, reading exact Guest terminal files after actors finish |
 | `SWCUB-STALE-MERGE-001` | GUI cached record conflicts with a CLI update to shared application state | GUI sets `gui_status=Approved`; CLI sets `cli_note=Reviewed by CLI` | GUI observes cached revision 0; CLI writes revision 1; GUI saves its stale whole-record cache and drops the CLI field | GUI refreshes the latest state before editing and saving | `GuestWebStateEvaluator`, reading the Guest-local service's final JSON after actors finish |
 
-Task definitions and condition mapping are machine-readable in [`tasks/task_suite_v2.json`](tasks/task_suite_v2.json). The runner and validator reuse the pinned OSWorld V2.1 adapter, existing scripted actors, orchestrator, and evaluator implementations. Actor contexts do not expose evaluator callbacks or hidden backend state.
+Task definitions and condition mapping are machine-readable in [`tasks/task_suite_v2.json`](../../../tasks/task_suite_v2.json). The runner and validator reuse the pinned OSWorld V2.1 adapter, existing scripted actors, orchestrator, and evaluator implementations. Actor contexts do not expose evaluator callbacks or hidden backend state.
 
 ## Task A — GUI control contention
 

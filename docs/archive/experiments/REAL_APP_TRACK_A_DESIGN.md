@@ -13,7 +13,7 @@ Each initialized desktop contains two Flat ODF files:
 
 The Writer actor replaces the complete document with `Approved by GUI actor` and saves. The Calc actor changes B2 to `Approved`, saves, and preserves every other cell. A paired Solo episode executes each actor alone on a separate clean Guest. This gives five Writer and five Calc individual-control runs within five paired Solo episodes. MA-ID puts both actors on separate Guest desktops. MA-SD binds both actors to the same Guest and X11 desktop.
 
-The canonical machine-readable task instance is [`tasks/codesk_writer_calc_v1.json`](tasks/codesk_writer_calc_v1.json). The previous `OFFICE-GUI-GUI-001` prototype and terminal Track A fixture remain unchanged.
+The canonical machine-readable task instance is [`tasks/codesk_writer_calc_v1.json`](../../../tasks/codesk_writer_calc_v1.json). The previous `OFFICE-GUI-GUI-001` prototype and terminal Track A fixture remain unchanged.
 
 ## Interaction protocol
 

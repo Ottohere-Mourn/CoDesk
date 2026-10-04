@@ -20,7 +20,7 @@ The two visible application fixtures are titled Guest terminal windows (`Documen
 
 ## Task and evaluator
 
-The machine-readable task contract is [`tasks/codesk_track_a_v1.json`](tasks/codesk_track_a_v1.json). The actors use the existing `ActorContext` and `OSWorldSharedEpisode` interfaces. The runner uses the pinned OSWorld V2.1 `DesktopEnv` with the existing QEMU runtime and Guest image.
+The machine-readable task contract is [`tasks/codesk_track_a_v1.json`](../../../tasks/codesk_track_a_v1.json). The actors use the existing `ActorContext` and `OSWorldSharedEpisode` interfaces. The runner uses the pinned OSWorld V2.1 `DesktopEnv` with the existing QEMU runtime and Guest image.
 
 After the actor schedule ends, the hidden evaluator records:
 

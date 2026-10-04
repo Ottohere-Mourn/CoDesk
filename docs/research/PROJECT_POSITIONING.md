@@ -49,4 +49,4 @@ Accordingly, CoDesk measures per-actor goal success and joint state integrity un
 
 ## Positioning guardrail
 
-Do not claim novelty from the name or broad phrase “shared workspace.” For each task, document whether actors use the same desktop session, whether goals are independent and jointly feasible, what resource is contested, the deterministic interaction trigger, the failure signature, the recovery operation, and the hidden-state evaluator predicate. Keep prior competition/overlap audits linked from [`docs/POSITIONING.md`](docs/POSITIONING.md) and refresh them before publication.
+Do not claim novelty from the name or broad phrase “shared workspace.” For each task, document whether actors use the same desktop session, whether goals are independent and jointly feasible, what resource is contested, the deterministic interaction trigger, the failure signature, the recovery operation, and the hidden-state evaluator predicate. Keep prior competition/overlap audits linked from [`docs/POSITIONING.md`](../POSITIONING.md) and refresh them before publication.

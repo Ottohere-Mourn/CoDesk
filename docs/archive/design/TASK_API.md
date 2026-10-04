@@ -10,7 +10,7 @@
 - Event log schema: `1` (`swcub/core.py`)
 - Episode metadata schema: `1` (`swcub/provenance.py`)
 
-Task version changes when actor goals, initial-state semantics, trigger behavior, evaluator predicates, or recovery intervention changes. Metadata fields may be extended additively by increasing the metadata schema version; that does not silently change a task version. The task version applies to both V2 tasks in [`tasks/task_suite_v2.json`](tasks/task_suite_v2.json).
+Task version changes when actor goals, initial-state semantics, trigger behavior, evaluator predicates, or recovery intervention changes. Metadata fields may be extended additively by increasing the metadata schema version; that does not silently change a task version. The task version applies to both V2 tasks in [`tasks/task_suite_v2.json`](../../../tasks/task_suite_v2.json).
 
 ## Task specification
 
@@ -43,7 +43,7 @@ The versioned task catalog declares the stable task-level mechanism and actor ro
 }
 ```
 
-`TaskInstanceSpec.from_dict` validates and copies the data. `materialize_schedule()` resolves declared actor-turn prerequisites deterministically. `expected_state` is evaluator-only; task setup code may hold it, but ActorContext never exposes it. The actual in-use instance is [`tasks/instances/browser_gui_cli.json`](tasks/instances/browser_gui_cli.json); focus task declarations are in [`tasks/task_suite_v2.json`](tasks/task_suite_v2.json).
+`TaskInstanceSpec.from_dict` validates and copies the data. `materialize_schedule()` resolves declared actor-turn prerequisites deterministically. `expected_state` is evaluator-only; task setup code may hold it, but ActorContext never exposes it. The actual in-use instance is [`tasks/instances/browser_gui_cli.json`](../../../tasks/instances/browser_gui_cli.json); focus task declarations are in [`tasks/task_suite_v2.json`](../../../tasks/task_suite_v2.json).
 
 ## Actor interface
 

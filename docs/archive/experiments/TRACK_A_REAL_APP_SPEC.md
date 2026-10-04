@@ -9,9 +9,9 @@ The office-app task prototype already exists in this repository; this specificat
 - **Instance schema:** 1
 - **Applications:** LibreOffice Writer and LibreOffice Calc (recorded Guest version: 7.3.7.2)
 - **Actors:** `writer_actor` (GUI) and `calc_actor` (GUI)
-- **Current task runner:** [`scripts/run_osworld_v2_1_office.py`](scripts/run_osworld_v2_1_office.py)
-- **Current task instance:** [`tasks/instances/office_writer_calc.json`](tasks/instances/office_writer_calc.json)
-- **Current task evaluator:** `GuestLibreOfficeEvaluator` in [`swcub/evaluator.py`](swcub/evaluator.py)
+- **Current task runner:** [`scripts/run_osworld_v2_1_office.py`](../../../scripts/run_osworld_v2_1_office.py)
+- **Current task instance:** [`tasks/instances/office_writer_calc.json`](../../../tasks/instances/office_writer_calc.json)
+- **Current task evaluator:** `GuestLibreOfficeEvaluator` in [`swcub/evaluator.py`](../../../swcub/evaluator.py)
 - **Current status:** scripted real-Guest Solo, sequential, naive-interleaving, and focus-aware episodes are documented in `TEST_RESULTS.md`; MA-ID is not implemented for this task family. Do not infer a task version from the instance schema; pin an explicit task version before the next formal series.
 
 ## Scenario and initial state

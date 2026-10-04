@@ -12,7 +12,7 @@
 - Environment: pinned OSWorld V2.1 Ubuntu QEMU Guest, one Guest per episode
 - Current task set: `SWCUB-FOCUS-ROUTING-001` and `SWCUB-STALE-MERGE-001`
 
-The two tasks, independent actor goals, conditions, and output locations are in [`tasks/task_suite_v2.json`](tasks/task_suite_v2.json). Existing evaluators and task semantics are frozen for the initial model smoke. The V2 scripted validation artifacts are on RAID1 under `/mnt/raid1/mjh/Shared-Workspace-Benchmark-V0-artifacts/osworld-v2.1/task-suite-v2/`; the three re-run focus cases use `task-suite-v2-protocol/`.
+The two tasks, independent actor goals, conditions, and output locations are in [`tasks/task_suite_v2.json`](../../../tasks/task_suite_v2.json). Existing evaluators and task semantics are frozen for the initial model smoke. The V2 scripted validation artifacts are on RAID1 under `/mnt/raid1/mjh/Shared-Workspace-Benchmark-V0-artifacts/osworld-v2.1/task-suite-v2/`; the three re-run focus cases use `task-suite-v2-protocol/`.
 
 ## Episode protocol
 
@@ -64,4 +64,4 @@ The Guest archive digest in the release manifest identifies the downloaded archi
 
 The V2 scripted suite currently has eight validated episodes across the two tasks. The older three focus artifacts lacked resource ledgers and were rerun under the current ownership mechanism; the suite validator now requires ledgered Guest create/destroy, unified task version, content hashes, exact actor rosters, and reset verification.
 
-Before the first shared model smoke, require one successful Qwen solo episode for that exact task/version plus a passing solo control for the second actor. If either fails, retain the evidence and stop shared conditions for that task. Do not alter model, task goal, evaluator, or task difficulty to clear the gate. The run plan is fixed in [`MODEL_SMOKE_PLAN.md`](MODEL_SMOKE_PLAN.md).
+Before the first shared model smoke, require one successful Qwen solo episode for that exact task/version plus a passing solo control for the second actor. If either fails, retain the evidence and stop shared conditions for that task. Do not alter model, task goal, evaluator, or task difficulty to clear the gate. The run plan is fixed in [`MODEL_SMOKE_PLAN.md`](../experiments/MODEL_SMOKE_PLAN.md).

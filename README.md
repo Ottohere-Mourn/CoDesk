@@ -10,7 +10,7 @@ How do independent computer-use agents perform when they act alone, use independ
 - **MA-ID:** multiple actors have independent desktop/input sessions.
 - **MA-SD:** actors share one live desktop control session.
 
-For a valid MA-ID/MA-SD comparison, task-relevant initial state, goals, schedule, budgets, applications, backend, evaluator, and reset must be equivalent. The intended treatment is desktop-session sharing. See the [benchmark overview](docs/research/BENCHMARK_OVERVIEW.md) and [protocol](CODESK_PROTOCOL_V1.md).
+For a valid MA-ID/MA-SD comparison, task-relevant initial state, goals, schedule, budgets, applications, backend, evaluator, and reset must be equivalent. The intended treatment is desktop-session sharing. See the [benchmark overview](docs/research/BENCHMARK_OVERVIEW.md) and [protocol](docs/research/CODESK_PROTOCOL_V1.md).
 
 ## V1 suite
 
@@ -50,8 +50,8 @@ Real Guest execution is explicitly marked **PENDING REAL-GUEST VALIDATION** in t
 - [Agent adapter interface](docs/getting-started/AGENT_ADAPTER.md)
 - [Current handoff](docs/handoff/HANDOFF.md)
 - [Historical document index](docs/archive/README.md)
-- [Evaluation protocol](CODESK_PROTOCOL_V1.md)
-- [Task instance schema](INSTANCE_SCHEMA_V1.md)
+- [Evaluation protocol](docs/research/CODESK_PROTOCOL_V1.md)
+- [Task instance schema](docs/data/INSTANCE_SCHEMA_V1.md)
 
 ## Evidence boundary
 

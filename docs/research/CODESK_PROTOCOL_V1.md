@@ -55,7 +55,7 @@ MA-ID and MA-SD use the same task instance, actor-to-goal mapping, model checkpo
 | D. Application Context | **Optional candidate** | Scripted Guest showed tab/page change and wrong-context action with constant X11 window ID; task controls and model evidence remain. |
 | E. Window / Modal Ownership | **Optional candidate** | Scripted Guest showed repeatable native modal dialog and observable owner/state; no multi-Actor outcome run yet. |
 
-The detailed scope and lifecycle gates are in [`TASK_TRACK_SPEC.md`](TASK_TRACK_SPEC.md). Tracks D and E remain optional candidates, not validated task families. Observation invalidation isolated from lost writes, human interruption/resumption, and asynchronous durability remain future work.
+The detailed scope and lifecycle gates are in [`TASK_TRACK_SPEC.md`](../archive/design/TASK_TRACK_SPEC.md). Tracks D and E remain optional candidates, not validated task families. Observation invalidation isolated from lost writes, human interruption/resumption, and asynchronous durability remain future work.
 
 Exploratory real-Qwen Writer/Calc Solo, MA-ID and MA-SD episodes now exist for the Focus anchor. They are small mechanism evidence, not benchmark-level statistics. The scripted Clipboard, Modal and Application Context probes do not establish model susceptibility.
 

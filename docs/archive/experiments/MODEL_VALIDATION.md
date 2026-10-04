@@ -2,7 +2,7 @@
 
 Date: 2026-09-27. All model trials used the pinned OSWorld V2.1 Guest and actual LibreOffice UI. No paid API, remote inference service, model training, or weight download was used.
 
-> **Historical record:** the three JSON-action trials below used the project's first, bespoke GUI actor. That actor, parser, and guard-based action schema have been removed. They are retained as failure evidence only and are not the current integration. The current baseline reuses OSWorld V2.1 `Qwen3VLAgent`; see [`AGENT_FRAMEWORK_REVIEW.md`](AGENT_FRAMEWORK_REVIEW.md) and the new episode status in [`TEST_RESULTS.md`](TEST_RESULTS.md).
+> **Historical record:** the three JSON-action trials below used the project's first, bespoke GUI actor. That actor, parser, and guard-based action schema have been removed. They are retained as failure evidence only and are not the current integration. The current baseline reuses OSWorld V2.1 `Qwen3VLAgent`; see [`AGENT_FRAMEWORK_REVIEW.md`](../design/AGENT_FRAMEWORK_REVIEW.md) and the new episode status in [`TEST_RESULTS.md`](TEST_RESULTS.md).
 
 ## Local resources and loop
 

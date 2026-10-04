@@ -2,7 +2,7 @@
 
 CoDesk is the current benchmark name; the audit below was produced under the Shared-Workspace prototype name and is retained as a dated evidence snapshot.
 
-Audit snapshot: 2026-09-26. The scope is Multi-Actor Computer Use: separate goal-bearing principals sharing a live desktop/application session. Detailed per-work evidence, page numbers, tasks and artifact paths are in [NOVELTY_AUDIT.md](../NOVELTY_AUDIT.md); the three-level classification is in [OVERLAP_MATRIX.md](../OVERLAP_MATRIX.md).
+Audit snapshot: 2026-09-26. The scope is Multi-Actor Computer Use: separate goal-bearing principals sharing a live desktop/application session. Detailed per-work evidence, page numbers, tasks and artifact paths are in [NOVELTY_AUDIT.md](archive/design/NOVELTY_AUDIT.md); the three-level classification is in [OVERLAP_MATRIX.md](archive/design/OVERLAP_MATRIX.md).
 
 ## Direct collision
 

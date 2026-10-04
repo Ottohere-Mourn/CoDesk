@@ -23,8 +23,8 @@ Relevant pinned files:
 
 - OSWorld dependency: `/home/mjh/Projects/_deps/OSWorld-V2-osworld-v2.1`, commit `3d778a3c9a34a079316f70df023b166700445792`.
 - Native agent: `mm_agents/qwen3vl_agent.py` (in that dependency).
-- Benchmark bridge: [`swcub/osworld_agent_actor.py`](swcub/osworld_agent_actor.py), [`swcub/environment.py`](swcub/environment.py), [`scripts/run_osworld_v2_1_office.py`](scripts/run_osworld_v2_1_office.py).
-- Local inference transport: [`scripts/local_qwen_worker.py`](scripts/local_qwen_worker.py), offline/local-files-only.
+- Benchmark bridge: [`swcub/osworld_agent_actor.py`](../../../swcub/osworld_agent_actor.py), [`swcub/environment.py`](../../../swcub/environment.py), [`scripts/run_osworld_v2_1_office.py`](../../../scripts/run_osworld_v2_1_office.py).
+- Local inference transport: [`scripts/local_qwen_worker.py`](../../../scripts/local_qwen_worker.py), offline/local-files-only.
 
 ## Adapter changes required
 

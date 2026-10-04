@@ -99,4 +99,4 @@ Aggregation is only meaningful for complete, provenance-backed run artifacts. Ke
 
 ## Runtime prerequisites and boundaries
 
-Guest execution requires the supported OSWorld V2.1 Guest environment, Docker/KVM permissions, pinned runtime assets, and verified resource ownership. See [ENV_SETUP.md](../../ENV_SETUP.md) and [A6000 environment check](../../scripts/a6000_environment_check.sh). Model execution additionally requires a healthy configured inference endpoint. Do not infer readiness from this document; the live Guest smoke and Qwen baseline remain pending.
+Guest execution requires the supported OSWorld V2.1 Guest environment, Docker/KVM permissions, pinned runtime assets, and verified resource ownership. See [ENV_SETUP.md](../archive/design/ENV_SETUP.md) and [A6000 environment check](../../scripts/a6000_environment_check.sh). Model execution additionally requires a healthy configured inference endpoint. Do not infer readiness from this document; the live Guest smoke and Qwen baseline remain pending.

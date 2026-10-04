@@ -4,7 +4,7 @@
 
 ## 1. Project Goal
 
-CoDesk (Collaborative Desktop Use Benchmark) asks: **what additional task failures and recovery costs arise when independently goal-directed Computer-Use Agents share a live, non-exclusive desktop session?** (**VERIFIED protocol:** [`CODESK_PROTOCOL_V1.md`](CODESK_PROTOCOL_V1.md), [`PROJECT_POSITIONING.md`](PROJECT_POSITIONING.md)).
+CoDesk (Collaborative Desktop Use Benchmark) asks: **what additional task failures and recovery costs arise when independently goal-directed Computer-Use Agents share a live, non-exclusive desktop session?** (**VERIFIED protocol:** [`CODESK_PROTOCOL_V1.md`](../../research/CODESK_PROTOCOL_V1.md), [`PROJECT_POSITIONING.md`](../../research/PROJECT_POSITIONING.md)).
 
 - An Actor is an independent action-producing entity with its own goal, identity, observation/action history, budget, and execution state. Human Replay is a distinct actor composition; scripted actors validate task mechanics but are not model-agent evidence.
 - **Solo:** each actor's goal is run from the same clean task fixture without partner actions. Every actor must pass its own Solo goal before interpreting a shared-condition failure.
@@ -14,7 +14,7 @@ CoDesk (Collaborative Desktop Use Benchmark) asks: **what additional task failur
 
 ## 2. Experimental Causal Contract
 
-For matched MA-ID/MA-SD comparisons, hold task instance and initial state, Actor-goal mapping, model/Agent and prompt, action budget, schedule, trigger, app version, authoritative backend, evaluator, and reset rule fixed. The intended treatment is desktop-session topology alone. If the same backend cannot be kept under both conditions, report a factorial design or stop the causal comparison; never use the diagonal private-vs-shared backend comparison as the desktop effect. (**VERIFIED:** [`CODESK_PROTOCOL_V1.md`](CODESK_PROTOCOL_V1.md), [`TASK_REGISTRY_V1.md`](TASK_REGISTRY_V1.md)).
+For matched MA-ID/MA-SD comparisons, hold task instance and initial state, Actor-goal mapping, model/Agent and prompt, action budget, schedule, trigger, app version, authoritative backend, evaluator, and reset rule fixed. The intended treatment is desktop-session topology alone. If the same backend cannot be kept under both conditions, report a factorial design or stop the causal comparison; never use the diagonal private-vs-shared backend comparison as the desktop effect. (**VERIFIED:** [`CODESK_PROTOCOL_V1.md`](../../research/CODESK_PROTOCOL_V1.md), [`TASK_REGISTRY_V1.md`](../design/TASK_REGISTRY_V1.md)).
 
 Report these separately:
 
