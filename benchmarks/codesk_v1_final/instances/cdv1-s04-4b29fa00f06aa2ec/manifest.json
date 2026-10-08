@@ -1,0 +1,443 @@
+{
+  "actor_goals": [
+    {
+      "actor_id": "A",
+      "expected_value": "{\"rows\": [1, 4], \"status\": \"Approved\"}",
+      "goal": "Select all assigned A rows and apply the exact bulk status to those rows only. Target browser/rows/high; initial '[]'; required final '{\"rows\": [1, 4], \"status\": \"Approved\"}'.",
+      "initial_value": "[]",
+      "operation": "update browser/rows/high",
+      "target_objects": [
+        "browser/rows/high"
+      ],
+      "task_domain": "Browser"
+    },
+    {
+      "actor_id": "B",
+      "expected_value": "{\"rows\": [2, 3], \"status\": \"Recorded\"}",
+      "goal": "Select all assigned B rows and apply the independent bulk status to those rows only. Target browser/rows/normal; initial '[]'; required final '{\"rows\": [2, 3], \"status\": \"Recorded\"}'.",
+      "initial_value": "[]",
+      "operation": "update browser/rows/normal",
+      "target_objects": [
+        "browser/rows/normal"
+      ],
+      "task_domain": "Browser"
+    }
+  ],
+  "benchmark_version": "codesk-v1.0",
+  "evaluator": {
+    "actor_paths": {
+      "A": "actors.A.value",
+      "B": "actors.B.value"
+    },
+    "adapter": "codesk_exact_state_v1",
+    "condition_semantics": {
+      "ma_id": "score each actor on equivalent independent desktop fixture",
+      "ma_sd": "score both actor goals and shared-state integrity",
+      "solo": "score selected actor; require inactive target and guards unchanged"
+    },
+    "context_expectation": {
+      "context_axes": {
+        "fixture_state": "near-match severity rows",
+        "schedule_policy": "unchanged",
+        "target_neighborhood": 3,
+        "workflow_graph": "unchanged"
+      },
+      "density_level": 3,
+      "description": "near-match severity rows",
+      "profile": "priority_board",
+      "profile_index": 2
+    },
+    "expected_state": {
+      "actors": {
+        "A": {
+          "object": "browser/rows/high",
+          "value": "{\"rows\": [1, 4], \"status\": \"Approved\"}"
+        },
+        "B": {
+          "object": "browser/rows/normal",
+          "value": "{\"rows\": [2, 3], \"status\": \"Recorded\"}"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "context_profile": {
+          "context_axes": {
+            "fixture_state": "near-match severity rows",
+            "schedule_policy": "unchanged",
+            "target_neighborhood": 3,
+            "workflow_graph": "unchanged"
+          },
+          "density_level": 3,
+          "description": "near-match severity rows",
+          "profile": "priority_board",
+          "profile_index": 2
+        },
+        "initial": {
+          "operation_kind": "browser_multiselect_bulk",
+          "operation_pair": [
+            "multirow_select_bulk_status",
+            "multirow_select_bulk_status"
+          ],
+          "profile_label": "rows_priority",
+          "rows_a": [
+            1,
+            4
+          ],
+          "rows_b": [
+            2,
+            3
+          ],
+          "state_context": {
+            "context_axes": {
+              "fixture_state": "near-match severity rows",
+              "schedule_policy": "unchanged",
+              "target_neighborhood": 3,
+              "workflow_graph": "unchanged"
+            },
+            "density_level": 3,
+            "description": "near-match severity rows",
+            "profile": "priority_board",
+            "profile_index": 2
+          }
+        },
+        "resource": "selection_active_object"
+      }
+    },
+    "initial_state": {
+      "actors": {
+        "A": {
+          "object": "browser/rows/high",
+          "value": "[]"
+        },
+        "B": {
+          "object": "browser/rows/normal",
+          "value": "[]"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "context_profile": {
+          "context_axes": {
+            "fixture_state": "near-match severity rows",
+            "schedule_policy": "unchanged",
+            "target_neighborhood": 3,
+            "workflow_graph": "unchanged"
+          },
+          "density_level": 3,
+          "description": "near-match severity rows",
+          "profile": "priority_board",
+          "profile_index": 2
+        },
+        "initial": {
+          "operation_kind": "browser_multiselect_bulk",
+          "operation_pair": [
+            "multirow_select_bulk_status",
+            "multirow_select_bulk_status"
+          ],
+          "profile_label": "rows_priority",
+          "rows_a": [
+            1,
+            4
+          ],
+          "rows_b": [
+            2,
+            3
+          ],
+          "state_context": {
+            "context_axes": {
+              "fixture_state": "near-match severity rows",
+              "schedule_policy": "unchanged",
+              "target_neighborhood": 3,
+              "workflow_graph": "unchanged"
+            },
+            "density_level": 3,
+            "description": "near-match severity rows",
+            "profile": "priority_board",
+            "profile_index": 2
+          }
+        },
+        "resource": "selection_active_object"
+      }
+    },
+    "invariants": [
+      {
+        "equals": "PRESERVE",
+        "path": "actors.guards.main"
+      }
+    ],
+    "operation_contract": {
+      "A": "browser/table/rows-a",
+      "B": "browser/table/rows-b",
+      "evidence_required": true,
+      "operation_graph": "browser_multirow_selection_bulk_update",
+      "shared_state": "selected row set"
+    },
+    "schedule_policy_id": "browser-row-selection-bulk-action-resume-v1"
+  },
+  "evaluator_path": "evaluators/cdv1-s04-4b29fa00f06aa2ec.json",
+  "evaluator_sha256": "c3729806b5757d299201ba969c2c362ee2bca588aca8bdacc364112442eaf1a2",
+  "family": "selection_active_object",
+  "fixture_files": [
+    {
+      "path": "fixtures/cdv1-s04-4b29fa00f06aa2ec/browser-events.jsonl",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size_bytes": 0
+    },
+    {
+      "path": "fixtures/cdv1-s04-4b29fa00f06aa2ec/browser-initial-state.json",
+      "sha256": "b52d99c4718d263d1afca5f5d2d717e90f55372e4a1d294af2066b375295abd1",
+      "size_bytes": 696
+    },
+    {
+      "path": "fixtures/cdv1-s04-4b29fa00f06aa2ec/browser-server.py",
+      "sha256": "103486547c83dcc1c82c6004a5f13fc322842196c1b12de431627bd07af995b9",
+      "size_bytes": 3224
+    },
+    {
+      "path": "fixtures/cdv1-s04-4b29fa00f06aa2ec/state-context.json",
+      "sha256": "8cce4202621f71392f2b66bd275374b1e726824286cb79cc495caa54eb9ae53c",
+      "size_bytes": 249
+    },
+    {
+      "path": "fixtures/cdv1-s04-4b29fa00f06aa2ec/workspace.html",
+      "sha256": "dc639d87e2b3342619c3043beacfe8828197021b70da9def7daaba7c1c07324e",
+      "size_bytes": 2911
+    }
+  ],
+  "generation_seed": 2026,
+  "initial_fixture_spec": {
+    "application_set": [
+      "Browser",
+      "Browser"
+    ],
+    "fixture_profile": "rows_priority",
+    "layout_id": "guard_after",
+    "public_assets": [
+      {
+        "path": "fixtures/cdv1-s04-4b29fa00f06aa2ec/browser-events.jsonl",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size_bytes": 0
+      },
+      {
+        "path": "fixtures/cdv1-s04-4b29fa00f06aa2ec/browser-initial-state.json",
+        "sha256": "b52d99c4718d263d1afca5f5d2d717e90f55372e4a1d294af2066b375295abd1",
+        "size_bytes": 696
+      },
+      {
+        "path": "fixtures/cdv1-s04-4b29fa00f06aa2ec/browser-server.py",
+        "sha256": "103486547c83dcc1c82c6004a5f13fc322842196c1b12de431627bd07af995b9",
+        "size_bytes": 3224
+      },
+      {
+        "path": "fixtures/cdv1-s04-4b29fa00f06aa2ec/state-context.json",
+        "sha256": "8cce4202621f71392f2b66bd275374b1e726824286cb79cc495caa54eb9ae53c",
+        "size_bytes": 249
+      },
+      {
+        "path": "fixtures/cdv1-s04-4b29fa00f06aa2ec/workspace.html",
+        "sha256": "dc639d87e2b3342619c3043beacfe8828197021b70da9def7daaba7c1c07324e",
+        "size_bytes": 2911
+      }
+    ]
+  },
+  "instance_id": "cdv1-s04-4b29fa00f06aa2ec",
+  "manifest_entry_sha256": "456c841e2b00087b2c6bdf14e542659cfca5d517984e346543f6726b30cb976f",
+  "provenance": {
+    "fixture_sha256": "9098f9cf0c983852df850bb610f17767e84bb9d0116a12549cfbcc15fa891c51",
+    "generation_seed": 2026,
+    "generator": "swcub.production_v1",
+    "seed_role": "deterministic profile ordering only; excluded from instance identity",
+    "semantic_spec_sha256": "4b29fa00f06aa2ec084a2d2df74af123e29126f5603d21c759ec0e97c3884c2b",
+    "source_code_sha256": "c6f4ce3ff7f122b199f69d31f881393102fe21e3cae914f6877b8bb2f676fcb3",
+    "source_commit": "fc75fc962775fb64429d11f13c5cd0df0cc1cedd"
+  },
+  "reset_metadata": {
+    "fixture_id": "cdv1-s04-4b29fa00f06aa2ec",
+    "fresh_guest_required": true,
+    "remove_prior_app_state": true,
+    "verify_fixture_hash": "9098f9cf0c983852df850bb610f17767e84bb9d0116a12549cfbcc15fa891c51",
+    "verify_state": {
+      "actors": {
+        "A": {
+          "object": "browser/rows/high",
+          "value": "[]"
+        },
+        "B": {
+          "object": "browser/rows/normal",
+          "value": "[]"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "context_profile": {
+          "context_axes": {
+            "fixture_state": "near-match severity rows",
+            "schedule_policy": "unchanged",
+            "target_neighborhood": 3,
+            "workflow_graph": "unchanged"
+          },
+          "density_level": 3,
+          "description": "near-match severity rows",
+          "profile": "priority_board",
+          "profile_index": 2
+        },
+        "initial": {
+          "operation_kind": "browser_multiselect_bulk",
+          "operation_pair": [
+            "multirow_select_bulk_status",
+            "multirow_select_bulk_status"
+          ],
+          "profile_label": "rows_priority",
+          "rows_a": [
+            1,
+            4
+          ],
+          "rows_b": [
+            2,
+            3
+          ],
+          "state_context": {
+            "context_axes": {
+              "fixture_state": "near-match severity rows",
+              "schedule_policy": "unchanged",
+              "target_neighborhood": 3,
+              "workflow_graph": "unchanged"
+            },
+            "density_level": 3,
+            "description": "near-match severity rows",
+            "profile": "priority_board",
+            "profile_index": 2
+          }
+        },
+        "resource": "selection_active_object"
+      }
+    }
+  },
+  "schedule_policy_id": "browser-row-selection-bulk-action-resume-v1",
+  "semantic_parameters": {
+    "domain_id": "capital_allocation",
+    "domain_schema": {
+      "entity": "capital request",
+      "field_a": "Decision",
+      "field_b": "Ledger state"
+    },
+    "layout_id": "guard_after",
+    "object_profile_id": "rows_priority",
+    "object_schema": {
+      "operation_kind": "browser_multiselect_bulk",
+      "operation_pair": [
+        "multirow_select_bulk_status",
+        "multirow_select_bulk_status"
+      ],
+      "profile_label": "rows_priority",
+      "rows_a": [
+        1,
+        4
+      ],
+      "rows_b": [
+        2,
+        3
+      ],
+      "state_context": {
+        "context_axes": {
+          "fixture_state": "near-match severity rows",
+          "schedule_policy": "unchanged",
+          "target_neighborhood": 3,
+          "workflow_graph": "unchanged"
+        },
+        "density_level": 3,
+        "description": "near-match severity rows",
+        "profile": "priority_board",
+        "profile_index": 2
+      }
+    },
+    "operation_graph": "browser_multirow_selection_bulk_update",
+    "operation_schema_revision": 1,
+    "state_context": {
+      "context_axes": {
+        "fixture_state": "near-match severity rows",
+        "schedule_policy": "unchanged",
+        "target_neighborhood": 3,
+        "workflow_graph": "unchanged"
+      },
+      "density_level": 3,
+      "description": "near-match severity rows",
+      "profile": "priority_board",
+      "profile_index": 2
+    },
+    "workflow_id": "S-04"
+  },
+  "signatures": {
+    "fixture": "9098f9cf0c983852df850bb610f17767e84bb9d0116a12549cfbcc15fa891c51",
+    "goal": "898da84e0fc7d1336acb30f4c90d5bca2149381fb83f353d53f5ebf132057e7e",
+    "semantic": "4b29fa00f06aa2ec084a2d2df74af123e29126f5603d21c759ec0e97c3884c2b",
+    "structural": "e108d7b2a47a71f08f0ec2d6aedc4d5a98ee2eefa1f025b237986e5428b28ca0"
+  },
+  "target_objects": {
+    "A": [
+      "browser/rows/high"
+    ],
+    "B": [
+      "browser/rows/normal"
+    ]
+  },
+  "task_domains": {
+    "A": "Browser",
+    "B": "Browser"
+  },
+  "topology_compatibility": {
+    "ma_id": {
+      "backend_binding": "same logical workspace seed; independent desktop sessions allowed",
+      "desktop_count": 2,
+      "fixtures": "byte-identical task-relevant clones"
+    },
+    "ma_sd": {
+      "actor_bindings": "A and B share desktop",
+      "desktop_count": 1
+    },
+    "solo": {
+      "actor_bindings": "A or B",
+      "desktop_count": 1
+    }
+  },
+  "treatment_relevant_state": {
+    "family_state": "selection_active_object",
+    "operation_graph": "browser_multirow_selection_bulk_update",
+    "shared_resource": {
+      "operation_kind": "browser_multiselect_bulk",
+      "operation_pair": [
+        "multirow_select_bulk_status",
+        "multirow_select_bulk_status"
+      ],
+      "profile_label": "rows_priority",
+      "rows_a": [
+        1,
+        4
+      ],
+      "rows_b": [
+        2,
+        3
+      ],
+      "state_context": {
+        "context_axes": {
+          "fixture_state": "near-match severity rows",
+          "schedule_policy": "unchanged",
+          "target_neighborhood": 3,
+          "workflow_graph": "unchanged"
+        },
+        "density_level": 3,
+        "description": "near-match severity rows",
+        "profile": "priority_board",
+        "profile_index": 2
+      }
+    }
+  },
+  "validation_level": "offline_operation_template",
+  "workflow_id": "S-04"
+}

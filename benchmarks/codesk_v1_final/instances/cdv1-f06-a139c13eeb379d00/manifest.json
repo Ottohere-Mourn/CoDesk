@@ -1,0 +1,443 @@
+{
+  "actor_goals": [
+    {
+      "actor_id": "A",
+      "expected_value": "{\"record\": \"SKU-7316\", \"status\": \"Reconciled\"}",
+      "goal": "Fill the assigned Browser record fields and submit exactly once. Target browser/record/asset; initial '__UNSUBMITTED__'; required final '{\"record\": \"SKU-7316\", \"status\": \"Reconciled\"}'.",
+      "initial_value": "__UNSUBMITTED__",
+      "operation": "update browser/record/asset",
+      "target_objects": [
+        "browser/record/asset"
+      ],
+      "task_domain": "Browser"
+    },
+    {
+      "actor_id": "B",
+      "expected_value": "TERMINAL-SKU-7316",
+      "goal": "Edit the assigned shell command, run it, and produce the exact output file without changing other files. Target terminal/output/asset; initial ''; required final 'TERMINAL-SKU-7316'. Run the command and write exactly 'TERMINAL-SKU-7316' to /home/oem/codesk/cdv1-f06-a139c13eeb379d00/terminal-result-B.txt.",
+      "initial_value": "",
+      "operation": "update terminal/output/asset",
+      "target_objects": [
+        "terminal/output/asset"
+      ],
+      "task_domain": "Terminal"
+    }
+  ],
+  "benchmark_version": "codesk-v1.0",
+  "evaluator": {
+    "actor_paths": {
+      "A": "actors.A.value",
+      "B": "actors.B.value"
+    },
+    "adapter": "codesk_exact_state_v1",
+    "condition_semantics": {
+      "ma_id": "score each actor on equivalent independent desktop fixture",
+      "ma_sd": "score both actor goals and shared-state integrity",
+      "solo": "score selected actor; require inactive target and guards unchanged"
+    },
+    "context_expectation": {
+      "context_axes": {
+        "fixture_state": "input/output pair context",
+        "schedule_policy": "unchanged",
+        "target_neighborhood": 3,
+        "workflow_graph": "unchanged"
+      },
+      "density_level": 3,
+      "description": "input/output pair context",
+      "profile": "asset_maintenance",
+      "profile_index": 2
+    },
+    "expected_state": {
+      "actors": {
+        "A": {
+          "object": "browser/record/asset",
+          "value": "{\"record\": \"SKU-7316\", \"status\": \"Reconciled\"}"
+        },
+        "B": {
+          "object": "terminal/output/asset",
+          "value": "TERMINAL-SKU-7316"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "context_profile": {
+          "context_axes": {
+            "fixture_state": "input/output pair context",
+            "schedule_policy": "unchanged",
+            "target_neighborhood": 3,
+            "workflow_graph": "unchanged"
+          },
+          "density_level": 3,
+          "description": "input/output pair context",
+          "profile": "asset_maintenance",
+          "profile_index": 2
+        },
+        "initial": {
+          "fields": [
+            "record_id",
+            "status"
+          ],
+          "operation_kind": "browser_terminal_transaction",
+          "operation_pair": [
+            "multi_field_submit",
+            "command_edit_execute"
+          ],
+          "profile_label": "form_asset",
+          "state_context": {
+            "context_axes": {
+              "fixture_state": "input/output pair context",
+              "schedule_policy": "unchanged",
+              "target_neighborhood": 3,
+              "workflow_graph": "unchanged"
+            },
+            "density_level": 3,
+            "description": "input/output pair context",
+            "profile": "asset_maintenance",
+            "profile_index": 2
+          }
+        },
+        "resource": "focus_input_routing"
+      }
+    },
+    "initial_state": {
+      "actors": {
+        "A": {
+          "object": "browser/record/asset",
+          "value": "__UNSUBMITTED__"
+        },
+        "B": {
+          "object": "terminal/output/asset",
+          "value": ""
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "context_profile": {
+          "context_axes": {
+            "fixture_state": "input/output pair context",
+            "schedule_policy": "unchanged",
+            "target_neighborhood": 3,
+            "workflow_graph": "unchanged"
+          },
+          "density_level": 3,
+          "description": "input/output pair context",
+          "profile": "asset_maintenance",
+          "profile_index": 2
+        },
+        "initial": {
+          "fields": [
+            "record_id",
+            "status"
+          ],
+          "operation_kind": "browser_terminal_transaction",
+          "operation_pair": [
+            "multi_field_submit",
+            "command_edit_execute"
+          ],
+          "profile_label": "form_asset",
+          "state_context": {
+            "context_axes": {
+              "fixture_state": "input/output pair context",
+              "schedule_policy": "unchanged",
+              "target_neighborhood": 3,
+              "workflow_graph": "unchanged"
+            },
+            "density_level": 3,
+            "description": "input/output pair context",
+            "profile": "asset_maintenance",
+            "profile_index": 2
+          }
+        },
+        "resource": "focus_input_routing"
+      }
+    },
+    "invariants": [
+      {
+        "equals": "PRESERVE",
+        "path": "actors.guards.main"
+      }
+    ],
+    "operation_contract": {
+      "A": "browser/form-transaction",
+      "B": "terminal/command-line",
+      "evidence_required": true,
+      "operation_graph": "browser_multifield_submit_and_terminal_command_edit",
+      "shared_state": "foreground window and keyboard target"
+    },
+    "schedule_policy_id": "browser-terminal-edit-submit-action-boundary-v1"
+  },
+  "evaluator_path": "evaluators/cdv1-f06-a139c13eeb379d00.json",
+  "evaluator_sha256": "0910e8f274fab065d66fc2d0862add1d148e2c6019012b22ce3ca9b0d5734912",
+  "family": "focus_input_routing",
+  "fixture_files": [
+    {
+      "path": "fixtures/cdv1-f06-a139c13eeb379d00/browser-events.jsonl",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size_bytes": 0
+    },
+    {
+      "path": "fixtures/cdv1-f06-a139c13eeb379d00/browser-initial-state.json",
+      "sha256": "34db8141844bd76deace08f817ce5bc61f9e53806f14d3fe322c7057be7963ec",
+      "size_bytes": 208
+    },
+    {
+      "path": "fixtures/cdv1-f06-a139c13eeb379d00/browser-server.py",
+      "sha256": "a08f9d4fedcd06507e359b23b1147c4e3a750d409322d3784d787e801766546c",
+      "size_bytes": 3224
+    },
+    {
+      "path": "fixtures/cdv1-f06-a139c13eeb379d00/state-context.json",
+      "sha256": "9107990e59f67d5187909f219dc78ef244536c063355dcc305b98a36819accf5",
+      "size_bytes": 254
+    },
+    {
+      "path": "fixtures/cdv1-f06-a139c13eeb379d00/terminal-state.json",
+      "sha256": "1b3884de2d06bd700d23ecef1dd1af42b98c426133651a72c4b586f5d7523f05",
+      "size_bytes": 54
+    },
+    {
+      "path": "fixtures/cdv1-f06-a139c13eeb379d00/terminal-task.sh",
+      "sha256": "f68e691181bddd6357b8c1db7b1c7163abe074e9f54cc13201fa027ef5379b52",
+      "size_bytes": 268
+    },
+    {
+      "path": "fixtures/cdv1-f06-a139c13eeb379d00/workspace.html",
+      "sha256": "1c65fb0fb9ae2453348551fe4644f1eb995c0ebdadc9d3bf3131826b112af599",
+      "size_bytes": 1466
+    }
+  ],
+  "generation_seed": 2026,
+  "initial_fixture_spec": {
+    "application_set": [
+      "Browser",
+      "Terminal"
+    ],
+    "fixture_profile": "form_asset",
+    "layout_id": "guard_after",
+    "public_assets": [
+      {
+        "path": "fixtures/cdv1-f06-a139c13eeb379d00/browser-events.jsonl",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size_bytes": 0
+      },
+      {
+        "path": "fixtures/cdv1-f06-a139c13eeb379d00/browser-initial-state.json",
+        "sha256": "34db8141844bd76deace08f817ce5bc61f9e53806f14d3fe322c7057be7963ec",
+        "size_bytes": 208
+      },
+      {
+        "path": "fixtures/cdv1-f06-a139c13eeb379d00/browser-server.py",
+        "sha256": "a08f9d4fedcd06507e359b23b1147c4e3a750d409322d3784d787e801766546c",
+        "size_bytes": 3224
+      },
+      {
+        "path": "fixtures/cdv1-f06-a139c13eeb379d00/state-context.json",
+        "sha256": "9107990e59f67d5187909f219dc78ef244536c063355dcc305b98a36819accf5",
+        "size_bytes": 254
+      },
+      {
+        "path": "fixtures/cdv1-f06-a139c13eeb379d00/terminal-state.json",
+        "sha256": "1b3884de2d06bd700d23ecef1dd1af42b98c426133651a72c4b586f5d7523f05",
+        "size_bytes": 54
+      },
+      {
+        "path": "fixtures/cdv1-f06-a139c13eeb379d00/terminal-task.sh",
+        "sha256": "f68e691181bddd6357b8c1db7b1c7163abe074e9f54cc13201fa027ef5379b52",
+        "size_bytes": 268
+      },
+      {
+        "path": "fixtures/cdv1-f06-a139c13eeb379d00/workspace.html",
+        "sha256": "1c65fb0fb9ae2453348551fe4644f1eb995c0ebdadc9d3bf3131826b112af599",
+        "size_bytes": 1466
+      }
+    ]
+  },
+  "instance_id": "cdv1-f06-a139c13eeb379d00",
+  "manifest_entry_sha256": "501b450415d86f5b6f8ee5215cd47185b74606e22de27357238da72a386df0e6",
+  "provenance": {
+    "fixture_sha256": "dbbe8154de74c2139aa4a1ac7b99bd34f8d8334a38bc431a8c12c00363321bc1",
+    "generation_seed": 2026,
+    "generator": "swcub.production_v1",
+    "seed_role": "deterministic profile ordering only; excluded from instance identity",
+    "semantic_spec_sha256": "a139c13eeb379d0071e679be532eb6a7606864205ff844980f9c78201e7ea635",
+    "source_code_sha256": "c6f4ce3ff7f122b199f69d31f881393102fe21e3cae914f6877b8bb2f676fcb3",
+    "source_commit": "fc75fc962775fb64429d11f13c5cd0df0cc1cedd"
+  },
+  "reset_metadata": {
+    "fixture_id": "cdv1-f06-a139c13eeb379d00",
+    "fresh_guest_required": true,
+    "remove_prior_app_state": true,
+    "verify_fixture_hash": "dbbe8154de74c2139aa4a1ac7b99bd34f8d8334a38bc431a8c12c00363321bc1",
+    "verify_state": {
+      "actors": {
+        "A": {
+          "object": "browser/record/asset",
+          "value": "__UNSUBMITTED__"
+        },
+        "B": {
+          "object": "terminal/output/asset",
+          "value": ""
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "context_profile": {
+          "context_axes": {
+            "fixture_state": "input/output pair context",
+            "schedule_policy": "unchanged",
+            "target_neighborhood": 3,
+            "workflow_graph": "unchanged"
+          },
+          "density_level": 3,
+          "description": "input/output pair context",
+          "profile": "asset_maintenance",
+          "profile_index": 2
+        },
+        "initial": {
+          "fields": [
+            "record_id",
+            "status"
+          ],
+          "operation_kind": "browser_terminal_transaction",
+          "operation_pair": [
+            "multi_field_submit",
+            "command_edit_execute"
+          ],
+          "profile_label": "form_asset",
+          "state_context": {
+            "context_axes": {
+              "fixture_state": "input/output pair context",
+              "schedule_policy": "unchanged",
+              "target_neighborhood": 3,
+              "workflow_graph": "unchanged"
+            },
+            "density_level": 3,
+            "description": "input/output pair context",
+            "profile": "asset_maintenance",
+            "profile_index": 2
+          }
+        },
+        "resource": "focus_input_routing"
+      }
+    }
+  },
+  "schedule_policy_id": "browser-terminal-edit-submit-action-boundary-v1",
+  "semantic_parameters": {
+    "domain_id": "warehouse_reconciliation",
+    "domain_schema": {
+      "entity": "warehouse lot",
+      "field_a": "Reconciliation",
+      "field_b": "Count status"
+    },
+    "layout_id": "guard_after",
+    "object_profile_id": "form_asset",
+    "object_schema": {
+      "fields": [
+        "record_id",
+        "status"
+      ],
+      "operation_kind": "browser_terminal_transaction",
+      "operation_pair": [
+        "multi_field_submit",
+        "command_edit_execute"
+      ],
+      "profile_label": "form_asset",
+      "state_context": {
+        "context_axes": {
+          "fixture_state": "input/output pair context",
+          "schedule_policy": "unchanged",
+          "target_neighborhood": 3,
+          "workflow_graph": "unchanged"
+        },
+        "density_level": 3,
+        "description": "input/output pair context",
+        "profile": "asset_maintenance",
+        "profile_index": 2
+      }
+    },
+    "operation_graph": "browser_multifield_submit_and_terminal_command_edit",
+    "operation_schema_revision": 1,
+    "state_context": {
+      "context_axes": {
+        "fixture_state": "input/output pair context",
+        "schedule_policy": "unchanged",
+        "target_neighborhood": 3,
+        "workflow_graph": "unchanged"
+      },
+      "density_level": 3,
+      "description": "input/output pair context",
+      "profile": "asset_maintenance",
+      "profile_index": 2
+    },
+    "workflow_id": "F-06"
+  },
+  "signatures": {
+    "fixture": "dbbe8154de74c2139aa4a1ac7b99bd34f8d8334a38bc431a8c12c00363321bc1",
+    "goal": "f1f7e8fa882ff434e6300a7a899ee7e0b42ad357883282a06ef9d6a2acefcb52",
+    "semantic": "a139c13eeb379d0071e679be532eb6a7606864205ff844980f9c78201e7ea635",
+    "structural": "cdfc225385dd64f1dfe82957889c89b6cb81e3f80127c5d07d615a502e5958b3"
+  },
+  "target_objects": {
+    "A": [
+      "browser/record/asset"
+    ],
+    "B": [
+      "terminal/output/asset"
+    ]
+  },
+  "task_domains": {
+    "A": "Browser",
+    "B": "Terminal"
+  },
+  "topology_compatibility": {
+    "ma_id": {
+      "backend_binding": "same logical workspace seed; independent desktop sessions allowed",
+      "desktop_count": 2,
+      "fixtures": "byte-identical task-relevant clones"
+    },
+    "ma_sd": {
+      "actor_bindings": "A and B share desktop",
+      "desktop_count": 1
+    },
+    "solo": {
+      "actor_bindings": "A or B",
+      "desktop_count": 1
+    }
+  },
+  "treatment_relevant_state": {
+    "family_state": "focus_input_routing",
+    "operation_graph": "browser_multifield_submit_and_terminal_command_edit",
+    "shared_resource": {
+      "fields": [
+        "record_id",
+        "status"
+      ],
+      "operation_kind": "browser_terminal_transaction",
+      "operation_pair": [
+        "multi_field_submit",
+        "command_edit_execute"
+      ],
+      "profile_label": "form_asset",
+      "state_context": {
+        "context_axes": {
+          "fixture_state": "input/output pair context",
+          "schedule_policy": "unchanged",
+          "target_neighborhood": 3,
+          "workflow_graph": "unchanged"
+        },
+        "density_level": 3,
+        "description": "input/output pair context",
+        "profile": "asset_maintenance",
+        "profile_index": 2
+      }
+    }
+  },
+  "validation_level": "offline_operation_template",
+  "workflow_id": "F-06"
+}

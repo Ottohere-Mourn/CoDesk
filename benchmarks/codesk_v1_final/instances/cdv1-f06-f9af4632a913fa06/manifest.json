@@ -1,0 +1,443 @@
+{
+  "actor_goals": [
+    {
+      "actor_id": "A",
+      "expected_value": "{\"record\": \"CAP-4821\", \"status\": \"Approved\"}",
+      "goal": "Fill the assigned Browser record fields and submit exactly once. Target browser/record/safety; initial '__UNSUBMITTED__'; required final '{\"record\": \"CAP-4821\", \"status\": \"Approved\"}'.",
+      "initial_value": "__UNSUBMITTED__",
+      "operation": "update browser/record/safety",
+      "target_objects": [
+        "browser/record/safety"
+      ],
+      "task_domain": "Browser"
+    },
+    {
+      "actor_id": "B",
+      "expected_value": "TERMINAL-CAP-4821",
+      "goal": "Edit the assigned shell command, run it, and produce the exact output file without changing other files. Target terminal/output/safety; initial ''; required final 'TERMINAL-CAP-4821'. Run the command and write exactly 'TERMINAL-CAP-4821' to /home/oem/codesk/cdv1-f06-f9af4632a913fa06/terminal-result-B.txt.",
+      "initial_value": "",
+      "operation": "update terminal/output/safety",
+      "target_objects": [
+        "terminal/output/safety"
+      ],
+      "task_domain": "Terminal"
+    }
+  ],
+  "benchmark_version": "codesk-v1.0",
+  "evaluator": {
+    "actor_paths": {
+      "A": "actors.A.value",
+      "B": "actors.B.value"
+    },
+    "adapter": "codesk_exact_state_v1",
+    "condition_semantics": {
+      "ma_id": "score each actor on equivalent independent desktop fixture",
+      "ma_sd": "score both actor goals and shared-state integrity",
+      "solo": "score selected actor; require inactive target and guards unchanged"
+    },
+    "context_expectation": {
+      "context_axes": {
+        "fixture_state": "archived outputs context",
+        "schedule_policy": "unchanged",
+        "target_neighborhood": 4,
+        "workflow_graph": "unchanged"
+      },
+      "density_level": 4,
+      "description": "archived outputs context",
+      "profile": "safety_incident",
+      "profile_index": 3
+    },
+    "expected_state": {
+      "actors": {
+        "A": {
+          "object": "browser/record/safety",
+          "value": "{\"record\": \"CAP-4821\", \"status\": \"Approved\"}"
+        },
+        "B": {
+          "object": "terminal/output/safety",
+          "value": "TERMINAL-CAP-4821"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "context_profile": {
+          "context_axes": {
+            "fixture_state": "archived outputs context",
+            "schedule_policy": "unchanged",
+            "target_neighborhood": 4,
+            "workflow_graph": "unchanged"
+          },
+          "density_level": 4,
+          "description": "archived outputs context",
+          "profile": "safety_incident",
+          "profile_index": 3
+        },
+        "initial": {
+          "fields": [
+            "record_id",
+            "status"
+          ],
+          "operation_kind": "browser_terminal_transaction",
+          "operation_pair": [
+            "multi_field_submit",
+            "command_edit_execute"
+          ],
+          "profile_label": "form_safety",
+          "state_context": {
+            "context_axes": {
+              "fixture_state": "archived outputs context",
+              "schedule_policy": "unchanged",
+              "target_neighborhood": 4,
+              "workflow_graph": "unchanged"
+            },
+            "density_level": 4,
+            "description": "archived outputs context",
+            "profile": "safety_incident",
+            "profile_index": 3
+          }
+        },
+        "resource": "focus_input_routing"
+      }
+    },
+    "initial_state": {
+      "actors": {
+        "A": {
+          "object": "browser/record/safety",
+          "value": "__UNSUBMITTED__"
+        },
+        "B": {
+          "object": "terminal/output/safety",
+          "value": ""
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "context_profile": {
+          "context_axes": {
+            "fixture_state": "archived outputs context",
+            "schedule_policy": "unchanged",
+            "target_neighborhood": 4,
+            "workflow_graph": "unchanged"
+          },
+          "density_level": 4,
+          "description": "archived outputs context",
+          "profile": "safety_incident",
+          "profile_index": 3
+        },
+        "initial": {
+          "fields": [
+            "record_id",
+            "status"
+          ],
+          "operation_kind": "browser_terminal_transaction",
+          "operation_pair": [
+            "multi_field_submit",
+            "command_edit_execute"
+          ],
+          "profile_label": "form_safety",
+          "state_context": {
+            "context_axes": {
+              "fixture_state": "archived outputs context",
+              "schedule_policy": "unchanged",
+              "target_neighborhood": 4,
+              "workflow_graph": "unchanged"
+            },
+            "density_level": 4,
+            "description": "archived outputs context",
+            "profile": "safety_incident",
+            "profile_index": 3
+          }
+        },
+        "resource": "focus_input_routing"
+      }
+    },
+    "invariants": [
+      {
+        "equals": "PRESERVE",
+        "path": "actors.guards.main"
+      }
+    ],
+    "operation_contract": {
+      "A": "browser/form-transaction",
+      "B": "terminal/command-line",
+      "evidence_required": true,
+      "operation_graph": "browser_multifield_submit_and_terminal_command_edit",
+      "shared_state": "foreground window and keyboard target"
+    },
+    "schedule_policy_id": "browser-terminal-edit-submit-action-boundary-v1"
+  },
+  "evaluator_path": "evaluators/cdv1-f06-f9af4632a913fa06.json",
+  "evaluator_sha256": "7ff1ec37a9f56f9eac692e2563af4a4774d449d16fd27bd1d0fbe2f1cc7dafd7",
+  "family": "focus_input_routing",
+  "fixture_files": [
+    {
+      "path": "fixtures/cdv1-f06-f9af4632a913fa06/browser-events.jsonl",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size_bytes": 0
+    },
+    {
+      "path": "fixtures/cdv1-f06-f9af4632a913fa06/browser-initial-state.json",
+      "sha256": "34db8141844bd76deace08f817ce5bc61f9e53806f14d3fe322c7057be7963ec",
+      "size_bytes": 208
+    },
+    {
+      "path": "fixtures/cdv1-f06-f9af4632a913fa06/browser-server.py",
+      "sha256": "dfdd25ffe1e9d293a33c1906b46ccf77df53fd76bcf720ae45f7aa170a303442",
+      "size_bytes": 3224
+    },
+    {
+      "path": "fixtures/cdv1-f06-f9af4632a913fa06/state-context.json",
+      "sha256": "e375c76b18b4e07f18cf7dfaf2e874c4d1d3635fc2bdc72fdae9c060f893125f",
+      "size_bytes": 250
+    },
+    {
+      "path": "fixtures/cdv1-f06-f9af4632a913fa06/terminal-state.json",
+      "sha256": "be28a6390e5d3b320a5680b3ded6d3284fef3a94592ec6a091567b2c9c870c76",
+      "size_bytes": 54
+    },
+    {
+      "path": "fixtures/cdv1-f06-f9af4632a913fa06/terminal-task.sh",
+      "sha256": "a1c0082681da8e28d55ec96dad4fdf4a932b458ff7576e804fba59a7487fa2b8",
+      "size_bytes": 319
+    },
+    {
+      "path": "fixtures/cdv1-f06-f9af4632a913fa06/workspace.html",
+      "sha256": "36196d94496561418b6efc14af1ff9cbd1d45a439ff227cabf17d24039d5dba5",
+      "size_bytes": 1553
+    }
+  ],
+  "generation_seed": 2026,
+  "initial_fixture_spec": {
+    "application_set": [
+      "Browser",
+      "Terminal"
+    ],
+    "fixture_profile": "form_safety",
+    "layout_id": "guard_after",
+    "public_assets": [
+      {
+        "path": "fixtures/cdv1-f06-f9af4632a913fa06/browser-events.jsonl",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size_bytes": 0
+      },
+      {
+        "path": "fixtures/cdv1-f06-f9af4632a913fa06/browser-initial-state.json",
+        "sha256": "34db8141844bd76deace08f817ce5bc61f9e53806f14d3fe322c7057be7963ec",
+        "size_bytes": 208
+      },
+      {
+        "path": "fixtures/cdv1-f06-f9af4632a913fa06/browser-server.py",
+        "sha256": "dfdd25ffe1e9d293a33c1906b46ccf77df53fd76bcf720ae45f7aa170a303442",
+        "size_bytes": 3224
+      },
+      {
+        "path": "fixtures/cdv1-f06-f9af4632a913fa06/state-context.json",
+        "sha256": "e375c76b18b4e07f18cf7dfaf2e874c4d1d3635fc2bdc72fdae9c060f893125f",
+        "size_bytes": 250
+      },
+      {
+        "path": "fixtures/cdv1-f06-f9af4632a913fa06/terminal-state.json",
+        "sha256": "be28a6390e5d3b320a5680b3ded6d3284fef3a94592ec6a091567b2c9c870c76",
+        "size_bytes": 54
+      },
+      {
+        "path": "fixtures/cdv1-f06-f9af4632a913fa06/terminal-task.sh",
+        "sha256": "a1c0082681da8e28d55ec96dad4fdf4a932b458ff7576e804fba59a7487fa2b8",
+        "size_bytes": 319
+      },
+      {
+        "path": "fixtures/cdv1-f06-f9af4632a913fa06/workspace.html",
+        "sha256": "36196d94496561418b6efc14af1ff9cbd1d45a439ff227cabf17d24039d5dba5",
+        "size_bytes": 1553
+      }
+    ]
+  },
+  "instance_id": "cdv1-f06-f9af4632a913fa06",
+  "manifest_entry_sha256": "4f59887099c8977b2afc5d19659ddc00ce0cb14a79bf823daf265067fbbb2f11",
+  "provenance": {
+    "fixture_sha256": "a1c725f3e445b3376cbab5d975f86acc1d0d81cbaed466155b8e8645d6e35b48",
+    "generation_seed": 2026,
+    "generator": "swcub.production_v1",
+    "seed_role": "deterministic profile ordering only; excluded from instance identity",
+    "semantic_spec_sha256": "f9af4632a913fa0669c13074f1bafe0de6cd2f4ea7c0af299ad2e07162d346de",
+    "source_code_sha256": "c6f4ce3ff7f122b199f69d31f881393102fe21e3cae914f6877b8bb2f676fcb3",
+    "source_commit": "fc75fc962775fb64429d11f13c5cd0df0cc1cedd"
+  },
+  "reset_metadata": {
+    "fixture_id": "cdv1-f06-f9af4632a913fa06",
+    "fresh_guest_required": true,
+    "remove_prior_app_state": true,
+    "verify_fixture_hash": "a1c725f3e445b3376cbab5d975f86acc1d0d81cbaed466155b8e8645d6e35b48",
+    "verify_state": {
+      "actors": {
+        "A": {
+          "object": "browser/record/safety",
+          "value": "__UNSUBMITTED__"
+        },
+        "B": {
+          "object": "terminal/output/safety",
+          "value": ""
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "context_profile": {
+          "context_axes": {
+            "fixture_state": "archived outputs context",
+            "schedule_policy": "unchanged",
+            "target_neighborhood": 4,
+            "workflow_graph": "unchanged"
+          },
+          "density_level": 4,
+          "description": "archived outputs context",
+          "profile": "safety_incident",
+          "profile_index": 3
+        },
+        "initial": {
+          "fields": [
+            "record_id",
+            "status"
+          ],
+          "operation_kind": "browser_terminal_transaction",
+          "operation_pair": [
+            "multi_field_submit",
+            "command_edit_execute"
+          ],
+          "profile_label": "form_safety",
+          "state_context": {
+            "context_axes": {
+              "fixture_state": "archived outputs context",
+              "schedule_policy": "unchanged",
+              "target_neighborhood": 4,
+              "workflow_graph": "unchanged"
+            },
+            "density_level": 4,
+            "description": "archived outputs context",
+            "profile": "safety_incident",
+            "profile_index": 3
+          }
+        },
+        "resource": "focus_input_routing"
+      }
+    }
+  },
+  "schedule_policy_id": "browser-terminal-edit-submit-action-boundary-v1",
+  "semantic_parameters": {
+    "domain_id": "capital_allocation",
+    "domain_schema": {
+      "entity": "capital request",
+      "field_a": "Decision",
+      "field_b": "Ledger state"
+    },
+    "layout_id": "guard_after",
+    "object_profile_id": "form_safety",
+    "object_schema": {
+      "fields": [
+        "record_id",
+        "status"
+      ],
+      "operation_kind": "browser_terminal_transaction",
+      "operation_pair": [
+        "multi_field_submit",
+        "command_edit_execute"
+      ],
+      "profile_label": "form_safety",
+      "state_context": {
+        "context_axes": {
+          "fixture_state": "archived outputs context",
+          "schedule_policy": "unchanged",
+          "target_neighborhood": 4,
+          "workflow_graph": "unchanged"
+        },
+        "density_level": 4,
+        "description": "archived outputs context",
+        "profile": "safety_incident",
+        "profile_index": 3
+      }
+    },
+    "operation_graph": "browser_multifield_submit_and_terminal_command_edit",
+    "operation_schema_revision": 1,
+    "state_context": {
+      "context_axes": {
+        "fixture_state": "archived outputs context",
+        "schedule_policy": "unchanged",
+        "target_neighborhood": 4,
+        "workflow_graph": "unchanged"
+      },
+      "density_level": 4,
+      "description": "archived outputs context",
+      "profile": "safety_incident",
+      "profile_index": 3
+    },
+    "workflow_id": "F-06"
+  },
+  "signatures": {
+    "fixture": "a1c725f3e445b3376cbab5d975f86acc1d0d81cbaed466155b8e8645d6e35b48",
+    "goal": "584c9cbae0291a0db492d3e4059c4e97b7e36ed57eaa2242d6334b99785d3240",
+    "semantic": "f9af4632a913fa0669c13074f1bafe0de6cd2f4ea7c0af299ad2e07162d346de",
+    "structural": "2e73a76ab91ac44d0f9268c88ef252ae4583b3b3fed15303ac7ff5da18f0de19"
+  },
+  "target_objects": {
+    "A": [
+      "browser/record/safety"
+    ],
+    "B": [
+      "terminal/output/safety"
+    ]
+  },
+  "task_domains": {
+    "A": "Browser",
+    "B": "Terminal"
+  },
+  "topology_compatibility": {
+    "ma_id": {
+      "backend_binding": "same logical workspace seed; independent desktop sessions allowed",
+      "desktop_count": 2,
+      "fixtures": "byte-identical task-relevant clones"
+    },
+    "ma_sd": {
+      "actor_bindings": "A and B share desktop",
+      "desktop_count": 1
+    },
+    "solo": {
+      "actor_bindings": "A or B",
+      "desktop_count": 1
+    }
+  },
+  "treatment_relevant_state": {
+    "family_state": "focus_input_routing",
+    "operation_graph": "browser_multifield_submit_and_terminal_command_edit",
+    "shared_resource": {
+      "fields": [
+        "record_id",
+        "status"
+      ],
+      "operation_kind": "browser_terminal_transaction",
+      "operation_pair": [
+        "multi_field_submit",
+        "command_edit_execute"
+      ],
+      "profile_label": "form_safety",
+      "state_context": {
+        "context_axes": {
+          "fixture_state": "archived outputs context",
+          "schedule_policy": "unchanged",
+          "target_neighborhood": 4,
+          "workflow_graph": "unchanged"
+        },
+        "density_level": 4,
+        "description": "archived outputs context",
+        "profile": "safety_incident",
+        "profile_index": 3
+      }
+    }
+  },
+  "validation_level": "offline_operation_template",
+  "workflow_id": "F-06"
+}

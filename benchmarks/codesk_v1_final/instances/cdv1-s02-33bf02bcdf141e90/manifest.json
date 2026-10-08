@@ -1,0 +1,393 @@
+{
+  "actor_goals": [
+    {
+      "actor_id": "A",
+      "expected_value": "[[\"A00-SUP-2048\",\"A01-SUP-2048\",\"A02-SUP-2048\"],[\"A10-SUP-2048\",\"A11-SUP-2048\",\"A12-SUP-2048\"]]",
+      "goal": "Select and fill the assigned 2-by-3 range with the requested row/column pattern. Target calc/C2:E3; initial '__EMPTY_RANGE__'; required final '[[\"A00-SUP-2048\",\"A01-SUP-2048\",\"A02-SUP-2048\"],[\"A10-SUP-2048\",\"A11-SUP-2048\",\"A12-SUP-2048\"]]'.",
+      "initial_value": "__EMPTY_RANGE__",
+      "operation": "update calc/C2:E3",
+      "target_objects": [
+        "calc/C2:E3"
+      ],
+      "task_domain": "Calc"
+    },
+    {
+      "actor_id": "B",
+      "expected_value": "[[\"B00-SUP-2048\",\"B01-SUP-2048\",\"B02-SUP-2048\"],[\"B10-SUP-2048\",\"B11-SUP-2048\",\"B12-SUP-2048\"]]",
+      "goal": "Select and fill the other 2-by-3 range with its independent pattern. Target calc/G2:I3; initial '__EMPTY_RANGE__'; required final '[[\"B00-SUP-2048\",\"B01-SUP-2048\",\"B02-SUP-2048\"],[\"B10-SUP-2048\",\"B11-SUP-2048\",\"B12-SUP-2048\"]]'.",
+      "initial_value": "__EMPTY_RANGE__",
+      "operation": "update calc/G2:I3",
+      "target_objects": [
+        "calc/G2:I3"
+      ],
+      "task_domain": "Calc"
+    }
+  ],
+  "benchmark_version": "codesk-v1.0",
+  "evaluator": {
+    "actor_paths": {
+      "A": "actors.A.value",
+      "B": "actors.B.value"
+    },
+    "adapter": "codesk_exact_state_v1",
+    "condition_semantics": {
+      "ma_id": "score each actor on equivalent independent desktop fixture",
+      "ma_sd": "score both actor goals and shared-state integrity",
+      "solo": "score selected actor; require inactive target and guards unchanged"
+    },
+    "context_expectation": {
+      "context_axes": {
+        "fixture_state": "dense neighboring records",
+        "schedule_policy": "unchanged",
+        "target_neighborhood": 4,
+        "workflow_graph": "unchanged"
+      },
+      "density_level": 4,
+      "description": "dense neighboring records",
+      "profile": "ledger_surround",
+      "profile_index": 1
+    },
+    "expected_state": {
+      "actors": {
+        "A": {
+          "object": "calc/C2:E3",
+          "value": "[[\"A00-SUP-2048\",\"A01-SUP-2048\",\"A02-SUP-2048\"],[\"A10-SUP-2048\",\"A11-SUP-2048\",\"A12-SUP-2048\"]]"
+        },
+        "B": {
+          "object": "calc/G2:I3",
+          "value": "[[\"B00-SUP-2048\",\"B01-SUP-2048\",\"B02-SUP-2048\"],[\"B10-SUP-2048\",\"B11-SUP-2048\",\"B12-SUP-2048\"]]"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "context_profile": {
+          "context_axes": {
+            "fixture_state": "dense neighboring records",
+            "schedule_policy": "unchanged",
+            "target_neighborhood": 4,
+            "workflow_graph": "unchanged"
+          },
+          "density_level": 4,
+          "description": "dense neighboring records",
+          "profile": "ledger_surround",
+          "profile_index": 1
+        },
+        "initial": {
+          "operation_kind": "calc_range_fill",
+          "operation_pair": [
+            "range_selection_fill",
+            "range_selection_fill"
+          ],
+          "profile_label": "fill_bc",
+          "shape": [
+            2,
+            3
+          ],
+          "state_context": {
+            "context_axes": {
+              "fixture_state": "dense neighboring records",
+              "schedule_policy": "unchanged",
+              "target_neighborhood": 4,
+              "workflow_graph": "unchanged"
+            },
+            "density_level": 4,
+            "description": "dense neighboring records",
+            "profile": "ledger_surround",
+            "profile_index": 1
+          }
+        },
+        "resource": "selection_active_object"
+      }
+    },
+    "initial_state": {
+      "actors": {
+        "A": {
+          "object": "calc/C2:E3",
+          "value": "__EMPTY_RANGE__"
+        },
+        "B": {
+          "object": "calc/G2:I3",
+          "value": "__EMPTY_RANGE__"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "context_profile": {
+          "context_axes": {
+            "fixture_state": "dense neighboring records",
+            "schedule_policy": "unchanged",
+            "target_neighborhood": 4,
+            "workflow_graph": "unchanged"
+          },
+          "density_level": 4,
+          "description": "dense neighboring records",
+          "profile": "ledger_surround",
+          "profile_index": 1
+        },
+        "initial": {
+          "operation_kind": "calc_range_fill",
+          "operation_pair": [
+            "range_selection_fill",
+            "range_selection_fill"
+          ],
+          "profile_label": "fill_bc",
+          "shape": [
+            2,
+            3
+          ],
+          "state_context": {
+            "context_axes": {
+              "fixture_state": "dense neighboring records",
+              "schedule_policy": "unchanged",
+              "target_neighborhood": 4,
+              "workflow_graph": "unchanged"
+            },
+            "density_level": 4,
+            "description": "dense neighboring records",
+            "profile": "ledger_surround",
+            "profile_index": 1
+          }
+        },
+        "resource": "selection_active_object"
+      }
+    },
+    "invariants": [
+      {
+        "equals": "PRESERVE",
+        "path": "actors.guards.main"
+      }
+    ],
+    "operation_contract": {
+      "A": "calc/range-fill-a",
+      "B": "calc/range-fill-b",
+      "evidence_required": true,
+      "operation_graph": "calc_rectangular_selection_fill_handle",
+      "shared_state": "active selected range"
+    },
+    "schedule_policy_id": "calc-range-selection-change-resume-v1"
+  },
+  "evaluator_path": "evaluators/cdv1-s02-33bf02bcdf141e90.json",
+  "evaluator_sha256": "83e0b44087bc7a2c524f86fea01ff4996e2075da203cab3aa18c3011ac04b3f8",
+  "family": "selection_active_object",
+  "fixture_files": [
+    {
+      "path": "fixtures/cdv1-s02-33bf02bcdf141e90/state-context.json",
+      "sha256": "f06ef3a386e3fee8a83f018e44a9fbf244ea5851a3a9fc42c36e1ed1b50ef55f",
+      "size_bytes": 252
+    },
+    {
+      "path": "fixtures/cdv1-s02-33bf02bcdf141e90/workbook.fods",
+      "sha256": "3974e386503529247f929ebf3f745b664a43b328adfa1c74ed37d144c96ff5e1",
+      "size_bytes": 7587
+    }
+  ],
+  "generation_seed": 2026,
+  "initial_fixture_spec": {
+    "application_set": [
+      "Calc",
+      "Calc"
+    ],
+    "fixture_profile": "fill_bc",
+    "layout_id": "guard_after",
+    "public_assets": [
+      {
+        "path": "fixtures/cdv1-s02-33bf02bcdf141e90/state-context.json",
+        "sha256": "f06ef3a386e3fee8a83f018e44a9fbf244ea5851a3a9fc42c36e1ed1b50ef55f",
+        "size_bytes": 252
+      },
+      {
+        "path": "fixtures/cdv1-s02-33bf02bcdf141e90/workbook.fods",
+        "sha256": "3974e386503529247f929ebf3f745b664a43b328adfa1c74ed37d144c96ff5e1",
+        "size_bytes": 7587
+      }
+    ]
+  },
+  "instance_id": "cdv1-s02-33bf02bcdf141e90",
+  "manifest_entry_sha256": "7a1ff8ba0a9c81f180d0320b69c392703f778278fd6857407dbb27aa13372b86",
+  "provenance": {
+    "fixture_sha256": "9e118f64d3af1c840ee86b0ebbd6200604764f417b92ee7ad853da6aa7703bc3",
+    "generation_seed": 2026,
+    "generator": "swcub.production_v1",
+    "seed_role": "deterministic profile ordering only; excluded from instance identity",
+    "semantic_spec_sha256": "33bf02bcdf141e90113e7307a358c66e9e794f7ba5fb01a15917153d421c1669",
+    "source_code_sha256": "c6f4ce3ff7f122b199f69d31f881393102fe21e3cae914f6877b8bb2f676fcb3",
+    "source_commit": "fc75fc962775fb64429d11f13c5cd0df0cc1cedd"
+  },
+  "reset_metadata": {
+    "fixture_id": "cdv1-s02-33bf02bcdf141e90",
+    "fresh_guest_required": true,
+    "remove_prior_app_state": true,
+    "verify_fixture_hash": "9e118f64d3af1c840ee86b0ebbd6200604764f417b92ee7ad853da6aa7703bc3",
+    "verify_state": {
+      "actors": {
+        "A": {
+          "object": "calc/C2:E3",
+          "value": "__EMPTY_RANGE__"
+        },
+        "B": {
+          "object": "calc/G2:I3",
+          "value": "__EMPTY_RANGE__"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "context_profile": {
+          "context_axes": {
+            "fixture_state": "dense neighboring records",
+            "schedule_policy": "unchanged",
+            "target_neighborhood": 4,
+            "workflow_graph": "unchanged"
+          },
+          "density_level": 4,
+          "description": "dense neighboring records",
+          "profile": "ledger_surround",
+          "profile_index": 1
+        },
+        "initial": {
+          "operation_kind": "calc_range_fill",
+          "operation_pair": [
+            "range_selection_fill",
+            "range_selection_fill"
+          ],
+          "profile_label": "fill_bc",
+          "shape": [
+            2,
+            3
+          ],
+          "state_context": {
+            "context_axes": {
+              "fixture_state": "dense neighboring records",
+              "schedule_policy": "unchanged",
+              "target_neighborhood": 4,
+              "workflow_graph": "unchanged"
+            },
+            "density_level": 4,
+            "description": "dense neighboring records",
+            "profile": "ledger_surround",
+            "profile_index": 1
+          }
+        },
+        "resource": "selection_active_object"
+      }
+    }
+  },
+  "schedule_policy_id": "calc-range-selection-change-resume-v1",
+  "semantic_parameters": {
+    "domain_id": "supplier_onboarding",
+    "domain_schema": {
+      "entity": "supplier record",
+      "field_a": "Review decision",
+      "field_b": "Verification state"
+    },
+    "layout_id": "guard_after",
+    "object_profile_id": "fill_bc",
+    "object_schema": {
+      "operation_kind": "calc_range_fill",
+      "operation_pair": [
+        "range_selection_fill",
+        "range_selection_fill"
+      ],
+      "profile_label": "fill_bc",
+      "shape": [
+        2,
+        3
+      ],
+      "state_context": {
+        "context_axes": {
+          "fixture_state": "dense neighboring records",
+          "schedule_policy": "unchanged",
+          "target_neighborhood": 4,
+          "workflow_graph": "unchanged"
+        },
+        "density_level": 4,
+        "description": "dense neighboring records",
+        "profile": "ledger_surround",
+        "profile_index": 1
+      }
+    },
+    "operation_graph": "calc_rectangular_selection_fill_handle",
+    "operation_schema_revision": 1,
+    "state_context": {
+      "context_axes": {
+        "fixture_state": "dense neighboring records",
+        "schedule_policy": "unchanged",
+        "target_neighborhood": 4,
+        "workflow_graph": "unchanged"
+      },
+      "density_level": 4,
+      "description": "dense neighboring records",
+      "profile": "ledger_surround",
+      "profile_index": 1
+    },
+    "workflow_id": "S-02"
+  },
+  "signatures": {
+    "fixture": "9e118f64d3af1c840ee86b0ebbd6200604764f417b92ee7ad853da6aa7703bc3",
+    "goal": "a07cdc2db18c4410a4a4ea987ddd58299bd676cc0ce9f2dc13fd73c0651ae450",
+    "semantic": "33bf02bcdf141e90113e7307a358c66e9e794f7ba5fb01a15917153d421c1669",
+    "structural": "d5a5da09015ec803263e6bf77ab7a9b3d3d1d029f2ad92d9bb8adb76040be759"
+  },
+  "target_objects": {
+    "A": [
+      "calc/C2:E3"
+    ],
+    "B": [
+      "calc/G2:I3"
+    ]
+  },
+  "task_domains": {
+    "A": "Calc",
+    "B": "Calc"
+  },
+  "topology_compatibility": {
+    "ma_id": {
+      "backend_binding": "same logical workspace seed; independent desktop sessions allowed",
+      "desktop_count": 2,
+      "fixtures": "byte-identical task-relevant clones"
+    },
+    "ma_sd": {
+      "actor_bindings": "A and B share desktop",
+      "desktop_count": 1
+    },
+    "solo": {
+      "actor_bindings": "A or B",
+      "desktop_count": 1
+    }
+  },
+  "treatment_relevant_state": {
+    "family_state": "selection_active_object",
+    "operation_graph": "calc_rectangular_selection_fill_handle",
+    "shared_resource": {
+      "operation_kind": "calc_range_fill",
+      "operation_pair": [
+        "range_selection_fill",
+        "range_selection_fill"
+      ],
+      "profile_label": "fill_bc",
+      "shape": [
+        2,
+        3
+      ],
+      "state_context": {
+        "context_axes": {
+          "fixture_state": "dense neighboring records",
+          "schedule_policy": "unchanged",
+          "target_neighborhood": 4,
+          "workflow_graph": "unchanged"
+        },
+        "density_level": 4,
+        "description": "dense neighboring records",
+        "profile": "ledger_surround",
+        "profile_index": 1
+      }
+    }
+  },
+  "validation_level": "offline_operation_template",
+  "workflow_id": "S-02"
+}

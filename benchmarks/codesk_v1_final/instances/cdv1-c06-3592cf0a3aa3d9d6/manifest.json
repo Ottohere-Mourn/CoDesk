@@ -1,0 +1,423 @@
+{
+  "actor_goals": [
+    {
+      "actor_id": "A",
+      "expected_value": "OUTPUT-SUP-2048",
+      "goal": "Select and copy the exact command output, paste it into the assigned Browser search, and submit the search. Target browser/search/ticket; initial ''; required final 'OUTPUT-SUP-2048'.",
+      "initial_value": "",
+      "operation": "update browser/search/ticket",
+      "target_objects": [
+        "browser/search/ticket"
+      ],
+      "task_domain": "Browser"
+    },
+    {
+      "actor_id": "B",
+      "expected_value": "SEARCH-SUP-2048",
+      "goal": "Copy the assigned Browser text token and paste it into the independent destination field. Target browser/destination/ticket; initial '__EMPTY__'; required final 'SEARCH-SUP-2048'.",
+      "initial_value": "__EMPTY__",
+      "operation": "update browser/destination/ticket",
+      "target_objects": [
+        "browser/destination/ticket"
+      ],
+      "task_domain": "Browser"
+    }
+  ],
+  "benchmark_version": "codesk-v1.0",
+  "evaluator": {
+    "actor_paths": {
+      "A": "actors.A.value",
+      "B": "actors.B.value"
+    },
+    "adapter": "codesk_exact_state_v1",
+    "condition_semantics": {
+      "ma_id": "score each actor on equivalent independent desktop fixture",
+      "ma_sd": "score both actor goals and shared-state integrity",
+      "solo": "score selected actor; require inactive target and guards unchanged"
+    },
+    "context_expectation": {
+      "context_axes": {
+        "fixture_state": "archived-result distractors",
+        "schedule_policy": "unchanged",
+        "target_neighborhood": 5,
+        "workflow_graph": "unchanged"
+      },
+      "density_level": 5,
+      "description": "archived-result distractors",
+      "profile": "tree_output",
+      "profile_index": 4
+    },
+    "expected_state": {
+      "actors": {
+        "A": {
+          "object": "browser/search/ticket",
+          "value": "OUTPUT-SUP-2048"
+        },
+        "B": {
+          "object": "browser/destination/ticket",
+          "value": "SEARCH-SUP-2048"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "context_profile": {
+          "context_axes": {
+            "fixture_state": "archived-result distractors",
+            "schedule_policy": "unchanged",
+            "target_neighborhood": 5,
+            "workflow_graph": "unchanged"
+          },
+          "density_level": 5,
+          "description": "archived-result distractors",
+          "profile": "tree_output",
+          "profile_index": 4
+        },
+        "initial": {
+          "operation_kind": "terminal_browser_text_transfer",
+          "operation_pair": [
+            "terminal_output_copy_search",
+            "browser_text_copy_paste"
+          ],
+          "profile_label": "search_ticket",
+          "state_context": {
+            "context_axes": {
+              "fixture_state": "archived-result distractors",
+              "schedule_policy": "unchanged",
+              "target_neighborhood": 5,
+              "workflow_graph": "unchanged"
+            },
+            "density_level": 5,
+            "description": "archived-result distractors",
+            "profile": "tree_output",
+            "profile_index": 4
+          }
+        },
+        "resource": "clipboard_state"
+      }
+    },
+    "initial_state": {
+      "actors": {
+        "A": {
+          "object": "browser/search/ticket",
+          "value": ""
+        },
+        "B": {
+          "object": "browser/destination/ticket",
+          "value": "__EMPTY__"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "context_profile": {
+          "context_axes": {
+            "fixture_state": "archived-result distractors",
+            "schedule_policy": "unchanged",
+            "target_neighborhood": 5,
+            "workflow_graph": "unchanged"
+          },
+          "density_level": 5,
+          "description": "archived-result distractors",
+          "profile": "tree_output",
+          "profile_index": 4
+        },
+        "initial": {
+          "operation_kind": "terminal_browser_text_transfer",
+          "operation_pair": [
+            "terminal_output_copy_search",
+            "browser_text_copy_paste"
+          ],
+          "profile_label": "search_ticket",
+          "state_context": {
+            "context_axes": {
+              "fixture_state": "archived-result distractors",
+              "schedule_policy": "unchanged",
+              "target_neighborhood": 5,
+              "workflow_graph": "unchanged"
+            },
+            "density_level": 5,
+            "description": "archived-result distractors",
+            "profile": "tree_output",
+            "profile_index": 4
+          }
+        },
+        "resource": "clipboard_state"
+      }
+    },
+    "invariants": [
+      {
+        "equals": "PRESERVE",
+        "path": "actors.guards.main"
+      }
+    ],
+    "operation_contract": {
+      "A": "terminal/selection-to-browser-search",
+      "B": "browser/text-copy-paste",
+      "evidence_required": true,
+      "operation_graph": "terminal_selected_output_to_browser_search_and_browser_text_copy",
+      "shared_state": "X11 clipboard selection"
+    },
+    "schedule_policy_id": "terminal-output-browser-copy-confirm-resume-v1"
+  },
+  "evaluator_path": "evaluators/cdv1-c06-3592cf0a3aa3d9d6.json",
+  "evaluator_sha256": "63375587ca500c027307f8efcf04260523c88f6428497b84b90a46ce28440ab1",
+  "family": "clipboard_state",
+  "fixture_files": [
+    {
+      "path": "fixtures/cdv1-c06-3592cf0a3aa3d9d6/browser-events.jsonl",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size_bytes": 0
+    },
+    {
+      "path": "fixtures/cdv1-c06-3592cf0a3aa3d9d6/browser-initial-state.json",
+      "sha256": "d4c14df5c0b6519feef6c9fbd61216c6f26e98c4e4f2d1ebb0e4ce10e40b74c7",
+      "size_bytes": 202
+    },
+    {
+      "path": "fixtures/cdv1-c06-3592cf0a3aa3d9d6/browser-server.py",
+      "sha256": "bf3ac0783bd9a061300de0948af0df58f8fd949afa5cdfb6e37e2ebf80e6cf44",
+      "size_bytes": 3224
+    },
+    {
+      "path": "fixtures/cdv1-c06-3592cf0a3aa3d9d6/state-context.json",
+      "sha256": "a492aaf5f98c5b8130ef7bdcfe4a7bf48793216a390c326e2883c4ea35216b1c",
+      "size_bytes": 252
+    },
+    {
+      "path": "fixtures/cdv1-c06-3592cf0a3aa3d9d6/terminal-state.json",
+      "sha256": "e0d9912ed6e6db2b1d50cb8563896d86f752527117612c63bc5a1becc5fe19fa",
+      "size_bytes": 52
+    },
+    {
+      "path": "fixtures/cdv1-c06-3592cf0a3aa3d9d6/terminal-task.sh",
+      "sha256": "3e1916c0427da6307a16f63f8e863f51bd881d42d3a9032729f78a784e580a43",
+      "size_bytes": 430
+    },
+    {
+      "path": "fixtures/cdv1-c06-3592cf0a3aa3d9d6/workspace.html",
+      "sha256": "2669ff556ad6318f6338e6822e75adc6b4fd0bb19513a66d2060bf64899b5807",
+      "size_bytes": 1623
+    }
+  ],
+  "generation_seed": 2026,
+  "initial_fixture_spec": {
+    "application_set": [
+      "Terminal",
+      "Browser"
+    ],
+    "fixture_profile": "search_ticket",
+    "layout_id": "guard_after",
+    "public_assets": [
+      {
+        "path": "fixtures/cdv1-c06-3592cf0a3aa3d9d6/browser-events.jsonl",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size_bytes": 0
+      },
+      {
+        "path": "fixtures/cdv1-c06-3592cf0a3aa3d9d6/browser-initial-state.json",
+        "sha256": "d4c14df5c0b6519feef6c9fbd61216c6f26e98c4e4f2d1ebb0e4ce10e40b74c7",
+        "size_bytes": 202
+      },
+      {
+        "path": "fixtures/cdv1-c06-3592cf0a3aa3d9d6/browser-server.py",
+        "sha256": "bf3ac0783bd9a061300de0948af0df58f8fd949afa5cdfb6e37e2ebf80e6cf44",
+        "size_bytes": 3224
+      },
+      {
+        "path": "fixtures/cdv1-c06-3592cf0a3aa3d9d6/state-context.json",
+        "sha256": "a492aaf5f98c5b8130ef7bdcfe4a7bf48793216a390c326e2883c4ea35216b1c",
+        "size_bytes": 252
+      },
+      {
+        "path": "fixtures/cdv1-c06-3592cf0a3aa3d9d6/terminal-state.json",
+        "sha256": "e0d9912ed6e6db2b1d50cb8563896d86f752527117612c63bc5a1becc5fe19fa",
+        "size_bytes": 52
+      },
+      {
+        "path": "fixtures/cdv1-c06-3592cf0a3aa3d9d6/terminal-task.sh",
+        "sha256": "3e1916c0427da6307a16f63f8e863f51bd881d42d3a9032729f78a784e580a43",
+        "size_bytes": 430
+      },
+      {
+        "path": "fixtures/cdv1-c06-3592cf0a3aa3d9d6/workspace.html",
+        "sha256": "2669ff556ad6318f6338e6822e75adc6b4fd0bb19513a66d2060bf64899b5807",
+        "size_bytes": 1623
+      }
+    ]
+  },
+  "instance_id": "cdv1-c06-3592cf0a3aa3d9d6",
+  "manifest_entry_sha256": "2183cbe82833779c8d0e9e48766fbea10ed3d7df6968d5429e53df7b7d893cb4",
+  "provenance": {
+    "fixture_sha256": "84380de184b600467fc97e24e7ea86f67ec7dcfe89907487bf361e23cc5176c1",
+    "generation_seed": 2026,
+    "generator": "swcub.production_v1",
+    "seed_role": "deterministic profile ordering only; excluded from instance identity",
+    "semantic_spec_sha256": "3592cf0a3aa3d9d6ffe8547644d08a3c51a393ed5a84f4e3823aeb0b24a3af2f",
+    "source_code_sha256": "c6f4ce3ff7f122b199f69d31f881393102fe21e3cae914f6877b8bb2f676fcb3",
+    "source_commit": "fc75fc962775fb64429d11f13c5cd0df0cc1cedd"
+  },
+  "reset_metadata": {
+    "fixture_id": "cdv1-c06-3592cf0a3aa3d9d6",
+    "fresh_guest_required": true,
+    "remove_prior_app_state": true,
+    "verify_fixture_hash": "84380de184b600467fc97e24e7ea86f67ec7dcfe89907487bf361e23cc5176c1",
+    "verify_state": {
+      "actors": {
+        "A": {
+          "object": "browser/search/ticket",
+          "value": ""
+        },
+        "B": {
+          "object": "browser/destination/ticket",
+          "value": "__EMPTY__"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "context_profile": {
+          "context_axes": {
+            "fixture_state": "archived-result distractors",
+            "schedule_policy": "unchanged",
+            "target_neighborhood": 5,
+            "workflow_graph": "unchanged"
+          },
+          "density_level": 5,
+          "description": "archived-result distractors",
+          "profile": "tree_output",
+          "profile_index": 4
+        },
+        "initial": {
+          "operation_kind": "terminal_browser_text_transfer",
+          "operation_pair": [
+            "terminal_output_copy_search",
+            "browser_text_copy_paste"
+          ],
+          "profile_label": "search_ticket",
+          "state_context": {
+            "context_axes": {
+              "fixture_state": "archived-result distractors",
+              "schedule_policy": "unchanged",
+              "target_neighborhood": 5,
+              "workflow_graph": "unchanged"
+            },
+            "density_level": 5,
+            "description": "archived-result distractors",
+            "profile": "tree_output",
+            "profile_index": 4
+          }
+        },
+        "resource": "clipboard_state"
+      }
+    }
+  },
+  "schedule_policy_id": "terminal-output-browser-copy-confirm-resume-v1",
+  "semantic_parameters": {
+    "domain_id": "supplier_onboarding",
+    "domain_schema": {
+      "entity": "supplier record",
+      "field_a": "Review decision",
+      "field_b": "Verification state"
+    },
+    "layout_id": "guard_after",
+    "object_profile_id": "search_ticket",
+    "object_schema": {
+      "operation_kind": "terminal_browser_text_transfer",
+      "operation_pair": [
+        "terminal_output_copy_search",
+        "browser_text_copy_paste"
+      ],
+      "profile_label": "search_ticket",
+      "state_context": {
+        "context_axes": {
+          "fixture_state": "archived-result distractors",
+          "schedule_policy": "unchanged",
+          "target_neighborhood": 5,
+          "workflow_graph": "unchanged"
+        },
+        "density_level": 5,
+        "description": "archived-result distractors",
+        "profile": "tree_output",
+        "profile_index": 4
+      }
+    },
+    "operation_graph": "terminal_selected_output_to_browser_search_and_browser_text_copy",
+    "operation_schema_revision": 1,
+    "state_context": {
+      "context_axes": {
+        "fixture_state": "archived-result distractors",
+        "schedule_policy": "unchanged",
+        "target_neighborhood": 5,
+        "workflow_graph": "unchanged"
+      },
+      "density_level": 5,
+      "description": "archived-result distractors",
+      "profile": "tree_output",
+      "profile_index": 4
+    },
+    "workflow_id": "C-06"
+  },
+  "signatures": {
+    "fixture": "84380de184b600467fc97e24e7ea86f67ec7dcfe89907487bf361e23cc5176c1",
+    "goal": "2b19ad418d4701fe0e8306baee26b3dbfea9e920c5cc77e10a4586b694a9f465",
+    "semantic": "3592cf0a3aa3d9d6ffe8547644d08a3c51a393ed5a84f4e3823aeb0b24a3af2f",
+    "structural": "6d7b55da8895674de4658bd739bc6db33e99e2eff2832511304d80570f92f462"
+  },
+  "target_objects": {
+    "A": [
+      "browser/search/ticket"
+    ],
+    "B": [
+      "browser/destination/ticket"
+    ]
+  },
+  "task_domains": {
+    "A": "Browser",
+    "B": "Browser"
+  },
+  "topology_compatibility": {
+    "ma_id": {
+      "backend_binding": "same logical workspace seed; independent desktop sessions allowed",
+      "desktop_count": 2,
+      "fixtures": "byte-identical task-relevant clones"
+    },
+    "ma_sd": {
+      "actor_bindings": "A and B share desktop",
+      "desktop_count": 1
+    },
+    "solo": {
+      "actor_bindings": "A or B",
+      "desktop_count": 1
+    }
+  },
+  "treatment_relevant_state": {
+    "family_state": "clipboard_state",
+    "operation_graph": "terminal_selected_output_to_browser_search_and_browser_text_copy",
+    "shared_resource": {
+      "operation_kind": "terminal_browser_text_transfer",
+      "operation_pair": [
+        "terminal_output_copy_search",
+        "browser_text_copy_paste"
+      ],
+      "profile_label": "search_ticket",
+      "state_context": {
+        "context_axes": {
+          "fixture_state": "archived-result distractors",
+          "schedule_policy": "unchanged",
+          "target_neighborhood": 5,
+          "workflow_graph": "unchanged"
+        },
+        "density_level": 5,
+        "description": "archived-result distractors",
+        "profile": "tree_output",
+        "profile_index": 4
+      }
+    }
+  },
+  "validation_level": "offline_operation_template",
+  "workflow_id": "C-06"
+}

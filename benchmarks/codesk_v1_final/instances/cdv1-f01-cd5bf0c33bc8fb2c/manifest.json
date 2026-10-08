@@ -1,0 +1,381 @@
+{
+  "actor_goals": [
+    {
+      "actor_id": "A",
+      "expected_value": "Cleared: inspection item (D2)",
+      "goal": "Replace all Writer document content with the assigned decision and save.",
+      "initial_value": "Draft: inspection item",
+      "operation": "update writer/document-content",
+      "target_objects": [
+        "writer/document-content"
+      ],
+      "task_domain": "Writer"
+    },
+    {
+      "actor_id": "B",
+      "expected_value": "Inspected: inspection item (D2)",
+      "goal": "Set the assigned Calc field and preserve the remaining table.",
+      "initial_value": "Pending: inspection item",
+      "operation": "update calc/D2",
+      "target_objects": [
+        "calc/D2"
+      ],
+      "task_domain": "Calc"
+    }
+  ],
+  "benchmark_version": "codesk-v1.0",
+  "evaluator": {
+    "actor_paths": {
+      "A": "actors.A.value",
+      "B": "actors.B.value"
+    },
+    "adapter": "codesk_exact_state_v1",
+    "condition_semantics": {
+      "ma_id": "score each actor on equivalent independent desktop fixture",
+      "ma_sd": "score both actor goals and shared-state integrity",
+      "solo": "score selected actor; require inactive target and guards unchanged"
+    },
+    "context_expectation": {
+      "context_axes": {
+        "fixture_state": "subtotal and neighboring records",
+        "schedule_policy": "unchanged",
+        "target_neighborhood": 5,
+        "workflow_graph": "unchanged"
+      },
+      "density_level": 5,
+      "description": "subtotal and neighboring records",
+      "profile": "multi_section_brief",
+      "profile_index": 4
+    },
+    "expected_state": {
+      "actors": {
+        "A": {
+          "object": "writer/document-content",
+          "value": "Cleared: inspection item (D2)"
+        },
+        "B": {
+          "object": "calc/D2",
+          "value": "Inspected: inspection item (D2)"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "context_profile": {
+          "context_axes": {
+            "fixture_state": "subtotal and neighboring records",
+            "schedule_policy": "unchanged",
+            "target_neighborhood": 5,
+            "workflow_graph": "unchanged"
+          },
+          "density_level": 5,
+          "description": "subtotal and neighboring records",
+          "profile": "multi_section_brief",
+          "profile_index": 4
+        },
+        "initial": {
+          "headers": [
+            "Item",
+            "Owner",
+            "Region",
+            "Status"
+          ],
+          "state_context": {
+            "context_axes": {
+              "fixture_state": "subtotal and neighboring records",
+              "schedule_policy": "unchanged",
+              "target_neighborhood": 5,
+              "workflow_graph": "unchanged"
+            },
+            "density_level": 5,
+            "description": "subtotal and neighboring records",
+            "profile": "multi_section_brief",
+            "profile_index": 4
+          },
+          "target": "D2"
+        },
+        "resource": "focus_input_routing"
+      }
+    },
+    "initial_state": {
+      "actors": {
+        "A": {
+          "object": "writer/document-content",
+          "value": "Draft: inspection item"
+        },
+        "B": {
+          "object": "calc/D2",
+          "value": "Pending: inspection item"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "context_profile": {
+          "context_axes": {
+            "fixture_state": "subtotal and neighboring records",
+            "schedule_policy": "unchanged",
+            "target_neighborhood": 5,
+            "workflow_graph": "unchanged"
+          },
+          "density_level": 5,
+          "description": "subtotal and neighboring records",
+          "profile": "multi_section_brief",
+          "profile_index": 4
+        },
+        "initial": {
+          "headers": [
+            "Item",
+            "Owner",
+            "Region",
+            "Status"
+          ],
+          "state_context": {
+            "context_axes": {
+              "fixture_state": "subtotal and neighboring records",
+              "schedule_policy": "unchanged",
+              "target_neighborhood": 5,
+              "workflow_graph": "unchanged"
+            },
+            "density_level": 5,
+            "description": "subtotal and neighboring records",
+            "profile": "multi_section_brief",
+            "profile_index": 4
+          },
+          "target": "D2"
+        },
+        "resource": "focus_input_routing"
+      }
+    },
+    "invariants": [
+      {
+        "equals": "PRESERVE",
+        "path": "actors.guards.main"
+      }
+    ],
+    "schedule_policy_id": "action-boundary-round-robin-ab-v1"
+  },
+  "evaluator_path": "evaluators/cdv1-f01-cd5bf0c33bc8fb2c.json",
+  "evaluator_sha256": "16e455d6c90c58248844337fa3aad661ac9685b68cbe30e22488521927160617",
+  "family": "focus_input_routing",
+  "fixture_files": [
+    {
+      "path": "fixtures/cdv1-f01-cd5bf0c33bc8fb2c/document.fodt",
+      "sha256": "22f0f911f0c36e054a947fcedec9b8a0278053888af07d35573e7e5eb2011368",
+      "size_bytes": 888
+    },
+    {
+      "path": "fixtures/cdv1-f01-cd5bf0c33bc8fb2c/state-context.json",
+      "sha256": "c5075aaca8cc299082d165d9fcc8202ecb4eb91396c0c73d982946a8f787c5ee",
+      "size_bytes": 270
+    },
+    {
+      "path": "fixtures/cdv1-f01-cd5bf0c33bc8fb2c/workbook.fods",
+      "sha256": "03168b93e9ee04e562c20802da9bab25b76f0562be7ae9d1157ec93c72fa3fe3",
+      "size_bytes": 3971
+    }
+  ],
+  "generation_seed": 2026,
+  "initial_fixture_spec": {
+    "application_set": [
+      "Writer",
+      "Calc"
+    ],
+    "fixture_profile": "cell_d2",
+    "layout_id": "guard_after",
+    "public_assets": [
+      {
+        "path": "fixtures/cdv1-f01-cd5bf0c33bc8fb2c/document.fodt",
+        "sha256": "22f0f911f0c36e054a947fcedec9b8a0278053888af07d35573e7e5eb2011368",
+        "size_bytes": 888
+      },
+      {
+        "path": "fixtures/cdv1-f01-cd5bf0c33bc8fb2c/state-context.json",
+        "sha256": "c5075aaca8cc299082d165d9fcc8202ecb4eb91396c0c73d982946a8f787c5ee",
+        "size_bytes": 270
+      },
+      {
+        "path": "fixtures/cdv1-f01-cd5bf0c33bc8fb2c/workbook.fods",
+        "sha256": "03168b93e9ee04e562c20802da9bab25b76f0562be7ae9d1157ec93c72fa3fe3",
+        "size_bytes": 3971
+      }
+    ]
+  },
+  "instance_id": "cdv1-f01-cd5bf0c33bc8fb2c",
+  "manifest_entry_sha256": "8cf66570e4e403fbf9dfa174efbd65df895614a48f56d41a1026cc3093e6087b",
+  "provenance": {
+    "fixture_sha256": "80246fbdf29e512ccdb68d1c2f6f20f8a9e4946011eb47881b1acda6f59c9891",
+    "generation_seed": 2026,
+    "generator": "swcub.production_v1",
+    "seed_role": "deterministic profile ordering only; excluded from instance identity",
+    "semantic_spec_sha256": "cd5bf0c33bc8fb2cd2dc9e578e0cc6757eb86a6790fe46585a19def18e83787b",
+    "source_code_sha256": "c6f4ce3ff7f122b199f69d31f881393102fe21e3cae914f6877b8bb2f676fcb3",
+    "source_commit": "fc75fc962775fb64429d11f13c5cd0df0cc1cedd"
+  },
+  "reset_metadata": {
+    "fixture_id": "cdv1-f01-cd5bf0c33bc8fb2c",
+    "fresh_guest_required": true,
+    "remove_prior_app_state": true,
+    "verify_fixture_hash": "80246fbdf29e512ccdb68d1c2f6f20f8a9e4946011eb47881b1acda6f59c9891",
+    "verify_state": {
+      "actors": {
+        "A": {
+          "object": "writer/document-content",
+          "value": "Draft: inspection item"
+        },
+        "B": {
+          "object": "calc/D2",
+          "value": "Pending: inspection item"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "context_profile": {
+          "context_axes": {
+            "fixture_state": "subtotal and neighboring records",
+            "schedule_policy": "unchanged",
+            "target_neighborhood": 5,
+            "workflow_graph": "unchanged"
+          },
+          "density_level": 5,
+          "description": "subtotal and neighboring records",
+          "profile": "multi_section_brief",
+          "profile_index": 4
+        },
+        "initial": {
+          "headers": [
+            "Item",
+            "Owner",
+            "Region",
+            "Status"
+          ],
+          "state_context": {
+            "context_axes": {
+              "fixture_state": "subtotal and neighboring records",
+              "schedule_policy": "unchanged",
+              "target_neighborhood": 5,
+              "workflow_graph": "unchanged"
+            },
+            "density_level": 5,
+            "description": "subtotal and neighboring records",
+            "profile": "multi_section_brief",
+            "profile_index": 4
+          },
+          "target": "D2"
+        },
+        "resource": "focus_input_routing"
+      }
+    }
+  },
+  "schedule_policy_id": "action-boundary-round-robin-ab-v1",
+  "semantic_parameters": {
+    "domain_id": "safety_inspection",
+    "domain_schema": {
+      "entity": "inspection item",
+      "field_a": "Clearance",
+      "field_b": "Inspection state"
+    },
+    "layout_id": "guard_after",
+    "object_profile_id": "cell_d2",
+    "object_schema": {
+      "headers": [
+        "Item",
+        "Owner",
+        "Region",
+        "Status"
+      ],
+      "state_context": {
+        "context_axes": {
+          "fixture_state": "subtotal and neighboring records",
+          "schedule_policy": "unchanged",
+          "target_neighborhood": 5,
+          "workflow_graph": "unchanged"
+        },
+        "density_level": 5,
+        "description": "subtotal and neighboring records",
+        "profile": "multi_section_brief",
+        "profile_index": 4
+      },
+      "target": "D2"
+    },
+    "operation_graph": "writer_full_document_vs_calc_cell",
+    "operation_schema_revision": 4,
+    "state_context": {
+      "context_axes": {
+        "fixture_state": "subtotal and neighboring records",
+        "schedule_policy": "unchanged",
+        "target_neighborhood": 5,
+        "workflow_graph": "unchanged"
+      },
+      "density_level": 5,
+      "description": "subtotal and neighboring records",
+      "profile": "multi_section_brief",
+      "profile_index": 4
+    },
+    "workflow_id": "F-01"
+  },
+  "signatures": {
+    "fixture": "80246fbdf29e512ccdb68d1c2f6f20f8a9e4946011eb47881b1acda6f59c9891",
+    "goal": "84adb56879a3173d64f9dd95ccd8a51bfcef9c770a4c49eba8df1fb7ea871da5",
+    "semantic": "cd5bf0c33bc8fb2cd2dc9e578e0cc6757eb86a6790fe46585a19def18e83787b",
+    "structural": "0898736b64b9470d5d6181b7eb06efbfe3bb6ca5b67ee3a01dfe5795a2b457c3"
+  },
+  "target_objects": {
+    "A": [
+      "writer/document-content"
+    ],
+    "B": [
+      "calc/D2"
+    ]
+  },
+  "task_domains": {
+    "A": "Writer",
+    "B": "Calc"
+  },
+  "topology_compatibility": {
+    "ma_id": {
+      "backend_binding": "same logical workspace seed; independent desktop sessions allowed",
+      "desktop_count": 2,
+      "fixtures": "byte-identical task-relevant clones"
+    },
+    "ma_sd": {
+      "actor_bindings": "A and B share desktop",
+      "desktop_count": 1
+    },
+    "solo": {
+      "actor_bindings": "A or B",
+      "desktop_count": 1
+    }
+  },
+  "treatment_relevant_state": {
+    "family_state": "focus_input_routing",
+    "operation_graph": "writer_full_document_vs_calc_cell",
+    "shared_resource": {
+      "headers": [
+        "Item",
+        "Owner",
+        "Region",
+        "Status"
+      ],
+      "state_context": {
+        "context_axes": {
+          "fixture_state": "subtotal and neighboring records",
+          "schedule_policy": "unchanged",
+          "target_neighborhood": 5,
+          "workflow_graph": "unchanged"
+        },
+        "density_level": 5,
+        "description": "subtotal and neighboring records",
+        "profile": "multi_section_brief",
+        "profile_index": 4
+      },
+      "target": "D2"
+    }
+  },
+  "validation_level": "qwen_mechanism_evidence",
+  "workflow_id": "F-01"
+}

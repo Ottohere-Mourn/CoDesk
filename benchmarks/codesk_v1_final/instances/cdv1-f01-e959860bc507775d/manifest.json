@@ -1,0 +1,371 @@
+{
+  "actor_goals": [
+    {
+      "actor_id": "A",
+      "expected_value": "Approved by GUI actor",
+      "goal": "Replace all Writer document content with the assigned decision and save.",
+      "initial_value": "Quarterly status report",
+      "operation": "update writer/document-content",
+      "target_objects": [
+        "writer/document-content"
+      ],
+      "task_domain": "Writer"
+    },
+    {
+      "actor_id": "B",
+      "expected_value": "Approved",
+      "goal": "Set the assigned Calc field and preserve the remaining table.",
+      "initial_value": "Draft",
+      "operation": "update calc/B2",
+      "target_objects": [
+        "calc/B2"
+      ],
+      "task_domain": "Calc"
+    }
+  ],
+  "benchmark_version": "codesk-v1.0",
+  "evaluator": {
+    "actor_paths": {
+      "A": "actors.A.value",
+      "B": "actors.B.value"
+    },
+    "adapter": "codesk_exact_state_v1",
+    "condition_semantics": {
+      "ma_id": "score each actor on equivalent independent desktop fixture",
+      "ma_sd": "score both actor goals and shared-state integrity",
+      "solo": "score selected actor; require inactive target and guards unchanged"
+    },
+    "context_expectation": {
+      "context_axes": {
+        "fixture_state": "sparse Calc ledger neighborhood",
+        "schedule_policy": "unchanged",
+        "target_neighborhood": 1,
+        "workflow_graph": "unchanged"
+      },
+      "density_level": 1,
+      "description": "sparse Calc ledger neighborhood",
+      "profile": "status_memo",
+      "profile_index": 0
+    },
+    "expected_state": {
+      "actors": {
+        "A": {
+          "object": "writer/document-content",
+          "value": "Approved by GUI actor"
+        },
+        "B": {
+          "object": "calc/B2",
+          "value": "Approved"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "context_profile": {
+          "context_axes": {
+            "fixture_state": "sparse Calc ledger neighborhood",
+            "schedule_policy": "unchanged",
+            "target_neighborhood": 1,
+            "workflow_graph": "unchanged"
+          },
+          "density_level": 1,
+          "description": "sparse Calc ledger neighborhood",
+          "profile": "status_memo",
+          "profile_index": 0
+        },
+        "initial": {
+          "headers": [
+            "Record",
+            "Status"
+          ],
+          "state_context": {
+            "context_axes": {
+              "fixture_state": "sparse Calc ledger neighborhood",
+              "schedule_policy": "unchanged",
+              "target_neighborhood": 1,
+              "workflow_graph": "unchanged"
+            },
+            "density_level": 1,
+            "description": "sparse Calc ledger neighborhood",
+            "profile": "status_memo",
+            "profile_index": 0
+          },
+          "target": "B2"
+        },
+        "resource": "focus_input_routing"
+      }
+    },
+    "initial_state": {
+      "actors": {
+        "A": {
+          "object": "writer/document-content",
+          "value": "Quarterly status report"
+        },
+        "B": {
+          "object": "calc/B2",
+          "value": "Draft"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "context_profile": {
+          "context_axes": {
+            "fixture_state": "sparse Calc ledger neighborhood",
+            "schedule_policy": "unchanged",
+            "target_neighborhood": 1,
+            "workflow_graph": "unchanged"
+          },
+          "density_level": 1,
+          "description": "sparse Calc ledger neighborhood",
+          "profile": "status_memo",
+          "profile_index": 0
+        },
+        "initial": {
+          "headers": [
+            "Record",
+            "Status"
+          ],
+          "state_context": {
+            "context_axes": {
+              "fixture_state": "sparse Calc ledger neighborhood",
+              "schedule_policy": "unchanged",
+              "target_neighborhood": 1,
+              "workflow_graph": "unchanged"
+            },
+            "density_level": 1,
+            "description": "sparse Calc ledger neighborhood",
+            "profile": "status_memo",
+            "profile_index": 0
+          },
+          "target": "B2"
+        },
+        "resource": "focus_input_routing"
+      }
+    },
+    "invariants": [
+      {
+        "equals": "PRESERVE",
+        "path": "actors.guards.main"
+      }
+    ],
+    "schedule_policy_id": "action-boundary-round-robin-ab-v1"
+  },
+  "evaluator_path": "evaluators/cdv1-f01-e959860bc507775d.json",
+  "evaluator_sha256": "5b716db4d160a8ca7b4a1d6fb0f7d1b7a3058a60c508f2e8e9f26b83e29c0f16",
+  "family": "focus_input_routing",
+  "fixture_files": [
+    {
+      "path": "fixtures/cdv1-f01-e959860bc507775d/document.fodt",
+      "sha256": "078906f6bce997129d02814a2d252f678b1511c42a2615f1aae16426ad3b2f74",
+      "size_bytes": 874
+    },
+    {
+      "path": "fixtures/cdv1-f01-e959860bc507775d/state-context.json",
+      "sha256": "390eb2f53bb996ae2b63a67229627fc3af60f832386b26136e2b35dea1ed47a1",
+      "size_bytes": 260
+    },
+    {
+      "path": "fixtures/cdv1-f01-e959860bc507775d/workbook.fods",
+      "sha256": "9d84b5940dd62149ee9f4b9c645af84614d27ef9f24ae34a927f59ebd0d4464c",
+      "size_bytes": 2071
+    }
+  ],
+  "generation_seed": 2026,
+  "initial_fixture_spec": {
+    "application_set": [
+      "Writer",
+      "Calc"
+    ],
+    "fixture_profile": "cell_b2",
+    "layout_id": "guard_after",
+    "public_assets": [
+      {
+        "path": "fixtures/cdv1-f01-e959860bc507775d/document.fodt",
+        "sha256": "078906f6bce997129d02814a2d252f678b1511c42a2615f1aae16426ad3b2f74",
+        "size_bytes": 874
+      },
+      {
+        "path": "fixtures/cdv1-f01-e959860bc507775d/state-context.json",
+        "sha256": "390eb2f53bb996ae2b63a67229627fc3af60f832386b26136e2b35dea1ed47a1",
+        "size_bytes": 260
+      },
+      {
+        "path": "fixtures/cdv1-f01-e959860bc507775d/workbook.fods",
+        "sha256": "9d84b5940dd62149ee9f4b9c645af84614d27ef9f24ae34a927f59ebd0d4464c",
+        "size_bytes": 2071
+      }
+    ]
+  },
+  "instance_id": "cdv1-f01-e959860bc507775d",
+  "manifest_entry_sha256": "a9f267497a42f69abb809b46e80f4955d7da840243c282007c6bded5a5427db3",
+  "provenance": {
+    "fixture_sha256": "321071cff65cfcad25e593dae067a30a0ad3bb04c967092d58c67d5dabfd6bd9",
+    "generation_seed": 2026,
+    "generator": "swcub.production_v1",
+    "seed_role": "deterministic profile ordering only; excluded from instance identity",
+    "semantic_spec_sha256": "e959860bc507775d0a182af1e49072b19d5d9ca01ea2a125e2bc33fe04894d6c",
+    "source_code_sha256": "c6f4ce3ff7f122b199f69d31f881393102fe21e3cae914f6877b8bb2f676fcb3",
+    "source_commit": "fc75fc962775fb64429d11f13c5cd0df0cc1cedd"
+  },
+  "reset_metadata": {
+    "fixture_id": "cdv1-f01-e959860bc507775d",
+    "fresh_guest_required": true,
+    "remove_prior_app_state": true,
+    "verify_fixture_hash": "321071cff65cfcad25e593dae067a30a0ad3bb04c967092d58c67d5dabfd6bd9",
+    "verify_state": {
+      "actors": {
+        "A": {
+          "object": "writer/document-content",
+          "value": "Quarterly status report"
+        },
+        "B": {
+          "object": "calc/B2",
+          "value": "Draft"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "context_profile": {
+          "context_axes": {
+            "fixture_state": "sparse Calc ledger neighborhood",
+            "schedule_policy": "unchanged",
+            "target_neighborhood": 1,
+            "workflow_graph": "unchanged"
+          },
+          "density_level": 1,
+          "description": "sparse Calc ledger neighborhood",
+          "profile": "status_memo",
+          "profile_index": 0
+        },
+        "initial": {
+          "headers": [
+            "Record",
+            "Status"
+          ],
+          "state_context": {
+            "context_axes": {
+              "fixture_state": "sparse Calc ledger neighborhood",
+              "schedule_policy": "unchanged",
+              "target_neighborhood": 1,
+              "workflow_graph": "unchanged"
+            },
+            "density_level": 1,
+            "description": "sparse Calc ledger neighborhood",
+            "profile": "status_memo",
+            "profile_index": 0
+          },
+          "target": "B2"
+        },
+        "resource": "focus_input_routing"
+      }
+    }
+  },
+  "schedule_policy_id": "action-boundary-round-robin-ab-v1",
+  "semantic_parameters": {
+    "domain_id": "capital_allocation",
+    "domain_schema": {
+      "entity": "capital request",
+      "field_a": "Decision",
+      "field_b": "Ledger state"
+    },
+    "layout_id": "guard_after",
+    "object_profile_id": "cell_b2",
+    "object_schema": {
+      "headers": [
+        "Record",
+        "Status"
+      ],
+      "state_context": {
+        "context_axes": {
+          "fixture_state": "sparse Calc ledger neighborhood",
+          "schedule_policy": "unchanged",
+          "target_neighborhood": 1,
+          "workflow_graph": "unchanged"
+        },
+        "density_level": 1,
+        "description": "sparse Calc ledger neighborhood",
+        "profile": "status_memo",
+        "profile_index": 0
+      },
+      "target": "B2"
+    },
+    "operation_graph": "writer_full_document_vs_calc_cell",
+    "operation_schema_revision": 4,
+    "state_context": {
+      "context_axes": {
+        "fixture_state": "sparse Calc ledger neighborhood",
+        "schedule_policy": "unchanged",
+        "target_neighborhood": 1,
+        "workflow_graph": "unchanged"
+      },
+      "density_level": 1,
+      "description": "sparse Calc ledger neighborhood",
+      "profile": "status_memo",
+      "profile_index": 0
+    },
+    "workflow_id": "F-01"
+  },
+  "signatures": {
+    "fixture": "321071cff65cfcad25e593dae067a30a0ad3bb04c967092d58c67d5dabfd6bd9",
+    "goal": "ffda8cbed9cb47d46cc441ff70c0d78ed3e533cdf0b6f785bcad4e26eb757ea0",
+    "semantic": "e959860bc507775d0a182af1e49072b19d5d9ca01ea2a125e2bc33fe04894d6c",
+    "structural": "cb3a79e8d4d190e31903eff1b36860059df02268c3d4c0add7832089b0e5326b"
+  },
+  "target_objects": {
+    "A": [
+      "writer/document-content"
+    ],
+    "B": [
+      "calc/B2"
+    ]
+  },
+  "task_domains": {
+    "A": "Writer",
+    "B": "Calc"
+  },
+  "topology_compatibility": {
+    "ma_id": {
+      "backend_binding": "same logical workspace seed; independent desktop sessions allowed",
+      "desktop_count": 2,
+      "fixtures": "byte-identical task-relevant clones"
+    },
+    "ma_sd": {
+      "actor_bindings": "A and B share desktop",
+      "desktop_count": 1
+    },
+    "solo": {
+      "actor_bindings": "A or B",
+      "desktop_count": 1
+    }
+  },
+  "treatment_relevant_state": {
+    "family_state": "focus_input_routing",
+    "operation_graph": "writer_full_document_vs_calc_cell",
+    "shared_resource": {
+      "headers": [
+        "Record",
+        "Status"
+      ],
+      "state_context": {
+        "context_axes": {
+          "fixture_state": "sparse Calc ledger neighborhood",
+          "schedule_policy": "unchanged",
+          "target_neighborhood": 1,
+          "workflow_graph": "unchanged"
+        },
+        "density_level": 1,
+        "description": "sparse Calc ledger neighborhood",
+        "profile": "status_memo",
+        "profile_index": 0
+      },
+      "target": "B2"
+    }
+  },
+  "validation_level": "qwen_mechanism_evidence",
+  "workflow_id": "F-01"
+}

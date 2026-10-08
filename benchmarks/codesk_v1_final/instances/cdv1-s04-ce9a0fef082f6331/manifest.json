@@ -1,0 +1,443 @@
+{
+  "actor_goals": [
+    {
+      "actor_id": "A",
+      "expected_value": "{\"rows\": [1, 3], \"status\": \"Reconciled\"}",
+      "goal": "Select all assigned A rows and apply the exact bulk status to those rows only. Target browser/rows/1,3; initial '[]'; required final '{\"rows\": [1, 3], \"status\": \"Reconciled\"}'.",
+      "initial_value": "[]",
+      "operation": "update browser/rows/1,3",
+      "target_objects": [
+        "browser/rows/1,3"
+      ],
+      "task_domain": "Browser"
+    },
+    {
+      "actor_id": "B",
+      "expected_value": "{\"rows\": [2, 4], \"status\": \"Counted\"}",
+      "goal": "Select all assigned B rows and apply the independent bulk status to those rows only. Target browser/rows/2,4; initial '[]'; required final '{\"rows\": [2, 4], \"status\": \"Counted\"}'.",
+      "initial_value": "[]",
+      "operation": "update browser/rows/2,4",
+      "target_objects": [
+        "browser/rows/2,4"
+      ],
+      "task_domain": "Browser"
+    }
+  ],
+  "benchmark_version": "codesk-v1.0",
+  "evaluator": {
+    "actor_paths": {
+      "A": "actors.A.value",
+      "B": "actors.B.value"
+    },
+    "adapter": "codesk_exact_state_v1",
+    "condition_semantics": {
+      "ma_id": "score each actor on equivalent independent desktop fixture",
+      "ma_sd": "score both actor goals and shared-state integrity",
+      "solo": "score selected actor; require inactive target and guards unchanged"
+    },
+    "context_expectation": {
+      "context_axes": {
+        "fixture_state": "compact table/one distractor",
+        "schedule_policy": "unchanged",
+        "target_neighborhood": 1,
+        "workflow_graph": "unchanged"
+      },
+      "density_level": 1,
+      "description": "compact table/one distractor",
+      "profile": "compact_queue",
+      "profile_index": 0
+    },
+    "expected_state": {
+      "actors": {
+        "A": {
+          "object": "browser/rows/1,3",
+          "value": "{\"rows\": [1, 3], \"status\": \"Reconciled\"}"
+        },
+        "B": {
+          "object": "browser/rows/2,4",
+          "value": "{\"rows\": [2, 4], \"status\": \"Counted\"}"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "context_profile": {
+          "context_axes": {
+            "fixture_state": "compact table/one distractor",
+            "schedule_policy": "unchanged",
+            "target_neighborhood": 1,
+            "workflow_graph": "unchanged"
+          },
+          "density_level": 1,
+          "description": "compact table/one distractor",
+          "profile": "compact_queue",
+          "profile_index": 0
+        },
+        "initial": {
+          "operation_kind": "browser_multiselect_bulk",
+          "operation_pair": [
+            "multirow_select_bulk_status",
+            "multirow_select_bulk_status"
+          ],
+          "profile_label": "rows_even",
+          "rows_a": [
+            1,
+            3
+          ],
+          "rows_b": [
+            2,
+            4
+          ],
+          "state_context": {
+            "context_axes": {
+              "fixture_state": "compact table/one distractor",
+              "schedule_policy": "unchanged",
+              "target_neighborhood": 1,
+              "workflow_graph": "unchanged"
+            },
+            "density_level": 1,
+            "description": "compact table/one distractor",
+            "profile": "compact_queue",
+            "profile_index": 0
+          }
+        },
+        "resource": "selection_active_object"
+      }
+    },
+    "initial_state": {
+      "actors": {
+        "A": {
+          "object": "browser/rows/1,3",
+          "value": "[]"
+        },
+        "B": {
+          "object": "browser/rows/2,4",
+          "value": "[]"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "context_profile": {
+          "context_axes": {
+            "fixture_state": "compact table/one distractor",
+            "schedule_policy": "unchanged",
+            "target_neighborhood": 1,
+            "workflow_graph": "unchanged"
+          },
+          "density_level": 1,
+          "description": "compact table/one distractor",
+          "profile": "compact_queue",
+          "profile_index": 0
+        },
+        "initial": {
+          "operation_kind": "browser_multiselect_bulk",
+          "operation_pair": [
+            "multirow_select_bulk_status",
+            "multirow_select_bulk_status"
+          ],
+          "profile_label": "rows_even",
+          "rows_a": [
+            1,
+            3
+          ],
+          "rows_b": [
+            2,
+            4
+          ],
+          "state_context": {
+            "context_axes": {
+              "fixture_state": "compact table/one distractor",
+              "schedule_policy": "unchanged",
+              "target_neighborhood": 1,
+              "workflow_graph": "unchanged"
+            },
+            "density_level": 1,
+            "description": "compact table/one distractor",
+            "profile": "compact_queue",
+            "profile_index": 0
+          }
+        },
+        "resource": "selection_active_object"
+      }
+    },
+    "invariants": [
+      {
+        "equals": "PRESERVE",
+        "path": "actors.guards.main"
+      }
+    ],
+    "operation_contract": {
+      "A": "browser/table/rows-a",
+      "B": "browser/table/rows-b",
+      "evidence_required": true,
+      "operation_graph": "browser_multirow_selection_bulk_update",
+      "shared_state": "selected row set"
+    },
+    "schedule_policy_id": "browser-row-selection-bulk-action-resume-v1"
+  },
+  "evaluator_path": "evaluators/cdv1-s04-ce9a0fef082f6331.json",
+  "evaluator_sha256": "d9703a75430d2ed0503c7012184b10a163f17f4513df67d70b828a24ee251728",
+  "family": "selection_active_object",
+  "fixture_files": [
+    {
+      "path": "fixtures/cdv1-s04-ce9a0fef082f6331/browser-events.jsonl",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size_bytes": 0
+    },
+    {
+      "path": "fixtures/cdv1-s04-ce9a0fef082f6331/browser-initial-state.json",
+      "sha256": "e6e8790feebb1f53753c6c339d58f091a79debd24277b6f8562e7f57e6380528",
+      "size_bytes": 558
+    },
+    {
+      "path": "fixtures/cdv1-s04-ce9a0fef082f6331/browser-server.py",
+      "sha256": "a0a6026d26d371e585f3c3c2ad3f80907e0356e7b63aea008781c657591b8d27",
+      "size_bytes": 3224
+    },
+    {
+      "path": "fixtures/cdv1-s04-ce9a0fef082f6331/state-context.json",
+      "sha256": "3739c0ed1053b8aed786783b1a790892ea73bd46c32388a99f3894c012724c30",
+      "size_bytes": 256
+    },
+    {
+      "path": "fixtures/cdv1-s04-ce9a0fef082f6331/workspace.html",
+      "sha256": "eb3ee03f79a46b343b6db07882cf7ca715c1c6fa8dee2445369df70f1ccd3096",
+      "size_bytes": 2501
+    }
+  ],
+  "generation_seed": 2026,
+  "initial_fixture_spec": {
+    "application_set": [
+      "Browser",
+      "Browser"
+    ],
+    "fixture_profile": "rows_even",
+    "layout_id": "guard_after",
+    "public_assets": [
+      {
+        "path": "fixtures/cdv1-s04-ce9a0fef082f6331/browser-events.jsonl",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size_bytes": 0
+      },
+      {
+        "path": "fixtures/cdv1-s04-ce9a0fef082f6331/browser-initial-state.json",
+        "sha256": "e6e8790feebb1f53753c6c339d58f091a79debd24277b6f8562e7f57e6380528",
+        "size_bytes": 558
+      },
+      {
+        "path": "fixtures/cdv1-s04-ce9a0fef082f6331/browser-server.py",
+        "sha256": "a0a6026d26d371e585f3c3c2ad3f80907e0356e7b63aea008781c657591b8d27",
+        "size_bytes": 3224
+      },
+      {
+        "path": "fixtures/cdv1-s04-ce9a0fef082f6331/state-context.json",
+        "sha256": "3739c0ed1053b8aed786783b1a790892ea73bd46c32388a99f3894c012724c30",
+        "size_bytes": 256
+      },
+      {
+        "path": "fixtures/cdv1-s04-ce9a0fef082f6331/workspace.html",
+        "sha256": "eb3ee03f79a46b343b6db07882cf7ca715c1c6fa8dee2445369df70f1ccd3096",
+        "size_bytes": 2501
+      }
+    ]
+  },
+  "instance_id": "cdv1-s04-ce9a0fef082f6331",
+  "manifest_entry_sha256": "021663672aba65aea6762874787afa5f580b34cc3f7a824476c761c188b5b1ea",
+  "provenance": {
+    "fixture_sha256": "063c03b1bda2cbbd619524dead0834d16ef5d2da490252f9cba995e23f3f2343",
+    "generation_seed": 2026,
+    "generator": "swcub.production_v1",
+    "seed_role": "deterministic profile ordering only; excluded from instance identity",
+    "semantic_spec_sha256": "ce9a0fef082f6331e19da7fc6d5159bef9d26a34d9376ebef634c77a17871398",
+    "source_code_sha256": "c6f4ce3ff7f122b199f69d31f881393102fe21e3cae914f6877b8bb2f676fcb3",
+    "source_commit": "fc75fc962775fb64429d11f13c5cd0df0cc1cedd"
+  },
+  "reset_metadata": {
+    "fixture_id": "cdv1-s04-ce9a0fef082f6331",
+    "fresh_guest_required": true,
+    "remove_prior_app_state": true,
+    "verify_fixture_hash": "063c03b1bda2cbbd619524dead0834d16ef5d2da490252f9cba995e23f3f2343",
+    "verify_state": {
+      "actors": {
+        "A": {
+          "object": "browser/rows/1,3",
+          "value": "[]"
+        },
+        "B": {
+          "object": "browser/rows/2,4",
+          "value": "[]"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "context_profile": {
+          "context_axes": {
+            "fixture_state": "compact table/one distractor",
+            "schedule_policy": "unchanged",
+            "target_neighborhood": 1,
+            "workflow_graph": "unchanged"
+          },
+          "density_level": 1,
+          "description": "compact table/one distractor",
+          "profile": "compact_queue",
+          "profile_index": 0
+        },
+        "initial": {
+          "operation_kind": "browser_multiselect_bulk",
+          "operation_pair": [
+            "multirow_select_bulk_status",
+            "multirow_select_bulk_status"
+          ],
+          "profile_label": "rows_even",
+          "rows_a": [
+            1,
+            3
+          ],
+          "rows_b": [
+            2,
+            4
+          ],
+          "state_context": {
+            "context_axes": {
+              "fixture_state": "compact table/one distractor",
+              "schedule_policy": "unchanged",
+              "target_neighborhood": 1,
+              "workflow_graph": "unchanged"
+            },
+            "density_level": 1,
+            "description": "compact table/one distractor",
+            "profile": "compact_queue",
+            "profile_index": 0
+          }
+        },
+        "resource": "selection_active_object"
+      }
+    }
+  },
+  "schedule_policy_id": "browser-row-selection-bulk-action-resume-v1",
+  "semantic_parameters": {
+    "domain_id": "warehouse_reconciliation",
+    "domain_schema": {
+      "entity": "warehouse lot",
+      "field_a": "Reconciliation",
+      "field_b": "Count status"
+    },
+    "layout_id": "guard_after",
+    "object_profile_id": "rows_even",
+    "object_schema": {
+      "operation_kind": "browser_multiselect_bulk",
+      "operation_pair": [
+        "multirow_select_bulk_status",
+        "multirow_select_bulk_status"
+      ],
+      "profile_label": "rows_even",
+      "rows_a": [
+        1,
+        3
+      ],
+      "rows_b": [
+        2,
+        4
+      ],
+      "state_context": {
+        "context_axes": {
+          "fixture_state": "compact table/one distractor",
+          "schedule_policy": "unchanged",
+          "target_neighborhood": 1,
+          "workflow_graph": "unchanged"
+        },
+        "density_level": 1,
+        "description": "compact table/one distractor",
+        "profile": "compact_queue",
+        "profile_index": 0
+      }
+    },
+    "operation_graph": "browser_multirow_selection_bulk_update",
+    "operation_schema_revision": 1,
+    "state_context": {
+      "context_axes": {
+        "fixture_state": "compact table/one distractor",
+        "schedule_policy": "unchanged",
+        "target_neighborhood": 1,
+        "workflow_graph": "unchanged"
+      },
+      "density_level": 1,
+      "description": "compact table/one distractor",
+      "profile": "compact_queue",
+      "profile_index": 0
+    },
+    "workflow_id": "S-04"
+  },
+  "signatures": {
+    "fixture": "063c03b1bda2cbbd619524dead0834d16ef5d2da490252f9cba995e23f3f2343",
+    "goal": "84712798a7dac6316b65cf34d235972103e5f1e9fb20b8b51fee995c2b039319",
+    "semantic": "ce9a0fef082f6331e19da7fc6d5159bef9d26a34d9376ebef634c77a17871398",
+    "structural": "02486793a11cd45ab6836065c1faa1488fe25fd4b8a3d09b34a1f5e7ada211fa"
+  },
+  "target_objects": {
+    "A": [
+      "browser/rows/1,3"
+    ],
+    "B": [
+      "browser/rows/2,4"
+    ]
+  },
+  "task_domains": {
+    "A": "Browser",
+    "B": "Browser"
+  },
+  "topology_compatibility": {
+    "ma_id": {
+      "backend_binding": "same logical workspace seed; independent desktop sessions allowed",
+      "desktop_count": 2,
+      "fixtures": "byte-identical task-relevant clones"
+    },
+    "ma_sd": {
+      "actor_bindings": "A and B share desktop",
+      "desktop_count": 1
+    },
+    "solo": {
+      "actor_bindings": "A or B",
+      "desktop_count": 1
+    }
+  },
+  "treatment_relevant_state": {
+    "family_state": "selection_active_object",
+    "operation_graph": "browser_multirow_selection_bulk_update",
+    "shared_resource": {
+      "operation_kind": "browser_multiselect_bulk",
+      "operation_pair": [
+        "multirow_select_bulk_status",
+        "multirow_select_bulk_status"
+      ],
+      "profile_label": "rows_even",
+      "rows_a": [
+        1,
+        3
+      ],
+      "rows_b": [
+        2,
+        4
+      ],
+      "state_context": {
+        "context_axes": {
+          "fixture_state": "compact table/one distractor",
+          "schedule_policy": "unchanged",
+          "target_neighborhood": 1,
+          "workflow_graph": "unchanged"
+        },
+        "density_level": 1,
+        "description": "compact table/one distractor",
+        "profile": "compact_queue",
+        "profile_index": 0
+      }
+    }
+  },
+  "validation_level": "offline_operation_template",
+  "workflow_id": "S-04"
+}

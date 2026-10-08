@@ -1,0 +1,85 @@
+{
+  "description": "Transfer plain text from independent sources to Writer and Calc destinations.",
+  "family": "clipboard_state",
+  "goal_a": "Paste the assigned note into the Writer destination.",
+  "goal_b": "Paste the assigned identifier into the Calc destination.",
+  "operation_graph": "plain_text_transfer",
+  "runtime_validation_incomplete": false,
+  "schedule_policy_id": "copy-confirm-b-copy-confirm-resume-a-v1",
+  "semantic_parameter_schema": {
+    "actor_target_disjoint": true,
+    "domain_fields": [
+      "entity",
+      "field_a",
+      "field_b",
+      "a_status",
+      "b_status"
+    ],
+    "identity_excludes": [
+      "generation_seed",
+      "repeat",
+      "condition",
+      "model",
+      "window_coordinates"
+    ],
+    "layout_fields": [
+      "guard_placement",
+      "field_order",
+      "fixture_layout"
+    ],
+    "no_op_goals_allowed": false,
+    "object_profiles": [
+      {
+        "a": "writer/paragraph[1]",
+        "b": "calc/A2",
+        "id": "writer_note_calc_cell",
+        "schema": {
+          "destination": "single cell",
+          "payload_kind": "plain note"
+        }
+      },
+      {
+        "a": "writer/insertion-after-record",
+        "b": "calc/C2",
+        "id": "writer_record_calc_cell",
+        "schema": {
+          "destination": "single cell",
+          "payload_kind": "record identifier"
+        }
+      },
+      {
+        "a": "writer/insertion-after-reference",
+        "b": "calc/B3",
+        "id": "writer_url_calc_cell",
+        "schema": {
+          "destination": "single cell",
+          "payload_kind": "plain URL text"
+        }
+      },
+      {
+        "a": "writer/insertion-after-action",
+        "b": "calc/C3",
+        "id": "writer_action_calc_cell",
+        "schema": {
+          "destination": "single cell",
+          "payload_kind": "action phrase"
+        }
+      },
+      {
+        "a": "writer/insertion-before-guard",
+        "b": "calc/D2",
+        "id": "writer_summary_calc_cell",
+        "schema": {
+          "destination": "single cell",
+          "payload_kind": "summary text"
+        }
+      }
+    ]
+  },
+  "task_domains": [
+    "Writer",
+    "Calc"
+  ],
+  "validation_level": "qwen_smoke",
+  "workflow_id": "C-01"
+}

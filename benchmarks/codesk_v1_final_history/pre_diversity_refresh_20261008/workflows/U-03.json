@@ -1,0 +1,114 @@
+{
+  "description": "Enter a formula and a peer value in one Calc history stack; A's later Undo must detect and recover the peer edit.",
+  "family": "undo_redo_history",
+  "goal_a": "Enter the assigned formula and restore the required formula after observing the peer Undo effect.",
+  "goal_b": "Commit the independent value to the assigned Calc cell.",
+  "operation_graph": "calc_formula_edit_peer_commit_undo_recovery",
+  "required_apps": [
+    "Calc",
+    "Calc"
+  ],
+  "runtime_validation_incomplete": true,
+  "schedule_policy_id": "calc-formula-edit-b-undo-recover-v1",
+  "semantic_parameter_schema": {
+    "actor_target_disjoint": true,
+    "domain_fields": [
+      "entity",
+      "field_a",
+      "field_b",
+      "a_status",
+      "b_status"
+    ],
+    "identity_excludes": [
+      "generation_seed",
+      "repeat",
+      "condition",
+      "model",
+      "window_coordinates"
+    ],
+    "layout_fields": [
+      "guard_placement",
+      "field_order",
+      "fixture_layout"
+    ],
+    "no_op_goals_allowed": false,
+    "object_profiles": [
+      {
+        "a": "calc/B2",
+        "b": "calc/C3",
+        "id": "undo_formula_a",
+        "schema": {
+          "operation_kind": "calc_formula_undo",
+          "operation_pair": [
+            "formula_entry_undo_recovery",
+            "cell_value_commit"
+          ],
+          "profile_label": "undo_formula_a"
+        }
+      },
+      {
+        "a": "calc/C2",
+        "b": "calc/D3",
+        "id": "undo_formula_b",
+        "schema": {
+          "operation_kind": "calc_formula_undo",
+          "operation_pair": [
+            "formula_entry_undo_recovery",
+            "cell_value_commit"
+          ],
+          "profile_label": "undo_formula_b"
+        }
+      },
+      {
+        "a": "calc/D2",
+        "b": "calc/E3",
+        "id": "undo_formula_c",
+        "schema": {
+          "operation_kind": "calc_formula_undo",
+          "operation_pair": [
+            "formula_entry_undo_recovery",
+            "cell_value_commit"
+          ],
+          "profile_label": "undo_formula_c"
+        }
+      },
+      {
+        "a": "calc/B3",
+        "b": "calc/C4",
+        "id": "undo_formula_d",
+        "schema": {
+          "operation_kind": "calc_formula_undo",
+          "operation_pair": [
+            "formula_entry_undo_recovery",
+            "cell_value_commit"
+          ],
+          "profile_label": "undo_formula_d"
+        }
+      },
+      {
+        "a": "calc/D3",
+        "b": "calc/E4",
+        "id": "undo_formula_e",
+        "schema": {
+          "operation_kind": "calc_formula_undo",
+          "operation_pair": [
+            "formula_entry_undo_recovery",
+            "cell_value_commit"
+          ],
+          "profile_label": "undo_formula_e"
+        }
+      }
+    ],
+    "operation_schema": {
+      "A": "calc/formula-cell",
+      "B": "calc/value-cell",
+      "shared": "Calc document undo stack"
+    }
+  },
+  "task_domains": [
+    "Calc",
+    "Calc"
+  ],
+  "validation_level": "offline_operation_template",
+  "workflow_id": "U-03"
+}

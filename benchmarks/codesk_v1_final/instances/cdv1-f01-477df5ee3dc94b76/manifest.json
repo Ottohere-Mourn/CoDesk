@@ -1,0 +1,371 @@
+{
+  "actor_goals": [
+    {
+      "actor_id": "A",
+      "expected_value": "Reconciled: warehouse lot (B3)",
+      "goal": "Replace all Writer document content with the assigned decision and save.",
+      "initial_value": "Draft: warehouse lot",
+      "operation": "update writer/document-content",
+      "target_objects": [
+        "writer/document-content"
+      ],
+      "task_domain": "Writer"
+    },
+    {
+      "actor_id": "B",
+      "expected_value": "Counted: warehouse lot (B3)",
+      "goal": "Set the assigned Calc field and preserve the remaining table.",
+      "initial_value": "Pending: warehouse lot",
+      "operation": "update calc/B3",
+      "target_objects": [
+        "calc/B3"
+      ],
+      "task_domain": "Calc"
+    }
+  ],
+  "benchmark_version": "codesk-v1.0",
+  "evaluator": {
+    "actor_paths": {
+      "A": "actors.A.value",
+      "B": "actors.B.value"
+    },
+    "adapter": "codesk_exact_state_v1",
+    "condition_semantics": {
+      "ma_id": "score each actor on equivalent independent desktop fixture",
+      "ma_sd": "score both actor goals and shared-state integrity",
+      "solo": "score selected actor; require inactive target and guards unchanged"
+    },
+    "context_expectation": {
+      "context_axes": {
+        "fixture_state": "formula-bearing Calc neighbors",
+        "schedule_policy": "unchanged",
+        "target_neighborhood": 3,
+        "workflow_graph": "unchanged"
+      },
+      "density_level": 3,
+      "description": "formula-bearing Calc neighbors",
+      "profile": "action_list",
+      "profile_index": 2
+    },
+    "expected_state": {
+      "actors": {
+        "A": {
+          "object": "writer/document-content",
+          "value": "Reconciled: warehouse lot (B3)"
+        },
+        "B": {
+          "object": "calc/B3",
+          "value": "Counted: warehouse lot (B3)"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "context_profile": {
+          "context_axes": {
+            "fixture_state": "formula-bearing Calc neighbors",
+            "schedule_policy": "unchanged",
+            "target_neighborhood": 3,
+            "workflow_graph": "unchanged"
+          },
+          "density_level": 3,
+          "description": "formula-bearing Calc neighbors",
+          "profile": "action_list",
+          "profile_index": 2
+        },
+        "initial": {
+          "headers": [
+            "Asset",
+            "Status"
+          ],
+          "state_context": {
+            "context_axes": {
+              "fixture_state": "formula-bearing Calc neighbors",
+              "schedule_policy": "unchanged",
+              "target_neighborhood": 3,
+              "workflow_graph": "unchanged"
+            },
+            "density_level": 3,
+            "description": "formula-bearing Calc neighbors",
+            "profile": "action_list",
+            "profile_index": 2
+          },
+          "target": "B3"
+        },
+        "resource": "focus_input_routing"
+      }
+    },
+    "initial_state": {
+      "actors": {
+        "A": {
+          "object": "writer/document-content",
+          "value": "Draft: warehouse lot"
+        },
+        "B": {
+          "object": "calc/B3",
+          "value": "Pending: warehouse lot"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "context_profile": {
+          "context_axes": {
+            "fixture_state": "formula-bearing Calc neighbors",
+            "schedule_policy": "unchanged",
+            "target_neighborhood": 3,
+            "workflow_graph": "unchanged"
+          },
+          "density_level": 3,
+          "description": "formula-bearing Calc neighbors",
+          "profile": "action_list",
+          "profile_index": 2
+        },
+        "initial": {
+          "headers": [
+            "Asset",
+            "Status"
+          ],
+          "state_context": {
+            "context_axes": {
+              "fixture_state": "formula-bearing Calc neighbors",
+              "schedule_policy": "unchanged",
+              "target_neighborhood": 3,
+              "workflow_graph": "unchanged"
+            },
+            "density_level": 3,
+            "description": "formula-bearing Calc neighbors",
+            "profile": "action_list",
+            "profile_index": 2
+          },
+          "target": "B3"
+        },
+        "resource": "focus_input_routing"
+      }
+    },
+    "invariants": [
+      {
+        "equals": "PRESERVE",
+        "path": "actors.guards.main"
+      }
+    ],
+    "schedule_policy_id": "action-boundary-round-robin-ab-v1"
+  },
+  "evaluator_path": "evaluators/cdv1-f01-477df5ee3dc94b76.json",
+  "evaluator_sha256": "b603868901b609018a48d1633b5bed17c33e7436593f3b0d7da458c270bb5b80",
+  "family": "focus_input_routing",
+  "fixture_files": [
+    {
+      "path": "fixtures/cdv1-f01-477df5ee3dc94b76/document.fodt",
+      "sha256": "c32856fef651779d7cc7ce5511bf5088dad29419270a0b9d9cf51434a465e4b6",
+      "size_bytes": 876
+    },
+    {
+      "path": "fixtures/cdv1-f01-477df5ee3dc94b76/state-context.json",
+      "sha256": "52d9e2d4a57274a03ba60f773ee049d1fcb9193e9024f34e95a92695b73fa808",
+      "size_bytes": 258
+    },
+    {
+      "path": "fixtures/cdv1-f01-477df5ee3dc94b76/workbook.fods",
+      "sha256": "41eebcc77fdbbcabb615a297f17a77ae823c9708b02b2730c93800e3034f917b",
+      "size_bytes": 3238
+    }
+  ],
+  "generation_seed": 2026,
+  "initial_fixture_spec": {
+    "application_set": [
+      "Writer",
+      "Calc"
+    ],
+    "fixture_profile": "cell_b3",
+    "layout_id": "guard_after",
+    "public_assets": [
+      {
+        "path": "fixtures/cdv1-f01-477df5ee3dc94b76/document.fodt",
+        "sha256": "c32856fef651779d7cc7ce5511bf5088dad29419270a0b9d9cf51434a465e4b6",
+        "size_bytes": 876
+      },
+      {
+        "path": "fixtures/cdv1-f01-477df5ee3dc94b76/state-context.json",
+        "sha256": "52d9e2d4a57274a03ba60f773ee049d1fcb9193e9024f34e95a92695b73fa808",
+        "size_bytes": 258
+      },
+      {
+        "path": "fixtures/cdv1-f01-477df5ee3dc94b76/workbook.fods",
+        "sha256": "41eebcc77fdbbcabb615a297f17a77ae823c9708b02b2730c93800e3034f917b",
+        "size_bytes": 3238
+      }
+    ]
+  },
+  "instance_id": "cdv1-f01-477df5ee3dc94b76",
+  "manifest_entry_sha256": "6cdef826ea1f20a649490b0b82baa9b78203f90fdd50905af07791646a3d5de4",
+  "provenance": {
+    "fixture_sha256": "c3d69b72f4b7c2b000b0cbc73248d21ea0bcb200426a9aff6744fa0e444ee851",
+    "generation_seed": 2026,
+    "generator": "swcub.production_v1",
+    "seed_role": "deterministic profile ordering only; excluded from instance identity",
+    "semantic_spec_sha256": "477df5ee3dc94b7682acc959c064fddad4439c22cf815811f447cd4d52084d06",
+    "source_code_sha256": "c6f4ce3ff7f122b199f69d31f881393102fe21e3cae914f6877b8bb2f676fcb3",
+    "source_commit": "fc75fc962775fb64429d11f13c5cd0df0cc1cedd"
+  },
+  "reset_metadata": {
+    "fixture_id": "cdv1-f01-477df5ee3dc94b76",
+    "fresh_guest_required": true,
+    "remove_prior_app_state": true,
+    "verify_fixture_hash": "c3d69b72f4b7c2b000b0cbc73248d21ea0bcb200426a9aff6744fa0e444ee851",
+    "verify_state": {
+      "actors": {
+        "A": {
+          "object": "writer/document-content",
+          "value": "Draft: warehouse lot"
+        },
+        "B": {
+          "object": "calc/B3",
+          "value": "Pending: warehouse lot"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "context_profile": {
+          "context_axes": {
+            "fixture_state": "formula-bearing Calc neighbors",
+            "schedule_policy": "unchanged",
+            "target_neighborhood": 3,
+            "workflow_graph": "unchanged"
+          },
+          "density_level": 3,
+          "description": "formula-bearing Calc neighbors",
+          "profile": "action_list",
+          "profile_index": 2
+        },
+        "initial": {
+          "headers": [
+            "Asset",
+            "Status"
+          ],
+          "state_context": {
+            "context_axes": {
+              "fixture_state": "formula-bearing Calc neighbors",
+              "schedule_policy": "unchanged",
+              "target_neighborhood": 3,
+              "workflow_graph": "unchanged"
+            },
+            "density_level": 3,
+            "description": "formula-bearing Calc neighbors",
+            "profile": "action_list",
+            "profile_index": 2
+          },
+          "target": "B3"
+        },
+        "resource": "focus_input_routing"
+      }
+    }
+  },
+  "schedule_policy_id": "action-boundary-round-robin-ab-v1",
+  "semantic_parameters": {
+    "domain_id": "warehouse_reconciliation",
+    "domain_schema": {
+      "entity": "warehouse lot",
+      "field_a": "Reconciliation",
+      "field_b": "Count status"
+    },
+    "layout_id": "guard_after",
+    "object_profile_id": "cell_b3",
+    "object_schema": {
+      "headers": [
+        "Asset",
+        "Status"
+      ],
+      "state_context": {
+        "context_axes": {
+          "fixture_state": "formula-bearing Calc neighbors",
+          "schedule_policy": "unchanged",
+          "target_neighborhood": 3,
+          "workflow_graph": "unchanged"
+        },
+        "density_level": 3,
+        "description": "formula-bearing Calc neighbors",
+        "profile": "action_list",
+        "profile_index": 2
+      },
+      "target": "B3"
+    },
+    "operation_graph": "writer_full_document_vs_calc_cell",
+    "operation_schema_revision": 4,
+    "state_context": {
+      "context_axes": {
+        "fixture_state": "formula-bearing Calc neighbors",
+        "schedule_policy": "unchanged",
+        "target_neighborhood": 3,
+        "workflow_graph": "unchanged"
+      },
+      "density_level": 3,
+      "description": "formula-bearing Calc neighbors",
+      "profile": "action_list",
+      "profile_index": 2
+    },
+    "workflow_id": "F-01"
+  },
+  "signatures": {
+    "fixture": "c3d69b72f4b7c2b000b0cbc73248d21ea0bcb200426a9aff6744fa0e444ee851",
+    "goal": "59d18a23cd0ed3c0bf7701653f00380c67727225b19751e11868d23345cdb260",
+    "semantic": "477df5ee3dc94b7682acc959c064fddad4439c22cf815811f447cd4d52084d06",
+    "structural": "d3af1e51624994da79c9245c8eb277961c2fd82adce0ead29d5cc79ce0a0292e"
+  },
+  "target_objects": {
+    "A": [
+      "writer/document-content"
+    ],
+    "B": [
+      "calc/B3"
+    ]
+  },
+  "task_domains": {
+    "A": "Writer",
+    "B": "Calc"
+  },
+  "topology_compatibility": {
+    "ma_id": {
+      "backend_binding": "same logical workspace seed; independent desktop sessions allowed",
+      "desktop_count": 2,
+      "fixtures": "byte-identical task-relevant clones"
+    },
+    "ma_sd": {
+      "actor_bindings": "A and B share desktop",
+      "desktop_count": 1
+    },
+    "solo": {
+      "actor_bindings": "A or B",
+      "desktop_count": 1
+    }
+  },
+  "treatment_relevant_state": {
+    "family_state": "focus_input_routing",
+    "operation_graph": "writer_full_document_vs_calc_cell",
+    "shared_resource": {
+      "headers": [
+        "Asset",
+        "Status"
+      ],
+      "state_context": {
+        "context_axes": {
+          "fixture_state": "formula-bearing Calc neighbors",
+          "schedule_policy": "unchanged",
+          "target_neighborhood": 3,
+          "workflow_graph": "unchanged"
+        },
+        "density_level": 3,
+        "description": "formula-bearing Calc neighbors",
+        "profile": "action_list",
+        "profile_index": 2
+      },
+      "target": "B3"
+    }
+  },
+  "validation_level": "qwen_mechanism_evidence",
+  "workflow_id": "F-01"
+}

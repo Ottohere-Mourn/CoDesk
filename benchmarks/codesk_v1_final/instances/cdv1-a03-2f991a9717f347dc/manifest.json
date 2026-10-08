@@ -1,0 +1,373 @@
+{
+  "actor_goals": [
+    {
+      "actor_id": "A",
+      "expected_value": "SHEET-A-SAFE-1193",
+      "goal": "Enter the assigned value in the named cell on Sheet A and preserve its guard cells. Target calc/SheetA.C3; initial ''; required final 'SHEET-A-SAFE-1193'.",
+      "initial_value": "",
+      "operation": "update calc/SheetA.C3",
+      "target_objects": [
+        "calc/SheetA.C3"
+      ],
+      "task_domain": "Calc"
+    },
+    {
+      "actor_id": "B",
+      "expected_value": "SHEET-B-SAFE-1193",
+      "goal": "Enter the assigned value in the named cell on Sheet B and preserve its guard cells. Target calc/SheetB.D4; initial ''; required final 'SHEET-B-SAFE-1193'.",
+      "initial_value": "",
+      "operation": "update calc/SheetB.D4",
+      "target_objects": [
+        "calc/SheetB.D4"
+      ],
+      "task_domain": "Calc"
+    }
+  ],
+  "benchmark_version": "codesk-v1.0",
+  "evaluator": {
+    "actor_paths": {
+      "A": "actors.A.value",
+      "B": "actors.B.value"
+    },
+    "adapter": "codesk_exact_state_v1",
+    "condition_semantics": {
+      "ma_id": "score each actor on equivalent independent desktop fixture",
+      "ma_sd": "score both actor goals and shared-state integrity",
+      "solo": "score selected actor; require inactive target and guards unchanged"
+    },
+    "context_expectation": {
+      "context_axes": {
+        "fixture_state": "occupied boundary/blank margin",
+        "schedule_policy": "unchanged",
+        "target_neighborhood": 5,
+        "workflow_graph": "unchanged"
+      },
+      "density_level": 5,
+      "description": "occupied boundary/blank margin",
+      "profile": "reconciliation_boundary",
+      "profile_index": 4
+    },
+    "expected_state": {
+      "actors": {
+        "A": {
+          "object": "calc/SheetA.C3",
+          "value": "SHEET-A-SAFE-1193"
+        },
+        "B": {
+          "object": "calc/SheetB.D4",
+          "value": "SHEET-B-SAFE-1193"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "context_profile": {
+          "context_axes": {
+            "fixture_state": "occupied boundary/blank margin",
+            "schedule_policy": "unchanged",
+            "target_neighborhood": 5,
+            "workflow_graph": "unchanged"
+          },
+          "density_level": 5,
+          "description": "occupied boundary/blank margin",
+          "profile": "reconciliation_boundary",
+          "profile_index": 4
+        },
+        "initial": {
+          "operation_kind": "calc_sheet_context",
+          "operation_pair": [
+            "sheet_scoped_cell_edit",
+            "sheet_scoped_cell_edit"
+          ],
+          "profile_label": "sheet_budget",
+          "state_context": {
+            "context_axes": {
+              "fixture_state": "occupied boundary/blank margin",
+              "schedule_policy": "unchanged",
+              "target_neighborhood": 5,
+              "workflow_graph": "unchanged"
+            },
+            "density_level": 5,
+            "description": "occupied boundary/blank margin",
+            "profile": "reconciliation_boundary",
+            "profile_index": 4
+          }
+        },
+        "resource": "application_context"
+      }
+    },
+    "initial_state": {
+      "actors": {
+        "A": {
+          "object": "calc/SheetA.C3",
+          "value": ""
+        },
+        "B": {
+          "object": "calc/SheetB.D4",
+          "value": ""
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "context_profile": {
+          "context_axes": {
+            "fixture_state": "occupied boundary/blank margin",
+            "schedule_policy": "unchanged",
+            "target_neighborhood": 5,
+            "workflow_graph": "unchanged"
+          },
+          "density_level": 5,
+          "description": "occupied boundary/blank margin",
+          "profile": "reconciliation_boundary",
+          "profile_index": 4
+        },
+        "initial": {
+          "operation_kind": "calc_sheet_context",
+          "operation_pair": [
+            "sheet_scoped_cell_edit",
+            "sheet_scoped_cell_edit"
+          ],
+          "profile_label": "sheet_budget",
+          "state_context": {
+            "context_axes": {
+              "fixture_state": "occupied boundary/blank margin",
+              "schedule_policy": "unchanged",
+              "target_neighborhood": 5,
+              "workflow_graph": "unchanged"
+            },
+            "density_level": 5,
+            "description": "occupied boundary/blank margin",
+            "profile": "reconciliation_boundary",
+            "profile_index": 4
+          }
+        },
+        "resource": "application_context"
+      }
+    },
+    "invariants": [
+      {
+        "equals": "PRESERVE",
+        "path": "actors.guards.main"
+      }
+    ],
+    "operation_contract": {
+      "A": "calc/sheet-a/cell",
+      "B": "calc/sheet-b/cell",
+      "evidence_required": true,
+      "operation_graph": "calc_sheet_switch_and_sheet_scoped_edit",
+      "shared_state": "active worksheet context"
+    },
+    "schedule_policy_id": "calc-sheet-context-change-observe-resume-v1"
+  },
+  "evaluator_path": "evaluators/cdv1-a03-2f991a9717f347dc.json",
+  "evaluator_sha256": "b67456b2b92c096290746e3656b709972f8f7749ce6cab1bf6d4af57b9f16c20",
+  "family": "application_context",
+  "fixture_files": [
+    {
+      "path": "fixtures/cdv1-a03-2f991a9717f347dc/state-context.json",
+      "sha256": "c0a58255e9082ac04a9677c1c60a73215cf6add9a5dea21caff769e732149bfd",
+      "size_bytes": 270
+    },
+    {
+      "path": "fixtures/cdv1-a03-2f991a9717f347dc/workbook.fods",
+      "sha256": "096d5c79117cdf7a796f13f7f52dab648aa339b83de13fd105dcf3d08b115c5f",
+      "size_bytes": 17913
+    }
+  ],
+  "generation_seed": 2026,
+  "initial_fixture_spec": {
+    "application_set": [
+      "Calc",
+      "Calc"
+    ],
+    "fixture_profile": "sheet_budget",
+    "layout_id": "guard_after",
+    "public_assets": [
+      {
+        "path": "fixtures/cdv1-a03-2f991a9717f347dc/state-context.json",
+        "sha256": "c0a58255e9082ac04a9677c1c60a73215cf6add9a5dea21caff769e732149bfd",
+        "size_bytes": 270
+      },
+      {
+        "path": "fixtures/cdv1-a03-2f991a9717f347dc/workbook.fods",
+        "sha256": "096d5c79117cdf7a796f13f7f52dab648aa339b83de13fd105dcf3d08b115c5f",
+        "size_bytes": 17913
+      }
+    ]
+  },
+  "instance_id": "cdv1-a03-2f991a9717f347dc",
+  "manifest_entry_sha256": "225e702f70ac1ff062e3f2ea7c10e29c397855c84ac88de5010b6185d01bc0eb",
+  "provenance": {
+    "fixture_sha256": "359ae9ff92d0b780c5fa2cd06b3b4537053bb252440501a464e3238398102655",
+    "generation_seed": 2026,
+    "generator": "swcub.production_v1",
+    "seed_role": "deterministic profile ordering only; excluded from instance identity",
+    "semantic_spec_sha256": "2f991a9717f347dc429f1aeccca9c8b10380b90ab17a91623333f0d942b302cd",
+    "source_code_sha256": "c6f4ce3ff7f122b199f69d31f881393102fe21e3cae914f6877b8bb2f676fcb3",
+    "source_commit": "fc75fc962775fb64429d11f13c5cd0df0cc1cedd"
+  },
+  "reset_metadata": {
+    "fixture_id": "cdv1-a03-2f991a9717f347dc",
+    "fresh_guest_required": true,
+    "remove_prior_app_state": true,
+    "verify_fixture_hash": "359ae9ff92d0b780c5fa2cd06b3b4537053bb252440501a464e3238398102655",
+    "verify_state": {
+      "actors": {
+        "A": {
+          "object": "calc/SheetA.C3",
+          "value": ""
+        },
+        "B": {
+          "object": "calc/SheetB.D4",
+          "value": ""
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "context_profile": {
+          "context_axes": {
+            "fixture_state": "occupied boundary/blank margin",
+            "schedule_policy": "unchanged",
+            "target_neighborhood": 5,
+            "workflow_graph": "unchanged"
+          },
+          "density_level": 5,
+          "description": "occupied boundary/blank margin",
+          "profile": "reconciliation_boundary",
+          "profile_index": 4
+        },
+        "initial": {
+          "operation_kind": "calc_sheet_context",
+          "operation_pair": [
+            "sheet_scoped_cell_edit",
+            "sheet_scoped_cell_edit"
+          ],
+          "profile_label": "sheet_budget",
+          "state_context": {
+            "context_axes": {
+              "fixture_state": "occupied boundary/blank margin",
+              "schedule_policy": "unchanged",
+              "target_neighborhood": 5,
+              "workflow_graph": "unchanged"
+            },
+            "density_level": 5,
+            "description": "occupied boundary/blank margin",
+            "profile": "reconciliation_boundary",
+            "profile_index": 4
+          }
+        },
+        "resource": "application_context"
+      }
+    }
+  },
+  "schedule_policy_id": "calc-sheet-context-change-observe-resume-v1",
+  "semantic_parameters": {
+    "domain_id": "safety_inspection",
+    "domain_schema": {
+      "entity": "inspection item",
+      "field_a": "Clearance",
+      "field_b": "Inspection state"
+    },
+    "layout_id": "guard_after",
+    "object_profile_id": "sheet_budget",
+    "object_schema": {
+      "operation_kind": "calc_sheet_context",
+      "operation_pair": [
+        "sheet_scoped_cell_edit",
+        "sheet_scoped_cell_edit"
+      ],
+      "profile_label": "sheet_budget",
+      "state_context": {
+        "context_axes": {
+          "fixture_state": "occupied boundary/blank margin",
+          "schedule_policy": "unchanged",
+          "target_neighborhood": 5,
+          "workflow_graph": "unchanged"
+        },
+        "density_level": 5,
+        "description": "occupied boundary/blank margin",
+        "profile": "reconciliation_boundary",
+        "profile_index": 4
+      }
+    },
+    "operation_graph": "calc_sheet_switch_and_sheet_scoped_edit",
+    "operation_schema_revision": 1,
+    "state_context": {
+      "context_axes": {
+        "fixture_state": "occupied boundary/blank margin",
+        "schedule_policy": "unchanged",
+        "target_neighborhood": 5,
+        "workflow_graph": "unchanged"
+      },
+      "density_level": 5,
+      "description": "occupied boundary/blank margin",
+      "profile": "reconciliation_boundary",
+      "profile_index": 4
+    },
+    "workflow_id": "A-03"
+  },
+  "signatures": {
+    "fixture": "359ae9ff92d0b780c5fa2cd06b3b4537053bb252440501a464e3238398102655",
+    "goal": "bf49d71e46fab5780e360504df4f2b26dfae560d527db5587c098d688bf68e3c",
+    "semantic": "2f991a9717f347dc429f1aeccca9c8b10380b90ab17a91623333f0d942b302cd",
+    "structural": "075c1ec4848e3c9e2d1c12afd16dc1ba3224fa5af475ff7a40192ce908598343"
+  },
+  "target_objects": {
+    "A": [
+      "calc/SheetA.C3"
+    ],
+    "B": [
+      "calc/SheetB.D4"
+    ]
+  },
+  "task_domains": {
+    "A": "Calc",
+    "B": "Calc"
+  },
+  "topology_compatibility": {
+    "ma_id": {
+      "backend_binding": "same logical workspace seed; independent desktop sessions allowed",
+      "desktop_count": 2,
+      "fixtures": "byte-identical task-relevant clones"
+    },
+    "ma_sd": {
+      "actor_bindings": "A and B share desktop",
+      "desktop_count": 1
+    },
+    "solo": {
+      "actor_bindings": "A or B",
+      "desktop_count": 1
+    }
+  },
+  "treatment_relevant_state": {
+    "family_state": "application_context",
+    "operation_graph": "calc_sheet_switch_and_sheet_scoped_edit",
+    "shared_resource": {
+      "operation_kind": "calc_sheet_context",
+      "operation_pair": [
+        "sheet_scoped_cell_edit",
+        "sheet_scoped_cell_edit"
+      ],
+      "profile_label": "sheet_budget",
+      "state_context": {
+        "context_axes": {
+          "fixture_state": "occupied boundary/blank margin",
+          "schedule_policy": "unchanged",
+          "target_neighborhood": 5,
+          "workflow_graph": "unchanged"
+        },
+        "density_level": 5,
+        "description": "occupied boundary/blank margin",
+        "profile": "reconciliation_boundary",
+        "profile_index": 4
+      }
+    }
+  },
+  "validation_level": "offline_operation_template",
+  "workflow_id": "A-03"
+}

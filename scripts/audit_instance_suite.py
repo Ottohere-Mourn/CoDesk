@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import argparse, json,sys
+import argparse, json,sys,copy
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 from swcub.production_v1 import read_manifest, audit_records,sha256,evaluate_oracle
@@ -16,11 +16,22 @@ for row in rows:
  ep=(root/row["evaluator_path"]).resolve()
  if root.resolve() not in ep.parents or not ep.is_file():raise SystemExit(f"unsafe/missing evaluator: {row['evaluator_path']}")
  if sha256(ep.read_bytes())!=row["evaluator_sha256"]:raise SystemExit(f"evaluator hash mismatch: {row['instance_id']}")
- evaluator=json.loads(ep.read_text());exp=evaluator["expected_state"]
- if not evaluate_oracle({"evaluator":evaluator},exp)["joint_success"]:raise SystemExit(f"positive oracle failed: {row['instance_id']}")
+ evaluator=json.loads(ep.read_text());exp=copy.deepcopy(evaluator["expected_state"])
+ contract=evaluator.get("operation_contract",{})
+ if contract:
+  exp["operation_evidence"]={actor:{"satisfied":True,"operation":contract[actor]} for actor in ("A","B") if actor in contract}
+ if evaluator.get("history_contract"):
+  exp["workflow_evidence"]={"A":{"temporary_edit_observed":True,"undo_after_temporary_edit":True,"undo_after_actor_b":True}}
+ if not evaluate_oracle({"workflow_id":row["workflow_id"],"evaluator":evaluator},exp)["joint_success"]:raise SystemExit(f"positive oracle failed: {row['instance_id']}")
  positive+=1
- bad=json.loads(json.dumps(exp));bad["actors"]["A"]["value"]=evaluator["initial_state"]["actors"]["A"]["value"]
- if evaluate_oracle({"evaluator":evaluator},bad)["joint_success"]:raise SystemExit(f"negative oracle passed: {row['instance_id']}")
+ bad=json.loads(json.dumps(exp))
+ if evaluator.get("operation_contract"):
+  bad.setdefault("operation_evidence",{}).setdefault("A",{})["satisfied"]=False
+ elif evaluator.get("history_contract"):
+  bad.setdefault("workflow_evidence",{}).setdefault("A",{})["undo_after_actor_b"]=False
+ else:
+  bad["actors"]["A"]["value"]=evaluator["initial_state"]["actors"]["A"]["value"]
+ if evaluate_oracle({"workflow_id":row["workflow_id"],"evaluator":evaluator},bad)["joint_success"]:raise SystemExit(f"negative oracle passed: {row['instance_id']}")
  negative+=1
 out.update({"fixture_files_verified":files_ok,"evaluators_verified":len(rows),"positive_oracle_controls":positive,"negative_oracle_controls":negative})
 a.output.write_text(json.dumps(out,indent=2,sort_keys=True)+"\n")

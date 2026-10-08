@@ -154,9 +154,20 @@ def main():
             else:
                 output.append(json.dumps(row,sort_keys=True,separators=(",",":")))
         (SUITE/"manifest.jsonl").write_text("\n".join(output)+"\n")
-        full_compile=compile_suite(SUITE/"manifest.jsonl",SUITE,SUITE/"runtime_plans.jsonl")
-        if full_compile.get("failed") or full_compile.get("compiled")!=600:
-            raise SystemExit(f"final runtime compile failed; snapshot retained: {full_compile}")
+        with tempfile.TemporaryDirectory(prefix="codesk-full-plan-compile-") as plan_tmp:
+            compiled_path=Path(plan_tmp)/"runtime_plans.jsonl"
+            full_compile=compile_suite(SUITE/"manifest.jsonl",SUITE,compiled_path)
+            if full_compile.get("failed") or full_compile.get("compiled")!=600:
+                raise SystemExit(f"final runtime compile failed; snapshot retained: {full_compile}")
+            full_compile["plans_path"]="benchmarks/codesk_v1_final/runtime_plans.jsonl"
+            compiled={json.loads(line)["run_id"]:line for line in compiled_path.read_text().splitlines()}
+            prior_lines={json.loads(line)["run_id"]:line for line in (SUITE/"runtime_plans.jsonl").read_text().splitlines()}
+            merged_plans=[]
+            for row in merged:
+                run_id=f"plan-{row['instance_id']}"
+                if row["workflow_id"] in TARGETS: merged_plans.append(compiled[run_id])
+                else: merged_plans.append(prior_lines[run_id])
+            (SUITE/"runtime_plans.jsonl").write_text("\n".join(merged_plans)+"\n")
         old_validation=(SUITE/"metadata"/"validation_manifest.jsonl").read_text().splitlines()
         old_validation_by_w={w:[json.loads(x) for x in old_validation if json.loads(x)["workflow_id"]==w] for w in TARGETS}
         validation=[]
@@ -186,7 +197,8 @@ def main():
         regen={"version":"2026-10-08","source_commit":git_commit(ROOT),"base_manifest_sha256":base_hash,
             "final_manifest_sha256":digest(SUITE/"manifest.jsonl"),"affected_workflows":sorted(TARGETS),
             "replaced_instance_ids":sorted(old_ids),"new_instance_ids":sorted(new_by_id),
-            "non_target_workflow_rows_preserved_byte_for_byte":True,"guest_or_qwen_started":False}
+             "non_target_workflow_rows_preserved_byte_for_byte":True,"non_target_runtime_plans_preserved_byte_for_byte":True,
+            "target_runtime_plans_recompiled":220,"full_runtime_plan_compile_count":600,"guest_or_qwen_started":False}
         (SUITE/"metadata"/"diversity-regeneration.json").write_text(json.dumps(regen,indent=2,sort_keys=True)+"\n")
         print(json.dumps({"updated_manifest_sha256":digest(SUITE/"manifest.jsonl"),
             "replaced":len(old_ids),"new":len(new_rows),"runtime_compiled":full_compile["compiled"],

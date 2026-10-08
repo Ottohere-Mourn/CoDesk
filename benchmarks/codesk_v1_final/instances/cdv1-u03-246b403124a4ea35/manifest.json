@@ -1,0 +1,385 @@
+{
+  "actor_goals": [
+    {
+      "actor_id": "A",
+      "expected_value": "=SUM(C2:C4)",
+      "goal": "Enter the assigned formula =SUM(C2:C4) in calc/D2. After Actor B commits, use Undo once to expose the shared history effect; preserve your formula.",
+      "initial_value": "=SUM(B2:B4)",
+      "operation": "temporary Calc formula edit followed by peer-history Undo",
+      "target_objects": [
+        "calc/D2"
+      ],
+      "task_domain": "Calc"
+    },
+    {
+      "actor_id": "B",
+      "expected_value": "Peer final",
+      "goal": "Commit Peer final in calc/E3; after Actor A's Undo, re-observe and restore the value if it was reverted.",
+      "initial_value": "Seed B",
+      "operation": "Calc value edit followed by post-Undo recovery",
+      "target_objects": [
+        "calc/E3"
+      ],
+      "task_domain": "Calc"
+    }
+  ],
+  "benchmark_version": "codesk-v1.0",
+  "evaluator": {
+    "actor_paths": {
+      "A": "actors.A.value",
+      "B": "actors.B.value"
+    },
+    "adapter": "codesk_exact_state_v1",
+    "condition_semantics": {
+      "ma_id": "score each actor on equivalent independent desktop fixture",
+      "ma_sd": "score both actor goals and shared-state integrity",
+      "solo": "score selected actor; require inactive target and guards unchanged"
+    },
+    "context_expectation": {
+      "context_axes": {
+        "fixture_state": "formula-bearing neighbors",
+        "schedule_policy": "unchanged",
+        "target_neighborhood": 2,
+        "workflow_graph": "unchanged"
+      },
+      "density_level": 2,
+      "description": "formula-bearing neighbors",
+      "profile": "cross_column_summary",
+      "profile_index": 2
+    },
+    "expected_state": {
+      "actors": {
+        "A": {
+          "object": "calc/D2",
+          "value": "=SUM(C2:C4)"
+        },
+        "B": {
+          "object": "calc/E3",
+          "value": "Peer final"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "context_profile": {
+          "context_axes": {
+            "fixture_state": "formula-bearing neighbors",
+            "schedule_policy": "unchanged",
+            "target_neighborhood": 2,
+            "workflow_graph": "unchanged"
+          },
+          "density_level": 2,
+          "description": "formula-bearing neighbors",
+          "profile": "cross_column_summary",
+          "profile_index": 2
+        },
+        "initial": {
+          "operation_kind": "calc_formula_undo",
+          "operation_pair": [
+            "formula_entry_undo_recovery",
+            "cell_value_commit"
+          ],
+          "profile_label": "undo_formula_c",
+          "state_context": {
+            "context_axes": {
+              "fixture_state": "formula-bearing neighbors",
+              "schedule_policy": "unchanged",
+              "target_neighborhood": 2,
+              "workflow_graph": "unchanged"
+            },
+            "density_level": 2,
+            "description": "formula-bearing neighbors",
+            "profile": "cross_column_summary",
+            "profile_index": 2
+          }
+        },
+        "resource": "undo_redo_history"
+      }
+    },
+    "history_contract": {
+      "actor_a_requires": [
+        "temporary_edit_or_operation_observed",
+        "undo_action_after_actor_b_commit",
+        "recovery_verified"
+      ],
+      "actor_b_requires": [
+        "target_edit_committed"
+      ],
+      "final_state_is_not_sufficient": true,
+      "operation_schema_revision": 1
+    },
+    "initial_state": {
+      "actors": {
+        "A": {
+          "object": "calc/D2",
+          "value": "=SUM(B2:B4)"
+        },
+        "B": {
+          "object": "calc/E3",
+          "value": "Seed B"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "context_profile": {
+          "context_axes": {
+            "fixture_state": "formula-bearing neighbors",
+            "schedule_policy": "unchanged",
+            "target_neighborhood": 2,
+            "workflow_graph": "unchanged"
+          },
+          "density_level": 2,
+          "description": "formula-bearing neighbors",
+          "profile": "cross_column_summary",
+          "profile_index": 2
+        },
+        "initial": {
+          "operation_kind": "calc_formula_undo",
+          "operation_pair": [
+            "formula_entry_undo_recovery",
+            "cell_value_commit"
+          ],
+          "profile_label": "undo_formula_c",
+          "state_context": {
+            "context_axes": {
+              "fixture_state": "formula-bearing neighbors",
+              "schedule_policy": "unchanged",
+              "target_neighborhood": 2,
+              "workflow_graph": "unchanged"
+            },
+            "density_level": 2,
+            "description": "formula-bearing neighbors",
+            "profile": "cross_column_summary",
+            "profile_index": 2
+          }
+        },
+        "resource": "undo_redo_history"
+      }
+    },
+    "invariants": [
+      {
+        "equals": "PRESERVE",
+        "path": "actors.guards.main"
+      }
+    ],
+    "operation_contract": {
+      "A": "calc/formula-cell",
+      "B": "calc/value-cell",
+      "evidence_required": true,
+      "operation_graph": "calc_formula_edit_peer_commit_undo_recovery",
+      "shared_state": "Calc document undo stack"
+    },
+    "schedule_policy_id": "calc-formula-edit-b-undo-recover-v1"
+  },
+  "evaluator_path": "evaluators/cdv1-u03-246b403124a4ea35.json",
+  "evaluator_sha256": "61149504793b98f741d3cca667138746a59bb8ef46507b5427801f22139b21b0",
+  "family": "undo_redo_history",
+  "fixture_files": [
+    {
+      "path": "fixtures/cdv1-u03-246b403124a4ea35/state-context.json",
+      "sha256": "3cf320e74599830f0fc91e7dda85c567390485ee1c1ef90da935680c3c60fc1e",
+      "size_bytes": 257
+    },
+    {
+      "path": "fixtures/cdv1-u03-246b403124a4ea35/workbook.fods",
+      "sha256": "8b194dca93a5afdb319e742fdea62d2660f9a0f1e18bfe5a7fac1ce7f637d7f4",
+      "size_bytes": 9530
+    }
+  ],
+  "generation_seed": 2026,
+  "initial_fixture_spec": {
+    "application_set": [
+      "Calc",
+      "Calc"
+    ],
+    "fixture_profile": "undo_formula_c",
+    "layout_id": "guard_after",
+    "public_assets": [
+      {
+        "path": "fixtures/cdv1-u03-246b403124a4ea35/state-context.json",
+        "sha256": "3cf320e74599830f0fc91e7dda85c567390485ee1c1ef90da935680c3c60fc1e",
+        "size_bytes": 257
+      },
+      {
+        "path": "fixtures/cdv1-u03-246b403124a4ea35/workbook.fods",
+        "sha256": "8b194dca93a5afdb319e742fdea62d2660f9a0f1e18bfe5a7fac1ce7f637d7f4",
+        "size_bytes": 9530
+      }
+    ]
+  },
+  "instance_id": "cdv1-u03-246b403124a4ea35",
+  "manifest_entry_sha256": "ef0e1e1f16ef184b4349b8eacfcd43fce2e4a6f6d70f84e9f8c1f3c25badf04d",
+  "provenance": {
+    "fixture_sha256": "50b2f50a2dabe29a5805260b11c6ff2b8f7fff0dd445ec0138b98b9390e24574",
+    "generation_seed": 2026,
+    "generator": "swcub.production_v1",
+    "seed_role": "deterministic profile ordering only; excluded from instance identity",
+    "semantic_spec_sha256": "246b403124a4ea3576afd982f72dd18ca0ddd6752d90b1f51facc38be437afeb",
+    "source_code_sha256": "c6f4ce3ff7f122b199f69d31f881393102fe21e3cae914f6877b8bb2f676fcb3",
+    "source_commit": "fc75fc962775fb64429d11f13c5cd0df0cc1cedd"
+  },
+  "reset_metadata": {
+    "fixture_id": "cdv1-u03-246b403124a4ea35",
+    "fresh_guest_required": true,
+    "remove_prior_app_state": true,
+    "verify_fixture_hash": "50b2f50a2dabe29a5805260b11c6ff2b8f7fff0dd445ec0138b98b9390e24574",
+    "verify_state": {
+      "actors": {
+        "A": {
+          "object": "calc/D2",
+          "value": "=SUM(B2:B4)"
+        },
+        "B": {
+          "object": "calc/E3",
+          "value": "Seed B"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "context_profile": {
+          "context_axes": {
+            "fixture_state": "formula-bearing neighbors",
+            "schedule_policy": "unchanged",
+            "target_neighborhood": 2,
+            "workflow_graph": "unchanged"
+          },
+          "density_level": 2,
+          "description": "formula-bearing neighbors",
+          "profile": "cross_column_summary",
+          "profile_index": 2
+        },
+        "initial": {
+          "operation_kind": "calc_formula_undo",
+          "operation_pair": [
+            "formula_entry_undo_recovery",
+            "cell_value_commit"
+          ],
+          "profile_label": "undo_formula_c",
+          "state_context": {
+            "context_axes": {
+              "fixture_state": "formula-bearing neighbors",
+              "schedule_policy": "unchanged",
+              "target_neighborhood": 2,
+              "workflow_graph": "unchanged"
+            },
+            "density_level": 2,
+            "description": "formula-bearing neighbors",
+            "profile": "cross_column_summary",
+            "profile_index": 2
+          }
+        },
+        "resource": "undo_redo_history"
+      }
+    }
+  },
+  "schedule_policy_id": "calc-formula-edit-b-undo-recover-v1",
+  "semantic_parameters": {
+    "domain_id": "warehouse_reconciliation",
+    "domain_schema": {
+      "entity": "warehouse lot",
+      "field_a": "Reconciliation",
+      "field_b": "Count status"
+    },
+    "layout_id": "guard_after",
+    "object_profile_id": "undo_formula_c",
+    "object_schema": {
+      "operation_kind": "calc_formula_undo",
+      "operation_pair": [
+        "formula_entry_undo_recovery",
+        "cell_value_commit"
+      ],
+      "profile_label": "undo_formula_c",
+      "state_context": {
+        "context_axes": {
+          "fixture_state": "formula-bearing neighbors",
+          "schedule_policy": "unchanged",
+          "target_neighborhood": 2,
+          "workflow_graph": "unchanged"
+        },
+        "density_level": 2,
+        "description": "formula-bearing neighbors",
+        "profile": "cross_column_summary",
+        "profile_index": 2
+      }
+    },
+    "operation_graph": "calc_formula_edit_peer_commit_undo_recovery",
+    "operation_schema_revision": 1,
+    "state_context": {
+      "context_axes": {
+        "fixture_state": "formula-bearing neighbors",
+        "schedule_policy": "unchanged",
+        "target_neighborhood": 2,
+        "workflow_graph": "unchanged"
+      },
+      "density_level": 2,
+      "description": "formula-bearing neighbors",
+      "profile": "cross_column_summary",
+      "profile_index": 2
+    },
+    "workflow_id": "U-03"
+  },
+  "signatures": {
+    "fixture": "50b2f50a2dabe29a5805260b11c6ff2b8f7fff0dd445ec0138b98b9390e24574",
+    "goal": "d0349c39822bda1dd018f2b415248fe51493dcfcf33afbb5e26f888d9109538f",
+    "semantic": "246b403124a4ea3576afd982f72dd18ca0ddd6752d90b1f51facc38be437afeb",
+    "structural": "48df7722acf5e5195fd0ce5ed8f7de2f6c62a0d649a7dd42681c2fa393f4f888"
+  },
+  "target_objects": {
+    "A": [
+      "calc/D2"
+    ],
+    "B": [
+      "calc/E3"
+    ]
+  },
+  "task_domains": {
+    "A": "Calc",
+    "B": "Calc"
+  },
+  "topology_compatibility": {
+    "ma_id": {
+      "backend_binding": "same logical workspace seed; independent desktop sessions allowed",
+      "desktop_count": 2,
+      "fixtures": "byte-identical task-relevant clones"
+    },
+    "ma_sd": {
+      "actor_bindings": "A and B share desktop",
+      "desktop_count": 1
+    },
+    "solo": {
+      "actor_bindings": "A or B",
+      "desktop_count": 1
+    }
+  },
+  "treatment_relevant_state": {
+    "family_state": "undo_redo_history",
+    "operation_graph": "calc_formula_edit_peer_commit_undo_recovery",
+    "shared_resource": {
+      "operation_kind": "calc_formula_undo",
+      "operation_pair": [
+        "formula_entry_undo_recovery",
+        "cell_value_commit"
+      ],
+      "profile_label": "undo_formula_c",
+      "state_context": {
+        "context_axes": {
+          "fixture_state": "formula-bearing neighbors",
+          "schedule_policy": "unchanged",
+          "target_neighborhood": 2,
+          "workflow_graph": "unchanged"
+        },
+        "density_level": 2,
+        "description": "formula-bearing neighbors",
+        "profile": "cross_column_summary",
+        "profile_index": 2
+      }
+    }
+  },
+  "validation_level": "offline_operation_template",
+  "workflow_id": "U-03"
+}

@@ -1,0 +1,385 @@
+{
+  "actor_goals": [
+    {
+      "actor_id": "A",
+      "expected_value": "=SUM(C2:C4)",
+      "goal": "Enter the assigned formula =SUM(C2:C4) in calc/B3. After Actor B commits, use Undo once to expose the shared history effect; preserve your formula.",
+      "initial_value": "=SUM(B2:B4)",
+      "operation": "temporary Calc formula edit followed by peer-history Undo",
+      "target_objects": [
+        "calc/B3"
+      ],
+      "task_domain": "Calc"
+    },
+    {
+      "actor_id": "B",
+      "expected_value": "Peer final",
+      "goal": "Commit Peer final in calc/C4; after Actor A's Undo, re-observe and restore the value if it was reverted.",
+      "initial_value": "Seed B",
+      "operation": "Calc value edit followed by post-Undo recovery",
+      "target_objects": [
+        "calc/C4"
+      ],
+      "task_domain": "Calc"
+    }
+  ],
+  "benchmark_version": "codesk-v1.0",
+  "evaluator": {
+    "actor_paths": {
+      "A": "actors.A.value",
+      "B": "actors.B.value"
+    },
+    "adapter": "codesk_exact_state_v1",
+    "condition_semantics": {
+      "ma_id": "score each actor on equivalent independent desktop fixture",
+      "ma_sd": "score both actor goals and shared-state integrity",
+      "solo": "score selected actor; require inactive target and guards unchanged"
+    },
+    "context_expectation": {
+      "context_axes": {
+        "fixture_state": "mixed empty/value state",
+        "schedule_policy": "unchanged",
+        "target_neighborhood": 3,
+        "workflow_graph": "unchanged"
+      },
+      "density_level": 3,
+      "description": "mixed empty/value state",
+      "profile": "blank_input_gap",
+      "profile_index": 3
+    },
+    "expected_state": {
+      "actors": {
+        "A": {
+          "object": "calc/B3",
+          "value": "=SUM(C2:C4)"
+        },
+        "B": {
+          "object": "calc/C4",
+          "value": "Peer final"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "context_profile": {
+          "context_axes": {
+            "fixture_state": "mixed empty/value state",
+            "schedule_policy": "unchanged",
+            "target_neighborhood": 3,
+            "workflow_graph": "unchanged"
+          },
+          "density_level": 3,
+          "description": "mixed empty/value state",
+          "profile": "blank_input_gap",
+          "profile_index": 3
+        },
+        "initial": {
+          "operation_kind": "calc_formula_undo",
+          "operation_pair": [
+            "formula_entry_undo_recovery",
+            "cell_value_commit"
+          ],
+          "profile_label": "undo_formula_d",
+          "state_context": {
+            "context_axes": {
+              "fixture_state": "mixed empty/value state",
+              "schedule_policy": "unchanged",
+              "target_neighborhood": 3,
+              "workflow_graph": "unchanged"
+            },
+            "density_level": 3,
+            "description": "mixed empty/value state",
+            "profile": "blank_input_gap",
+            "profile_index": 3
+          }
+        },
+        "resource": "undo_redo_history"
+      }
+    },
+    "history_contract": {
+      "actor_a_requires": [
+        "temporary_edit_or_operation_observed",
+        "undo_action_after_actor_b_commit",
+        "recovery_verified"
+      ],
+      "actor_b_requires": [
+        "target_edit_committed"
+      ],
+      "final_state_is_not_sufficient": true,
+      "operation_schema_revision": 1
+    },
+    "initial_state": {
+      "actors": {
+        "A": {
+          "object": "calc/B3",
+          "value": "=SUM(B2:B4)"
+        },
+        "B": {
+          "object": "calc/C4",
+          "value": "Seed B"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "context_profile": {
+          "context_axes": {
+            "fixture_state": "mixed empty/value state",
+            "schedule_policy": "unchanged",
+            "target_neighborhood": 3,
+            "workflow_graph": "unchanged"
+          },
+          "density_level": 3,
+          "description": "mixed empty/value state",
+          "profile": "blank_input_gap",
+          "profile_index": 3
+        },
+        "initial": {
+          "operation_kind": "calc_formula_undo",
+          "operation_pair": [
+            "formula_entry_undo_recovery",
+            "cell_value_commit"
+          ],
+          "profile_label": "undo_formula_d",
+          "state_context": {
+            "context_axes": {
+              "fixture_state": "mixed empty/value state",
+              "schedule_policy": "unchanged",
+              "target_neighborhood": 3,
+              "workflow_graph": "unchanged"
+            },
+            "density_level": 3,
+            "description": "mixed empty/value state",
+            "profile": "blank_input_gap",
+            "profile_index": 3
+          }
+        },
+        "resource": "undo_redo_history"
+      }
+    },
+    "invariants": [
+      {
+        "equals": "PRESERVE",
+        "path": "actors.guards.main"
+      }
+    ],
+    "operation_contract": {
+      "A": "calc/formula-cell",
+      "B": "calc/value-cell",
+      "evidence_required": true,
+      "operation_graph": "calc_formula_edit_peer_commit_undo_recovery",
+      "shared_state": "Calc document undo stack"
+    },
+    "schedule_policy_id": "calc-formula-edit-b-undo-recover-v1"
+  },
+  "evaluator_path": "evaluators/cdv1-u03-503673643d20ac44.json",
+  "evaluator_sha256": "66e35e5d87afd31201dc2c1eba1db13ea6e104946ba5563b43921d3551edca9b",
+  "family": "undo_redo_history",
+  "fixture_files": [
+    {
+      "path": "fixtures/cdv1-u03-503673643d20ac44/state-context.json",
+      "sha256": "1a135a314c5662c74b440ab7bccf1cd1b2cb01854afbc10a57734dbb7c028651",
+      "size_bytes": 248
+    },
+    {
+      "path": "fixtures/cdv1-u03-503673643d20ac44/workbook.fods",
+      "sha256": "374936d4162c9c07db968ed7b30f5fe9198997b78aa73ae62ec9c601652b650e",
+      "size_bytes": 11467
+    }
+  ],
+  "generation_seed": 2026,
+  "initial_fixture_spec": {
+    "application_set": [
+      "Calc",
+      "Calc"
+    ],
+    "fixture_profile": "undo_formula_d",
+    "layout_id": "guard_after",
+    "public_assets": [
+      {
+        "path": "fixtures/cdv1-u03-503673643d20ac44/state-context.json",
+        "sha256": "1a135a314c5662c74b440ab7bccf1cd1b2cb01854afbc10a57734dbb7c028651",
+        "size_bytes": 248
+      },
+      {
+        "path": "fixtures/cdv1-u03-503673643d20ac44/workbook.fods",
+        "sha256": "374936d4162c9c07db968ed7b30f5fe9198997b78aa73ae62ec9c601652b650e",
+        "size_bytes": 11467
+      }
+    ]
+  },
+  "instance_id": "cdv1-u03-503673643d20ac44",
+  "manifest_entry_sha256": "d285a72f915d002e757a040c3a94a456b6c38705d6ed5c85736c0ca7601f182d",
+  "provenance": {
+    "fixture_sha256": "567c020e437e95c1828ee8320f6e32d558b875cff1e674fef6e8110bc6aea6a1",
+    "generation_seed": 2026,
+    "generator": "swcub.production_v1",
+    "seed_role": "deterministic profile ordering only; excluded from instance identity",
+    "semantic_spec_sha256": "503673643d20ac44052197e54a1f77e1dc63959131923966e77f2b0619249a5d",
+    "source_code_sha256": "c6f4ce3ff7f122b199f69d31f881393102fe21e3cae914f6877b8bb2f676fcb3",
+    "source_commit": "fc75fc962775fb64429d11f13c5cd0df0cc1cedd"
+  },
+  "reset_metadata": {
+    "fixture_id": "cdv1-u03-503673643d20ac44",
+    "fresh_guest_required": true,
+    "remove_prior_app_state": true,
+    "verify_fixture_hash": "567c020e437e95c1828ee8320f6e32d558b875cff1e674fef6e8110bc6aea6a1",
+    "verify_state": {
+      "actors": {
+        "A": {
+          "object": "calc/B3",
+          "value": "=SUM(B2:B4)"
+        },
+        "B": {
+          "object": "calc/C4",
+          "value": "Seed B"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "context_profile": {
+          "context_axes": {
+            "fixture_state": "mixed empty/value state",
+            "schedule_policy": "unchanged",
+            "target_neighborhood": 3,
+            "workflow_graph": "unchanged"
+          },
+          "density_level": 3,
+          "description": "mixed empty/value state",
+          "profile": "blank_input_gap",
+          "profile_index": 3
+        },
+        "initial": {
+          "operation_kind": "calc_formula_undo",
+          "operation_pair": [
+            "formula_entry_undo_recovery",
+            "cell_value_commit"
+          ],
+          "profile_label": "undo_formula_d",
+          "state_context": {
+            "context_axes": {
+              "fixture_state": "mixed empty/value state",
+              "schedule_policy": "unchanged",
+              "target_neighborhood": 3,
+              "workflow_graph": "unchanged"
+            },
+            "density_level": 3,
+            "description": "mixed empty/value state",
+            "profile": "blank_input_gap",
+            "profile_index": 3
+          }
+        },
+        "resource": "undo_redo_history"
+      }
+    }
+  },
+  "schedule_policy_id": "calc-formula-edit-b-undo-recover-v1",
+  "semantic_parameters": {
+    "domain_id": "warehouse_reconciliation",
+    "domain_schema": {
+      "entity": "warehouse lot",
+      "field_a": "Reconciliation",
+      "field_b": "Count status"
+    },
+    "layout_id": "guard_after",
+    "object_profile_id": "undo_formula_d",
+    "object_schema": {
+      "operation_kind": "calc_formula_undo",
+      "operation_pair": [
+        "formula_entry_undo_recovery",
+        "cell_value_commit"
+      ],
+      "profile_label": "undo_formula_d",
+      "state_context": {
+        "context_axes": {
+          "fixture_state": "mixed empty/value state",
+          "schedule_policy": "unchanged",
+          "target_neighborhood": 3,
+          "workflow_graph": "unchanged"
+        },
+        "density_level": 3,
+        "description": "mixed empty/value state",
+        "profile": "blank_input_gap",
+        "profile_index": 3
+      }
+    },
+    "operation_graph": "calc_formula_edit_peer_commit_undo_recovery",
+    "operation_schema_revision": 1,
+    "state_context": {
+      "context_axes": {
+        "fixture_state": "mixed empty/value state",
+        "schedule_policy": "unchanged",
+        "target_neighborhood": 3,
+        "workflow_graph": "unchanged"
+      },
+      "density_level": 3,
+      "description": "mixed empty/value state",
+      "profile": "blank_input_gap",
+      "profile_index": 3
+    },
+    "workflow_id": "U-03"
+  },
+  "signatures": {
+    "fixture": "567c020e437e95c1828ee8320f6e32d558b875cff1e674fef6e8110bc6aea6a1",
+    "goal": "a7164ad85d35972e3b34b5f9d0c2e82b92d018dfd19be29bd2824ffa1c6ecf42",
+    "semantic": "503673643d20ac44052197e54a1f77e1dc63959131923966e77f2b0619249a5d",
+    "structural": "ba8098a5388f6500d90a5cd01691aede50be6852c576e8a1eae393ee862b7d1a"
+  },
+  "target_objects": {
+    "A": [
+      "calc/B3"
+    ],
+    "B": [
+      "calc/C4"
+    ]
+  },
+  "task_domains": {
+    "A": "Calc",
+    "B": "Calc"
+  },
+  "topology_compatibility": {
+    "ma_id": {
+      "backend_binding": "same logical workspace seed; independent desktop sessions allowed",
+      "desktop_count": 2,
+      "fixtures": "byte-identical task-relevant clones"
+    },
+    "ma_sd": {
+      "actor_bindings": "A and B share desktop",
+      "desktop_count": 1
+    },
+    "solo": {
+      "actor_bindings": "A or B",
+      "desktop_count": 1
+    }
+  },
+  "treatment_relevant_state": {
+    "family_state": "undo_redo_history",
+    "operation_graph": "calc_formula_edit_peer_commit_undo_recovery",
+    "shared_resource": {
+      "operation_kind": "calc_formula_undo",
+      "operation_pair": [
+        "formula_entry_undo_recovery",
+        "cell_value_commit"
+      ],
+      "profile_label": "undo_formula_d",
+      "state_context": {
+        "context_axes": {
+          "fixture_state": "mixed empty/value state",
+          "schedule_policy": "unchanged",
+          "target_neighborhood": 3,
+          "workflow_graph": "unchanged"
+        },
+        "density_level": 3,
+        "description": "mixed empty/value state",
+        "profile": "blank_input_gap",
+        "profile_index": 3
+      }
+    }
+  },
+  "validation_level": "offline_operation_template",
+  "workflow_id": "U-03"
+}

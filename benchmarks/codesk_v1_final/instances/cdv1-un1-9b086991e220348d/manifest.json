@@ -1,0 +1,363 @@
+{
+  "actor_goals": [
+    {
+      "actor_id": "A",
+      "expected_value": "TEMP-A",
+      "goal": "Temporarily replace Writer paragraph 1 with TEMP-A; after Actor B edits their paragraph, use Undo to restore the original text Seed A.",
+      "initial_value": "Seed A",
+      "operation": "temporary Writer paragraph replacement followed by Undo after Actor B's committed edit",
+      "target_objects": [
+        "writer/paragraph[0]"
+      ],
+      "task_domain": "Writer"
+    },
+    {
+      "actor_id": "B",
+      "expected_value": "FINAL-B",
+      "goal": "Replace Writer paragraph 1 with FINAL-B and save.",
+      "initial_value": "Seed B",
+      "operation": "update writer/paragraph[1]",
+      "target_objects": [
+        "writer/paragraph[1]"
+      ],
+      "task_domain": "Writer"
+    }
+  ],
+  "benchmark_version": "codesk-v1.0",
+  "evaluator": {
+    "actor_paths": {
+      "A": "actors.A.value",
+      "B": "actors.B.value"
+    },
+    "adapter": "codesk_exact_state_v1",
+    "condition_semantics": {
+      "ma_id": "score each actor on equivalent independent desktop fixture",
+      "ma_sd": "score both actor goals and shared-state integrity",
+      "solo": "score selected actor; require inactive target and guards unchanged"
+    },
+    "context_expectation": {
+      "context_axes": {
+        "fixture_state": "headed body paragraphs",
+        "schedule_policy": "unchanged",
+        "target_neighborhood": 1,
+        "workflow_graph": "unchanged"
+      },
+      "density_level": 1,
+      "description": "headed body paragraphs",
+      "profile": "section_body",
+      "profile_index": 0
+    },
+    "expected_state": {
+      "actors": {
+        "A": {
+          "object": "writer/paragraph[0]",
+          "value": "Seed A"
+        },
+        "B": {
+          "object": "writer/paragraph[1]",
+          "value": "FINAL-B"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "context_profile": {
+          "context_axes": {
+            "fixture_state": "headed body paragraphs",
+            "schedule_policy": "unchanged",
+            "target_neighborhood": 1,
+            "workflow_graph": "unchanged"
+          },
+          "density_level": 1,
+          "description": "headed body paragraphs",
+          "profile": "section_body",
+          "profile_index": 0
+        },
+        "initial": {
+          "object_type": "paragraph",
+          "state_context": {
+            "context_axes": {
+              "fixture_state": "headed body paragraphs",
+              "schedule_policy": "unchanged",
+              "target_neighborhood": 1,
+              "workflow_graph": "unchanged"
+            },
+            "density_level": 1,
+            "description": "headed body paragraphs",
+            "profile": "section_body",
+            "profile_index": 0
+          },
+          "undo_depth": 1,
+          "undo_operation": "text replacement"
+        },
+        "resource": "undo_redo_history"
+      }
+    },
+    "history_contract": {
+      "actor_a_requires": [
+        "temporary_edit_committed",
+        "undo_action_after_actor_b_commit"
+      ],
+      "actor_b_requires": [
+        "target_edit_committed"
+      ],
+      "final_actor_a_value": "initial_value",
+      "final_state_is_not_sufficient": true,
+      "operation_schema_revision": 1
+    },
+    "initial_state": {
+      "actors": {
+        "A": {
+          "object": "writer/paragraph[0]",
+          "value": "Seed A"
+        },
+        "B": {
+          "object": "writer/paragraph[1]",
+          "value": "Seed B"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "context_profile": {
+          "context_axes": {
+            "fixture_state": "headed body paragraphs",
+            "schedule_policy": "unchanged",
+            "target_neighborhood": 1,
+            "workflow_graph": "unchanged"
+          },
+          "density_level": 1,
+          "description": "headed body paragraphs",
+          "profile": "section_body",
+          "profile_index": 0
+        },
+        "initial": {
+          "object_type": "paragraph",
+          "state_context": {
+            "context_axes": {
+              "fixture_state": "headed body paragraphs",
+              "schedule_policy": "unchanged",
+              "target_neighborhood": 1,
+              "workflow_graph": "unchanged"
+            },
+            "density_level": 1,
+            "description": "headed body paragraphs",
+            "profile": "section_body",
+            "profile_index": 0
+          },
+          "undo_depth": 1,
+          "undo_operation": "text replacement"
+        },
+        "resource": "undo_redo_history"
+      }
+    },
+    "invariants": [
+      {
+        "equals": "PRESERVE",
+        "path": "actors.guards.main"
+      }
+    ],
+    "schedule_policy_id": "edit-a-edit-b-undo-a-v1"
+  },
+  "evaluator_path": "evaluators/cdv1-un1-9b086991e220348d.json",
+  "evaluator_sha256": "7c911e91fef94dc2351256d4f63e2221944bcc986779421b80559273b8703210",
+  "family": "undo_redo_history",
+  "fixture_files": [
+    {
+      "path": "fixtures/cdv1-un1-9b086991e220348d/document.fodt",
+      "sha256": "bcb5b60af35664eaf25ae68a2c6609673b8fc700cfb7e60ea6a0ab91147f6747",
+      "size_bytes": 810
+    },
+    {
+      "path": "fixtures/cdv1-un1-9b086991e220348d/state-context.json",
+      "sha256": "569bf4eeab5d24be854d1c20fa94252df12b6396642d8e724faaf7531bdfabd0",
+      "size_bytes": 243
+    }
+  ],
+  "generation_seed": 2026,
+  "initial_fixture_spec": {
+    "application_set": [
+      "Writer",
+      "Writer"
+    ],
+    "fixture_profile": "writer_lines_0_1",
+    "layout_id": "guard_after",
+    "public_assets": [
+      {
+        "path": "fixtures/cdv1-un1-9b086991e220348d/document.fodt",
+        "sha256": "bcb5b60af35664eaf25ae68a2c6609673b8fc700cfb7e60ea6a0ab91147f6747",
+        "size_bytes": 810
+      },
+      {
+        "path": "fixtures/cdv1-un1-9b086991e220348d/state-context.json",
+        "sha256": "569bf4eeab5d24be854d1c20fa94252df12b6396642d8e724faaf7531bdfabd0",
+        "size_bytes": 243
+      }
+    ]
+  },
+  "instance_id": "cdv1-un1-9b086991e220348d",
+  "manifest_entry_sha256": "6e5bb7bb895825986631cd299bd3344f9f8f7faa745604e9867c794f875b393e",
+  "provenance": {
+    "fixture_sha256": "fe1b07a0d66375a97100b8f048b5d7449ce4fb90aabf4b7764956f4b106df9ce",
+    "generation_seed": 2026,
+    "generator": "swcub.production_v1",
+    "seed_role": "deterministic profile ordering only; excluded from instance identity",
+    "semantic_spec_sha256": "9b086991e220348d609aecbaf55c8de07aa7e8ec77b137f7bddad117158b8046",
+    "source_code_sha256": "c6f4ce3ff7f122b199f69d31f881393102fe21e3cae914f6877b8bb2f676fcb3",
+    "source_commit": "fc75fc962775fb64429d11f13c5cd0df0cc1cedd"
+  },
+  "reset_metadata": {
+    "fixture_id": "cdv1-un1-9b086991e220348d",
+    "fresh_guest_required": true,
+    "remove_prior_app_state": true,
+    "verify_fixture_hash": "fe1b07a0d66375a97100b8f048b5d7449ce4fb90aabf4b7764956f4b106df9ce",
+    "verify_state": {
+      "actors": {
+        "A": {
+          "object": "writer/paragraph[0]",
+          "value": "Seed A"
+        },
+        "B": {
+          "object": "writer/paragraph[1]",
+          "value": "Seed B"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "context_profile": {
+          "context_axes": {
+            "fixture_state": "headed body paragraphs",
+            "schedule_policy": "unchanged",
+            "target_neighborhood": 1,
+            "workflow_graph": "unchanged"
+          },
+          "density_level": 1,
+          "description": "headed body paragraphs",
+          "profile": "section_body",
+          "profile_index": 0
+        },
+        "initial": {
+          "object_type": "paragraph",
+          "state_context": {
+            "context_axes": {
+              "fixture_state": "headed body paragraphs",
+              "schedule_policy": "unchanged",
+              "target_neighborhood": 1,
+              "workflow_graph": "unchanged"
+            },
+            "density_level": 1,
+            "description": "headed body paragraphs",
+            "profile": "section_body",
+            "profile_index": 0
+          },
+          "undo_depth": 1,
+          "undo_operation": "text replacement"
+        },
+        "resource": "undo_redo_history"
+      }
+    }
+  },
+  "schedule_policy_id": "edit-a-edit-b-undo-a-v1",
+  "semantic_parameters": {
+    "domain_id": "safety_inspection",
+    "domain_schema": {
+      "entity": "inspection item",
+      "field_a": "Clearance",
+      "field_b": "Inspection state"
+    },
+    "layout_id": "guard_after",
+    "object_profile_id": "writer_lines_0_1",
+    "object_schema": {
+      "object_type": "paragraph",
+      "state_context": {
+        "context_axes": {
+          "fixture_state": "headed body paragraphs",
+          "schedule_policy": "unchanged",
+          "target_neighborhood": 1,
+          "workflow_graph": "unchanged"
+        },
+        "density_level": 1,
+        "description": "headed body paragraphs",
+        "profile": "section_body",
+        "profile_index": 0
+      },
+      "undo_depth": 1,
+      "undo_operation": "text replacement"
+    },
+    "operation_graph": "writer_document_history",
+    "operation_schema_revision": 1,
+    "state_context": {
+      "context_axes": {
+        "fixture_state": "headed body paragraphs",
+        "schedule_policy": "unchanged",
+        "target_neighborhood": 1,
+        "workflow_graph": "unchanged"
+      },
+      "density_level": 1,
+      "description": "headed body paragraphs",
+      "profile": "section_body",
+      "profile_index": 0
+    },
+    "workflow_id": "U-N1"
+  },
+  "signatures": {
+    "fixture": "fe1b07a0d66375a97100b8f048b5d7449ce4fb90aabf4b7764956f4b106df9ce",
+    "goal": "88db79a2ddcd0163da9be97adc283576548fa25b0757911612d0af70de90e4b2",
+    "semantic": "9b086991e220348d609aecbaf55c8de07aa7e8ec77b137f7bddad117158b8046",
+    "structural": "6032dadca682805ee894bbc3ee524f0659971a57e46ca9ca01b3029ab2e5a889"
+  },
+  "target_objects": {
+    "A": [
+      "writer/paragraph[0]"
+    ],
+    "B": [
+      "writer/paragraph[1]"
+    ]
+  },
+  "task_domains": {
+    "A": "Writer",
+    "B": "Writer"
+  },
+  "topology_compatibility": {
+    "ma_id": {
+      "backend_binding": "same logical workspace seed; independent desktop sessions allowed",
+      "desktop_count": 2,
+      "fixtures": "byte-identical task-relevant clones"
+    },
+    "ma_sd": {
+      "actor_bindings": "A and B share desktop",
+      "desktop_count": 1
+    },
+    "solo": {
+      "actor_bindings": "A or B",
+      "desktop_count": 1
+    }
+  },
+  "treatment_relevant_state": {
+    "family_state": "undo_redo_history",
+    "operation_graph": "writer_document_history",
+    "shared_resource": {
+      "object_type": "paragraph",
+      "state_context": {
+        "context_axes": {
+          "fixture_state": "headed body paragraphs",
+          "schedule_policy": "unchanged",
+          "target_neighborhood": 1,
+          "workflow_graph": "unchanged"
+        },
+        "density_level": 1,
+        "description": "headed body paragraphs",
+        "profile": "section_body",
+        "profile_index": 0
+      },
+      "undo_depth": 1,
+      "undo_operation": "text replacement"
+    }
+  },
+  "validation_level": "offline",
+  "workflow_id": "U-N1"
+}

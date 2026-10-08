@@ -1,0 +1,443 @@
+{
+  "actor_goals": [
+    {
+      "actor_id": "A",
+      "expected_value": "{\"rows\": [2, 5], \"status\": \"Approved\"}",
+      "goal": "Select all assigned A rows and apply the exact bulk status to those rows only. Target browser/rows/vendor-a; initial '[]'; required final '{\"rows\": [2, 5], \"status\": \"Approved\"}'.",
+      "initial_value": "[]",
+      "operation": "update browser/rows/vendor-a",
+      "target_objects": [
+        "browser/rows/vendor-a"
+      ],
+      "task_domain": "Browser"
+    },
+    {
+      "actor_id": "B",
+      "expected_value": "{\"rows\": [1, 4], \"status\": \"Recorded\"}",
+      "goal": "Select all assigned B rows and apply the independent bulk status to those rows only. Target browser/rows/vendor-b; initial '[]'; required final '{\"rows\": [1, 4], \"status\": \"Recorded\"}'.",
+      "initial_value": "[]",
+      "operation": "update browser/rows/vendor-b",
+      "target_objects": [
+        "browser/rows/vendor-b"
+      ],
+      "task_domain": "Browser"
+    }
+  ],
+  "benchmark_version": "codesk-v1.0",
+  "evaluator": {
+    "actor_paths": {
+      "A": "actors.A.value",
+      "B": "actors.B.value"
+    },
+    "adapter": "codesk_exact_state_v1",
+    "condition_semantics": {
+      "ma_id": "score each actor on equivalent independent desktop fixture",
+      "ma_sd": "score both actor goals and shared-state integrity",
+      "solo": "score selected actor; require inactive target and guards unchanged"
+    },
+    "context_expectation": {
+      "context_axes": {
+        "fixture_state": "archived inventory rows",
+        "schedule_policy": "unchanged",
+        "target_neighborhood": 4,
+        "workflow_graph": "unchanged"
+      },
+      "density_level": 4,
+      "description": "archived inventory rows",
+      "profile": "inventory_audit",
+      "profile_index": 3
+    },
+    "expected_state": {
+      "actors": {
+        "A": {
+          "object": "browser/rows/vendor-a",
+          "value": "{\"rows\": [2, 5], \"status\": \"Approved\"}"
+        },
+        "B": {
+          "object": "browser/rows/vendor-b",
+          "value": "{\"rows\": [1, 4], \"status\": \"Recorded\"}"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "context_profile": {
+          "context_axes": {
+            "fixture_state": "archived inventory rows",
+            "schedule_policy": "unchanged",
+            "target_neighborhood": 4,
+            "workflow_graph": "unchanged"
+          },
+          "density_level": 4,
+          "description": "archived inventory rows",
+          "profile": "inventory_audit",
+          "profile_index": 3
+        },
+        "initial": {
+          "operation_kind": "browser_multiselect_bulk",
+          "operation_pair": [
+            "multirow_select_bulk_status",
+            "multirow_select_bulk_status"
+          ],
+          "profile_label": "rows_vendor",
+          "rows_a": [
+            2,
+            5
+          ],
+          "rows_b": [
+            1,
+            4
+          ],
+          "state_context": {
+            "context_axes": {
+              "fixture_state": "archived inventory rows",
+              "schedule_policy": "unchanged",
+              "target_neighborhood": 4,
+              "workflow_graph": "unchanged"
+            },
+            "density_level": 4,
+            "description": "archived inventory rows",
+            "profile": "inventory_audit",
+            "profile_index": 3
+          }
+        },
+        "resource": "selection_active_object"
+      }
+    },
+    "initial_state": {
+      "actors": {
+        "A": {
+          "object": "browser/rows/vendor-a",
+          "value": "[]"
+        },
+        "B": {
+          "object": "browser/rows/vendor-b",
+          "value": "[]"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "context_profile": {
+          "context_axes": {
+            "fixture_state": "archived inventory rows",
+            "schedule_policy": "unchanged",
+            "target_neighborhood": 4,
+            "workflow_graph": "unchanged"
+          },
+          "density_level": 4,
+          "description": "archived inventory rows",
+          "profile": "inventory_audit",
+          "profile_index": 3
+        },
+        "initial": {
+          "operation_kind": "browser_multiselect_bulk",
+          "operation_pair": [
+            "multirow_select_bulk_status",
+            "multirow_select_bulk_status"
+          ],
+          "profile_label": "rows_vendor",
+          "rows_a": [
+            2,
+            5
+          ],
+          "rows_b": [
+            1,
+            4
+          ],
+          "state_context": {
+            "context_axes": {
+              "fixture_state": "archived inventory rows",
+              "schedule_policy": "unchanged",
+              "target_neighborhood": 4,
+              "workflow_graph": "unchanged"
+            },
+            "density_level": 4,
+            "description": "archived inventory rows",
+            "profile": "inventory_audit",
+            "profile_index": 3
+          }
+        },
+        "resource": "selection_active_object"
+      }
+    },
+    "invariants": [
+      {
+        "equals": "PRESERVE",
+        "path": "actors.guards.main"
+      }
+    ],
+    "operation_contract": {
+      "A": "browser/table/rows-a",
+      "B": "browser/table/rows-b",
+      "evidence_required": true,
+      "operation_graph": "browser_multirow_selection_bulk_update",
+      "shared_state": "selected row set"
+    },
+    "schedule_policy_id": "browser-row-selection-bulk-action-resume-v1"
+  },
+  "evaluator_path": "evaluators/cdv1-s04-f02a45d7db2e38f1.json",
+  "evaluator_sha256": "42aeade4533aef26f35ebdc16736a4d4d494cacd70c92b8f7b50ce994ffe4c28",
+  "family": "selection_active_object",
+  "fixture_files": [
+    {
+      "path": "fixtures/cdv1-s04-f02a45d7db2e38f1/browser-events.jsonl",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size_bytes": 0
+    },
+    {
+      "path": "fixtures/cdv1-s04-f02a45d7db2e38f1/browser-initial-state.json",
+      "sha256": "b5650729ebd1a590fa761097fe4b413242336508369be09595fff9d542ecd239",
+      "size_bytes": 766
+    },
+    {
+      "path": "fixtures/cdv1-s04-f02a45d7db2e38f1/browser-server.py",
+      "sha256": "1a142ea0b3d9a4cc9beb6c6141da074c950ddd6a4b2014474fca29fa8d6813c7",
+      "size_bytes": 3224
+    },
+    {
+      "path": "fixtures/cdv1-s04-f02a45d7db2e38f1/state-context.json",
+      "sha256": "fd34f4e11fb4fa2a1bd154a3441e0a616b9057e905346f56ffd59148501eda59",
+      "size_bytes": 248
+    },
+    {
+      "path": "fixtures/cdv1-s04-f02a45d7db2e38f1/workspace.html",
+      "sha256": "5d0f098687843110b3d12e566bd2d20851343d3ee006dc2a78ce470e716a6dd1",
+      "size_bytes": 3121
+    }
+  ],
+  "generation_seed": 2026,
+  "initial_fixture_spec": {
+    "application_set": [
+      "Browser",
+      "Browser"
+    ],
+    "fixture_profile": "rows_vendor",
+    "layout_id": "guard_after",
+    "public_assets": [
+      {
+        "path": "fixtures/cdv1-s04-f02a45d7db2e38f1/browser-events.jsonl",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size_bytes": 0
+      },
+      {
+        "path": "fixtures/cdv1-s04-f02a45d7db2e38f1/browser-initial-state.json",
+        "sha256": "b5650729ebd1a590fa761097fe4b413242336508369be09595fff9d542ecd239",
+        "size_bytes": 766
+      },
+      {
+        "path": "fixtures/cdv1-s04-f02a45d7db2e38f1/browser-server.py",
+        "sha256": "1a142ea0b3d9a4cc9beb6c6141da074c950ddd6a4b2014474fca29fa8d6813c7",
+        "size_bytes": 3224
+      },
+      {
+        "path": "fixtures/cdv1-s04-f02a45d7db2e38f1/state-context.json",
+        "sha256": "fd34f4e11fb4fa2a1bd154a3441e0a616b9057e905346f56ffd59148501eda59",
+        "size_bytes": 248
+      },
+      {
+        "path": "fixtures/cdv1-s04-f02a45d7db2e38f1/workspace.html",
+        "sha256": "5d0f098687843110b3d12e566bd2d20851343d3ee006dc2a78ce470e716a6dd1",
+        "size_bytes": 3121
+      }
+    ]
+  },
+  "instance_id": "cdv1-s04-f02a45d7db2e38f1",
+  "manifest_entry_sha256": "734a27065e41cafa36565840b79b73ca740ba2b06813db39377cf880345f6fc7",
+  "provenance": {
+    "fixture_sha256": "e57bc11da11e7fb7365fcef694e68f622ae39f35f162e5de94d959849843b69b",
+    "generation_seed": 2026,
+    "generator": "swcub.production_v1",
+    "seed_role": "deterministic profile ordering only; excluded from instance identity",
+    "semantic_spec_sha256": "f02a45d7db2e38f137f1a8215737f71615e76201866c01549a2d6cd90581c115",
+    "source_code_sha256": "c6f4ce3ff7f122b199f69d31f881393102fe21e3cae914f6877b8bb2f676fcb3",
+    "source_commit": "fc75fc962775fb64429d11f13c5cd0df0cc1cedd"
+  },
+  "reset_metadata": {
+    "fixture_id": "cdv1-s04-f02a45d7db2e38f1",
+    "fresh_guest_required": true,
+    "remove_prior_app_state": true,
+    "verify_fixture_hash": "e57bc11da11e7fb7365fcef694e68f622ae39f35f162e5de94d959849843b69b",
+    "verify_state": {
+      "actors": {
+        "A": {
+          "object": "browser/rows/vendor-a",
+          "value": "[]"
+        },
+        "B": {
+          "object": "browser/rows/vendor-b",
+          "value": "[]"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "context_profile": {
+          "context_axes": {
+            "fixture_state": "archived inventory rows",
+            "schedule_policy": "unchanged",
+            "target_neighborhood": 4,
+            "workflow_graph": "unchanged"
+          },
+          "density_level": 4,
+          "description": "archived inventory rows",
+          "profile": "inventory_audit",
+          "profile_index": 3
+        },
+        "initial": {
+          "operation_kind": "browser_multiselect_bulk",
+          "operation_pair": [
+            "multirow_select_bulk_status",
+            "multirow_select_bulk_status"
+          ],
+          "profile_label": "rows_vendor",
+          "rows_a": [
+            2,
+            5
+          ],
+          "rows_b": [
+            1,
+            4
+          ],
+          "state_context": {
+            "context_axes": {
+              "fixture_state": "archived inventory rows",
+              "schedule_policy": "unchanged",
+              "target_neighborhood": 4,
+              "workflow_graph": "unchanged"
+            },
+            "density_level": 4,
+            "description": "archived inventory rows",
+            "profile": "inventory_audit",
+            "profile_index": 3
+          }
+        },
+        "resource": "selection_active_object"
+      }
+    }
+  },
+  "schedule_policy_id": "browser-row-selection-bulk-action-resume-v1",
+  "semantic_parameters": {
+    "domain_id": "capital_allocation",
+    "domain_schema": {
+      "entity": "capital request",
+      "field_a": "Decision",
+      "field_b": "Ledger state"
+    },
+    "layout_id": "guard_after",
+    "object_profile_id": "rows_vendor",
+    "object_schema": {
+      "operation_kind": "browser_multiselect_bulk",
+      "operation_pair": [
+        "multirow_select_bulk_status",
+        "multirow_select_bulk_status"
+      ],
+      "profile_label": "rows_vendor",
+      "rows_a": [
+        2,
+        5
+      ],
+      "rows_b": [
+        1,
+        4
+      ],
+      "state_context": {
+        "context_axes": {
+          "fixture_state": "archived inventory rows",
+          "schedule_policy": "unchanged",
+          "target_neighborhood": 4,
+          "workflow_graph": "unchanged"
+        },
+        "density_level": 4,
+        "description": "archived inventory rows",
+        "profile": "inventory_audit",
+        "profile_index": 3
+      }
+    },
+    "operation_graph": "browser_multirow_selection_bulk_update",
+    "operation_schema_revision": 1,
+    "state_context": {
+      "context_axes": {
+        "fixture_state": "archived inventory rows",
+        "schedule_policy": "unchanged",
+        "target_neighborhood": 4,
+        "workflow_graph": "unchanged"
+      },
+      "density_level": 4,
+      "description": "archived inventory rows",
+      "profile": "inventory_audit",
+      "profile_index": 3
+    },
+    "workflow_id": "S-04"
+  },
+  "signatures": {
+    "fixture": "e57bc11da11e7fb7365fcef694e68f622ae39f35f162e5de94d959849843b69b",
+    "goal": "99de8abd8157990104a58da408621867b456654d1e6d002357296f542654c3b0",
+    "semantic": "f02a45d7db2e38f137f1a8215737f71615e76201866c01549a2d6cd90581c115",
+    "structural": "d28c30f1d05e33f7467c56466c1a7848e275a9410210f115e0815a444b8bae25"
+  },
+  "target_objects": {
+    "A": [
+      "browser/rows/vendor-a"
+    ],
+    "B": [
+      "browser/rows/vendor-b"
+    ]
+  },
+  "task_domains": {
+    "A": "Browser",
+    "B": "Browser"
+  },
+  "topology_compatibility": {
+    "ma_id": {
+      "backend_binding": "same logical workspace seed; independent desktop sessions allowed",
+      "desktop_count": 2,
+      "fixtures": "byte-identical task-relevant clones"
+    },
+    "ma_sd": {
+      "actor_bindings": "A and B share desktop",
+      "desktop_count": 1
+    },
+    "solo": {
+      "actor_bindings": "A or B",
+      "desktop_count": 1
+    }
+  },
+  "treatment_relevant_state": {
+    "family_state": "selection_active_object",
+    "operation_graph": "browser_multirow_selection_bulk_update",
+    "shared_resource": {
+      "operation_kind": "browser_multiselect_bulk",
+      "operation_pair": [
+        "multirow_select_bulk_status",
+        "multirow_select_bulk_status"
+      ],
+      "profile_label": "rows_vendor",
+      "rows_a": [
+        2,
+        5
+      ],
+      "rows_b": [
+        1,
+        4
+      ],
+      "state_context": {
+        "context_axes": {
+          "fixture_state": "archived inventory rows",
+          "schedule_policy": "unchanged",
+          "target_neighborhood": 4,
+          "workflow_graph": "unchanged"
+        },
+        "density_level": 4,
+        "description": "archived inventory rows",
+        "profile": "inventory_audit",
+        "profile_index": 3
+      }
+    }
+  },
+  "validation_level": "offline_operation_template",
+  "workflow_id": "S-04"
+}

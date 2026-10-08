@@ -1,0 +1,393 @@
+{
+  "actor_goals": [
+    {
+      "actor_id": "A",
+      "expected_value": "[[\"A00-SAFE-1193\",\"A01-SAFE-1193\",\"A02-SAFE-1193\"],[\"A10-SAFE-1193\",\"A11-SAFE-1193\",\"A12-SAFE-1193\"]]",
+      "goal": "Select and fill the assigned 2-by-3 range with the requested row/column pattern. Target calc/C5:E6; initial '__EMPTY_RANGE__'; required final '[[\"A00-SAFE-1193\",\"A01-SAFE-1193\",\"A02-SAFE-1193\"],[\"A10-SAFE-1193\",\"A11-SAFE-1193\",\"A12-SAFE-1193\"]]'.",
+      "initial_value": "__EMPTY_RANGE__",
+      "operation": "update calc/C5:E6",
+      "target_objects": [
+        "calc/C5:E6"
+      ],
+      "task_domain": "Calc"
+    },
+    {
+      "actor_id": "B",
+      "expected_value": "[[\"B00-SAFE-1193\",\"B01-SAFE-1193\",\"B02-SAFE-1193\"],[\"B10-SAFE-1193\",\"B11-SAFE-1193\",\"B12-SAFE-1193\"]]",
+      "goal": "Select and fill the other 2-by-3 range with its independent pattern. Target calc/G5:I6; initial '__EMPTY_RANGE__'; required final '[[\"B00-SAFE-1193\",\"B01-SAFE-1193\",\"B02-SAFE-1193\"],[\"B10-SAFE-1193\",\"B11-SAFE-1193\",\"B12-SAFE-1193\"]]'.",
+      "initial_value": "__EMPTY_RANGE__",
+      "operation": "update calc/G5:I6",
+      "target_objects": [
+        "calc/G5:I6"
+      ],
+      "task_domain": "Calc"
+    }
+  ],
+  "benchmark_version": "codesk-v1.0",
+  "evaluator": {
+    "actor_paths": {
+      "A": "actors.A.value",
+      "B": "actors.B.value"
+    },
+    "adapter": "codesk_exact_state_v1",
+    "condition_semantics": {
+      "ma_id": "score each actor on equivalent independent desktop fixture",
+      "ma_sd": "score both actor goals and shared-state integrity",
+      "solo": "score selected actor; require inactive target and guards unchanged"
+    },
+    "context_expectation": {
+      "context_axes": {
+        "fixture_state": "partly empty neighborhood",
+        "schedule_policy": "unchanged",
+        "target_neighborhood": 3,
+        "workflow_graph": "unchanged"
+      },
+      "density_level": 3,
+      "description": "partly empty neighborhood",
+      "profile": "header_boundary",
+      "profile_index": 3
+    },
+    "expected_state": {
+      "actors": {
+        "A": {
+          "object": "calc/C5:E6",
+          "value": "[[\"A00-SAFE-1193\",\"A01-SAFE-1193\",\"A02-SAFE-1193\"],[\"A10-SAFE-1193\",\"A11-SAFE-1193\",\"A12-SAFE-1193\"]]"
+        },
+        "B": {
+          "object": "calc/G5:I6",
+          "value": "[[\"B00-SAFE-1193\",\"B01-SAFE-1193\",\"B02-SAFE-1193\"],[\"B10-SAFE-1193\",\"B11-SAFE-1193\",\"B12-SAFE-1193\"]]"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "context_profile": {
+          "context_axes": {
+            "fixture_state": "partly empty neighborhood",
+            "schedule_policy": "unchanged",
+            "target_neighborhood": 3,
+            "workflow_graph": "unchanged"
+          },
+          "density_level": 3,
+          "description": "partly empty neighborhood",
+          "profile": "header_boundary",
+          "profile_index": 3
+        },
+        "initial": {
+          "operation_kind": "calc_range_fill",
+          "operation_pair": [
+            "range_selection_fill",
+            "range_selection_fill"
+          ],
+          "profile_label": "fill_de",
+          "shape": [
+            2,
+            3
+          ],
+          "state_context": {
+            "context_axes": {
+              "fixture_state": "partly empty neighborhood",
+              "schedule_policy": "unchanged",
+              "target_neighborhood": 3,
+              "workflow_graph": "unchanged"
+            },
+            "density_level": 3,
+            "description": "partly empty neighborhood",
+            "profile": "header_boundary",
+            "profile_index": 3
+          }
+        },
+        "resource": "selection_active_object"
+      }
+    },
+    "initial_state": {
+      "actors": {
+        "A": {
+          "object": "calc/C5:E6",
+          "value": "__EMPTY_RANGE__"
+        },
+        "B": {
+          "object": "calc/G5:I6",
+          "value": "__EMPTY_RANGE__"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "context_profile": {
+          "context_axes": {
+            "fixture_state": "partly empty neighborhood",
+            "schedule_policy": "unchanged",
+            "target_neighborhood": 3,
+            "workflow_graph": "unchanged"
+          },
+          "density_level": 3,
+          "description": "partly empty neighborhood",
+          "profile": "header_boundary",
+          "profile_index": 3
+        },
+        "initial": {
+          "operation_kind": "calc_range_fill",
+          "operation_pair": [
+            "range_selection_fill",
+            "range_selection_fill"
+          ],
+          "profile_label": "fill_de",
+          "shape": [
+            2,
+            3
+          ],
+          "state_context": {
+            "context_axes": {
+              "fixture_state": "partly empty neighborhood",
+              "schedule_policy": "unchanged",
+              "target_neighborhood": 3,
+              "workflow_graph": "unchanged"
+            },
+            "density_level": 3,
+            "description": "partly empty neighborhood",
+            "profile": "header_boundary",
+            "profile_index": 3
+          }
+        },
+        "resource": "selection_active_object"
+      }
+    },
+    "invariants": [
+      {
+        "equals": "PRESERVE",
+        "path": "actors.guards.main"
+      }
+    ],
+    "operation_contract": {
+      "A": "calc/range-fill-a",
+      "B": "calc/range-fill-b",
+      "evidence_required": true,
+      "operation_graph": "calc_rectangular_selection_fill_handle",
+      "shared_state": "active selected range"
+    },
+    "schedule_policy_id": "calc-range-selection-change-resume-v1"
+  },
+  "evaluator_path": "evaluators/cdv1-s02-8a85f08ff5772bc5.json",
+  "evaluator_sha256": "8f87ac22949625c2d98504f946a208feab96991e9acdec5e6d4857f14cb1d192",
+  "family": "selection_active_object",
+  "fixture_files": [
+    {
+      "path": "fixtures/cdv1-s02-8a85f08ff5772bc5/state-context.json",
+      "sha256": "88be78fb93d84ca5c8dc2a1ee45562db3af2919bae827ab5ef11a870be322abd",
+      "size_bytes": 252
+    },
+    {
+      "path": "fixtures/cdv1-s02-8a85f08ff5772bc5/workbook.fods",
+      "sha256": "48c7ec75de445064fd557bc2fff2b42281d14ec1703a255e9458313f26078af7",
+      "size_bytes": 10429
+    }
+  ],
+  "generation_seed": 2026,
+  "initial_fixture_spec": {
+    "application_set": [
+      "Calc",
+      "Calc"
+    ],
+    "fixture_profile": "fill_de",
+    "layout_id": "guard_after",
+    "public_assets": [
+      {
+        "path": "fixtures/cdv1-s02-8a85f08ff5772bc5/state-context.json",
+        "sha256": "88be78fb93d84ca5c8dc2a1ee45562db3af2919bae827ab5ef11a870be322abd",
+        "size_bytes": 252
+      },
+      {
+        "path": "fixtures/cdv1-s02-8a85f08ff5772bc5/workbook.fods",
+        "sha256": "48c7ec75de445064fd557bc2fff2b42281d14ec1703a255e9458313f26078af7",
+        "size_bytes": 10429
+      }
+    ]
+  },
+  "instance_id": "cdv1-s02-8a85f08ff5772bc5",
+  "manifest_entry_sha256": "2960b9bc600e488ef6206bbe4916705563fe8a4eb0ea322820f0a2cad93d95f8",
+  "provenance": {
+    "fixture_sha256": "a52ec54b1283f59c38c1d667c50dfd211745b5b72f03e78504c1ecd277f10846",
+    "generation_seed": 2026,
+    "generator": "swcub.production_v1",
+    "seed_role": "deterministic profile ordering only; excluded from instance identity",
+    "semantic_spec_sha256": "8a85f08ff5772bc5c3de9d64ca5aedf3780a64b7eefd652f87a1645899cd95e5",
+    "source_code_sha256": "c6f4ce3ff7f122b199f69d31f881393102fe21e3cae914f6877b8bb2f676fcb3",
+    "source_commit": "fc75fc962775fb64429d11f13c5cd0df0cc1cedd"
+  },
+  "reset_metadata": {
+    "fixture_id": "cdv1-s02-8a85f08ff5772bc5",
+    "fresh_guest_required": true,
+    "remove_prior_app_state": true,
+    "verify_fixture_hash": "a52ec54b1283f59c38c1d667c50dfd211745b5b72f03e78504c1ecd277f10846",
+    "verify_state": {
+      "actors": {
+        "A": {
+          "object": "calc/C5:E6",
+          "value": "__EMPTY_RANGE__"
+        },
+        "B": {
+          "object": "calc/G5:I6",
+          "value": "__EMPTY_RANGE__"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "context_profile": {
+          "context_axes": {
+            "fixture_state": "partly empty neighborhood",
+            "schedule_policy": "unchanged",
+            "target_neighborhood": 3,
+            "workflow_graph": "unchanged"
+          },
+          "density_level": 3,
+          "description": "partly empty neighborhood",
+          "profile": "header_boundary",
+          "profile_index": 3
+        },
+        "initial": {
+          "operation_kind": "calc_range_fill",
+          "operation_pair": [
+            "range_selection_fill",
+            "range_selection_fill"
+          ],
+          "profile_label": "fill_de",
+          "shape": [
+            2,
+            3
+          ],
+          "state_context": {
+            "context_axes": {
+              "fixture_state": "partly empty neighborhood",
+              "schedule_policy": "unchanged",
+              "target_neighborhood": 3,
+              "workflow_graph": "unchanged"
+            },
+            "density_level": 3,
+            "description": "partly empty neighborhood",
+            "profile": "header_boundary",
+            "profile_index": 3
+          }
+        },
+        "resource": "selection_active_object"
+      }
+    }
+  },
+  "schedule_policy_id": "calc-range-selection-change-resume-v1",
+  "semantic_parameters": {
+    "domain_id": "safety_inspection",
+    "domain_schema": {
+      "entity": "inspection item",
+      "field_a": "Clearance",
+      "field_b": "Inspection state"
+    },
+    "layout_id": "guard_after",
+    "object_profile_id": "fill_de",
+    "object_schema": {
+      "operation_kind": "calc_range_fill",
+      "operation_pair": [
+        "range_selection_fill",
+        "range_selection_fill"
+      ],
+      "profile_label": "fill_de",
+      "shape": [
+        2,
+        3
+      ],
+      "state_context": {
+        "context_axes": {
+          "fixture_state": "partly empty neighborhood",
+          "schedule_policy": "unchanged",
+          "target_neighborhood": 3,
+          "workflow_graph": "unchanged"
+        },
+        "density_level": 3,
+        "description": "partly empty neighborhood",
+        "profile": "header_boundary",
+        "profile_index": 3
+      }
+    },
+    "operation_graph": "calc_rectangular_selection_fill_handle",
+    "operation_schema_revision": 1,
+    "state_context": {
+      "context_axes": {
+        "fixture_state": "partly empty neighborhood",
+        "schedule_policy": "unchanged",
+        "target_neighborhood": 3,
+        "workflow_graph": "unchanged"
+      },
+      "density_level": 3,
+      "description": "partly empty neighborhood",
+      "profile": "header_boundary",
+      "profile_index": 3
+    },
+    "workflow_id": "S-02"
+  },
+  "signatures": {
+    "fixture": "a52ec54b1283f59c38c1d667c50dfd211745b5b72f03e78504c1ecd277f10846",
+    "goal": "73bc76a3eca57d10a101f215b75ea26ec9f28d9a027802a0c3d219f02797dc59",
+    "semantic": "8a85f08ff5772bc5c3de9d64ca5aedf3780a64b7eefd652f87a1645899cd95e5",
+    "structural": "7023000f89e3d45a605ac267a40f8fc2beb5a4ba84b868d921906830dacca03a"
+  },
+  "target_objects": {
+    "A": [
+      "calc/C5:E6"
+    ],
+    "B": [
+      "calc/G5:I6"
+    ]
+  },
+  "task_domains": {
+    "A": "Calc",
+    "B": "Calc"
+  },
+  "topology_compatibility": {
+    "ma_id": {
+      "backend_binding": "same logical workspace seed; independent desktop sessions allowed",
+      "desktop_count": 2,
+      "fixtures": "byte-identical task-relevant clones"
+    },
+    "ma_sd": {
+      "actor_bindings": "A and B share desktop",
+      "desktop_count": 1
+    },
+    "solo": {
+      "actor_bindings": "A or B",
+      "desktop_count": 1
+    }
+  },
+  "treatment_relevant_state": {
+    "family_state": "selection_active_object",
+    "operation_graph": "calc_rectangular_selection_fill_handle",
+    "shared_resource": {
+      "operation_kind": "calc_range_fill",
+      "operation_pair": [
+        "range_selection_fill",
+        "range_selection_fill"
+      ],
+      "profile_label": "fill_de",
+      "shape": [
+        2,
+        3
+      ],
+      "state_context": {
+        "context_axes": {
+          "fixture_state": "partly empty neighborhood",
+          "schedule_policy": "unchanged",
+          "target_neighborhood": 3,
+          "workflow_graph": "unchanged"
+        },
+        "density_level": 3,
+        "description": "partly empty neighborhood",
+        "profile": "header_boundary",
+        "profile_index": 3
+      }
+    }
+  },
+  "validation_level": "offline_operation_template",
+  "workflow_id": "S-02"
+}

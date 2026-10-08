@@ -1,0 +1,376 @@
+{
+  "actor_goals": [
+    {
+      "actor_id": "A",
+      "expected_value": "REC-A-4100",
+      "goal": "Update record A only.",
+      "initial_value": "",
+      "operation": "update browser/record:asset",
+      "target_objects": [
+        "browser/record:asset"
+      ],
+      "task_domain": "Browser"
+    },
+    {
+      "actor_id": "B",
+      "expected_value": "REC-B-8200",
+      "goal": "Update record B only.",
+      "initial_value": "",
+      "operation": "update browser/record:maintenance",
+      "target_objects": [
+        "browser/record:maintenance"
+      ],
+      "task_domain": "Browser"
+    }
+  ],
+  "benchmark_version": "codesk-v1.0",
+  "evaluator": {
+    "actor_paths": {
+      "A": "actors.A.value",
+      "B": "actors.B.value"
+    },
+    "adapter": "codesk_exact_state_v1",
+    "condition_semantics": {
+      "ma_id": "score each actor on equivalent independent desktop fixture",
+      "ma_sd": "score both actor goals and shared-state integrity",
+      "solo": "score selected actor; require inactive target and guards unchanged"
+    },
+    "context_expectation": {
+      "context_axes": {
+        "fixture_state": "maintenance-cycle records",
+        "schedule_policy": "unchanged",
+        "target_neighborhood": 2,
+        "workflow_graph": "unchanged"
+      },
+      "density_level": 2,
+      "description": "maintenance-cycle records",
+      "profile": "asset_register",
+      "profile_index": 1
+    },
+    "expected_state": {
+      "actors": {
+        "A": {
+          "object": "browser/record:asset",
+          "value": "REC-A-4100"
+        },
+        "B": {
+          "object": "browser/record:maintenance",
+          "value": "REC-B-8200"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "context_profile": {
+          "context_axes": {
+            "fixture_state": "maintenance-cycle records",
+            "schedule_policy": "unchanged",
+            "target_neighborhood": 2,
+            "workflow_graph": "unchanged"
+          },
+          "density_level": 2,
+          "description": "maintenance-cycle records",
+          "profile": "asset_register",
+          "profile_index": 1
+        },
+        "initial": {
+          "record_type": "asset/maintenance",
+          "selection": "record row",
+          "state_context": {
+            "context_axes": {
+              "fixture_state": "maintenance-cycle records",
+              "schedule_policy": "unchanged",
+              "target_neighborhood": 2,
+              "workflow_graph": "unchanged"
+            },
+            "density_level": 2,
+            "description": "maintenance-cycle records",
+            "profile": "asset_register",
+            "profile_index": 1
+          }
+        },
+        "resource": "selection_active_object"
+      }
+    },
+    "initial_state": {
+      "actors": {
+        "A": {
+          "object": "browser/record:asset",
+          "value": ""
+        },
+        "B": {
+          "object": "browser/record:maintenance",
+          "value": ""
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "context_profile": {
+          "context_axes": {
+            "fixture_state": "maintenance-cycle records",
+            "schedule_policy": "unchanged",
+            "target_neighborhood": 2,
+            "workflow_graph": "unchanged"
+          },
+          "density_level": 2,
+          "description": "maintenance-cycle records",
+          "profile": "asset_register",
+          "profile_index": 1
+        },
+        "initial": {
+          "record_type": "asset/maintenance",
+          "selection": "record row",
+          "state_context": {
+            "context_axes": {
+              "fixture_state": "maintenance-cycle records",
+              "schedule_policy": "unchanged",
+              "target_neighborhood": 2,
+              "workflow_graph": "unchanged"
+            },
+            "density_level": 2,
+            "description": "maintenance-cycle records",
+            "profile": "asset_register",
+            "profile_index": 1
+          }
+        },
+        "resource": "selection_active_object"
+      }
+    },
+    "invariants": [
+      {
+        "equals": "PRESERVE",
+        "path": "actors.guards.main"
+      }
+    ],
+    "schedule_policy_id": "observe-selection-change-b-resume-a-v1"
+  },
+  "evaluator_path": "evaluators/cdv1-a02-6fea9832e862301b.json",
+  "evaluator_sha256": "5e47eb3570dfd19a852aeef7c20862677def3cb44ffaa2f30395ed05bc0cb50f",
+  "family": "selection_active_object",
+  "fixture_files": [
+    {
+      "path": "fixtures/cdv1-a02-6fea9832e862301b/browser-events.jsonl",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size_bytes": 0
+    },
+    {
+      "path": "fixtures/cdv1-a02-6fea9832e862301b/browser-initial-state.json",
+      "sha256": "8fef7abc524e41fc6e0fe4445ff46f0c214d2aa73a8e17217410d3ec27ad57e0",
+      "size_bytes": 127
+    },
+    {
+      "path": "fixtures/cdv1-a02-6fea9832e862301b/browser-server.py",
+      "sha256": "af11c103842cf18d5eacfccfecececb190e5ed9fbc62f75ade62f636db9687e9",
+      "size_bytes": 3334
+    },
+    {
+      "path": "fixtures/cdv1-a02-6fea9832e862301b/state-context.json",
+      "sha256": "f31942faf46bcbb9afbea7297da1b0c9a70c842a3f06740c170e0d17d303bd5f",
+      "size_bytes": 251
+    },
+    {
+      "path": "fixtures/cdv1-a02-6fea9832e862301b/workspace.html",
+      "sha256": "ecda983081ec6fd71050ba37276245569ff0b83677f4c47ec76110cb0b78df02",
+      "size_bytes": 868
+    }
+  ],
+  "generation_seed": 2026,
+  "initial_fixture_spec": {
+    "application_set": [
+      "Browser",
+      "Browser"
+    ],
+    "fixture_profile": "record_asset",
+    "layout_id": "guard_after",
+    "public_assets": [
+      {
+        "path": "fixtures/cdv1-a02-6fea9832e862301b/browser-events.jsonl",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size_bytes": 0
+      },
+      {
+        "path": "fixtures/cdv1-a02-6fea9832e862301b/browser-initial-state.json",
+        "sha256": "8fef7abc524e41fc6e0fe4445ff46f0c214d2aa73a8e17217410d3ec27ad57e0",
+        "size_bytes": 127
+      },
+      {
+        "path": "fixtures/cdv1-a02-6fea9832e862301b/browser-server.py",
+        "sha256": "af11c103842cf18d5eacfccfecececb190e5ed9fbc62f75ade62f636db9687e9",
+        "size_bytes": 3334
+      },
+      {
+        "path": "fixtures/cdv1-a02-6fea9832e862301b/state-context.json",
+        "sha256": "f31942faf46bcbb9afbea7297da1b0c9a70c842a3f06740c170e0d17d303bd5f",
+        "size_bytes": 251
+      },
+      {
+        "path": "fixtures/cdv1-a02-6fea9832e862301b/workspace.html",
+        "sha256": "ecda983081ec6fd71050ba37276245569ff0b83677f4c47ec76110cb0b78df02",
+        "size_bytes": 868
+      }
+    ]
+  },
+  "instance_id": "cdv1-a02-6fea9832e862301b",
+  "manifest_entry_sha256": "a71a3d26f96ff24b4f0484076dd8ca24d65f69eaf40db4771ed03c184786dd4f",
+  "provenance": {
+    "fixture_sha256": "e258dbab5bff678d604eb47abf4c73d4abea2be1d61febdcb87f40ec5783c8a6",
+    "generation_seed": 2026,
+    "generator": "swcub.production_v1",
+    "seed_role": "deterministic profile ordering only; excluded from instance identity",
+    "semantic_spec_sha256": "6fea9832e862301b69233dc9ad86eccb1d82cb2312bf54b2219ea8b8438518df",
+    "source_code_sha256": "c6f4ce3ff7f122b199f69d31f881393102fe21e3cae914f6877b8bb2f676fcb3",
+    "source_commit": "fc75fc962775fb64429d11f13c5cd0df0cc1cedd"
+  },
+  "reset_metadata": {
+    "fixture_id": "cdv1-a02-6fea9832e862301b",
+    "fresh_guest_required": true,
+    "remove_prior_app_state": true,
+    "verify_fixture_hash": "e258dbab5bff678d604eb47abf4c73d4abea2be1d61febdcb87f40ec5783c8a6",
+    "verify_state": {
+      "actors": {
+        "A": {
+          "object": "browser/record:asset",
+          "value": ""
+        },
+        "B": {
+          "object": "browser/record:maintenance",
+          "value": ""
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "context_profile": {
+          "context_axes": {
+            "fixture_state": "maintenance-cycle records",
+            "schedule_policy": "unchanged",
+            "target_neighborhood": 2,
+            "workflow_graph": "unchanged"
+          },
+          "density_level": 2,
+          "description": "maintenance-cycle records",
+          "profile": "asset_register",
+          "profile_index": 1
+        },
+        "initial": {
+          "record_type": "asset/maintenance",
+          "selection": "record row",
+          "state_context": {
+            "context_axes": {
+              "fixture_state": "maintenance-cycle records",
+              "schedule_policy": "unchanged",
+              "target_neighborhood": 2,
+              "workflow_graph": "unchanged"
+            },
+            "density_level": 2,
+            "description": "maintenance-cycle records",
+            "profile": "asset_register",
+            "profile_index": 1
+          }
+        },
+        "resource": "selection_active_object"
+      }
+    }
+  },
+  "schedule_policy_id": "observe-selection-change-b-resume-a-v1",
+  "semantic_parameters": {
+    "domain_id": "safety_inspection",
+    "domain_schema": {
+      "entity": "inspection item",
+      "field_a": "Clearance",
+      "field_b": "Inspection state"
+    },
+    "layout_id": "guard_after",
+    "object_profile_id": "record_asset",
+    "object_schema": {
+      "record_type": "asset/maintenance",
+      "selection": "record row",
+      "state_context": {
+        "context_axes": {
+          "fixture_state": "maintenance-cycle records",
+          "schedule_policy": "unchanged",
+          "target_neighborhood": 2,
+          "workflow_graph": "unchanged"
+        },
+        "density_level": 2,
+        "description": "maintenance-cycle records",
+        "profile": "asset_register",
+        "profile_index": 1
+      }
+    },
+    "operation_graph": "selected_record_context",
+    "operation_schema_revision": 1,
+    "state_context": {
+      "context_axes": {
+        "fixture_state": "maintenance-cycle records",
+        "schedule_policy": "unchanged",
+        "target_neighborhood": 2,
+        "workflow_graph": "unchanged"
+      },
+      "density_level": 2,
+      "description": "maintenance-cycle records",
+      "profile": "asset_register",
+      "profile_index": 1
+    },
+    "workflow_id": "A-02"
+  },
+  "signatures": {
+    "fixture": "e258dbab5bff678d604eb47abf4c73d4abea2be1d61febdcb87f40ec5783c8a6",
+    "goal": "363d54fc3e8bff41c64604b918e53b2a6de0420c7e7297f80127afdf77f9de75",
+    "semantic": "6fea9832e862301b69233dc9ad86eccb1d82cb2312bf54b2219ea8b8438518df",
+    "structural": "03373bf337768d73e4d2d60e5dc8da0756bb7b75060f51d41cc5f68b005679c0"
+  },
+  "target_objects": {
+    "A": [
+      "browser/record:asset"
+    ],
+    "B": [
+      "browser/record:maintenance"
+    ]
+  },
+  "task_domains": {
+    "A": "Browser",
+    "B": "Browser"
+  },
+  "topology_compatibility": {
+    "ma_id": {
+      "backend_binding": "same logical workspace seed; independent desktop sessions allowed",
+      "desktop_count": 2,
+      "fixtures": "byte-identical task-relevant clones"
+    },
+    "ma_sd": {
+      "actor_bindings": "A and B share desktop",
+      "desktop_count": 1
+    },
+    "solo": {
+      "actor_bindings": "A or B",
+      "desktop_count": 1
+    }
+  },
+  "treatment_relevant_state": {
+    "family_state": "selection_active_object",
+    "operation_graph": "selected_record_context",
+    "shared_resource": {
+      "record_type": "asset/maintenance",
+      "selection": "record row",
+      "state_context": {
+        "context_axes": {
+          "fixture_state": "maintenance-cycle records",
+          "schedule_policy": "unchanged",
+          "target_neighborhood": 2,
+          "workflow_graph": "unchanged"
+        },
+        "density_level": 2,
+        "description": "maintenance-cycle records",
+        "profile": "asset_register",
+        "profile_index": 1
+      }
+    }
+  },
+  "validation_level": "scripted_full",
+  "workflow_id": "A-02"
+}

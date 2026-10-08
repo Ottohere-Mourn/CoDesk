@@ -1,0 +1,376 @@
+{
+  "actor_goals": [
+    {
+      "actor_id": "A",
+      "expected_value": "Reconciled: warehouse lot (C2)",
+      "goal": "Replace all Writer document content with the assigned decision and save.",
+      "initial_value": "Draft: warehouse lot",
+      "operation": "update writer/document-content",
+      "target_objects": [
+        "writer/document-content"
+      ],
+      "task_domain": "Writer"
+    },
+    {
+      "actor_id": "B",
+      "expected_value": "Counted: warehouse lot (C2)",
+      "goal": "Set the assigned Calc field and preserve the remaining table.",
+      "initial_value": "Pending: warehouse lot",
+      "operation": "update calc/C2",
+      "target_objects": [
+        "calc/C2"
+      ],
+      "task_domain": "Calc"
+    }
+  ],
+  "benchmark_version": "codesk-v1.0",
+  "evaluator": {
+    "actor_paths": {
+      "A": "actors.A.value",
+      "B": "actors.B.value"
+    },
+    "adapter": "codesk_exact_state_v1",
+    "condition_semantics": {
+      "ma_id": "score each actor on equivalent independent desktop fixture",
+      "ma_sd": "score both actor goals and shared-state integrity",
+      "solo": "score selected actor; require inactive target and guards unchanged"
+    },
+    "context_expectation": {
+      "context_axes": {
+        "fixture_state": "dense Calc table",
+        "schedule_policy": "unchanged",
+        "target_neighborhood": 2,
+        "workflow_graph": "unchanged"
+      },
+      "density_level": 2,
+      "description": "dense Calc table",
+      "profile": "sectioned_report",
+      "profile_index": 1
+    },
+    "expected_state": {
+      "actors": {
+        "A": {
+          "object": "writer/document-content",
+          "value": "Reconciled: warehouse lot (C2)"
+        },
+        "B": {
+          "object": "calc/C2",
+          "value": "Counted: warehouse lot (C2)"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "context_profile": {
+          "context_axes": {
+            "fixture_state": "dense Calc table",
+            "schedule_policy": "unchanged",
+            "target_neighborhood": 2,
+            "workflow_graph": "unchanged"
+          },
+          "density_level": 2,
+          "description": "dense Calc table",
+          "profile": "sectioned_report",
+          "profile_index": 1
+        },
+        "initial": {
+          "headers": [
+            "Request",
+            "Owner",
+            "Decision"
+          ],
+          "state_context": {
+            "context_axes": {
+              "fixture_state": "dense Calc table",
+              "schedule_policy": "unchanged",
+              "target_neighborhood": 2,
+              "workflow_graph": "unchanged"
+            },
+            "density_level": 2,
+            "description": "dense Calc table",
+            "profile": "sectioned_report",
+            "profile_index": 1
+          },
+          "target": "C2"
+        },
+        "resource": "focus_input_routing"
+      }
+    },
+    "initial_state": {
+      "actors": {
+        "A": {
+          "object": "writer/document-content",
+          "value": "Draft: warehouse lot"
+        },
+        "B": {
+          "object": "calc/C2",
+          "value": "Pending: warehouse lot"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "context_profile": {
+          "context_axes": {
+            "fixture_state": "dense Calc table",
+            "schedule_policy": "unchanged",
+            "target_neighborhood": 2,
+            "workflow_graph": "unchanged"
+          },
+          "density_level": 2,
+          "description": "dense Calc table",
+          "profile": "sectioned_report",
+          "profile_index": 1
+        },
+        "initial": {
+          "headers": [
+            "Request",
+            "Owner",
+            "Decision"
+          ],
+          "state_context": {
+            "context_axes": {
+              "fixture_state": "dense Calc table",
+              "schedule_policy": "unchanged",
+              "target_neighborhood": 2,
+              "workflow_graph": "unchanged"
+            },
+            "density_level": 2,
+            "description": "dense Calc table",
+            "profile": "sectioned_report",
+            "profile_index": 1
+          },
+          "target": "C2"
+        },
+        "resource": "focus_input_routing"
+      }
+    },
+    "invariants": [
+      {
+        "equals": "PRESERVE",
+        "path": "actors.guards.main"
+      }
+    ],
+    "schedule_policy_id": "action-boundary-round-robin-ab-v1"
+  },
+  "evaluator_path": "evaluators/cdv1-f01-d951a85c55d42aef.json",
+  "evaluator_sha256": "874c5dc26871c38166e2f7105f569d2e1df001c3bf41d707dd395c7e75ecf46c",
+  "family": "focus_input_routing",
+  "fixture_files": [
+    {
+      "path": "fixtures/cdv1-f01-d951a85c55d42aef/document.fodt",
+      "sha256": "a28c7cad233fec4543b6209442d092416b84bc4633296bc53eb194c27c88a566",
+      "size_bytes": 917
+    },
+    {
+      "path": "fixtures/cdv1-f01-d951a85c55d42aef/state-context.json",
+      "sha256": "3304279f99c9659c78bfd2266647ee99327e6296492e57cf9312046676bed5ea",
+      "size_bytes": 235
+    },
+    {
+      "path": "fixtures/cdv1-f01-d951a85c55d42aef/workbook.fods",
+      "sha256": "c2d47e732d6b29a606dc5830ecf35dc2eb5434db7b3db65e28866a4e3e09f350",
+      "size_bytes": 3331
+    }
+  ],
+  "generation_seed": 2026,
+  "initial_fixture_spec": {
+    "application_set": [
+      "Writer",
+      "Calc"
+    ],
+    "fixture_profile": "cell_c2",
+    "layout_id": "guard_after",
+    "public_assets": [
+      {
+        "path": "fixtures/cdv1-f01-d951a85c55d42aef/document.fodt",
+        "sha256": "a28c7cad233fec4543b6209442d092416b84bc4633296bc53eb194c27c88a566",
+        "size_bytes": 917
+      },
+      {
+        "path": "fixtures/cdv1-f01-d951a85c55d42aef/state-context.json",
+        "sha256": "3304279f99c9659c78bfd2266647ee99327e6296492e57cf9312046676bed5ea",
+        "size_bytes": 235
+      },
+      {
+        "path": "fixtures/cdv1-f01-d951a85c55d42aef/workbook.fods",
+        "sha256": "c2d47e732d6b29a606dc5830ecf35dc2eb5434db7b3db65e28866a4e3e09f350",
+        "size_bytes": 3331
+      }
+    ]
+  },
+  "instance_id": "cdv1-f01-d951a85c55d42aef",
+  "manifest_entry_sha256": "16fb52793cceb809ce71d91b94b7db47b568c6d74cf1b08ab60f2f783a9b2034",
+  "provenance": {
+    "fixture_sha256": "602f93a94961c3cc0ce1b66e469056620aa86f24aa7dd6522f62ed17c5ad2b5b",
+    "generation_seed": 2026,
+    "generator": "swcub.production_v1",
+    "seed_role": "deterministic profile ordering only; excluded from instance identity",
+    "semantic_spec_sha256": "d951a85c55d42aefdfd046be5a26781a24d8872381fabeff7be791e6c101daf2",
+    "source_code_sha256": "c6f4ce3ff7f122b199f69d31f881393102fe21e3cae914f6877b8bb2f676fcb3",
+    "source_commit": "fc75fc962775fb64429d11f13c5cd0df0cc1cedd"
+  },
+  "reset_metadata": {
+    "fixture_id": "cdv1-f01-d951a85c55d42aef",
+    "fresh_guest_required": true,
+    "remove_prior_app_state": true,
+    "verify_fixture_hash": "602f93a94961c3cc0ce1b66e469056620aa86f24aa7dd6522f62ed17c5ad2b5b",
+    "verify_state": {
+      "actors": {
+        "A": {
+          "object": "writer/document-content",
+          "value": "Draft: warehouse lot"
+        },
+        "B": {
+          "object": "calc/C2",
+          "value": "Pending: warehouse lot"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "context_profile": {
+          "context_axes": {
+            "fixture_state": "dense Calc table",
+            "schedule_policy": "unchanged",
+            "target_neighborhood": 2,
+            "workflow_graph": "unchanged"
+          },
+          "density_level": 2,
+          "description": "dense Calc table",
+          "profile": "sectioned_report",
+          "profile_index": 1
+        },
+        "initial": {
+          "headers": [
+            "Request",
+            "Owner",
+            "Decision"
+          ],
+          "state_context": {
+            "context_axes": {
+              "fixture_state": "dense Calc table",
+              "schedule_policy": "unchanged",
+              "target_neighborhood": 2,
+              "workflow_graph": "unchanged"
+            },
+            "density_level": 2,
+            "description": "dense Calc table",
+            "profile": "sectioned_report",
+            "profile_index": 1
+          },
+          "target": "C2"
+        },
+        "resource": "focus_input_routing"
+      }
+    }
+  },
+  "schedule_policy_id": "action-boundary-round-robin-ab-v1",
+  "semantic_parameters": {
+    "domain_id": "warehouse_reconciliation",
+    "domain_schema": {
+      "entity": "warehouse lot",
+      "field_a": "Reconciliation",
+      "field_b": "Count status"
+    },
+    "layout_id": "guard_after",
+    "object_profile_id": "cell_c2",
+    "object_schema": {
+      "headers": [
+        "Request",
+        "Owner",
+        "Decision"
+      ],
+      "state_context": {
+        "context_axes": {
+          "fixture_state": "dense Calc table",
+          "schedule_policy": "unchanged",
+          "target_neighborhood": 2,
+          "workflow_graph": "unchanged"
+        },
+        "density_level": 2,
+        "description": "dense Calc table",
+        "profile": "sectioned_report",
+        "profile_index": 1
+      },
+      "target": "C2"
+    },
+    "operation_graph": "writer_full_document_vs_calc_cell",
+    "operation_schema_revision": 4,
+    "state_context": {
+      "context_axes": {
+        "fixture_state": "dense Calc table",
+        "schedule_policy": "unchanged",
+        "target_neighborhood": 2,
+        "workflow_graph": "unchanged"
+      },
+      "density_level": 2,
+      "description": "dense Calc table",
+      "profile": "sectioned_report",
+      "profile_index": 1
+    },
+    "workflow_id": "F-01"
+  },
+  "signatures": {
+    "fixture": "602f93a94961c3cc0ce1b66e469056620aa86f24aa7dd6522f62ed17c5ad2b5b",
+    "goal": "b7603775e552ceaf131fa2ac9f5282d87fee9c8ed104a3b76443c969275617e6",
+    "semantic": "d951a85c55d42aefdfd046be5a26781a24d8872381fabeff7be791e6c101daf2",
+    "structural": "80d488c2850d3e6a9c0147d556d9f3325cb2b020056cc83968c86c0a101bc91e"
+  },
+  "target_objects": {
+    "A": [
+      "writer/document-content"
+    ],
+    "B": [
+      "calc/C2"
+    ]
+  },
+  "task_domains": {
+    "A": "Writer",
+    "B": "Calc"
+  },
+  "topology_compatibility": {
+    "ma_id": {
+      "backend_binding": "same logical workspace seed; independent desktop sessions allowed",
+      "desktop_count": 2,
+      "fixtures": "byte-identical task-relevant clones"
+    },
+    "ma_sd": {
+      "actor_bindings": "A and B share desktop",
+      "desktop_count": 1
+    },
+    "solo": {
+      "actor_bindings": "A or B",
+      "desktop_count": 1
+    }
+  },
+  "treatment_relevant_state": {
+    "family_state": "focus_input_routing",
+    "operation_graph": "writer_full_document_vs_calc_cell",
+    "shared_resource": {
+      "headers": [
+        "Request",
+        "Owner",
+        "Decision"
+      ],
+      "state_context": {
+        "context_axes": {
+          "fixture_state": "dense Calc table",
+          "schedule_policy": "unchanged",
+          "target_neighborhood": 2,
+          "workflow_graph": "unchanged"
+        },
+        "density_level": 2,
+        "description": "dense Calc table",
+        "profile": "sectioned_report",
+        "profile_index": 1
+      },
+      "target": "C2"
+    }
+  },
+  "validation_level": "qwen_mechanism_evidence",
+  "workflow_id": "F-01"
+}

@@ -1,0 +1,423 @@
+{
+  "actor_goals": [
+    {
+      "actor_id": "A",
+      "expected_value": "OUTPUT-SUP-2048",
+      "goal": "Select and copy the exact command output, paste it into the assigned Browser search, and submit the search. Target browser/search/policy; initial ''; required final 'OUTPUT-SUP-2048'.",
+      "initial_value": "",
+      "operation": "update browser/search/policy",
+      "target_objects": [
+        "browser/search/policy"
+      ],
+      "task_domain": "Browser"
+    },
+    {
+      "actor_id": "B",
+      "expected_value": "SEARCH-SUP-2048",
+      "goal": "Copy the assigned Browser text token and paste it into the independent destination field. Target browser/destination/policy; initial '__EMPTY__'; required final 'SEARCH-SUP-2048'.",
+      "initial_value": "__EMPTY__",
+      "operation": "update browser/destination/policy",
+      "target_objects": [
+        "browser/destination/policy"
+      ],
+      "task_domain": "Browser"
+    }
+  ],
+  "benchmark_version": "codesk-v1.0",
+  "evaluator": {
+    "actor_paths": {
+      "A": "actors.A.value",
+      "B": "actors.B.value"
+    },
+    "adapter": "codesk_exact_state_v1",
+    "condition_semantics": {
+      "ma_id": "score each actor on equivalent independent desktop fixture",
+      "ma_sd": "score both actor goals and shared-state integrity",
+      "solo": "score selected actor; require inactive target and guards unchanged"
+    },
+    "context_expectation": {
+      "context_axes": {
+        "fixture_state": "entity/owner result context",
+        "schedule_policy": "unchanged",
+        "target_neighborhood": 4,
+        "workflow_graph": "unchanged"
+      },
+      "density_level": 4,
+      "description": "entity/owner result context",
+      "profile": "key_value_output",
+      "profile_index": 3
+    },
+    "expected_state": {
+      "actors": {
+        "A": {
+          "object": "browser/search/policy",
+          "value": "OUTPUT-SUP-2048"
+        },
+        "B": {
+          "object": "browser/destination/policy",
+          "value": "SEARCH-SUP-2048"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "context_profile": {
+          "context_axes": {
+            "fixture_state": "entity/owner result context",
+            "schedule_policy": "unchanged",
+            "target_neighborhood": 4,
+            "workflow_graph": "unchanged"
+          },
+          "density_level": 4,
+          "description": "entity/owner result context",
+          "profile": "key_value_output",
+          "profile_index": 3
+        },
+        "initial": {
+          "operation_kind": "terminal_browser_text_transfer",
+          "operation_pair": [
+            "terminal_output_copy_search",
+            "browser_text_copy_paste"
+          ],
+          "profile_label": "search_policy",
+          "state_context": {
+            "context_axes": {
+              "fixture_state": "entity/owner result context",
+              "schedule_policy": "unchanged",
+              "target_neighborhood": 4,
+              "workflow_graph": "unchanged"
+            },
+            "density_level": 4,
+            "description": "entity/owner result context",
+            "profile": "key_value_output",
+            "profile_index": 3
+          }
+        },
+        "resource": "clipboard_state"
+      }
+    },
+    "initial_state": {
+      "actors": {
+        "A": {
+          "object": "browser/search/policy",
+          "value": ""
+        },
+        "B": {
+          "object": "browser/destination/policy",
+          "value": "__EMPTY__"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "context_profile": {
+          "context_axes": {
+            "fixture_state": "entity/owner result context",
+            "schedule_policy": "unchanged",
+            "target_neighborhood": 4,
+            "workflow_graph": "unchanged"
+          },
+          "density_level": 4,
+          "description": "entity/owner result context",
+          "profile": "key_value_output",
+          "profile_index": 3
+        },
+        "initial": {
+          "operation_kind": "terminal_browser_text_transfer",
+          "operation_pair": [
+            "terminal_output_copy_search",
+            "browser_text_copy_paste"
+          ],
+          "profile_label": "search_policy",
+          "state_context": {
+            "context_axes": {
+              "fixture_state": "entity/owner result context",
+              "schedule_policy": "unchanged",
+              "target_neighborhood": 4,
+              "workflow_graph": "unchanged"
+            },
+            "density_level": 4,
+            "description": "entity/owner result context",
+            "profile": "key_value_output",
+            "profile_index": 3
+          }
+        },
+        "resource": "clipboard_state"
+      }
+    },
+    "invariants": [
+      {
+        "equals": "PRESERVE",
+        "path": "actors.guards.main"
+      }
+    ],
+    "operation_contract": {
+      "A": "terminal/selection-to-browser-search",
+      "B": "browser/text-copy-paste",
+      "evidence_required": true,
+      "operation_graph": "terminal_selected_output_to_browser_search_and_browser_text_copy",
+      "shared_state": "X11 clipboard selection"
+    },
+    "schedule_policy_id": "terminal-output-browser-copy-confirm-resume-v1"
+  },
+  "evaluator_path": "evaluators/cdv1-c06-c61943873b7db9a1.json",
+  "evaluator_sha256": "68b0d6d37da439d7690e5282ab45514c171f23dad5b962edd5767239262f3469",
+  "family": "clipboard_state",
+  "fixture_files": [
+    {
+      "path": "fixtures/cdv1-c06-c61943873b7db9a1/browser-events.jsonl",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size_bytes": 0
+    },
+    {
+      "path": "fixtures/cdv1-c06-c61943873b7db9a1/browser-initial-state.json",
+      "sha256": "d4c14df5c0b6519feef6c9fbd61216c6f26e98c4e4f2d1ebb0e4ce10e40b74c7",
+      "size_bytes": 202
+    },
+    {
+      "path": "fixtures/cdv1-c06-c61943873b7db9a1/browser-server.py",
+      "sha256": "13b9ccc1d879588954f94e46db0bbc85fb547afc657d89b20505df7a54e2b483",
+      "size_bytes": 3224
+    },
+    {
+      "path": "fixtures/cdv1-c06-c61943873b7db9a1/state-context.json",
+      "sha256": "9443fe90291fee800db820cc035017e2951071c1535d0bbe7bd7bae97ca0d71b",
+      "size_bytes": 257
+    },
+    {
+      "path": "fixtures/cdv1-c06-c61943873b7db9a1/terminal-state.json",
+      "sha256": "e0d9912ed6e6db2b1d50cb8563896d86f752527117612c63bc5a1becc5fe19fa",
+      "size_bytes": 52
+    },
+    {
+      "path": "fixtures/cdv1-c06-c61943873b7db9a1/terminal-task.sh",
+      "sha256": "64819051dfe9d972ab23e232c6aefad69be16260f8f4881bfccacd10b9604722",
+      "size_bytes": 378
+    },
+    {
+      "path": "fixtures/cdv1-c06-c61943873b7db9a1/workspace.html",
+      "sha256": "11951294ab212f1c2227f759108a0fb07da2356c7217164dd5e944dc3d2a79ec",
+      "size_bytes": 1543
+    }
+  ],
+  "generation_seed": 2026,
+  "initial_fixture_spec": {
+    "application_set": [
+      "Terminal",
+      "Browser"
+    ],
+    "fixture_profile": "search_policy",
+    "layout_id": "guard_after",
+    "public_assets": [
+      {
+        "path": "fixtures/cdv1-c06-c61943873b7db9a1/browser-events.jsonl",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size_bytes": 0
+      },
+      {
+        "path": "fixtures/cdv1-c06-c61943873b7db9a1/browser-initial-state.json",
+        "sha256": "d4c14df5c0b6519feef6c9fbd61216c6f26e98c4e4f2d1ebb0e4ce10e40b74c7",
+        "size_bytes": 202
+      },
+      {
+        "path": "fixtures/cdv1-c06-c61943873b7db9a1/browser-server.py",
+        "sha256": "13b9ccc1d879588954f94e46db0bbc85fb547afc657d89b20505df7a54e2b483",
+        "size_bytes": 3224
+      },
+      {
+        "path": "fixtures/cdv1-c06-c61943873b7db9a1/state-context.json",
+        "sha256": "9443fe90291fee800db820cc035017e2951071c1535d0bbe7bd7bae97ca0d71b",
+        "size_bytes": 257
+      },
+      {
+        "path": "fixtures/cdv1-c06-c61943873b7db9a1/terminal-state.json",
+        "sha256": "e0d9912ed6e6db2b1d50cb8563896d86f752527117612c63bc5a1becc5fe19fa",
+        "size_bytes": 52
+      },
+      {
+        "path": "fixtures/cdv1-c06-c61943873b7db9a1/terminal-task.sh",
+        "sha256": "64819051dfe9d972ab23e232c6aefad69be16260f8f4881bfccacd10b9604722",
+        "size_bytes": 378
+      },
+      {
+        "path": "fixtures/cdv1-c06-c61943873b7db9a1/workspace.html",
+        "sha256": "11951294ab212f1c2227f759108a0fb07da2356c7217164dd5e944dc3d2a79ec",
+        "size_bytes": 1543
+      }
+    ]
+  },
+  "instance_id": "cdv1-c06-c61943873b7db9a1",
+  "manifest_entry_sha256": "52181a52e511171c09693b5f6f85157d95436e8b9c654a9f2fda4b825d20c1ec",
+  "provenance": {
+    "fixture_sha256": "2ffba09a4dd4f1a2b1d7ac0c7bcddb072f08c343990a93042c304ded64a88510",
+    "generation_seed": 2026,
+    "generator": "swcub.production_v1",
+    "seed_role": "deterministic profile ordering only; excluded from instance identity",
+    "semantic_spec_sha256": "c61943873b7db9a122e6efe57d5e12ade5334462626c04f8c6e3661328891551",
+    "source_code_sha256": "c6f4ce3ff7f122b199f69d31f881393102fe21e3cae914f6877b8bb2f676fcb3",
+    "source_commit": "fc75fc962775fb64429d11f13c5cd0df0cc1cedd"
+  },
+  "reset_metadata": {
+    "fixture_id": "cdv1-c06-c61943873b7db9a1",
+    "fresh_guest_required": true,
+    "remove_prior_app_state": true,
+    "verify_fixture_hash": "2ffba09a4dd4f1a2b1d7ac0c7bcddb072f08c343990a93042c304ded64a88510",
+    "verify_state": {
+      "actors": {
+        "A": {
+          "object": "browser/search/policy",
+          "value": ""
+        },
+        "B": {
+          "object": "browser/destination/policy",
+          "value": "__EMPTY__"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "context_profile": {
+          "context_axes": {
+            "fixture_state": "entity/owner result context",
+            "schedule_policy": "unchanged",
+            "target_neighborhood": 4,
+            "workflow_graph": "unchanged"
+          },
+          "density_level": 4,
+          "description": "entity/owner result context",
+          "profile": "key_value_output",
+          "profile_index": 3
+        },
+        "initial": {
+          "operation_kind": "terminal_browser_text_transfer",
+          "operation_pair": [
+            "terminal_output_copy_search",
+            "browser_text_copy_paste"
+          ],
+          "profile_label": "search_policy",
+          "state_context": {
+            "context_axes": {
+              "fixture_state": "entity/owner result context",
+              "schedule_policy": "unchanged",
+              "target_neighborhood": 4,
+              "workflow_graph": "unchanged"
+            },
+            "density_level": 4,
+            "description": "entity/owner result context",
+            "profile": "key_value_output",
+            "profile_index": 3
+          }
+        },
+        "resource": "clipboard_state"
+      }
+    }
+  },
+  "schedule_policy_id": "terminal-output-browser-copy-confirm-resume-v1",
+  "semantic_parameters": {
+    "domain_id": "supplier_onboarding",
+    "domain_schema": {
+      "entity": "supplier record",
+      "field_a": "Review decision",
+      "field_b": "Verification state"
+    },
+    "layout_id": "guard_after",
+    "object_profile_id": "search_policy",
+    "object_schema": {
+      "operation_kind": "terminal_browser_text_transfer",
+      "operation_pair": [
+        "terminal_output_copy_search",
+        "browser_text_copy_paste"
+      ],
+      "profile_label": "search_policy",
+      "state_context": {
+        "context_axes": {
+          "fixture_state": "entity/owner result context",
+          "schedule_policy": "unchanged",
+          "target_neighborhood": 4,
+          "workflow_graph": "unchanged"
+        },
+        "density_level": 4,
+        "description": "entity/owner result context",
+        "profile": "key_value_output",
+        "profile_index": 3
+      }
+    },
+    "operation_graph": "terminal_selected_output_to_browser_search_and_browser_text_copy",
+    "operation_schema_revision": 1,
+    "state_context": {
+      "context_axes": {
+        "fixture_state": "entity/owner result context",
+        "schedule_policy": "unchanged",
+        "target_neighborhood": 4,
+        "workflow_graph": "unchanged"
+      },
+      "density_level": 4,
+      "description": "entity/owner result context",
+      "profile": "key_value_output",
+      "profile_index": 3
+    },
+    "workflow_id": "C-06"
+  },
+  "signatures": {
+    "fixture": "2ffba09a4dd4f1a2b1d7ac0c7bcddb072f08c343990a93042c304ded64a88510",
+    "goal": "722054288fb7258e7e05f0fe7ab6328e7043c846cf30423fe05b02290564fb2e",
+    "semantic": "c61943873b7db9a122e6efe57d5e12ade5334462626c04f8c6e3661328891551",
+    "structural": "5cf75db51f3a006506ebb2fae16f394d74df2950b777716c38e77eebf49dd410"
+  },
+  "target_objects": {
+    "A": [
+      "browser/search/policy"
+    ],
+    "B": [
+      "browser/destination/policy"
+    ]
+  },
+  "task_domains": {
+    "A": "Browser",
+    "B": "Browser"
+  },
+  "topology_compatibility": {
+    "ma_id": {
+      "backend_binding": "same logical workspace seed; independent desktop sessions allowed",
+      "desktop_count": 2,
+      "fixtures": "byte-identical task-relevant clones"
+    },
+    "ma_sd": {
+      "actor_bindings": "A and B share desktop",
+      "desktop_count": 1
+    },
+    "solo": {
+      "actor_bindings": "A or B",
+      "desktop_count": 1
+    }
+  },
+  "treatment_relevant_state": {
+    "family_state": "clipboard_state",
+    "operation_graph": "terminal_selected_output_to_browser_search_and_browser_text_copy",
+    "shared_resource": {
+      "operation_kind": "terminal_browser_text_transfer",
+      "operation_pair": [
+        "terminal_output_copy_search",
+        "browser_text_copy_paste"
+      ],
+      "profile_label": "search_policy",
+      "state_context": {
+        "context_axes": {
+          "fixture_state": "entity/owner result context",
+          "schedule_policy": "unchanged",
+          "target_neighborhood": 4,
+          "workflow_graph": "unchanged"
+        },
+        "density_level": 4,
+        "description": "entity/owner result context",
+        "profile": "key_value_output",
+        "profile_index": 3
+      }
+    }
+  },
+  "validation_level": "offline_operation_template",
+  "workflow_id": "C-06"
+}

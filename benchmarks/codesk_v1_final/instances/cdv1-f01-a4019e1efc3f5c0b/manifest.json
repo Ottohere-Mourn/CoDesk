@@ -1,0 +1,381 @@
+{
+  "actor_goals": [
+    {
+      "actor_id": "A",
+      "expected_value": "Accepted: supplier record (D2)",
+      "goal": "Replace all Writer document content with the assigned decision and save.",
+      "initial_value": "Draft: supplier record",
+      "operation": "update writer/document-content",
+      "target_objects": [
+        "writer/document-content"
+      ],
+      "task_domain": "Writer"
+    },
+    {
+      "actor_id": "B",
+      "expected_value": "Verified: supplier record (D2)",
+      "goal": "Set the assigned Calc field and preserve the remaining table.",
+      "initial_value": "Pending: supplier record",
+      "operation": "update calc/D2",
+      "target_objects": [
+        "calc/D2"
+      ],
+      "task_domain": "Calc"
+    }
+  ],
+  "benchmark_version": "codesk-v1.0",
+  "evaluator": {
+    "actor_paths": {
+      "A": "actors.A.value",
+      "B": "actors.B.value"
+    },
+    "adapter": "codesk_exact_state_v1",
+    "condition_semantics": {
+      "ma_id": "score each actor on equivalent independent desktop fixture",
+      "ma_sd": "score both actor goals and shared-state integrity",
+      "solo": "score selected actor; require inactive target and guards unchanged"
+    },
+    "context_expectation": {
+      "context_axes": {
+        "fixture_state": "subtotal and neighboring records",
+        "schedule_policy": "unchanged",
+        "target_neighborhood": 5,
+        "workflow_graph": "unchanged"
+      },
+      "density_level": 5,
+      "description": "subtotal and neighboring records",
+      "profile": "multi_section_brief",
+      "profile_index": 4
+    },
+    "expected_state": {
+      "actors": {
+        "A": {
+          "object": "writer/document-content",
+          "value": "Accepted: supplier record (D2)"
+        },
+        "B": {
+          "object": "calc/D2",
+          "value": "Verified: supplier record (D2)"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "context_profile": {
+          "context_axes": {
+            "fixture_state": "subtotal and neighboring records",
+            "schedule_policy": "unchanged",
+            "target_neighborhood": 5,
+            "workflow_graph": "unchanged"
+          },
+          "density_level": 5,
+          "description": "subtotal and neighboring records",
+          "profile": "multi_section_brief",
+          "profile_index": 4
+        },
+        "initial": {
+          "headers": [
+            "Item",
+            "Owner",
+            "Region",
+            "Status"
+          ],
+          "state_context": {
+            "context_axes": {
+              "fixture_state": "subtotal and neighboring records",
+              "schedule_policy": "unchanged",
+              "target_neighborhood": 5,
+              "workflow_graph": "unchanged"
+            },
+            "density_level": 5,
+            "description": "subtotal and neighboring records",
+            "profile": "multi_section_brief",
+            "profile_index": 4
+          },
+          "target": "D2"
+        },
+        "resource": "focus_input_routing"
+      }
+    },
+    "initial_state": {
+      "actors": {
+        "A": {
+          "object": "writer/document-content",
+          "value": "Draft: supplier record"
+        },
+        "B": {
+          "object": "calc/D2",
+          "value": "Pending: supplier record"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "context_profile": {
+          "context_axes": {
+            "fixture_state": "subtotal and neighboring records",
+            "schedule_policy": "unchanged",
+            "target_neighborhood": 5,
+            "workflow_graph": "unchanged"
+          },
+          "density_level": 5,
+          "description": "subtotal and neighboring records",
+          "profile": "multi_section_brief",
+          "profile_index": 4
+        },
+        "initial": {
+          "headers": [
+            "Item",
+            "Owner",
+            "Region",
+            "Status"
+          ],
+          "state_context": {
+            "context_axes": {
+              "fixture_state": "subtotal and neighboring records",
+              "schedule_policy": "unchanged",
+              "target_neighborhood": 5,
+              "workflow_graph": "unchanged"
+            },
+            "density_level": 5,
+            "description": "subtotal and neighboring records",
+            "profile": "multi_section_brief",
+            "profile_index": 4
+          },
+          "target": "D2"
+        },
+        "resource": "focus_input_routing"
+      }
+    },
+    "invariants": [
+      {
+        "equals": "PRESERVE",
+        "path": "actors.guards.main"
+      }
+    ],
+    "schedule_policy_id": "action-boundary-round-robin-ab-v1"
+  },
+  "evaluator_path": "evaluators/cdv1-f01-a4019e1efc3f5c0b.json",
+  "evaluator_sha256": "a4e31ec3257d694feda33ca65ab4cb344f9a4af0a726754c534c6d58b7a3f036",
+  "family": "focus_input_routing",
+  "fixture_files": [
+    {
+      "path": "fixtures/cdv1-f01-a4019e1efc3f5c0b/document.fodt",
+      "sha256": "fe76f4ded21d04cb4f7280788ecd5129ec9c1bd0a51339934aee982379d1ea73",
+      "size_bytes": 888
+    },
+    {
+      "path": "fixtures/cdv1-f01-a4019e1efc3f5c0b/state-context.json",
+      "sha256": "c5075aaca8cc299082d165d9fcc8202ecb4eb91396c0c73d982946a8f787c5ee",
+      "size_bytes": 270
+    },
+    {
+      "path": "fixtures/cdv1-f01-a4019e1efc3f5c0b/workbook.fods",
+      "sha256": "e359839a628d1e28738df3acac9811d6631dcc2e1964175549d91765f257ef8d",
+      "size_bytes": 3971
+    }
+  ],
+  "generation_seed": 2026,
+  "initial_fixture_spec": {
+    "application_set": [
+      "Writer",
+      "Calc"
+    ],
+    "fixture_profile": "cell_d2",
+    "layout_id": "guard_after",
+    "public_assets": [
+      {
+        "path": "fixtures/cdv1-f01-a4019e1efc3f5c0b/document.fodt",
+        "sha256": "fe76f4ded21d04cb4f7280788ecd5129ec9c1bd0a51339934aee982379d1ea73",
+        "size_bytes": 888
+      },
+      {
+        "path": "fixtures/cdv1-f01-a4019e1efc3f5c0b/state-context.json",
+        "sha256": "c5075aaca8cc299082d165d9fcc8202ecb4eb91396c0c73d982946a8f787c5ee",
+        "size_bytes": 270
+      },
+      {
+        "path": "fixtures/cdv1-f01-a4019e1efc3f5c0b/workbook.fods",
+        "sha256": "e359839a628d1e28738df3acac9811d6631dcc2e1964175549d91765f257ef8d",
+        "size_bytes": 3971
+      }
+    ]
+  },
+  "instance_id": "cdv1-f01-a4019e1efc3f5c0b",
+  "manifest_entry_sha256": "94ef92aaae02c312f3abd23d693645f94760385bceaa0e04aa53dc9ac68aaa41",
+  "provenance": {
+    "fixture_sha256": "d366931b2bdfae7fc7e8ffa72249ed826305bce70662d73e370b86a7b76e87a8",
+    "generation_seed": 2026,
+    "generator": "swcub.production_v1",
+    "seed_role": "deterministic profile ordering only; excluded from instance identity",
+    "semantic_spec_sha256": "a4019e1efc3f5c0b513eee145eac126fb1092a8ae453df520a54907c8dd590d2",
+    "source_code_sha256": "c6f4ce3ff7f122b199f69d31f881393102fe21e3cae914f6877b8bb2f676fcb3",
+    "source_commit": "fc75fc962775fb64429d11f13c5cd0df0cc1cedd"
+  },
+  "reset_metadata": {
+    "fixture_id": "cdv1-f01-a4019e1efc3f5c0b",
+    "fresh_guest_required": true,
+    "remove_prior_app_state": true,
+    "verify_fixture_hash": "d366931b2bdfae7fc7e8ffa72249ed826305bce70662d73e370b86a7b76e87a8",
+    "verify_state": {
+      "actors": {
+        "A": {
+          "object": "writer/document-content",
+          "value": "Draft: supplier record"
+        },
+        "B": {
+          "object": "calc/D2",
+          "value": "Pending: supplier record"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "context_profile": {
+          "context_axes": {
+            "fixture_state": "subtotal and neighboring records",
+            "schedule_policy": "unchanged",
+            "target_neighborhood": 5,
+            "workflow_graph": "unchanged"
+          },
+          "density_level": 5,
+          "description": "subtotal and neighboring records",
+          "profile": "multi_section_brief",
+          "profile_index": 4
+        },
+        "initial": {
+          "headers": [
+            "Item",
+            "Owner",
+            "Region",
+            "Status"
+          ],
+          "state_context": {
+            "context_axes": {
+              "fixture_state": "subtotal and neighboring records",
+              "schedule_policy": "unchanged",
+              "target_neighborhood": 5,
+              "workflow_graph": "unchanged"
+            },
+            "density_level": 5,
+            "description": "subtotal and neighboring records",
+            "profile": "multi_section_brief",
+            "profile_index": 4
+          },
+          "target": "D2"
+        },
+        "resource": "focus_input_routing"
+      }
+    }
+  },
+  "schedule_policy_id": "action-boundary-round-robin-ab-v1",
+  "semantic_parameters": {
+    "domain_id": "supplier_onboarding",
+    "domain_schema": {
+      "entity": "supplier record",
+      "field_a": "Review decision",
+      "field_b": "Verification state"
+    },
+    "layout_id": "guard_after",
+    "object_profile_id": "cell_d2",
+    "object_schema": {
+      "headers": [
+        "Item",
+        "Owner",
+        "Region",
+        "Status"
+      ],
+      "state_context": {
+        "context_axes": {
+          "fixture_state": "subtotal and neighboring records",
+          "schedule_policy": "unchanged",
+          "target_neighborhood": 5,
+          "workflow_graph": "unchanged"
+        },
+        "density_level": 5,
+        "description": "subtotal and neighboring records",
+        "profile": "multi_section_brief",
+        "profile_index": 4
+      },
+      "target": "D2"
+    },
+    "operation_graph": "writer_full_document_vs_calc_cell",
+    "operation_schema_revision": 4,
+    "state_context": {
+      "context_axes": {
+        "fixture_state": "subtotal and neighboring records",
+        "schedule_policy": "unchanged",
+        "target_neighborhood": 5,
+        "workflow_graph": "unchanged"
+      },
+      "density_level": 5,
+      "description": "subtotal and neighboring records",
+      "profile": "multi_section_brief",
+      "profile_index": 4
+    },
+    "workflow_id": "F-01"
+  },
+  "signatures": {
+    "fixture": "d366931b2bdfae7fc7e8ffa72249ed826305bce70662d73e370b86a7b76e87a8",
+    "goal": "8cdc7b64a37b16ab1eb91e1729e964851fbb56b2cce56fcd59721493e319e721",
+    "semantic": "a4019e1efc3f5c0b513eee145eac126fb1092a8ae453df520a54907c8dd590d2",
+    "structural": "6180f6c293743b76cd427dcb1859a7a2b50a157e4c1459ffcec9e29c5608fb18"
+  },
+  "target_objects": {
+    "A": [
+      "writer/document-content"
+    ],
+    "B": [
+      "calc/D2"
+    ]
+  },
+  "task_domains": {
+    "A": "Writer",
+    "B": "Calc"
+  },
+  "topology_compatibility": {
+    "ma_id": {
+      "backend_binding": "same logical workspace seed; independent desktop sessions allowed",
+      "desktop_count": 2,
+      "fixtures": "byte-identical task-relevant clones"
+    },
+    "ma_sd": {
+      "actor_bindings": "A and B share desktop",
+      "desktop_count": 1
+    },
+    "solo": {
+      "actor_bindings": "A or B",
+      "desktop_count": 1
+    }
+  },
+  "treatment_relevant_state": {
+    "family_state": "focus_input_routing",
+    "operation_graph": "writer_full_document_vs_calc_cell",
+    "shared_resource": {
+      "headers": [
+        "Item",
+        "Owner",
+        "Region",
+        "Status"
+      ],
+      "state_context": {
+        "context_axes": {
+          "fixture_state": "subtotal and neighboring records",
+          "schedule_policy": "unchanged",
+          "target_neighborhood": 5,
+          "workflow_graph": "unchanged"
+        },
+        "density_level": 5,
+        "description": "subtotal and neighboring records",
+        "profile": "multi_section_brief",
+        "profile_index": 4
+      },
+      "target": "D2"
+    }
+  },
+  "validation_level": "qwen_mechanism_evidence",
+  "workflow_id": "F-01"
+}

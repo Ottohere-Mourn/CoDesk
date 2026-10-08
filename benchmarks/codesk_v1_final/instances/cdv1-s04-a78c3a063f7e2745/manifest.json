@@ -1,0 +1,443 @@
+{
+  "actor_goals": [
+    {
+      "actor_id": "A",
+      "expected_value": "{\"rows\": [1, 2], \"status\": \"Accepted\"}",
+      "goal": "Select all assigned A rows and apply the exact bulk status to those rows only. Target browser/rows/1,2; initial '[]'; required final '{\"rows\": [1, 2], \"status\": \"Accepted\"}'.",
+      "initial_value": "[]",
+      "operation": "update browser/rows/1,2",
+      "target_objects": [
+        "browser/rows/1,2"
+      ],
+      "task_domain": "Browser"
+    },
+    {
+      "actor_id": "B",
+      "expected_value": "{\"rows\": [3, 4], \"status\": \"Verified\"}",
+      "goal": "Select all assigned B rows and apply the independent bulk status to those rows only. Target browser/rows/3,4; initial '[]'; required final '{\"rows\": [3, 4], \"status\": \"Verified\"}'.",
+      "initial_value": "[]",
+      "operation": "update browser/rows/3,4",
+      "target_objects": [
+        "browser/rows/3,4"
+      ],
+      "task_domain": "Browser"
+    }
+  ],
+  "benchmark_version": "codesk-v1.0",
+  "evaluator": {
+    "actor_paths": {
+      "A": "actors.A.value",
+      "B": "actors.B.value"
+    },
+    "adapter": "codesk_exact_state_v1",
+    "condition_semantics": {
+      "ma_id": "score each actor on equivalent independent desktop fixture",
+      "ma_sd": "score both actor goals and shared-state integrity",
+      "solo": "score selected actor; require inactive target and guards unchanged"
+    },
+    "context_expectation": {
+      "context_axes": {
+        "fixture_state": "similar vendor rows",
+        "schedule_policy": "unchanged",
+        "target_neighborhood": 2,
+        "workflow_graph": "unchanged"
+      },
+      "density_level": 2,
+      "description": "similar vendor rows",
+      "profile": "vendor_register",
+      "profile_index": 1
+    },
+    "expected_state": {
+      "actors": {
+        "A": {
+          "object": "browser/rows/1,2",
+          "value": "{\"rows\": [1, 2], \"status\": \"Accepted\"}"
+        },
+        "B": {
+          "object": "browser/rows/3,4",
+          "value": "{\"rows\": [3, 4], \"status\": \"Verified\"}"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "context_profile": {
+          "context_axes": {
+            "fixture_state": "similar vendor rows",
+            "schedule_policy": "unchanged",
+            "target_neighborhood": 2,
+            "workflow_graph": "unchanged"
+          },
+          "density_level": 2,
+          "description": "similar vendor rows",
+          "profile": "vendor_register",
+          "profile_index": 1
+        },
+        "initial": {
+          "operation_kind": "browser_multiselect_bulk",
+          "operation_pair": [
+            "multirow_select_bulk_status",
+            "multirow_select_bulk_status"
+          ],
+          "profile_label": "rows_left",
+          "rows_a": [
+            1,
+            2
+          ],
+          "rows_b": [
+            3,
+            4
+          ],
+          "state_context": {
+            "context_axes": {
+              "fixture_state": "similar vendor rows",
+              "schedule_policy": "unchanged",
+              "target_neighborhood": 2,
+              "workflow_graph": "unchanged"
+            },
+            "density_level": 2,
+            "description": "similar vendor rows",
+            "profile": "vendor_register",
+            "profile_index": 1
+          }
+        },
+        "resource": "selection_active_object"
+      }
+    },
+    "initial_state": {
+      "actors": {
+        "A": {
+          "object": "browser/rows/1,2",
+          "value": "[]"
+        },
+        "B": {
+          "object": "browser/rows/3,4",
+          "value": "[]"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "context_profile": {
+          "context_axes": {
+            "fixture_state": "similar vendor rows",
+            "schedule_policy": "unchanged",
+            "target_neighborhood": 2,
+            "workflow_graph": "unchanged"
+          },
+          "density_level": 2,
+          "description": "similar vendor rows",
+          "profile": "vendor_register",
+          "profile_index": 1
+        },
+        "initial": {
+          "operation_kind": "browser_multiselect_bulk",
+          "operation_pair": [
+            "multirow_select_bulk_status",
+            "multirow_select_bulk_status"
+          ],
+          "profile_label": "rows_left",
+          "rows_a": [
+            1,
+            2
+          ],
+          "rows_b": [
+            3,
+            4
+          ],
+          "state_context": {
+            "context_axes": {
+              "fixture_state": "similar vendor rows",
+              "schedule_policy": "unchanged",
+              "target_neighborhood": 2,
+              "workflow_graph": "unchanged"
+            },
+            "density_level": 2,
+            "description": "similar vendor rows",
+            "profile": "vendor_register",
+            "profile_index": 1
+          }
+        },
+        "resource": "selection_active_object"
+      }
+    },
+    "invariants": [
+      {
+        "equals": "PRESERVE",
+        "path": "actors.guards.main"
+      }
+    ],
+    "operation_contract": {
+      "A": "browser/table/rows-a",
+      "B": "browser/table/rows-b",
+      "evidence_required": true,
+      "operation_graph": "browser_multirow_selection_bulk_update",
+      "shared_state": "selected row set"
+    },
+    "schedule_policy_id": "browser-row-selection-bulk-action-resume-v1"
+  },
+  "evaluator_path": "evaluators/cdv1-s04-a78c3a063f7e2745.json",
+  "evaluator_sha256": "bd156177e48a14568321b52c7037a63f48c8efe15bbcb6eb566b07f128c0b946",
+  "family": "selection_active_object",
+  "fixture_files": [
+    {
+      "path": "fixtures/cdv1-s04-a78c3a063f7e2745/browser-events.jsonl",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size_bytes": 0
+    },
+    {
+      "path": "fixtures/cdv1-s04-a78c3a063f7e2745/browser-initial-state.json",
+      "sha256": "2bc09e52d03a33b34db7351e63e21c3fe486d4d5d066358f450e285c3e4c2595",
+      "size_bytes": 627
+    },
+    {
+      "path": "fixtures/cdv1-s04-a78c3a063f7e2745/browser-server.py",
+      "sha256": "45f00e05b38f6ba55fc1ec1e36461f7a228094614de92f4fb0cb0a40b5645f9c",
+      "size_bytes": 3224
+    },
+    {
+      "path": "fixtures/cdv1-s04-a78c3a063f7e2745/state-context.json",
+      "sha256": "8e34ff47f8a25e38e7e095a6a00f67a8460ab241343803a20927684edf507996",
+      "size_bytes": 240
+    },
+    {
+      "path": "fixtures/cdv1-s04-a78c3a063f7e2745/workspace.html",
+      "sha256": "b199da2ee5baf2fc2f2a9a6f2caae3673cc0624b32cc59219122e1872d53ae5e",
+      "size_bytes": 2689
+    }
+  ],
+  "generation_seed": 2026,
+  "initial_fixture_spec": {
+    "application_set": [
+      "Browser",
+      "Browser"
+    ],
+    "fixture_profile": "rows_left",
+    "layout_id": "guard_after",
+    "public_assets": [
+      {
+        "path": "fixtures/cdv1-s04-a78c3a063f7e2745/browser-events.jsonl",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size_bytes": 0
+      },
+      {
+        "path": "fixtures/cdv1-s04-a78c3a063f7e2745/browser-initial-state.json",
+        "sha256": "2bc09e52d03a33b34db7351e63e21c3fe486d4d5d066358f450e285c3e4c2595",
+        "size_bytes": 627
+      },
+      {
+        "path": "fixtures/cdv1-s04-a78c3a063f7e2745/browser-server.py",
+        "sha256": "45f00e05b38f6ba55fc1ec1e36461f7a228094614de92f4fb0cb0a40b5645f9c",
+        "size_bytes": 3224
+      },
+      {
+        "path": "fixtures/cdv1-s04-a78c3a063f7e2745/state-context.json",
+        "sha256": "8e34ff47f8a25e38e7e095a6a00f67a8460ab241343803a20927684edf507996",
+        "size_bytes": 240
+      },
+      {
+        "path": "fixtures/cdv1-s04-a78c3a063f7e2745/workspace.html",
+        "sha256": "b199da2ee5baf2fc2f2a9a6f2caae3673cc0624b32cc59219122e1872d53ae5e",
+        "size_bytes": 2689
+      }
+    ]
+  },
+  "instance_id": "cdv1-s04-a78c3a063f7e2745",
+  "manifest_entry_sha256": "70603d6bbf2f9cf86c8d22127cb09719ca35ecf0e847d8bcb1df812cf4be2d9e",
+  "provenance": {
+    "fixture_sha256": "32a3676ca0d50fa6d50f3997097908ca4861e310b2eb91c075e95a44b8a02afb",
+    "generation_seed": 2026,
+    "generator": "swcub.production_v1",
+    "seed_role": "deterministic profile ordering only; excluded from instance identity",
+    "semantic_spec_sha256": "a78c3a063f7e274568d34bb3bd2ed330eb4f265053c899744a6cfa8ae1714012",
+    "source_code_sha256": "c6f4ce3ff7f122b199f69d31f881393102fe21e3cae914f6877b8bb2f676fcb3",
+    "source_commit": "fc75fc962775fb64429d11f13c5cd0df0cc1cedd"
+  },
+  "reset_metadata": {
+    "fixture_id": "cdv1-s04-a78c3a063f7e2745",
+    "fresh_guest_required": true,
+    "remove_prior_app_state": true,
+    "verify_fixture_hash": "32a3676ca0d50fa6d50f3997097908ca4861e310b2eb91c075e95a44b8a02afb",
+    "verify_state": {
+      "actors": {
+        "A": {
+          "object": "browser/rows/1,2",
+          "value": "[]"
+        },
+        "B": {
+          "object": "browser/rows/3,4",
+          "value": "[]"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "context_profile": {
+          "context_axes": {
+            "fixture_state": "similar vendor rows",
+            "schedule_policy": "unchanged",
+            "target_neighborhood": 2,
+            "workflow_graph": "unchanged"
+          },
+          "density_level": 2,
+          "description": "similar vendor rows",
+          "profile": "vendor_register",
+          "profile_index": 1
+        },
+        "initial": {
+          "operation_kind": "browser_multiselect_bulk",
+          "operation_pair": [
+            "multirow_select_bulk_status",
+            "multirow_select_bulk_status"
+          ],
+          "profile_label": "rows_left",
+          "rows_a": [
+            1,
+            2
+          ],
+          "rows_b": [
+            3,
+            4
+          ],
+          "state_context": {
+            "context_axes": {
+              "fixture_state": "similar vendor rows",
+              "schedule_policy": "unchanged",
+              "target_neighborhood": 2,
+              "workflow_graph": "unchanged"
+            },
+            "density_level": 2,
+            "description": "similar vendor rows",
+            "profile": "vendor_register",
+            "profile_index": 1
+          }
+        },
+        "resource": "selection_active_object"
+      }
+    }
+  },
+  "schedule_policy_id": "browser-row-selection-bulk-action-resume-v1",
+  "semantic_parameters": {
+    "domain_id": "supplier_onboarding",
+    "domain_schema": {
+      "entity": "supplier record",
+      "field_a": "Review decision",
+      "field_b": "Verification state"
+    },
+    "layout_id": "guard_after",
+    "object_profile_id": "rows_left",
+    "object_schema": {
+      "operation_kind": "browser_multiselect_bulk",
+      "operation_pair": [
+        "multirow_select_bulk_status",
+        "multirow_select_bulk_status"
+      ],
+      "profile_label": "rows_left",
+      "rows_a": [
+        1,
+        2
+      ],
+      "rows_b": [
+        3,
+        4
+      ],
+      "state_context": {
+        "context_axes": {
+          "fixture_state": "similar vendor rows",
+          "schedule_policy": "unchanged",
+          "target_neighborhood": 2,
+          "workflow_graph": "unchanged"
+        },
+        "density_level": 2,
+        "description": "similar vendor rows",
+        "profile": "vendor_register",
+        "profile_index": 1
+      }
+    },
+    "operation_graph": "browser_multirow_selection_bulk_update",
+    "operation_schema_revision": 1,
+    "state_context": {
+      "context_axes": {
+        "fixture_state": "similar vendor rows",
+        "schedule_policy": "unchanged",
+        "target_neighborhood": 2,
+        "workflow_graph": "unchanged"
+      },
+      "density_level": 2,
+      "description": "similar vendor rows",
+      "profile": "vendor_register",
+      "profile_index": 1
+    },
+    "workflow_id": "S-04"
+  },
+  "signatures": {
+    "fixture": "32a3676ca0d50fa6d50f3997097908ca4861e310b2eb91c075e95a44b8a02afb",
+    "goal": "0712049795422812d1c177c8ffc1f5da939f4593377b71b498493a681f899429",
+    "semantic": "a78c3a063f7e274568d34bb3bd2ed330eb4f265053c899744a6cfa8ae1714012",
+    "structural": "59db66a41b6dded38f089db42e6dd8032c3dc49c8919ee9fa750afe9c2d485b6"
+  },
+  "target_objects": {
+    "A": [
+      "browser/rows/1,2"
+    ],
+    "B": [
+      "browser/rows/3,4"
+    ]
+  },
+  "task_domains": {
+    "A": "Browser",
+    "B": "Browser"
+  },
+  "topology_compatibility": {
+    "ma_id": {
+      "backend_binding": "same logical workspace seed; independent desktop sessions allowed",
+      "desktop_count": 2,
+      "fixtures": "byte-identical task-relevant clones"
+    },
+    "ma_sd": {
+      "actor_bindings": "A and B share desktop",
+      "desktop_count": 1
+    },
+    "solo": {
+      "actor_bindings": "A or B",
+      "desktop_count": 1
+    }
+  },
+  "treatment_relevant_state": {
+    "family_state": "selection_active_object",
+    "operation_graph": "browser_multirow_selection_bulk_update",
+    "shared_resource": {
+      "operation_kind": "browser_multiselect_bulk",
+      "operation_pair": [
+        "multirow_select_bulk_status",
+        "multirow_select_bulk_status"
+      ],
+      "profile_label": "rows_left",
+      "rows_a": [
+        1,
+        2
+      ],
+      "rows_b": [
+        3,
+        4
+      ],
+      "state_context": {
+        "context_axes": {
+          "fixture_state": "similar vendor rows",
+          "schedule_policy": "unchanged",
+          "target_neighborhood": 2,
+          "workflow_graph": "unchanged"
+        },
+        "density_level": 2,
+        "description": "similar vendor rows",
+        "profile": "vendor_register",
+        "profile_index": 1
+      }
+    }
+  },
+  "validation_level": "offline_operation_template",
+  "workflow_id": "S-04"
+}

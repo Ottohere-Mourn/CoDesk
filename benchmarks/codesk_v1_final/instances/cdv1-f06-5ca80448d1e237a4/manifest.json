@@ -1,0 +1,443 @@
+{
+  "actor_goals": [
+    {
+      "actor_id": "A",
+      "expected_value": "{\"record\": \"CAP-4821\", \"status\": \"Approved\"}",
+      "goal": "Fill the assigned Browser record fields and submit exactly once. Target browser/record/vendor; initial '__UNSUBMITTED__'; required final '{\"record\": \"CAP-4821\", \"status\": \"Approved\"}'.",
+      "initial_value": "__UNSUBMITTED__",
+      "operation": "update browser/record/vendor",
+      "target_objects": [
+        "browser/record/vendor"
+      ],
+      "task_domain": "Browser"
+    },
+    {
+      "actor_id": "B",
+      "expected_value": "TERMINAL-CAP-4821",
+      "goal": "Edit the assigned shell command, run it, and produce the exact output file without changing other files. Target terminal/output/vendor; initial ''; required final 'TERMINAL-CAP-4821'. Run the command and write exactly 'TERMINAL-CAP-4821' to /home/oem/codesk/cdv1-f06-5ca80448d1e237a4/terminal-result-B.txt.",
+      "initial_value": "",
+      "operation": "update terminal/output/vendor",
+      "target_objects": [
+        "terminal/output/vendor"
+      ],
+      "task_domain": "Terminal"
+    }
+  ],
+  "benchmark_version": "codesk-v1.0",
+  "evaluator": {
+    "actor_paths": {
+      "A": "actors.A.value",
+      "B": "actors.B.value"
+    },
+    "adapter": "codesk_exact_state_v1",
+    "condition_semantics": {
+      "ma_id": "score each actor on equivalent independent desktop fixture",
+      "ma_sd": "score both actor goals and shared-state integrity",
+      "solo": "score selected actor; require inactive target and guards unchanged"
+    },
+    "context_expectation": {
+      "context_axes": {
+        "fixture_state": "directory listing with decoys",
+        "schedule_policy": "unchanged",
+        "target_neighborhood": 2,
+        "workflow_graph": "unchanged"
+      },
+      "density_level": 2,
+      "description": "directory listing with decoys",
+      "profile": "vendor_dossier",
+      "profile_index": 1
+    },
+    "expected_state": {
+      "actors": {
+        "A": {
+          "object": "browser/record/vendor",
+          "value": "{\"record\": \"CAP-4821\", \"status\": \"Approved\"}"
+        },
+        "B": {
+          "object": "terminal/output/vendor",
+          "value": "TERMINAL-CAP-4821"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "context_profile": {
+          "context_axes": {
+            "fixture_state": "directory listing with decoys",
+            "schedule_policy": "unchanged",
+            "target_neighborhood": 2,
+            "workflow_graph": "unchanged"
+          },
+          "density_level": 2,
+          "description": "directory listing with decoys",
+          "profile": "vendor_dossier",
+          "profile_index": 1
+        },
+        "initial": {
+          "fields": [
+            "record_id",
+            "status"
+          ],
+          "operation_kind": "browser_terminal_transaction",
+          "operation_pair": [
+            "multi_field_submit",
+            "command_edit_execute"
+          ],
+          "profile_label": "form_vendor",
+          "state_context": {
+            "context_axes": {
+              "fixture_state": "directory listing with decoys",
+              "schedule_policy": "unchanged",
+              "target_neighborhood": 2,
+              "workflow_graph": "unchanged"
+            },
+            "density_level": 2,
+            "description": "directory listing with decoys",
+            "profile": "vendor_dossier",
+            "profile_index": 1
+          }
+        },
+        "resource": "focus_input_routing"
+      }
+    },
+    "initial_state": {
+      "actors": {
+        "A": {
+          "object": "browser/record/vendor",
+          "value": "__UNSUBMITTED__"
+        },
+        "B": {
+          "object": "terminal/output/vendor",
+          "value": ""
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "context_profile": {
+          "context_axes": {
+            "fixture_state": "directory listing with decoys",
+            "schedule_policy": "unchanged",
+            "target_neighborhood": 2,
+            "workflow_graph": "unchanged"
+          },
+          "density_level": 2,
+          "description": "directory listing with decoys",
+          "profile": "vendor_dossier",
+          "profile_index": 1
+        },
+        "initial": {
+          "fields": [
+            "record_id",
+            "status"
+          ],
+          "operation_kind": "browser_terminal_transaction",
+          "operation_pair": [
+            "multi_field_submit",
+            "command_edit_execute"
+          ],
+          "profile_label": "form_vendor",
+          "state_context": {
+            "context_axes": {
+              "fixture_state": "directory listing with decoys",
+              "schedule_policy": "unchanged",
+              "target_neighborhood": 2,
+              "workflow_graph": "unchanged"
+            },
+            "density_level": 2,
+            "description": "directory listing with decoys",
+            "profile": "vendor_dossier",
+            "profile_index": 1
+          }
+        },
+        "resource": "focus_input_routing"
+      }
+    },
+    "invariants": [
+      {
+        "equals": "PRESERVE",
+        "path": "actors.guards.main"
+      }
+    ],
+    "operation_contract": {
+      "A": "browser/form-transaction",
+      "B": "terminal/command-line",
+      "evidence_required": true,
+      "operation_graph": "browser_multifield_submit_and_terminal_command_edit",
+      "shared_state": "foreground window and keyboard target"
+    },
+    "schedule_policy_id": "browser-terminal-edit-submit-action-boundary-v1"
+  },
+  "evaluator_path": "evaluators/cdv1-f06-5ca80448d1e237a4.json",
+  "evaluator_sha256": "2cad443d8aad00ad367aa75dcc6751d00883011b6a7f1f624be58d9ea1803ce5",
+  "family": "focus_input_routing",
+  "fixture_files": [
+    {
+      "path": "fixtures/cdv1-f06-5ca80448d1e237a4/browser-events.jsonl",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size_bytes": 0
+    },
+    {
+      "path": "fixtures/cdv1-f06-5ca80448d1e237a4/browser-initial-state.json",
+      "sha256": "34db8141844bd76deace08f817ce5bc61f9e53806f14d3fe322c7057be7963ec",
+      "size_bytes": 208
+    },
+    {
+      "path": "fixtures/cdv1-f06-5ca80448d1e237a4/browser-server.py",
+      "sha256": "3ab12e7192a5981277c4f5a2f51a381dd40a9d275d15f07c721e70d0c22f38c6",
+      "size_bytes": 3224
+    },
+    {
+      "path": "fixtures/cdv1-f06-5ca80448d1e237a4/state-context.json",
+      "sha256": "b7d1aadef8991e31890eabbda317bfa31d74ffa63fd6b6ec03be6c03edbbbb2d",
+      "size_bytes": 259
+    },
+    {
+      "path": "fixtures/cdv1-f06-5ca80448d1e237a4/terminal-state.json",
+      "sha256": "be28a6390e5d3b320a5680b3ded6d3284fef3a94592ec6a091567b2c9c870c76",
+      "size_bytes": 54
+    },
+    {
+      "path": "fixtures/cdv1-f06-5ca80448d1e237a4/terminal-task.sh",
+      "sha256": "9bf39f9e843bd304a2c6b2b30a88da4abc5ffba9e0892d5acfafe49f8423aa03",
+      "size_bytes": 179
+    },
+    {
+      "path": "fixtures/cdv1-f06-5ca80448d1e237a4/workspace.html",
+      "sha256": "bed9b1725077e46ebc2647f7554b41c93a0ee3a04d83e96bbbc18b0c39300393",
+      "size_bytes": 1397
+    }
+  ],
+  "generation_seed": 2026,
+  "initial_fixture_spec": {
+    "application_set": [
+      "Browser",
+      "Terminal"
+    ],
+    "fixture_profile": "form_vendor",
+    "layout_id": "guard_after",
+    "public_assets": [
+      {
+        "path": "fixtures/cdv1-f06-5ca80448d1e237a4/browser-events.jsonl",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size_bytes": 0
+      },
+      {
+        "path": "fixtures/cdv1-f06-5ca80448d1e237a4/browser-initial-state.json",
+        "sha256": "34db8141844bd76deace08f817ce5bc61f9e53806f14d3fe322c7057be7963ec",
+        "size_bytes": 208
+      },
+      {
+        "path": "fixtures/cdv1-f06-5ca80448d1e237a4/browser-server.py",
+        "sha256": "3ab12e7192a5981277c4f5a2f51a381dd40a9d275d15f07c721e70d0c22f38c6",
+        "size_bytes": 3224
+      },
+      {
+        "path": "fixtures/cdv1-f06-5ca80448d1e237a4/state-context.json",
+        "sha256": "b7d1aadef8991e31890eabbda317bfa31d74ffa63fd6b6ec03be6c03edbbbb2d",
+        "size_bytes": 259
+      },
+      {
+        "path": "fixtures/cdv1-f06-5ca80448d1e237a4/terminal-state.json",
+        "sha256": "be28a6390e5d3b320a5680b3ded6d3284fef3a94592ec6a091567b2c9c870c76",
+        "size_bytes": 54
+      },
+      {
+        "path": "fixtures/cdv1-f06-5ca80448d1e237a4/terminal-task.sh",
+        "sha256": "9bf39f9e843bd304a2c6b2b30a88da4abc5ffba9e0892d5acfafe49f8423aa03",
+        "size_bytes": 179
+      },
+      {
+        "path": "fixtures/cdv1-f06-5ca80448d1e237a4/workspace.html",
+        "sha256": "bed9b1725077e46ebc2647f7554b41c93a0ee3a04d83e96bbbc18b0c39300393",
+        "size_bytes": 1397
+      }
+    ]
+  },
+  "instance_id": "cdv1-f06-5ca80448d1e237a4",
+  "manifest_entry_sha256": "b522fac239389127d8550af7a80793546406a363dce656c66f9c82e3f3249159",
+  "provenance": {
+    "fixture_sha256": "f91c3f5963d28088d5c989820ff00d63dbcc4e61648029fc365c8a5037510dcc",
+    "generation_seed": 2026,
+    "generator": "swcub.production_v1",
+    "seed_role": "deterministic profile ordering only; excluded from instance identity",
+    "semantic_spec_sha256": "5ca80448d1e237a499efd34e0e40e687e2323ba97aaba596cdf44e3f55032e35",
+    "source_code_sha256": "c6f4ce3ff7f122b199f69d31f881393102fe21e3cae914f6877b8bb2f676fcb3",
+    "source_commit": "fc75fc962775fb64429d11f13c5cd0df0cc1cedd"
+  },
+  "reset_metadata": {
+    "fixture_id": "cdv1-f06-5ca80448d1e237a4",
+    "fresh_guest_required": true,
+    "remove_prior_app_state": true,
+    "verify_fixture_hash": "f91c3f5963d28088d5c989820ff00d63dbcc4e61648029fc365c8a5037510dcc",
+    "verify_state": {
+      "actors": {
+        "A": {
+          "object": "browser/record/vendor",
+          "value": "__UNSUBMITTED__"
+        },
+        "B": {
+          "object": "terminal/output/vendor",
+          "value": ""
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "context_profile": {
+          "context_axes": {
+            "fixture_state": "directory listing with decoys",
+            "schedule_policy": "unchanged",
+            "target_neighborhood": 2,
+            "workflow_graph": "unchanged"
+          },
+          "density_level": 2,
+          "description": "directory listing with decoys",
+          "profile": "vendor_dossier",
+          "profile_index": 1
+        },
+        "initial": {
+          "fields": [
+            "record_id",
+            "status"
+          ],
+          "operation_kind": "browser_terminal_transaction",
+          "operation_pair": [
+            "multi_field_submit",
+            "command_edit_execute"
+          ],
+          "profile_label": "form_vendor",
+          "state_context": {
+            "context_axes": {
+              "fixture_state": "directory listing with decoys",
+              "schedule_policy": "unchanged",
+              "target_neighborhood": 2,
+              "workflow_graph": "unchanged"
+            },
+            "density_level": 2,
+            "description": "directory listing with decoys",
+            "profile": "vendor_dossier",
+            "profile_index": 1
+          }
+        },
+        "resource": "focus_input_routing"
+      }
+    }
+  },
+  "schedule_policy_id": "browser-terminal-edit-submit-action-boundary-v1",
+  "semantic_parameters": {
+    "domain_id": "capital_allocation",
+    "domain_schema": {
+      "entity": "capital request",
+      "field_a": "Decision",
+      "field_b": "Ledger state"
+    },
+    "layout_id": "guard_after",
+    "object_profile_id": "form_vendor",
+    "object_schema": {
+      "fields": [
+        "record_id",
+        "status"
+      ],
+      "operation_kind": "browser_terminal_transaction",
+      "operation_pair": [
+        "multi_field_submit",
+        "command_edit_execute"
+      ],
+      "profile_label": "form_vendor",
+      "state_context": {
+        "context_axes": {
+          "fixture_state": "directory listing with decoys",
+          "schedule_policy": "unchanged",
+          "target_neighborhood": 2,
+          "workflow_graph": "unchanged"
+        },
+        "density_level": 2,
+        "description": "directory listing with decoys",
+        "profile": "vendor_dossier",
+        "profile_index": 1
+      }
+    },
+    "operation_graph": "browser_multifield_submit_and_terminal_command_edit",
+    "operation_schema_revision": 1,
+    "state_context": {
+      "context_axes": {
+        "fixture_state": "directory listing with decoys",
+        "schedule_policy": "unchanged",
+        "target_neighborhood": 2,
+        "workflow_graph": "unchanged"
+      },
+      "density_level": 2,
+      "description": "directory listing with decoys",
+      "profile": "vendor_dossier",
+      "profile_index": 1
+    },
+    "workflow_id": "F-06"
+  },
+  "signatures": {
+    "fixture": "f91c3f5963d28088d5c989820ff00d63dbcc4e61648029fc365c8a5037510dcc",
+    "goal": "b1afb8de8a128c011d98071c61bd2ce658884a17c9f3da745624cf61c870cf9c",
+    "semantic": "5ca80448d1e237a499efd34e0e40e687e2323ba97aaba596cdf44e3f55032e35",
+    "structural": "1c82950e4b4baaf274e2bdeff908e1f1d17bb3202586d91c9731cd2c8ad7a899"
+  },
+  "target_objects": {
+    "A": [
+      "browser/record/vendor"
+    ],
+    "B": [
+      "terminal/output/vendor"
+    ]
+  },
+  "task_domains": {
+    "A": "Browser",
+    "B": "Terminal"
+  },
+  "topology_compatibility": {
+    "ma_id": {
+      "backend_binding": "same logical workspace seed; independent desktop sessions allowed",
+      "desktop_count": 2,
+      "fixtures": "byte-identical task-relevant clones"
+    },
+    "ma_sd": {
+      "actor_bindings": "A and B share desktop",
+      "desktop_count": 1
+    },
+    "solo": {
+      "actor_bindings": "A or B",
+      "desktop_count": 1
+    }
+  },
+  "treatment_relevant_state": {
+    "family_state": "focus_input_routing",
+    "operation_graph": "browser_multifield_submit_and_terminal_command_edit",
+    "shared_resource": {
+      "fields": [
+        "record_id",
+        "status"
+      ],
+      "operation_kind": "browser_terminal_transaction",
+      "operation_pair": [
+        "multi_field_submit",
+        "command_edit_execute"
+      ],
+      "profile_label": "form_vendor",
+      "state_context": {
+        "context_axes": {
+          "fixture_state": "directory listing with decoys",
+          "schedule_policy": "unchanged",
+          "target_neighborhood": 2,
+          "workflow_graph": "unchanged"
+        },
+        "density_level": 2,
+        "description": "directory listing with decoys",
+        "profile": "vendor_dossier",
+        "profile_index": 1
+      }
+    }
+  },
+  "validation_level": "offline_operation_template",
+  "workflow_id": "F-06"
+}

@@ -1,0 +1,443 @@
+{
+  "actor_goals": [
+    {
+      "actor_id": "A",
+      "expected_value": "{\"record\": \"SAFE-1193\", \"status\": \"Cleared\"}",
+      "goal": "Fill the assigned Browser record fields and submit exactly once. Target browser/record/release; initial '__UNSUBMITTED__'; required final '{\"record\": \"SAFE-1193\", \"status\": \"Cleared\"}'.",
+      "initial_value": "__UNSUBMITTED__",
+      "operation": "update browser/record/release",
+      "target_objects": [
+        "browser/record/release"
+      ],
+      "task_domain": "Browser"
+    },
+    {
+      "actor_id": "B",
+      "expected_value": "TERMINAL-SAFE-1193",
+      "goal": "Edit the assigned shell command, run it, and produce the exact output file without changing other files. Target terminal/output/release; initial ''; required final 'TERMINAL-SAFE-1193'. Run the command and write exactly 'TERMINAL-SAFE-1193' to /home/oem/codesk/cdv1-f06-7677ea8adaefcf3b/terminal-result-B.txt.",
+      "initial_value": "",
+      "operation": "update terminal/output/release",
+      "target_objects": [
+        "terminal/output/release"
+      ],
+      "task_domain": "Terminal"
+    }
+  ],
+  "benchmark_version": "codesk-v1.0",
+  "evaluator": {
+    "actor_paths": {
+      "A": "actors.A.value",
+      "B": "actors.B.value"
+    },
+    "adapter": "codesk_exact_state_v1",
+    "condition_semantics": {
+      "ma_id": "score each actor on equivalent independent desktop fixture",
+      "ma_sd": "score both actor goals and shared-state integrity",
+      "solo": "score selected actor; require inactive target and guards unchanged"
+    },
+    "context_expectation": {
+      "context_axes": {
+        "fixture_state": "multiple candidate artifacts",
+        "schedule_policy": "unchanged",
+        "target_neighborhood": 5,
+        "workflow_graph": "unchanged"
+      },
+      "density_level": 5,
+      "description": "multiple candidate artifacts",
+      "profile": "release_approval",
+      "profile_index": 4
+    },
+    "expected_state": {
+      "actors": {
+        "A": {
+          "object": "browser/record/release",
+          "value": "{\"record\": \"SAFE-1193\", \"status\": \"Cleared\"}"
+        },
+        "B": {
+          "object": "terminal/output/release",
+          "value": "TERMINAL-SAFE-1193"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "context_profile": {
+          "context_axes": {
+            "fixture_state": "multiple candidate artifacts",
+            "schedule_policy": "unchanged",
+            "target_neighborhood": 5,
+            "workflow_graph": "unchanged"
+          },
+          "density_level": 5,
+          "description": "multiple candidate artifacts",
+          "profile": "release_approval",
+          "profile_index": 4
+        },
+        "initial": {
+          "fields": [
+            "record_id",
+            "status"
+          ],
+          "operation_kind": "browser_terminal_transaction",
+          "operation_pair": [
+            "multi_field_submit",
+            "command_edit_execute"
+          ],
+          "profile_label": "form_release",
+          "state_context": {
+            "context_axes": {
+              "fixture_state": "multiple candidate artifacts",
+              "schedule_policy": "unchanged",
+              "target_neighborhood": 5,
+              "workflow_graph": "unchanged"
+            },
+            "density_level": 5,
+            "description": "multiple candidate artifacts",
+            "profile": "release_approval",
+            "profile_index": 4
+          }
+        },
+        "resource": "focus_input_routing"
+      }
+    },
+    "initial_state": {
+      "actors": {
+        "A": {
+          "object": "browser/record/release",
+          "value": "__UNSUBMITTED__"
+        },
+        "B": {
+          "object": "terminal/output/release",
+          "value": ""
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "context_profile": {
+          "context_axes": {
+            "fixture_state": "multiple candidate artifacts",
+            "schedule_policy": "unchanged",
+            "target_neighborhood": 5,
+            "workflow_graph": "unchanged"
+          },
+          "density_level": 5,
+          "description": "multiple candidate artifacts",
+          "profile": "release_approval",
+          "profile_index": 4
+        },
+        "initial": {
+          "fields": [
+            "record_id",
+            "status"
+          ],
+          "operation_kind": "browser_terminal_transaction",
+          "operation_pair": [
+            "multi_field_submit",
+            "command_edit_execute"
+          ],
+          "profile_label": "form_release",
+          "state_context": {
+            "context_axes": {
+              "fixture_state": "multiple candidate artifacts",
+              "schedule_policy": "unchanged",
+              "target_neighborhood": 5,
+              "workflow_graph": "unchanged"
+            },
+            "density_level": 5,
+            "description": "multiple candidate artifacts",
+            "profile": "release_approval",
+            "profile_index": 4
+          }
+        },
+        "resource": "focus_input_routing"
+      }
+    },
+    "invariants": [
+      {
+        "equals": "PRESERVE",
+        "path": "actors.guards.main"
+      }
+    ],
+    "operation_contract": {
+      "A": "browser/form-transaction",
+      "B": "terminal/command-line",
+      "evidence_required": true,
+      "operation_graph": "browser_multifield_submit_and_terminal_command_edit",
+      "shared_state": "foreground window and keyboard target"
+    },
+    "schedule_policy_id": "browser-terminal-edit-submit-action-boundary-v1"
+  },
+  "evaluator_path": "evaluators/cdv1-f06-7677ea8adaefcf3b.json",
+  "evaluator_sha256": "692545ccf73ade489a8c52b17c97569d447cf9f29f25f46f3cd60f4e5a3e0a9f",
+  "family": "focus_input_routing",
+  "fixture_files": [
+    {
+      "path": "fixtures/cdv1-f06-7677ea8adaefcf3b/browser-events.jsonl",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size_bytes": 0
+    },
+    {
+      "path": "fixtures/cdv1-f06-7677ea8adaefcf3b/browser-initial-state.json",
+      "sha256": "34db8141844bd76deace08f817ce5bc61f9e53806f14d3fe322c7057be7963ec",
+      "size_bytes": 208
+    },
+    {
+      "path": "fixtures/cdv1-f06-7677ea8adaefcf3b/browser-server.py",
+      "sha256": "3336fdf0235059d1f2ce4ec629a511faf462d27ca4ebc7087a2ad89a8d82814a",
+      "size_bytes": 3224
+    },
+    {
+      "path": "fixtures/cdv1-f06-7677ea8adaefcf3b/state-context.json",
+      "sha256": "47c4652260df8c8b6c9470a123f912aec84b57da2a3f9913cd3c9a1a805134f5",
+      "size_bytes": 259
+    },
+    {
+      "path": "fixtures/cdv1-f06-7677ea8adaefcf3b/terminal-state.json",
+      "sha256": "30670c71cd329a81378d4a085eef1eb8e6143cfa1f4495172b9f9dd75a1f583d",
+      "size_bytes": 55
+    },
+    {
+      "path": "fixtures/cdv1-f06-7677ea8adaefcf3b/terminal-task.sh",
+      "sha256": "4955940132dc0dc130aa0585245fd42dc835bdbb25903a487bca566e0ff6fa8b",
+      "size_bytes": 398
+    },
+    {
+      "path": "fixtures/cdv1-f06-7677ea8adaefcf3b/workspace.html",
+      "sha256": "89e4afeb7252b42d265a0f04e747528b846511fee1ce23c2665965a8fbea963c",
+      "size_bytes": 1671
+    }
+  ],
+  "generation_seed": 2026,
+  "initial_fixture_spec": {
+    "application_set": [
+      "Browser",
+      "Terminal"
+    ],
+    "fixture_profile": "form_release",
+    "layout_id": "guard_after",
+    "public_assets": [
+      {
+        "path": "fixtures/cdv1-f06-7677ea8adaefcf3b/browser-events.jsonl",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size_bytes": 0
+      },
+      {
+        "path": "fixtures/cdv1-f06-7677ea8adaefcf3b/browser-initial-state.json",
+        "sha256": "34db8141844bd76deace08f817ce5bc61f9e53806f14d3fe322c7057be7963ec",
+        "size_bytes": 208
+      },
+      {
+        "path": "fixtures/cdv1-f06-7677ea8adaefcf3b/browser-server.py",
+        "sha256": "3336fdf0235059d1f2ce4ec629a511faf462d27ca4ebc7087a2ad89a8d82814a",
+        "size_bytes": 3224
+      },
+      {
+        "path": "fixtures/cdv1-f06-7677ea8adaefcf3b/state-context.json",
+        "sha256": "47c4652260df8c8b6c9470a123f912aec84b57da2a3f9913cd3c9a1a805134f5",
+        "size_bytes": 259
+      },
+      {
+        "path": "fixtures/cdv1-f06-7677ea8adaefcf3b/terminal-state.json",
+        "sha256": "30670c71cd329a81378d4a085eef1eb8e6143cfa1f4495172b9f9dd75a1f583d",
+        "size_bytes": 55
+      },
+      {
+        "path": "fixtures/cdv1-f06-7677ea8adaefcf3b/terminal-task.sh",
+        "sha256": "4955940132dc0dc130aa0585245fd42dc835bdbb25903a487bca566e0ff6fa8b",
+        "size_bytes": 398
+      },
+      {
+        "path": "fixtures/cdv1-f06-7677ea8adaefcf3b/workspace.html",
+        "sha256": "89e4afeb7252b42d265a0f04e747528b846511fee1ce23c2665965a8fbea963c",
+        "size_bytes": 1671
+      }
+    ]
+  },
+  "instance_id": "cdv1-f06-7677ea8adaefcf3b",
+  "manifest_entry_sha256": "be62f329262f8b10a8f3b65e77fb17b6abf29881e4885f7c3f27cc65c4690248",
+  "provenance": {
+    "fixture_sha256": "f2d0999f5138de95d95ba55615f9ba35bf6f7b99f9eb52747a4a3138a1566f33",
+    "generation_seed": 2026,
+    "generator": "swcub.production_v1",
+    "seed_role": "deterministic profile ordering only; excluded from instance identity",
+    "semantic_spec_sha256": "7677ea8adaefcf3b282276aa16b0e37cbb1f4f492d7fc1f24602535c09b02947",
+    "source_code_sha256": "c6f4ce3ff7f122b199f69d31f881393102fe21e3cae914f6877b8bb2f676fcb3",
+    "source_commit": "fc75fc962775fb64429d11f13c5cd0df0cc1cedd"
+  },
+  "reset_metadata": {
+    "fixture_id": "cdv1-f06-7677ea8adaefcf3b",
+    "fresh_guest_required": true,
+    "remove_prior_app_state": true,
+    "verify_fixture_hash": "f2d0999f5138de95d95ba55615f9ba35bf6f7b99f9eb52747a4a3138a1566f33",
+    "verify_state": {
+      "actors": {
+        "A": {
+          "object": "browser/record/release",
+          "value": "__UNSUBMITTED__"
+        },
+        "B": {
+          "object": "terminal/output/release",
+          "value": ""
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "context_profile": {
+          "context_axes": {
+            "fixture_state": "multiple candidate artifacts",
+            "schedule_policy": "unchanged",
+            "target_neighborhood": 5,
+            "workflow_graph": "unchanged"
+          },
+          "density_level": 5,
+          "description": "multiple candidate artifacts",
+          "profile": "release_approval",
+          "profile_index": 4
+        },
+        "initial": {
+          "fields": [
+            "record_id",
+            "status"
+          ],
+          "operation_kind": "browser_terminal_transaction",
+          "operation_pair": [
+            "multi_field_submit",
+            "command_edit_execute"
+          ],
+          "profile_label": "form_release",
+          "state_context": {
+            "context_axes": {
+              "fixture_state": "multiple candidate artifacts",
+              "schedule_policy": "unchanged",
+              "target_neighborhood": 5,
+              "workflow_graph": "unchanged"
+            },
+            "density_level": 5,
+            "description": "multiple candidate artifacts",
+            "profile": "release_approval",
+            "profile_index": 4
+          }
+        },
+        "resource": "focus_input_routing"
+      }
+    }
+  },
+  "schedule_policy_id": "browser-terminal-edit-submit-action-boundary-v1",
+  "semantic_parameters": {
+    "domain_id": "safety_inspection",
+    "domain_schema": {
+      "entity": "inspection item",
+      "field_a": "Clearance",
+      "field_b": "Inspection state"
+    },
+    "layout_id": "guard_after",
+    "object_profile_id": "form_release",
+    "object_schema": {
+      "fields": [
+        "record_id",
+        "status"
+      ],
+      "operation_kind": "browser_terminal_transaction",
+      "operation_pair": [
+        "multi_field_submit",
+        "command_edit_execute"
+      ],
+      "profile_label": "form_release",
+      "state_context": {
+        "context_axes": {
+          "fixture_state": "multiple candidate artifacts",
+          "schedule_policy": "unchanged",
+          "target_neighborhood": 5,
+          "workflow_graph": "unchanged"
+        },
+        "density_level": 5,
+        "description": "multiple candidate artifacts",
+        "profile": "release_approval",
+        "profile_index": 4
+      }
+    },
+    "operation_graph": "browser_multifield_submit_and_terminal_command_edit",
+    "operation_schema_revision": 1,
+    "state_context": {
+      "context_axes": {
+        "fixture_state": "multiple candidate artifacts",
+        "schedule_policy": "unchanged",
+        "target_neighborhood": 5,
+        "workflow_graph": "unchanged"
+      },
+      "density_level": 5,
+      "description": "multiple candidate artifacts",
+      "profile": "release_approval",
+      "profile_index": 4
+    },
+    "workflow_id": "F-06"
+  },
+  "signatures": {
+    "fixture": "f2d0999f5138de95d95ba55615f9ba35bf6f7b99f9eb52747a4a3138a1566f33",
+    "goal": "a50eb98fd43156c51b01a2ab14e90241b34af3291d6a75006a02b18f277ff4b1",
+    "semantic": "7677ea8adaefcf3b282276aa16b0e37cbb1f4f492d7fc1f24602535c09b02947",
+    "structural": "30c99c9a514eab38b1210b2843fe29a761b9152dde3aaa75a71de734100268ea"
+  },
+  "target_objects": {
+    "A": [
+      "browser/record/release"
+    ],
+    "B": [
+      "terminal/output/release"
+    ]
+  },
+  "task_domains": {
+    "A": "Browser",
+    "B": "Terminal"
+  },
+  "topology_compatibility": {
+    "ma_id": {
+      "backend_binding": "same logical workspace seed; independent desktop sessions allowed",
+      "desktop_count": 2,
+      "fixtures": "byte-identical task-relevant clones"
+    },
+    "ma_sd": {
+      "actor_bindings": "A and B share desktop",
+      "desktop_count": 1
+    },
+    "solo": {
+      "actor_bindings": "A or B",
+      "desktop_count": 1
+    }
+  },
+  "treatment_relevant_state": {
+    "family_state": "focus_input_routing",
+    "operation_graph": "browser_multifield_submit_and_terminal_command_edit",
+    "shared_resource": {
+      "fields": [
+        "record_id",
+        "status"
+      ],
+      "operation_kind": "browser_terminal_transaction",
+      "operation_pair": [
+        "multi_field_submit",
+        "command_edit_execute"
+      ],
+      "profile_label": "form_release",
+      "state_context": {
+        "context_axes": {
+          "fixture_state": "multiple candidate artifacts",
+          "schedule_policy": "unchanged",
+          "target_neighborhood": 5,
+          "workflow_graph": "unchanged"
+        },
+        "density_level": 5,
+        "description": "multiple candidate artifacts",
+        "profile": "release_approval",
+        "profile_index": 4
+      }
+    }
+  },
+  "validation_level": "offline_operation_template",
+  "workflow_id": "F-06"
+}

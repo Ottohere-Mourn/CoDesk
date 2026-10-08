@@ -1,0 +1,443 @@
+{
+  "actor_goals": [
+    {
+      "actor_id": "A",
+      "expected_value": "{\"record\": \"SUP-2048\", \"status\": \"Accepted\"}",
+      "goal": "Fill the assigned Browser record fields and submit exactly once. Target browser/record/review; initial '__UNSUBMITTED__'; required final '{\"record\": \"SUP-2048\", \"status\": \"Accepted\"}'.",
+      "initial_value": "__UNSUBMITTED__",
+      "operation": "update browser/record/review",
+      "target_objects": [
+        "browser/record/review"
+      ],
+      "task_domain": "Browser"
+    },
+    {
+      "actor_id": "B",
+      "expected_value": "TERMINAL-SUP-2048",
+      "goal": "Edit the assigned shell command, run it, and produce the exact output file without changing other files. Target terminal/output/review; initial ''; required final 'TERMINAL-SUP-2048'. Run the command and write exactly 'TERMINAL-SUP-2048' to /home/oem/codesk/cdv1-f06-ca0b50ded3701f2a/terminal-result-B.txt.",
+      "initial_value": "",
+      "operation": "update terminal/output/review",
+      "target_objects": [
+        "terminal/output/review"
+      ],
+      "task_domain": "Terminal"
+    }
+  ],
+  "benchmark_version": "codesk-v1.0",
+  "evaluator": {
+    "actor_paths": {
+      "A": "actors.A.value",
+      "B": "actors.B.value"
+    },
+    "adapter": "codesk_exact_state_v1",
+    "condition_semantics": {
+      "ma_id": "score each actor on equivalent independent desktop fixture",
+      "ma_sd": "score both actor goals and shared-state integrity",
+      "solo": "score selected actor; require inactive target and guards unchanged"
+    },
+    "context_expectation": {
+      "context_axes": {
+        "fixture_state": "one output file context",
+        "schedule_policy": "unchanged",
+        "target_neighborhood": 1,
+        "workflow_graph": "unchanged"
+      },
+      "density_level": 1,
+      "description": "one output file context",
+      "profile": "review_case",
+      "profile_index": 0
+    },
+    "expected_state": {
+      "actors": {
+        "A": {
+          "object": "browser/record/review",
+          "value": "{\"record\": \"SUP-2048\", \"status\": \"Accepted\"}"
+        },
+        "B": {
+          "object": "terminal/output/review",
+          "value": "TERMINAL-SUP-2048"
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "context_profile": {
+          "context_axes": {
+            "fixture_state": "one output file context",
+            "schedule_policy": "unchanged",
+            "target_neighborhood": 1,
+            "workflow_graph": "unchanged"
+          },
+          "density_level": 1,
+          "description": "one output file context",
+          "profile": "review_case",
+          "profile_index": 0
+        },
+        "initial": {
+          "fields": [
+            "record_id",
+            "status"
+          ],
+          "operation_kind": "browser_terminal_transaction",
+          "operation_pair": [
+            "multi_field_submit",
+            "command_edit_execute"
+          ],
+          "profile_label": "form_review",
+          "state_context": {
+            "context_axes": {
+              "fixture_state": "one output file context",
+              "schedule_policy": "unchanged",
+              "target_neighborhood": 1,
+              "workflow_graph": "unchanged"
+            },
+            "density_level": 1,
+            "description": "one output file context",
+            "profile": "review_case",
+            "profile_index": 0
+          }
+        },
+        "resource": "focus_input_routing"
+      }
+    },
+    "initial_state": {
+      "actors": {
+        "A": {
+          "object": "browser/record/review",
+          "value": "__UNSUBMITTED__"
+        },
+        "B": {
+          "object": "terminal/output/review",
+          "value": ""
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "context_profile": {
+          "context_axes": {
+            "fixture_state": "one output file context",
+            "schedule_policy": "unchanged",
+            "target_neighborhood": 1,
+            "workflow_graph": "unchanged"
+          },
+          "density_level": 1,
+          "description": "one output file context",
+          "profile": "review_case",
+          "profile_index": 0
+        },
+        "initial": {
+          "fields": [
+            "record_id",
+            "status"
+          ],
+          "operation_kind": "browser_terminal_transaction",
+          "operation_pair": [
+            "multi_field_submit",
+            "command_edit_execute"
+          ],
+          "profile_label": "form_review",
+          "state_context": {
+            "context_axes": {
+              "fixture_state": "one output file context",
+              "schedule_policy": "unchanged",
+              "target_neighborhood": 1,
+              "workflow_graph": "unchanged"
+            },
+            "density_level": 1,
+            "description": "one output file context",
+            "profile": "review_case",
+            "profile_index": 0
+          }
+        },
+        "resource": "focus_input_routing"
+      }
+    },
+    "invariants": [
+      {
+        "equals": "PRESERVE",
+        "path": "actors.guards.main"
+      }
+    ],
+    "operation_contract": {
+      "A": "browser/form-transaction",
+      "B": "terminal/command-line",
+      "evidence_required": true,
+      "operation_graph": "browser_multifield_submit_and_terminal_command_edit",
+      "shared_state": "foreground window and keyboard target"
+    },
+    "schedule_policy_id": "browser-terminal-edit-submit-action-boundary-v1"
+  },
+  "evaluator_path": "evaluators/cdv1-f06-ca0b50ded3701f2a.json",
+  "evaluator_sha256": "bfb4e47a7fcd64349c731fc60f2299660d18db2d066625490a7616e14dc7987d",
+  "family": "focus_input_routing",
+  "fixture_files": [
+    {
+      "path": "fixtures/cdv1-f06-ca0b50ded3701f2a/browser-events.jsonl",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size_bytes": 0
+    },
+    {
+      "path": "fixtures/cdv1-f06-ca0b50ded3701f2a/browser-initial-state.json",
+      "sha256": "34db8141844bd76deace08f817ce5bc61f9e53806f14d3fe322c7057be7963ec",
+      "size_bytes": 208
+    },
+    {
+      "path": "fixtures/cdv1-f06-ca0b50ded3701f2a/browser-server.py",
+      "sha256": "41be96ed61c14e71219412480ff6e846eb8f0236f20fe3f08f4edfbc65a06761",
+      "size_bytes": 3224
+    },
+    {
+      "path": "fixtures/cdv1-f06-ca0b50ded3701f2a/state-context.json",
+      "sha256": "faad677725e792fe924fa710973f46f79cf94f6bf89b660ca4e81d66f0c82288",
+      "size_bytes": 244
+    },
+    {
+      "path": "fixtures/cdv1-f06-ca0b50ded3701f2a/terminal-state.json",
+      "sha256": "115870a617fc67d273c79c9d23de0fd3047677f13decdac0d351c77eebb6cb1b",
+      "size_bytes": 54
+    },
+    {
+      "path": "fixtures/cdv1-f06-ca0b50ded3701f2a/terminal-task.sh",
+      "sha256": "be183dbe6b9830a148febaeb64073ac5979a3177d67a2ce194d018fce7d3c627",
+      "size_bytes": 115
+    },
+    {
+      "path": "fixtures/cdv1-f06-ca0b50ded3701f2a/workspace.html",
+      "sha256": "d2a454a2471d30e603db321944baf6c0d52c19c27bf02294ff28b973300ebc44",
+      "size_bytes": 1282
+    }
+  ],
+  "generation_seed": 2026,
+  "initial_fixture_spec": {
+    "application_set": [
+      "Browser",
+      "Terminal"
+    ],
+    "fixture_profile": "form_review",
+    "layout_id": "guard_after",
+    "public_assets": [
+      {
+        "path": "fixtures/cdv1-f06-ca0b50ded3701f2a/browser-events.jsonl",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size_bytes": 0
+      },
+      {
+        "path": "fixtures/cdv1-f06-ca0b50ded3701f2a/browser-initial-state.json",
+        "sha256": "34db8141844bd76deace08f817ce5bc61f9e53806f14d3fe322c7057be7963ec",
+        "size_bytes": 208
+      },
+      {
+        "path": "fixtures/cdv1-f06-ca0b50ded3701f2a/browser-server.py",
+        "sha256": "41be96ed61c14e71219412480ff6e846eb8f0236f20fe3f08f4edfbc65a06761",
+        "size_bytes": 3224
+      },
+      {
+        "path": "fixtures/cdv1-f06-ca0b50ded3701f2a/state-context.json",
+        "sha256": "faad677725e792fe924fa710973f46f79cf94f6bf89b660ca4e81d66f0c82288",
+        "size_bytes": 244
+      },
+      {
+        "path": "fixtures/cdv1-f06-ca0b50ded3701f2a/terminal-state.json",
+        "sha256": "115870a617fc67d273c79c9d23de0fd3047677f13decdac0d351c77eebb6cb1b",
+        "size_bytes": 54
+      },
+      {
+        "path": "fixtures/cdv1-f06-ca0b50ded3701f2a/terminal-task.sh",
+        "sha256": "be183dbe6b9830a148febaeb64073ac5979a3177d67a2ce194d018fce7d3c627",
+        "size_bytes": 115
+      },
+      {
+        "path": "fixtures/cdv1-f06-ca0b50ded3701f2a/workspace.html",
+        "sha256": "d2a454a2471d30e603db321944baf6c0d52c19c27bf02294ff28b973300ebc44",
+        "size_bytes": 1282
+      }
+    ]
+  },
+  "instance_id": "cdv1-f06-ca0b50ded3701f2a",
+  "manifest_entry_sha256": "72c61348c05699ebfa938928205fca5aa4c0754069a768eb7752bfb58fe43267",
+  "provenance": {
+    "fixture_sha256": "50dba1255d43d9f9d41b86d0b6175655b1b32791d33e5d7223efb1ea69f9f6b9",
+    "generation_seed": 2026,
+    "generator": "swcub.production_v1",
+    "seed_role": "deterministic profile ordering only; excluded from instance identity",
+    "semantic_spec_sha256": "ca0b50ded3701f2a9f83d9d2e709b61fb8088791ba31f62d71af81619cf88e5c",
+    "source_code_sha256": "c6f4ce3ff7f122b199f69d31f881393102fe21e3cae914f6877b8bb2f676fcb3",
+    "source_commit": "fc75fc962775fb64429d11f13c5cd0df0cc1cedd"
+  },
+  "reset_metadata": {
+    "fixture_id": "cdv1-f06-ca0b50ded3701f2a",
+    "fresh_guest_required": true,
+    "remove_prior_app_state": true,
+    "verify_fixture_hash": "50dba1255d43d9f9d41b86d0b6175655b1b32791d33e5d7223efb1ea69f9f6b9",
+    "verify_state": {
+      "actors": {
+        "A": {
+          "object": "browser/record/review",
+          "value": "__UNSUBMITTED__"
+        },
+        "B": {
+          "object": "terminal/output/review",
+          "value": ""
+        },
+        "guards": {
+          "main": "PRESERVE"
+        }
+      },
+      "treatment": {
+        "context_profile": {
+          "context_axes": {
+            "fixture_state": "one output file context",
+            "schedule_policy": "unchanged",
+            "target_neighborhood": 1,
+            "workflow_graph": "unchanged"
+          },
+          "density_level": 1,
+          "description": "one output file context",
+          "profile": "review_case",
+          "profile_index": 0
+        },
+        "initial": {
+          "fields": [
+            "record_id",
+            "status"
+          ],
+          "operation_kind": "browser_terminal_transaction",
+          "operation_pair": [
+            "multi_field_submit",
+            "command_edit_execute"
+          ],
+          "profile_label": "form_review",
+          "state_context": {
+            "context_axes": {
+              "fixture_state": "one output file context",
+              "schedule_policy": "unchanged",
+              "target_neighborhood": 1,
+              "workflow_graph": "unchanged"
+            },
+            "density_level": 1,
+            "description": "one output file context",
+            "profile": "review_case",
+            "profile_index": 0
+          }
+        },
+        "resource": "focus_input_routing"
+      }
+    }
+  },
+  "schedule_policy_id": "browser-terminal-edit-submit-action-boundary-v1",
+  "semantic_parameters": {
+    "domain_id": "supplier_onboarding",
+    "domain_schema": {
+      "entity": "supplier record",
+      "field_a": "Review decision",
+      "field_b": "Verification state"
+    },
+    "layout_id": "guard_after",
+    "object_profile_id": "form_review",
+    "object_schema": {
+      "fields": [
+        "record_id",
+        "status"
+      ],
+      "operation_kind": "browser_terminal_transaction",
+      "operation_pair": [
+        "multi_field_submit",
+        "command_edit_execute"
+      ],
+      "profile_label": "form_review",
+      "state_context": {
+        "context_axes": {
+          "fixture_state": "one output file context",
+          "schedule_policy": "unchanged",
+          "target_neighborhood": 1,
+          "workflow_graph": "unchanged"
+        },
+        "density_level": 1,
+        "description": "one output file context",
+        "profile": "review_case",
+        "profile_index": 0
+      }
+    },
+    "operation_graph": "browser_multifield_submit_and_terminal_command_edit",
+    "operation_schema_revision": 1,
+    "state_context": {
+      "context_axes": {
+        "fixture_state": "one output file context",
+        "schedule_policy": "unchanged",
+        "target_neighborhood": 1,
+        "workflow_graph": "unchanged"
+      },
+      "density_level": 1,
+      "description": "one output file context",
+      "profile": "review_case",
+      "profile_index": 0
+    },
+    "workflow_id": "F-06"
+  },
+  "signatures": {
+    "fixture": "50dba1255d43d9f9d41b86d0b6175655b1b32791d33e5d7223efb1ea69f9f6b9",
+    "goal": "35866488695bedf825f3e9cb88f8c2283a84a7c1ae9d610b91df2b288dc89151",
+    "semantic": "ca0b50ded3701f2a9f83d9d2e709b61fb8088791ba31f62d71af81619cf88e5c",
+    "structural": "17cb8fa88059294e534fb0787f558f3ec9765ded4a3672d5d124574e597f9d3a"
+  },
+  "target_objects": {
+    "A": [
+      "browser/record/review"
+    ],
+    "B": [
+      "terminal/output/review"
+    ]
+  },
+  "task_domains": {
+    "A": "Browser",
+    "B": "Terminal"
+  },
+  "topology_compatibility": {
+    "ma_id": {
+      "backend_binding": "same logical workspace seed; independent desktop sessions allowed",
+      "desktop_count": 2,
+      "fixtures": "byte-identical task-relevant clones"
+    },
+    "ma_sd": {
+      "actor_bindings": "A and B share desktop",
+      "desktop_count": 1
+    },
+    "solo": {
+      "actor_bindings": "A or B",
+      "desktop_count": 1
+    }
+  },
+  "treatment_relevant_state": {
+    "family_state": "focus_input_routing",
+    "operation_graph": "browser_multifield_submit_and_terminal_command_edit",
+    "shared_resource": {
+      "fields": [
+        "record_id",
+        "status"
+      ],
+      "operation_kind": "browser_terminal_transaction",
+      "operation_pair": [
+        "multi_field_submit",
+        "command_edit_execute"
+      ],
+      "profile_label": "form_review",
+      "state_context": {
+        "context_axes": {
+          "fixture_state": "one output file context",
+          "schedule_policy": "unchanged",
+          "target_neighborhood": 1,
+          "workflow_graph": "unchanged"
+        },
+        "density_level": 1,
+        "description": "one output file context",
+        "profile": "review_case",
+        "profile_index": 0
+      }
+    }
+  },
+  "validation_level": "offline_operation_template",
+  "workflow_id": "F-06"
+}

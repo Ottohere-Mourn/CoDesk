@@ -1,0 +1,154 @@
+{
+  "description": "Select each actor's disjoint rows in one Browser table and apply independent bulk status updates.",
+  "family": "selection_active_object",
+  "goal_a": "Select all assigned A rows and apply the exact bulk status to those rows only.",
+  "goal_b": "Select all assigned B rows and apply the independent bulk status to those rows only.",
+  "operation_graph": "browser_multirow_selection_bulk_update",
+  "required_apps": [
+    "Browser",
+    "Browser"
+  ],
+  "runtime_validation_incomplete": true,
+  "schedule_policy_id": "browser-row-selection-bulk-action-resume-v1",
+  "semantic_parameter_schema": {
+    "actor_target_disjoint": true,
+    "domain_fields": [
+      "entity",
+      "field_a",
+      "field_b",
+      "a_status",
+      "b_status"
+    ],
+    "identity_excludes": [
+      "generation_seed",
+      "repeat",
+      "condition",
+      "model",
+      "window_coordinates"
+    ],
+    "layout_fields": [
+      "guard_placement",
+      "field_order",
+      "fixture_layout"
+    ],
+    "no_op_goals_allowed": false,
+    "object_profiles": [
+      {
+        "a": "browser/rows/1,3",
+        "b": "browser/rows/2,4",
+        "id": "rows_even",
+        "schema": {
+          "operation_kind": "browser_multiselect_bulk",
+          "operation_pair": [
+            "multirow_select_bulk_status",
+            "multirow_select_bulk_status"
+          ],
+          "profile_label": "rows_even",
+          "rows_a": [
+            1,
+            3
+          ],
+          "rows_b": [
+            2,
+            4
+          ]
+        }
+      },
+      {
+        "a": "browser/rows/1,2",
+        "b": "browser/rows/3,4",
+        "id": "rows_left",
+        "schema": {
+          "operation_kind": "browser_multiselect_bulk",
+          "operation_pair": [
+            "multirow_select_bulk_status",
+            "multirow_select_bulk_status"
+          ],
+          "profile_label": "rows_left",
+          "rows_a": [
+            1,
+            2
+          ],
+          "rows_b": [
+            3,
+            4
+          ]
+        }
+      },
+      {
+        "a": "browser/rows/high",
+        "b": "browser/rows/normal",
+        "id": "rows_priority",
+        "schema": {
+          "operation_kind": "browser_multiselect_bulk",
+          "operation_pair": [
+            "multirow_select_bulk_status",
+            "multirow_select_bulk_status"
+          ],
+          "profile_label": "rows_priority",
+          "rows_a": [
+            1,
+            4
+          ],
+          "rows_b": [
+            2,
+            3
+          ]
+        }
+      },
+      {
+        "a": "browser/rows/vendor-a",
+        "b": "browser/rows/vendor-b",
+        "id": "rows_vendor",
+        "schema": {
+          "operation_kind": "browser_multiselect_bulk",
+          "operation_pair": [
+            "multirow_select_bulk_status",
+            "multirow_select_bulk_status"
+          ],
+          "profile_label": "rows_vendor",
+          "rows_a": [
+            2,
+            5
+          ],
+          "rows_b": [
+            1,
+            4
+          ]
+        }
+      },
+      {
+        "a": "browser/rows/safety-a",
+        "b": "browser/rows/safety-b",
+        "id": "rows_safety",
+        "schema": {
+          "operation_kind": "browser_multiselect_bulk",
+          "operation_pair": [
+            "multirow_select_bulk_status",
+            "multirow_select_bulk_status"
+          ],
+          "profile_label": "rows_safety",
+          "rows_a": [
+            3,
+            6
+          ],
+          "rows_b": [
+            1,
+            5
+          ]
+        }
+      }
+    ],
+    "operation_schema": {
+      "A": "browser/table/rows-a",
+      "B": "browser/table/rows-b",
+      "shared": "selected row set"
+    }
+  },
+  "task_domains": [
+    "Browser",
+    "Browser"
+  ],
+  "validation_level": "offline_operation_template",
+  "workflow_id": "S-04"
+}
