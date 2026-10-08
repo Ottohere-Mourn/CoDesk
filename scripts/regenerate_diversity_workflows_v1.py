@@ -22,6 +22,8 @@ from swcub.runtime_bindings_v1 import build_runtime_binding_registry
 TARGETS={"A-02","A-03","C-01","C-06","F-01","F-06","S-01","S-02","S-04","U-03","U-N1"}
 SUITE=ROOT/"benchmarks/codesk_v1_final"
 SNAPSHOT=ROOT/"benchmarks/codesk_v1_final_history/pre_diversity_refresh_20261008"
+# The instance rows were generated from this committed renderer/profile source.
+GENERATOR_SOURCE_COMMIT="fc75fc962775fb64429d11f13c5cd0df0cc1cedd"
 
 def digest(path:Path)->str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
@@ -76,7 +78,7 @@ def main():
             for domain in DOMAINS:
                 for profile in _PROFILE_ROWS[wid]:
                     spec=build_instance(wid,domain,profile,layout,2026,ROOT)
-                    spec.provenance["source_commit"]=git_commit(ROOT)
+                    spec.provenance["source_commit"]=GENERATOR_SOURCE_COMMIT
                     row=materialize(spec,stage)
                     ev=json.loads((stage/row["evaluator_path"]).read_text())
                     pos=evaluate_oracle({"workflow_id":wid,"evaluator":ev},_positive_state(spec))
@@ -181,7 +183,7 @@ def main():
         (SUITE/"metadata"/"validation_manifest.jsonl").write_text("\n".join(validation)+"\n")
         generation=json.loads((SUITE/"metadata"/"generation.json").read_text())
         generation.update({"instance_count":600,"workflow_count":30,"family_count":5,
-            "manifest_sha256":digest(SUITE/"manifest.jsonl"),"source_commit":git_commit(ROOT),
+            "manifest_sha256":digest(SUITE/"manifest.jsonl"),"source_commit":GENERATOR_SOURCE_COMMIT,
             "diversity_refresh":{"version":"2026-10-08","affected_workflows":sorted(TARGETS),
                 "old_instance_count":len(old_target),"new_instance_count":len(new_rows),
                 "snapshot":"benchmarks/codesk_v1_final_history/pre_diversity_refresh_20261008",
@@ -194,7 +196,7 @@ def main():
             "runtime_plan_compile":full_compile,"runtime_preflight_ready":600,"runtime_preflight_total":600})
         (SUITE/"metadata"/"generation.json").write_text(json.dumps(generation,indent=2,sort_keys=True)+"\n")
         (SUITE/"metadata"/"diversity-audit.json").write_text(json.dumps(full_audit,indent=2,sort_keys=True)+"\n")
-        regen={"version":"2026-10-08","source_commit":git_commit(ROOT),"base_manifest_sha256":base_hash,
+        regen={"version":"2026-10-08","source_commit":GENERATOR_SOURCE_COMMIT,"regeneration_script_commit":git_commit(ROOT),"base_manifest_sha256":base_hash,
             "final_manifest_sha256":digest(SUITE/"manifest.jsonl"),"affected_workflows":sorted(TARGETS),
             "replaced_instance_ids":sorted(old_ids),"new_instance_ids":sorted(new_by_id),
              "non_target_workflow_rows_preserved_byte_for_byte":True,"non_target_runtime_plans_preserved_byte_for_byte":True,
