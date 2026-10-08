@@ -16,6 +16,30 @@ class ProductionV1Tests(unittest.TestCase):
    self.assertEqual(a.fixture_files,b.fixture_files)
    self.assertTrue(evaluate_oracle(a,_positive_state(a))['joint_success'])
    self.assertFalse(evaluate_oracle(a,_negative_state(a))['joint_success'])
+
+ def test_diversity_context_profiles_are_task_relevant_and_oracle_visible(self):
+  from swcub.diversity_context_v1 import CONTEXTS
+  from swcub.production_v1 import _PROFILE_ROWS,DOMAINS,LAYOUTS
+  expected={"A-02","A-03","C-01","C-06","F-01","F-06","S-01","S-02","S-04","U-03","U-N1"}
+  self.assertEqual(set(CONTEXTS),expected)
+  for wid in sorted(expected):
+   profiles=_PROFILE_ROWS[wid]
+   self.assertEqual(len(profiles),5)
+   self.assertEqual(len({p["schema"]["state_context"]["profile"] for p in profiles}),5)
+   operation_graph=next(x["operation_graph"] for x in workflow_registry() if x["workflow_id"]==wid)
+   schedule=next(x["schedule_policy_id"] for x in workflow_registry() if x["workflow_id"]==wid)
+   signatures=set()
+   for profile in profiles:
+    spec=build_instance(wid,DOMAINS[0],profile,LAYOUTS[0],2026,Path(__file__).resolve().parents[1])
+    self.assertEqual(spec.semantic_parameters["operation_graph"],operation_graph)
+    self.assertEqual(spec.schedule_policy_id,schedule)
+    self.assertTrue(evaluate_oracle(spec,_positive_state(spec))["joint_success"])
+    rec=__import__("swcub.production_v1",fromlist=["to_record"]).to_record(spec)
+    signatures.add(rec["signatures"]["fixture"])
+    broken=_positive_state(spec);broken["context_state"]={"profile":"corrupted"}
+    self.assertFalse(evaluate_oracle(spec,broken)["joint_success"])
+   self.assertEqual(len(signatures),5)
+
  def test_manifest_materialization_and_hash(self):
   root=Path(__file__).resolve().parents[1];wid='F-01';d,p,l=_profile_catalog(wid,3)[0]
   spec=build_instance(wid,d,p,l,3,root)

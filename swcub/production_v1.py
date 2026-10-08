@@ -127,6 +127,8 @@ _PROFILE_ROWS: dict[str, list[dict[str, Any]]] = {
 
 from .second_wave_v1 import SECOND_WAVE as _SECOND_WAVE, profile_rows as _second_wave_profile_rows
 _PROFILE_ROWS.update(_second_wave_profile_rows())
+from .diversity_context_v1 import enrich_profiles as _enrich_diversity_profiles, apply_context as _apply_diversity_context
+_enrich_diversity_profiles(_PROFILE_ROWS)
 
 ACTORS = ("A", "B")
 
@@ -703,7 +705,8 @@ def _fixture_bytes(workflow_id: str, domain: dict[str,Any], profile: dict[str,An
     return assets
 
 def _source_digest() -> str:
-    return sha256(Path(__file__).read_bytes())
+    helper=Path(__file__).with_name("diversity_context_v1.py")
+    return sha256(Path(__file__).read_bytes()+helper.read_bytes())
 
 def build_instance(workflow_id: str, domain: dict[str,Any], profile: dict[str,Any],
                    layout: dict[str,Any], generation_seed: int, root: Path) -> InstanceSpecV1:
@@ -722,7 +725,7 @@ def build_instance(workflow_id: str, domain: dict[str,Any], profile: dict[str,An
     semantic={"workflow_id":workflow_id,"operation_graph":row["operation_graph"],
               "operation_schema_revision": {"F-01":4,"F-04":4,"C-01":4,"C-02":3,"F-02":3,"A-01":2,"U-01":2,"C-03":3,"U-N1":1,"C-N1":2}.get(workflow_id,1),
               "domain_id":domain["id"],"object_profile_id":profile["id"],
-              "object_schema":profile["schema"],"layout_id":layout["id"],
+              "object_schema":profile["schema"],"state_context":profile["schema"].get("state_context"),"layout_id":layout["id"],
               "domain_schema":{k:domain[k] for k in ("entity","field_a","field_b")}}
     semantic_sig=sha256(canonical_bytes(semantic))
     instance_id=f"cdv1-{workflow_id.lower().replace('-','')}-{semantic_sig[:16]}"
@@ -756,7 +759,7 @@ def build_instance(workflow_id: str, domain: dict[str,Any], profile: dict[str,An
     initial={"actors":{"A":{"value":a0,"object":target_objects["A"][0]},
                        "B":{"value":b0,"object":target_objects["B"][0]},
                        "guards":{"main":"PRESERVE"}},
-             "treatment":{"resource":row["family"],"initial":profile["schema"]}}
+             "treatment":{"resource":row["family"],"initial":profile["schema"],"context_profile":profile["schema"].get("state_context")}}
     expected=json.loads(json.dumps(initial))
     expected["actors"]["A"]["value"]=a0 if workflow_id in {"U-01","U-N1","U-02"} else a1
     expected["actors"]["B"]["value"]=b1
@@ -833,6 +836,7 @@ def build_instance(workflow_id: str, domain: dict[str,Any], profile: dict[str,An
                  ActorGoalSpec("B",row["task_domains"][1],goal_b,
                  op_b,tuple(target_objects["B"]),b0,b1))
     assets=_fixture_bytes(workflow_id,domain,profile,layout,a0,b0,a1,b1,instance_id)
+    assets=_apply_diversity_context(workflow_id,profile,domain,assets)
     fixture_rows=[]
     for rel,data in sorted(assets.items()):
         fixture_rows.append({"path":f"fixtures/{instance_id}/{rel}","sha256":sha256(data),"size_bytes":len(data)})
@@ -846,6 +850,7 @@ def build_instance(workflow_id: str, domain: dict[str,Any], profile: dict[str,An
     evaluator={"adapter":"codesk_exact_state_v1","actor_paths":{"A":"actors.A.value","B":"actors.B.value"},
        "expected_state":expected,"initial_state":initial,"invariants":[{"path":"actors.guards.main","equals":"PRESERVE"}],
        "schedule_policy_id":row["schedule_policy_id"],
+       "context_expectation":profile["schema"].get("state_context"),
        "condition_semantics":{"solo":"score selected actor; require inactive target and guards unchanged",
         "ma_id":"score each actor on equivalent independent desktop fixture",
         "ma_sd":"score both actor goals and shared-state integrity"}}
@@ -926,9 +931,13 @@ def evaluate_oracle(spec: InstanceSpecV1 | dict[str,Any], actual: dict[str,Any],
     inactive_integrity={a:(actual.get("actors",{}).get(a)==initial["actors"][a])
                         for a in ("A","B") if a not in active_actors}
     guards_ok=actual.get("actors",{}).get("guards")==initial["actors"]["guards"]
+    expected_context=row["evaluator"].get("context_expectation")
+    observed_context=actual.get("context_state",actual.get("treatment",{}).get("context_profile"))
+    context_ok=None if observed_context is None else observed_context==expected_context
     return {"actor_success":actor_success,"inactive_target_integrity":inactive_integrity,
-       "guards_intact":guards_ok,"joint_success":bool(actor_success) and all(actor_success.values())
-           and all(inactive_integrity.values()) and guards_ok}
+       "guards_intact":guards_ok,"context_integrity":context_ok,
+       "joint_success":bool(actor_success) and all(actor_success.values())
+           and all(inactive_integrity.values()) and guards_ok and context_ok is not False}
 
 def _positive_state(spec: InstanceSpecV1) -> dict[str,Any]:
     state=json.loads(json.dumps(spec.expected_final_state))
@@ -1047,8 +1056,17 @@ def audit_records(records: list[dict[str,Any]]) -> dict[str,Any]:
         else: near.add(near_key)
     per={}
     for wid,n in rows_by_workflow.items():
-        per[wid]={"generated":n,"retained":n,"duplicate_rejected":0,"near_duplicate_rejected":0,
-                  "diversity_assessment":"4 domain schemas × 5 workflow object/schema profiles × 2 target/guard layouts; no literal-only axis"}
+        contexts={canonical_bytes(r["semantic_parameters"].get("state_context")).decode()
+                  for r in records if r["workflow_id"]==wid and r["semantic_parameters"].get("state_context")}
+        item={"generated":n,"retained":n,"duplicate_rejected":0,"near_duplicate_rejected":0,
+              "state_context_profile_count":len(contexts)}
+        if contexts:
+            item["diversity_assessment"]="4 domains × 5 rendered task-state/context profiles; operation graph and schedule fixed"
+            item["diversity_level"]="STATE_DIVERSE"
+            item["meaningful_axes"]=["application/document/workbook context","target neighborhood or distractor structure","initial state"]
+        else:
+            item["diversity_assessment"]="legacy semantic profiles; classify from INSTANCE_VARIATION_AUDIT.md"
+        per[wid]=item
     duplicate_rows=exact_rows | near_rows
     return {"generated":len(records),"retained":len(records)-len(duplicate_rows),
             "duplicate_rejected":len(duplicate_rows),"exact_duplicate_rejected":len(exact_rows),
