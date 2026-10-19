@@ -69,7 +69,8 @@ without it see "No KVM" below.
 
 ```bash
 export OSWORLD_DIR=/path/to/OSWorld-V2 OSWORLD_IMAGE_DIR=/path/to/images
-bash infra/setup_osworld.sh            # add --with-mcp for the external (MCP) harnesses
+bash infra/setup_osworld.sh            # --with-mcp: external (MCP) harnesses; --with-v2-tasks: OSWorld 2.0
+                                       # task classes (gated, needs HF_TOKEN)
 cp configs/env.example.sh env.sh       # fill in paths and the model endpoint, then:
 source env.sh
 python -m pytest -q                    # unit tests (no Guest)
