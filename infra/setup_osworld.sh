@@ -6,7 +6,10 @@
 #   4. patch the docker provider (infra/patch_osworld.py)
 # Re-running is safe; finished steps are skipped.
 #
-#   OSWORLD_DIR=/path/OSWorld-V2 OSWORLD_IMAGE_DIR=/path/images bash infra/setup_osworld.sh [--with-mcp]
+#   OSWORLD_DIR=/path/OSWorld-V2 OSWORLD_IMAGE_DIR=/path/images bash infra/setup_osworld.sh [--with-mcp] [--with-v2-tasks]
+#
+# --with-v2-tasks: download the gated OSWorld 2.0 task classes (evaluation_examples/task_class/task_*.py) for the
+# pinned release; needs HF_TOKEN with access to the task repo. Classic examples ship with the checkout.
 #
 # OSWORLD_SKIP_FFMPEG=1: do not build OSWorld's bundled-ffmpeg package (its build downloads a static ffmpeg from
 # a single upstream host that is sometimes unreachable). Then put a system ffmpeg/ffprobe on PATH; only
@@ -56,9 +59,12 @@ sync_args=(--frozen --no-dev)
   exit 4
 }
 extras=""
-[[ "${1:-}" == "--with-mcp" ]] && extras="[mcp]"
+[[ " $* " == *" --with-mcp "* ]] && extras="[mcp]"
 uv pip install --python "$OSWORLD_DIR/.venv/bin/python" -e "$ROOT$extras"
 "$OSWORLD_DIR/.venv/bin/python" "$ROOT/infra/patch_osworld.py" "$OSWORLD_DIR"
+if [[ " $* " == *" --with-v2-tasks "* ]]; then
+  (cd "$OSWORLD_DIR" && .venv/bin/python scripts/tools/download_osworld_v2_tasks.py --benchmark-release "$RELEASE")
+fi
 
 echo "OSWorld code:  $OSWORLD_DIR ($actual)"
 echo "Guest image:   $qcow_path"
