@@ -7,6 +7,10 @@
 # Re-running is safe; finished steps are skipped.
 #
 #   OSWORLD_DIR=/path/OSWorld-V2 OSWORLD_IMAGE_DIR=/path/images bash infra/setup_osworld.sh [--with-mcp]
+#
+# OSWORLD_SKIP_FFMPEG=1: do not build OSWorld's bundled-ffmpeg package (its build downloads a static ffmpeg from
+# a single upstream host that is sometimes unreachable). Then put a system ffmpeg/ffprobe on PATH; only
+# recording and video-related evaluators use them.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -45,7 +49,12 @@ if [[ ! -s "$qcow_path" ]]; then
 fi
 [[ -s "$qcow_path" ]] || { echo "no Guest image at $qcow_path" >&2; exit 7; }
 
-(cd "$OSWORLD_DIR" && uv sync --frozen --no-dev)
+sync_args=(--frozen --no-dev)
+[[ "${OSWORLD_SKIP_FFMPEG:-0}" == "1" ]] && sync_args+=(--no-install-package osworld-ffmpeg)
+(cd "$OSWORLD_DIR" && uv sync "${sync_args[@]}") || {
+  echo "uv sync failed; if the osworld-ffmpeg build could not download ffmpeg, rerun with OSWORLD_SKIP_FFMPEG=1" >&2
+  exit 4
+}
 extras=""
 [[ "${1:-}" == "--with-mcp" ]] && extras="[mcp]"
 uv pip install --python "$OSWORLD_DIR/.venv/bin/python" -e "$ROOT$extras"
