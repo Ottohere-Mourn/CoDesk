@@ -6,11 +6,14 @@ class FakeGuest:
 
     def __init__(self, windows, active):
         self.windows, self.active = dict(windows), active
+        self.titles: dict[str, str] = {}
         self.cmds = []
 
     def execute(self, argv, timeout=60):
         cmd = argv[-1]
         self.cmds.append(cmd)
+        if "getwindowname" in cmd:  # titled(): "<id> <title>" lines
+            return {"output": "\n".join(f"{w} {self.titles.get(w, '')}" for w in self.windows)}
         if "search --onlyvisible" in cmd:
             return {"output": "\n".join(self.windows)}
         if "getactivewindow" in cmd:
@@ -51,3 +54,10 @@ def test_selfguard_wraps_actions_and_refocuses():
     assert "windowactivate', '--sync', '10'" in code and "interval=0)" in code
     g.windows["40"] = "1"  # same process as my window: mine
     assert s.mine("40")
+
+
+def test_broker_title_fallback_for_unclaimed_windows():
+    g = FakeGuest({"10": "1", "20": "2"}, active="20")
+    g.titles = {"20": "New Tab - Google Chrome"}
+    b = mediation.DesktopBroker(g, {"agentA": set(), "agentB": {"10"}}, level=2, app_titles={"agentA": "Chrome"})
+    assert b.owner["20"] == {"agentA"} and b.home["agentA"] == "20"

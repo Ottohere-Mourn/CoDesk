@@ -8,7 +8,8 @@
                input it brings its own window back to the front, and types at full speed.
 
 Window ownership comes from setup provenance: the windows that appeared while a task's setup ran belong to that
-task (``combo.setup_tasks`` records them); windows that appear during an agent's own batch become its own.
+task (``combo.setup_tasks`` records them), with the task app's window title as a fallback for windows no setup
+claimed (broker); windows that appear during an agent's own batch become its own.
 External harnesses (codex, pi, command) run unmodified: mediation applies to the ``step`` harness only.
 """
 from __future__ import annotations
@@ -39,6 +40,11 @@ class _Windows:
     def visible(self) -> set[str]:
         return set(self.sh("xdotool search --onlyvisible --name . 2>/dev/null").split())
 
+    def titled(self) -> dict[str, str]:
+        out = self.sh('for w in $(xdotool search --onlyvisible --name . 2>/dev/null); do '
+                      'echo "$w $(xdotool getwindowname $w 2>/dev/null)"; done')
+        return {ln.split(" ", 1)[0]: (ln.split(" ", 1) + [""])[1] for ln in out.splitlines() if ln.strip()}
+
     def active(self) -> str:
         return self.sh("xdotool getactivewindow 2>/dev/null").strip()
 
@@ -60,7 +66,8 @@ class _Windows:
 class DesktopBroker:
     """Shared by all agents of a run (``broker1`` / ``broker2``)."""
 
-    def __init__(self, guest: Guest, setup_windows: dict[str, set[str]], level: int):
+    def __init__(self, guest: Guest, setup_windows: dict[str, set[str]], level: int,
+                 app_titles: dict[str, str] | None = None):
         self.w = _Windows(guest)
         self.level = level
         self.lock = threading.Lock()
@@ -70,6 +77,14 @@ class DesktopBroker:
             self.home[name] = next(iter(sorted(wins)), None)
             for wid in wins:
                 self.owner[wid].add(name)
+        # fallback for windows no setup claimed (e.g. an app that came up after the setup window was recorded):
+        # owned by the agents whose task app the title matches
+        for wid, title in self.w.titled().items() if app_titles else ():
+            if wid not in self.owner:
+                for name, pattern in app_titles.items():
+                    if re.search(pattern, title):
+                        self.owner[wid].add(name)
+                        self.home[name] = self.home.get(name) or wid
         self.stats = collections.Counter()
 
     def bring_home(self, name: str) -> None:

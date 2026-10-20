@@ -273,7 +273,9 @@ def _run_shared(cfg: RunConfig, image: str, cache: Path, tasks: list, result: di
 def _attach_mediation(cfg: RunConfig, guest: Guest, slots: list, result: dict) -> None:
     windows = {s.name: set(w) for s, w in zip(slots, result.get("setup_windows", []))}
     if cfg.mediation.startswith("broker"):
-        broker = mediation.DesktopBroker(guest, windows, level=int(cfg.mediation[-1]))
+        from .analyze import APP_PATTERNS, app_of
+        titles = {s.name: APP_PATTERNS.get(app_of(spec, {}), "$^") for s, spec in zip(slots, cfg.tasks)}
+        broker = mediation.DesktopBroker(guest, windows, level=int(cfg.mediation[-1]), app_titles=titles)
         for s in slots:
             s.ctx.broker = broker
     else:
