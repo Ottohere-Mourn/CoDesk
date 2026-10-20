@@ -17,7 +17,7 @@ export PATH="$OSWORLD_DIR/.venv/bin:$PATH"                               # pytho
 # export OSCOMBO_EVAL_SETTLE_SECONDS=15   # s before evaluation, lets saves finish
 
 # --- model endpoints ---
-# OpenAI-compatible endpoint used by openai-cua / transports / codex harness (any proxy or gateway works):
+# OpenAI-compatible endpoint used by openai-cua / transports / codex and pi harnesses (any proxy or gateway works):
 export OPENAI_BASE_URL=https://api.openai.com/v1
 export OPENAI_API_KEY=...                 # put the real key in env.sh only
 # export OSCOMBO_RATE_LIMIT_RETRIES=60    # short randomized retries on HTTP 429 (shared deployments)

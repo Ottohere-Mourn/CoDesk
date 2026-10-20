@@ -26,12 +26,16 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from . import combo
+from . import combo, mediation
 from .guest import Guest, InfraError
 from .harness import AgentContext, AgentResult, make_harness
 from .osworld import load_task, osworld_dir, task_get
 
 MODES = ("solo", "sequential", "parallel", "isolated", "shadow")
+# instruction suffix of the co-agent prompt ablation ("coagent_hint": true in an agent spec): it only states the fact
+COAGENT_HINT = ("\n\nNote: this computer may be shared. Another agent may be operating the same desktop at the same "
+                "time, working on its own task in its own windows, so windows, focus or content can change because of "
+                "it.")
 
 
 @dataclass
@@ -46,6 +50,7 @@ class RunConfig:
     setup_settle: float = 20.0          # s after setup before the agents start (apps opened by setup settle)
     quiet_notifications: bool = True
     isolated_boot_stagger: float = 30.0
+    mediation: str = "none"             # none | broker1 | broker2 | selfguard (parallel mode, step harness)
     extra: dict[str, Any] = field(default_factory=dict)  # free-form labels copied into result.json
 
     def check(self) -> None:
@@ -57,9 +62,30 @@ class RunConfig:
             raise ValueError("tasks of one run must be distinct (scores are keyed by task id)")
         if len(self.agents) not in (1, len(self.tasks)):
             raise ValueError("give one agent spec per task, or one shared spec")
+        if self.mediation not in mediation.MODES:
+            raise ValueError(f"mediation must be one of {mediation.MODES}")
 
     def agent_spec(self, i: int) -> dict:
         return self.agents[i if len(self.agents) > 1 else 0]
+
+    def variant(self) -> str:
+        """Condition label beyond the mode, used by ``analyze``: mediation and prompt ablations."""
+        parts = [] if self.mediation == "none" else [self.mediation]
+        if any(a.get("coagent_hint") for a in self.agents):
+            parts.append("hint")
+        if any(a.get("instruction_suffix") for a in self.agents):
+            parts.append("suffix")
+        return "+".join(parts)
+
+
+def instruction_for(task: Any, spec: dict) -> str:
+    return (task_get(task, "instruction") + (COAGENT_HINT if spec.get("coagent_hint") else "")
+            + spec.get("instruction_suffix", ""))
+
+
+def endpoint(spec: dict) -> str | None:
+    """Model endpoint an agent talks to (recorded per run; the key is never recorded)."""
+    return spec.get("base_url") or spec.get("options", {}).get("base_url") or os.environ.get("OPENAI_BASE_URL")
 
 
 class AgentSlot:
@@ -70,7 +96,7 @@ class AgentSlot:
         self.task = task
         self.spec = spec
         self.ctx = AgentContext(name=self.name, task_id=str(task_get(task, "id")),
-                                instruction=task_get(task, "instruction"), guest=guest, out=out,
+                                instruction=instruction_for(task, spec), guest=guest, out=out,
                                 max_steps=max_steps, spec=spec)
         self.result = AgentResult()
         self.harness = None
@@ -103,7 +129,8 @@ class AgentSlot:
     def summary(self) -> dict:
         return {"task": self.ctx.task_id, "harness": self.spec.get("harness", "step"),
                 "policy": self.spec.get("policy"), "model": self.spec.get("model"), "status": self.result.status,
-                "error": self.result.error, "steps": self.result.steps, **self.result.extra}
+                "endpoint": endpoint(self.spec), "error": self.result.error, "steps": self.result.steps,
+                **self.result.extra}
 
 
 class ShadowPoller:
@@ -150,7 +177,8 @@ def run(cfg: RunConfig) -> dict:
     image = cfg.image or os.environ.get("OSCOMBO_GUEST_IMAGE")
     cache = Path(cfg.cache_dir or cfg.out / "cache")
     result: dict[str, Any] = {"mode": cfg.mode, "tasks": cfg.tasks, "max_steps": cfg.max_steps,
-                              "agent_specs": cfg.agents, "code": code_version(), **cfg.extra}
+                              "variant": cfg.variant(), "mediation": cfg.mediation, "agent_specs": cfg.agents,
+                              "code": code_version(), **cfg.extra}
     slots: list[AgentSlot] = []
     t0 = time.time()
     try:
@@ -192,13 +220,16 @@ def _run_shared(cfg: RunConfig, image: str, cache: Path, tasks: list, result: di
         result["boot_s"] = round(time.time() - t0, 1)
         if cfg.quiet_notifications:
             guest.quiet_notifications()
-        result.update(combo.setup_tasks(env, tasks))
+        mediate = cfg.mediation != "none" and cfg.mode == "parallel"
+        result.update(combo.setup_tasks(env, tasks, mediation.window_probe(guest) if mediate else None))
         time.sleep(cfg.setup_settle)
         _shot(guest, cfg.out / "start.png")
         result["setup_s"] = round(time.time() - t0 - result["boot_s"], 1)
 
         active = tasks[:1] if cfg.mode == "shadow" else tasks  # shadow: only agent A acts and is evaluated
         slots += [AgentSlot(i, t, cfg.agent_spec(i), guest, cfg.out, cfg.max_steps) for i, t in enumerate(active)]
+        if mediate:
+            _attach_mediation(cfg, guest, slots, result)
         for s in slots:
             s.prepare()
         t_agents = time.time()
@@ -221,6 +252,10 @@ def _run_shared(cfg: RunConfig, image: str, cache: Path, tasks: list, result: di
             for s in slots:
                 s.run()
         result["agents_s"] = round(time.time() - t_agents, 1)
+        if mediate:
+            stats = [s.ctx.broker.stats for s in slots[:1] if s.ctx.broker]
+            stats += [s.ctx.guard.stats for s in slots if s.ctx.guard]
+            result["mediation_stats"] = [dict(x) for x in stats]
         _shot(guest, cfg.out / "end.png")
 
         if any(s.infra_failed for s in slots):  # dead Guest: evaluation would hang; the run gets retried
@@ -233,6 +268,20 @@ def _run_shared(cfg: RunConfig, image: str, cache: Path, tasks: list, result: di
             env.close()
         except Exception:
             pass
+
+
+def _attach_mediation(cfg: RunConfig, guest: Guest, slots: list, result: dict) -> None:
+    windows = {s.name: set(w) for s, w in zip(slots, result.get("setup_windows", []))}
+    if cfg.mediation.startswith("broker"):
+        broker = mediation.DesktopBroker(guest, windows, level=int(cfg.mediation[-1]))
+        for s in slots:
+            s.ctx.broker = broker
+    else:
+        for s in slots:
+            s.ctx.guard = mediation.SelfGuard(guest, windows.get(s.name, set()))
+    unmediated = [s.name for s in slots if s.spec.get("harness", "step") != "step"]
+    if unmediated:  # external harnesses run unmodified
+        result["mediation_skipped"] = unmediated
 
 
 def _run_isolated(cfg: RunConfig, image: str, cache: Path, tasks: list, result: dict, slots: list,

@@ -3,6 +3,7 @@
   python -m oscombo analyze OUT_ROOT [--prefix exp1- ...] [--threshold 0.95] [--app v2/052=chrome ...]
 
 Condition = mode + the task's position in the run (``parallel-1`` = started as agent A, ...); solo is ``solo``.
+Runs with a variant (mediation, prompt ablation) get it in brackets: ``parallel[broker1]-1``, ``parallel[hint]-2``.
 Interference: a keyboard action counts as "into another agent's window" when the focused window right before it
 (recorded per action) matches another task's application and not this agent's own. Runs that failed for
 infrastructure reasons (no screenshot, VM boot, connection errors) are excluded and listed.
@@ -90,21 +91,22 @@ def analyze(rows: list[dict], threshold: float, apps_override: dict[str, str]) -
         apps = [app_of(s, apps_override) for s in specs]
         agents = list((r.get("agents") or {}).values())
         solved = 0
+        mode = r["mode"] + (f"[{r['variant']}]" if r.get("variant") else "")
         for pos, (spec, tid) in enumerate(zip(specs, ids)):
             score = r["scores"].get(tid)
             if score is None:  # not evaluated (shadow partner) or the evaluator itself failed: no observation
                 continue
-            cond = r["mode"] if r["mode"] == "solo" else f"{r['mode']}-{pos + 1}"
+            cond = mode if r["mode"] == "solo" else f"{mode}-{pos + 1}"
             good = score >= threshold
             solved += good
             per[(spec, cond)][0] += good
             per[(spec, cond)][1] += 1
             raw[(spec, cond)].append(score)
             if pos < len(agents):
-                steps[(spec, r["mode"])].append(agents[pos]["steps"])
+                steps[(spec, mode)].append(agents[pos]["steps"])
         if r["mode"] not in ("sequential", "parallel"):
             continue
-        joint[(" + ".join(sorted(specs)), r["mode"])][solved] += 1
+        joint[(" + ".join(sorted(specs)), mode)][solved] += 1
         names = sorted(r.get("agents") or {})
         for rec in x["trace"]:
             if "step" not in rec or rec.get("agent") not in names:
@@ -118,16 +120,16 @@ def analyze(rows: list[dict], threshold: float, apps_override: dict[str, str]) -
                 if not re.search(KEYBOARD, act.get("code", "")):
                     continue
                 w = act.get("window_before") or ""
-                interf[r["mode"]][1] += 1
+                interf[mode][1] += 1
                 if any(re.search(o, w) for o in others) and not re.search(own, w):
-                    interf[r["mode"]][0] += 1
+                    interf[mode][0] += 1
     return {"per": per, "raw": raw, "joint": joint, "steps": steps, "interf": interf}
 
 
 def report(stats: dict) -> None:
     per, raw = stats["per"], stats["raw"]
     order = {"solo": 0, "sequential": 1, "parallel": 2, "isolated": 3, "shadow": 4}
-    conds = sorted({c for _, c in per}, key=lambda c: (order.get(c.split("-")[0], 9), c))
+    conds = sorted({c for _, c in per}, key=lambda c: (order.get(c.split("-")[0].split("[")[0], 9), c))
     tasks = sorted({t for t, _ in per})
     w = max([len(t) for t in tasks] + [20])
     print(f"\nsuccess (ok/n)\n{'task':{w}s}" + "".join(f"{c:>15s}" for c in conds))

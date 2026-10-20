@@ -56,9 +56,13 @@ def agent_specs(a: argparse.Namespace) -> list[dict]:
     return [{k: v for k, v in spec.items() if v is not None}]
 
 
+def with_hint(specs: list[dict], hint: bool) -> list[dict]:
+    return [{**s, "coagent_hint": True} for s in specs] if hint else specs
+
+
 def add_run_args(ap: argparse.ArgumentParser) -> None:
     ap.add_argument("--harness", default=os.environ.get("OSCOMBO_HARNESS", "step"),
-                    help="step | command | codex | module:Class")
+                    help="step | command | codex | pi | module:Class")
     ap.add_argument("--policy", default=os.environ.get("OSCOMBO_POLICY", "openai-cua"),
                     help="step harness only: openai-cua | chat-pyautogui | responses-pyautogui | osworld-agent | "
                          "scripted | module:factory")
@@ -73,6 +77,10 @@ def add_run_args(ap: argparse.ArgumentParser) -> None:
     ap.add_argument("--image", help="Guest qcow2 (default $OSCOMBO_GUEST_IMAGE)")
     ap.add_argument("--setup-settle", type=float, default=20.0)
     ap.add_argument("--label", action="append", default=[], metavar="KEY=VALUE", help="extra field in result.json")
+    ap.add_argument("--mediation", default="none", choices=("none", "broker1", "broker2", "selfguard"),
+                    help="parallel mode, step harness: input broker / + window ownership / per-agent self-guard")
+    ap.add_argument("--coagent-hint", action="store_true",
+                    help="tell every agent the desktop may be shared (prompt ablation)")
 
 
 def cmd_run(a: argparse.Namespace) -> int:
@@ -82,9 +90,10 @@ def cmd_run(a: argparse.Namespace) -> int:
         _set_opt(extra, item)
     # resolve user paths before activate() changes into the OSWorld checkout
     tasks = [str(Path(t).resolve()) if t.endswith((".json", ".py")) else t for t in a.tasks]
-    cfg = runner.RunConfig(mode=a.mode, tasks=tasks, out=Path(a.out).resolve(), agents=agent_specs(a),
-                           max_steps=a.max_steps, image=str(Path(a.image).resolve()) if a.image else None,
-                           setup_settle=a.setup_settle, extra=extra)
+    cfg = runner.RunConfig(mode=a.mode, tasks=tasks, out=Path(a.out).resolve(),
+                           agents=with_hint(agent_specs(a), a.coagent_hint), max_steps=a.max_steps,
+                           image=str(Path(a.image).resolve()) if a.image else None, setup_settle=a.setup_settle,
+                           mediation=a.mediation, extra=extra)
     osworld.activate()
     result = runner.run(cfg)
     print(json.dumps({k: result.get(k) for k in ("mode", "tasks", "scores", "agents", "error")}, indent=1))

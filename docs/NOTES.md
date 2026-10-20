@@ -17,7 +17,14 @@ in code; the notes say where, so they are not undone by accident.
   `setup()`, which cannot be deduplicated — two of them in one Guest collide; pair a Chrome task with a non-Chrome
   one, or expect one shared Chrome.
 - **Evaluators only check their own target**: one agent can "succeed" while it corrupted the other's work. Look
-  at joint outcomes and the interference metric in `analyze`, not only per-task success.
+  at joint outcomes and the interference metric in `analyze`, not only per-task success. Checked on real runs:
+  the Calc multiply task checks only cell E3 and the Calc sum task only Sheet2 (OSWorld-V2 dropped the classic
+  `preserve_cells` check of Sheet1), so text typed into those workbooks by the other agent (URLs, shell
+  commands) still passes; whole-file checks (Calc dedup, VS Code replace) catch it.
+- **"Done" without effect**: an agent can run its edit in the other agent's window (e.g. Ctrl+H in Calc instead
+  of VS Code) and report success; the file is untouched and the evaluator correctly scores 0.
+- **Postconfig isolation**: each task's save steps run in their own setup call (with retries); in one call, a
+  failing step or a not-ready Guest skipped the other task's save as well.
 - **Order effects**: OSWorld 2.0 tasks evaluate inside their own `evaluate()`, so their postconfig cannot be
   split; run both task orders (`matrix` does this) and compare positions.
 - **Barrier start**: in `parallel`, agents are released by one barrier after all are prepared, so neither gets a

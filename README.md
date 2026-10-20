@@ -6,8 +6,8 @@ answers: what happens to GUI agents when they share one desktop (focus theft, ke
 agent's window, one task's setup/evaluation disturbing the other), compared with running the same tasks alone.
 
 Models and agent harnesses are pluggable: anything that implements OSWorld's `predict(instruction, obs)` agent
-interface plugs into the built-in step loop, and whole external agent programs (e.g. the codex CLI) can drive
-the Guest through an MCP computer-use server.
+interface plugs into the built-in step loop, and whole external agent programs (the codex and pi CLIs, or any
+other program) drive the Guest through the same set of desktop tools.
 
 ## Run modes
 
@@ -39,14 +39,16 @@ oscombo/
   harness/          HOW an agent drives the Guest
     base.py           Harness interface (prepare / run -> AgentResult)
     step_loop.py      "step": screenshot -> policy.predict -> execute pyautogui (official OSWorld loop)
-    external.py       "command": any external program; "codex": codex CLI + desktop MCP tools
+    external.py       "command": any program; "codex": codex CLI + MCP tools; "pi": pi agent + same tools
+    pi_desktop.ts     pi extension exposing the desktop tools
   policies/         WHICH model decides the next action inside the step loop
     base.py           Policy interface (= OSWorld mm_agents interface), action normalization
     openai_cua.py     "openai-cua": official GPTResponseAPIAgent (native computer tool), hardened transport
     osworld_agents.py "chat-pyautogui" / "responses-pyautogui" / "osworld-agent" (any mm_agents class)
     transports.py     OpenAI-compatible /chat/completions and /responses transports (replace call_llm)
     scripted.py       "scripted": fixed actions, no model (smoke tests)
-  mcp_server.py     computer-use MCP server over the Guest HTTP API (for external harnesses)
+  desktop_tools.py  desktop tools over the Guest HTTP API: MCP server (codex) or one call per process (pi)
+  mediation.py      optional harness-level fixes for shared desktops: input broker, window ownership, self-guard
   analyze.py        success by condition/position, partial credit, joint outcomes, cross-window interference
   cli.py            python -m oscombo {run, matrix, queue, analyze, cleanup}
 infra/
@@ -133,15 +135,21 @@ OSWorld action dicts). Set `needs_a11y = True` on the policy to also receive `ac
 | `--harness` | what drives the Guest |
 |---|---|
 | `step` (default) | the step loop around a policy (above) |
-| `codex` | codex CLI with only the desktop MCP tools (no shell, read-only sandbox); `--model`, `--effort`, `--opt base_url=...` |
+| `codex` | unmodified codex CLI with only the desktop tools over MCP (no shell, read-only sandbox); `--model`, `--effort`, `--opt base_url=...`, `--opt node_bin=...` |
+| `pi` | unmodified pi agent with only the desktop tools as an extension (no built-in tools); same options |
 | `command` | any program: `--opt command='["my-agent", "--url", "{guest_url}", "--task", "{instruction_file}"]'` |
 | `pkg.module:Class` | a `oscombo.harness.Harness` subclass: `prepare(ctx)`, `run(ctx) -> AgentResult` |
 
 External programs get `OSCOMBO_GUEST_URL`, `OSCOMBO_INSTRUCTION`, `OSCOMBO_INSTRUCTION_FILE`,
 `OSCOMBO_AGENT_DIR`, `OSCOMBO_ACTION_LOG`, `OSCOMBO_MAX_STEPS`, `OSCOMBO_MODEL`, `OSCOMBO_PASSWORD`. They can
-use `python -m oscombo.mcp_server` (stdio MCP: screenshot, click, drag, move, type_text, key, scroll, wait,
-declare_infeasible), which writes the action log the run trace is built from and enforces the step budget.
-Exit code 0 = done, `<agent_dir>/INFEASIBLE` = the agent declared the task infeasible.
+use `python -m oscombo.desktop_tools --mcp` (stdio MCP) or `python -m oscombo.desktop_tools <tool> '<json>'`
+(screenshot, click, drag, move, type_text, key, scroll, wait, declare_infeasible): every call returns a 1280x720
+screenshot, counts against the budget (`--max-steps`, screenshots included) and is written to the action log the
+run trace is built from. Exit code 0 = done, budget used up = max_steps, `<agent_dir>/INFEASIBLE` = the agent
+declared the task infeasible.
+
+Note: these desktop tools are ordinary function tools; `openai-cua` uses the model's native `computer` tool on
+the full 1920x1080 screen, so step-harness and external-harness results are not directly comparable.
 
 Different agents in one run can use different models and harnesses:
 
@@ -149,6 +157,15 @@ Different agents in one run can use different models and harnesses:
 python -m oscombo run --mode parallel --out runs/mixed --tasks chrome/<id> libreoffice_calc/<id> \
     --agents '[{"policy": "openai-cua", "model": "model-a"}, {"harness": "codex", "model": "model-b"}]'
 ```
+
+## Harness-level mitigations and prompt ablations
+
+`--mediation` (parallel mode, `step` harness) adds what a product runtime could do about input/focus contention:
+`broker1` (one agent at a time observes / acts, each on its own window), `broker2` (+ keyboard input into another
+agent's window is refused and the agent told), `selfguard` (each agent refocuses only its own windows). Window
+ownership comes from the windows each task's setup opened (`setup_windows` in result.json). `--coagent-hint`
+appends "this computer may be shared ..." to every instruction. Both are recorded as `variant` and reported as
+separate conditions by `analyze` (e.g. `parallel[broker2]-1`).
 
 ## Tests
 

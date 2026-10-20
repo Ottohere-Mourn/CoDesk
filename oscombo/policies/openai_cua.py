@@ -5,12 +5,13 @@ computer-action -> pyautogui conversion are the official ones. Endpoint and key 
 environment (``OPENAI_BASE_URL`` / ``OPENAI_API_KEY``) as in the official agent; an Azure OpenAI
 ``.../openai/v1`` endpoint works too.
 
-Two transport fixes are applied (prompts, actions and parsing are untouched):
+Transport-level changes only (prompts, actions and parsing are untouched):
 
 1. After a text-only turn (no ``computer_call``) the official follow-up sends an ``input_image`` together with
    ``previous_response_id``, which the computer tool rejects (HTTP 400 "Computer tool only allows input image
    without previous response"). Only the text part is sent; the model then asks for a screenshot itself.
 2. Rate limits (429) and transient upstream errors are retried, since several agents share one deployment.
+3. ``harness_notice`` (e.g. a mediation refusal) is appended to the next follow-up as text.
 
 Extra constructor kwargs: ``options.agent_kwargs``. Known endpoint limit: some deployments reject a chained
 request with more than 50 images, so keep ``max_steps`` <= 48 for this policy.
@@ -36,6 +37,9 @@ def harden(agent: Any) -> Any:
             for item in items:
                 if item.get("role") == "user" and isinstance(item.get("content"), list):
                     item["content"] = [c for c in item["content"] if c.get("type") != "input_image"]
+        if agent.harness_notice:  # e.g. the desktop broker refused an action; text only, the computer tool accepts it
+            items.append({"role": "user", "content": [{"type": "input_text", "text": agent.harness_notice}]})
+            agent.harness_notice = None
         return items
 
     create = agent._create_response
@@ -61,6 +65,7 @@ def harden(agent: Any) -> Any:
                 time.sleep(delay)
                 delay = min(delay * 2, 240.0)
 
+    agent.harness_notice = None
     agent._build_followup_input = followup
     agent._create_response = create_with_backoff
     return agent

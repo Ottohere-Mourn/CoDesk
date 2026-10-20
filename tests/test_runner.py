@@ -103,3 +103,15 @@ def test_config_checks():
         runner.RunConfig("parallel", ["a", "a"], None, [{}]).check()
     with pytest.raises(ValueError):
         runner.RunConfig("parallel", ["a", "b", "c"], None, [{}, {}]).check()
+
+
+@pytest.mark.parametrize("med", ["broker2", "selfguard"])
+def test_parallel_with_mediation_and_hint(fake_osworld, tmp_path, monkeypatch, med):
+    monkeypatch.setattr("oscombo.mediation.time.sleep", lambda s: None)
+    cfg = config(tmp_path, "parallel", ["chrome/a", "calc/b"], mediation=med)
+    cfg.agents = [{**cfg.agents[0], "coagent_hint": True}]
+    r = runner.run(cfg)
+    assert r.get("error") is None, r.get("traceback")
+    assert r["variant"] == f"{med}+hint" and len(r["setup_windows"]) == 2
+    assert {v["status"] for v in r["agents"].values()} == {"done"}
+    assert "mediation_stats" in r

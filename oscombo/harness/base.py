@@ -32,6 +32,8 @@ class AgentContext:
     spec: dict                # this agent's spec: harness, policy, model, options, ...
     t0: float = 0.0           # agent-phase start; trace times are relative to it
     stop: threading.Event = field(default_factory=threading.Event)  # set by the runner to abort
+    broker: Any = None        # shared mediation.DesktopBroker (step harness only)
+    guard: Any = None         # this agent's mediation.SelfGuard (step harness only)
 
 
 @dataclass

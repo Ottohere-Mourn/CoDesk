@@ -1,8 +1,8 @@
 """Harness registry. ``make_harness(spec)`` builds the harness named by ``spec["harness"]`` (default "step").
 
 Built-in: ``step`` (official OSWorld-style loop around a policy, see ``oscombo.policies``), ``command`` (any
-external program), ``codex`` (codex CLI + desktop MCP tools). Out-of-tree: ``"harness": "pkg.module:Class"``
-with a ``Harness`` subclass (see ``base.py``).
+external program), ``codex`` (codex CLI + desktop MCP tools), ``pi`` (pi agent + the same tools as an
+extension). Out-of-tree: ``"harness": "pkg.module:Class"`` with a ``Harness`` subclass (see ``base.py``).
 """
 from __future__ import annotations
 
@@ -14,6 +14,7 @@ HARNESSES: dict[str, str] = {
     "step": "oscombo.harness.step_loop:StepLoopHarness",
     "command": "oscombo.harness.external:CommandHarness",
     "codex": "oscombo.harness.external:CodexHarness",
+    "pi": "oscombo.harness.external:PiHarness",
 }
 
 
