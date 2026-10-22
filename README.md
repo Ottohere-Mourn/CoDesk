@@ -171,3 +171,11 @@ separate conditions by `analyze` (e.g. `parallel[broker2]-1`).
 
 `python -m pytest -q` runs the pipeline (all modes, setup dedup, decoupled evaluation, infra handling,
 harnesses, transports, analysis) against an in-memory DesktopEnv.
+
+## Collaborative cases
+
+Seven standalone collaborative GUI cases are maintained under [`oscombo/collab/`](oscombo/collab/CASE_REGISTRY.md):
+Data-to-Deck, Ticket-to-Resolution, Build-and-Verify, Timeline-and-Assets, Model-and-Review,
+Spreadsheet Handoff, and Workspace Assembly. The registry lists each case's commands, dependencies,
+evidence level, and remaining Guest/agent validation. These cases reuse shared protocol libraries but are
+separate from the official OSWorld Combo task definitions and runner semantics.

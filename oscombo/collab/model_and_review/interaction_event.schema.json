@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "CDD-MAR-001 application internal state event",
+  "type": "object",
+  "required": ["schema_version", "case_id", "run_id", "seq", "actor_id", "event_type", "timestamp_monotonic_ns", "capture_method", "atomic_with_input", "blender_state"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "case_id": {"const": "CDD-MAR-001"},
+    "run_id": {"type": "string"},
+    "seq": {"type": "integer", "minimum": 1},
+    "actor_id": {"enum": ["A", "B", "S"]},
+    "event_type": {"enum": ["observation", "action_start", "action_end", "save", "message", "recovery"]},
+    "timestamp_monotonic_ns": {"type": "integer", "minimum": 0},
+    "action_id": {"type": ["string", "null"]},
+    "action_label": {"type": ["string", "null"]},
+    "capture_method": {"enum": ["read_only_bpy_context_sample", "caller_supplied"]},
+    "atomic_with_input": {"const": false},
+    "blender_state": {
+      "type": "object",
+      "required": ["active_object", "selected_objects", "mode", "scene_camera", "active_workspace", "active_screen", "active_area_type", "viewports"],
+      "properties": {
+        "active_object": {"type": ["string", "null"]},
+        "selected_objects": {"type": "array", "items": {"type": "string"}},
+        "mode": {"type": "string"},
+        "scene_camera": {"type": ["string", "null"]},
+        "active_workspace": {"type": ["string", "null"]},
+        "active_screen": {"type": ["string", "null"]},
+        "active_area_type": {"type": ["string", "null"]},
+        "viewports": {"type": "array"}
+      }
+    }
+  },
+  "additionalProperties": true
+}

@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://codesk.local/schema/cdd-ttr-001-instance-0.1.0.json",
+  "title": "CDD-TTR-001 deterministic episode instance",
+  "type": "object",
+  "required": ["case_id", "case_version", "run_id", "fixture_seed", "database", "manifest", "condition", "actors", "backend", "ownership"],
+  "properties": {
+    "case_id": {"const": "CDD-TTR-001"},
+    "case_version": {"const": "0.1.0"},
+    "run_id": {"type": "string", "minLength": 1},
+    "fixture_seed": {"const": 0},
+    "database": {"type": "string"},
+    "manifest": {"type": "string", "description": "Hidden baseline snapshot; never mounted or exposed to actors."},
+    "condition": {"enum": ["single_agent", "collaborative_isolated", "collaborative_shared"]},
+    "actors": {"type": "array", "items": {"enum": ["A", "B", "S"]}},
+    "backend": {
+      "type": "object",
+      "required": ["topology", "fixture_sha256", "shared_between_actor_desktops"],
+      "properties": {
+        "topology": {"const": "one_episode_scoped_service_and_database"},
+        "fixture_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "shared_between_actor_desktops": {"const": true}
+      },
+      "additionalProperties": false
+    },
+    "ownership": {"type": "string"},
+    "budget": {"type": "object"},
+    "app_url": {"type": ["string", "null"]}
+  },
+  "additionalProperties": false
+}

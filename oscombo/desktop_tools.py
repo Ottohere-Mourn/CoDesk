@@ -19,8 +19,11 @@ import base64
 import fcntl
 import io
 import json
+import math
+import numbers
 import os
 import sys
+import threading
 import time
 from contextlib import contextmanager
 
@@ -31,20 +34,27 @@ URL = os.environ.get("OSCOMBO_GUEST_URL", "http://localhost:5000").rstrip("/")
 LOG = os.environ.get("OSCOMBO_ACTION_LOG")
 BUDGET = int(os.environ.get("OSCOMBO_MAX_STEPS") or "45")
 SETTLE = float(os.environ.get("OSCOMBO_MCP_SETTLE", "1.0"))
+TOOL_RESULT_COOLDOWN = max(0.0, float(os.environ.get("OSCOMBO_MCP_TURN_COOLDOWN_SEC", "0")))
+_cooldown_lock = threading.Lock()
+_last_tool_result_at: float | None = None
 MODEL_W, MODEL_H = 1280, 720
 PREFIX = "import pyautogui; import time; pyautogui.FAILSAFE = False; {cmd}"
 KEYMAP = {"return": "enter", "escape": "esc", "control": "ctrl", "super": "win", "page_up": "pageup",
           "page_down": "pagedown", "prior": "pageup", "next": "pagedown", "kp_enter": "enter", "alt_l": "alt",
           "control_l": "ctrl", "shift_l": "shift"}
 OUT_OF_BUDGET = f"Action budget used up ({BUDGET} tool calls). Stop now and reply with one line saying what you did."
+COORDINATE_CONTRACT = ("Coordinates use pixels in the most recently returned 1280x720 screenshot, "
+                       "origin at top-left; valid x is 0..1279 and y is 0..719. "
+                       "Out-of-range coordinates are rejected without execution or clamping, "
+                       "and the rejection is returned with a fresh screenshot.")
 TOOLS = {
-    "screenshot": "Take a screenshot of the whole desktop (1280x720).",
-    "click": "Move the mouse to (x, y) and click. button: left|right|middle. clicks: 1 or 2 (double click).",
-    "drag": "Press the left button at (x1, y1), drag to (x2, y2), release.",
-    "move": "Move the mouse to (x, y) without clicking (hover).",
+    "screenshot": "Take a screenshot of the whole desktop, resized to 1280x720 for the model.",
+    "click": f"{COORDINATE_CONTRACT} Move the mouse to (x, y) and click. button: left|right|middle. clicks: 1 or 2 (double click).",
+    "drag": f"{COORDINATE_CONTRACT} Press the left button at (x1, y1), drag to (x2, y2), release.",
+    "move": f"{COORDINATE_CONTRACT} Move the mouse to (x, y) without clicking (hover).",
     "type_text": "Type text at the current keyboard focus. Use key() for Enter/Tab/shortcuts.",
     "key": "Press a key or chord, e.g. 'Return', 'Tab', 'ctrl+s', 'alt+F4'. Several presses separated by spaces.",
-    "scroll": "Scroll at (x, y). direction: up|down|left|right. amount: number of wheel notches.",
+    "scroll": f"{COORDINATE_CONTRACT} Scroll at (x, y). direction: up|down|left|right. amount: number of wheel notches.",
     "wait": "Wait for the UI to update (seconds, max 30), then take a screenshot.",
     "declare_infeasible": "Call this (instead of acting) if you are confident the task cannot be done as specified.",
 }
@@ -56,11 +66,16 @@ def _state():
     several tool calls at once (pi does) and each runs in its own process."""
     path = os.path.join(os.path.dirname(LOG), "tool_state.json") if LOG else None
     if not path:
-        yield {"calls": 0, "scale": [1.5, 1.5]}
+        yield {"calls": 0, "scale": [1.5, 1.5], "guest_screenshot_size": None,
+               "model_screenshot_size": [MODEL_W, MODEL_H]}
         return
     with open(path + ".lock", "a") as lock:
         fcntl.flock(lock, fcntl.LOCK_EX)
-        st = json.load(open(path)) if os.path.exists(path) else {"calls": 0, "scale": [1.5, 1.5]}
+        st = json.load(open(path)) if os.path.exists(path) else {
+            "calls": 0, "scale": [1.5, 1.5], "guest_screenshot_size": None,
+            "model_screenshot_size": [MODEL_W, MODEL_H]}
+        st.setdefault("guest_screenshot_size", None)
+        st.setdefault("model_screenshot_size", [MODEL_W, MODEL_H])
         try:
             yield st
         finally:
@@ -87,7 +102,7 @@ def _py(code: str) -> None:
         raise RuntimeError(f"Guest command failed: {out.get('error') or out.get('output')}")
 
 
-def _shot() -> tuple[bytes, list[float]]:
+def _shot() -> tuple[bytes, list[float], list[int]]:
     time.sleep(SETTLE)
     r = None
     for _ in range(5):
@@ -100,7 +115,62 @@ def _shot() -> tuple[bytes, list[float]]:
     scale = [im.width / MODEL_W, im.height / MODEL_H]
     buf = io.BytesIO()
     im.resize((MODEL_W, MODEL_H), PILImage.LANCZOS).save(buf, "PNG")
-    return buf.getvalue(), scale
+    return buf.getvalue(), scale, [im.width, im.height]
+
+
+def _coordinate_audit(name: str, args: dict, scale: list[float],
+                      guest_size: list[int] | None) -> dict | None:
+    """Validate screenshot-space coordinates without changing model output."""
+    keys = {"click": ("x", "y"), "move": ("x", "y"), "scroll": ("x", "y"),
+            "drag": ("x1", "y1", "x2", "y2")}.get(name)
+    if keys is None:
+        return None
+    raw = {key: args.get(key) for key in keys}
+    audit = {"status": "rejected", "raw_model_coordinates": raw,
+             "model_screenshot_size": [MODEL_W, MODEL_H],
+             "guest_screenshot_size": guest_size, "scale": scale,
+             "mapped_guest_coordinates": None, "reason": None}
+    if guest_size is None:
+        audit["reason"] = "no_observation_yet"
+        return audit
+    try:
+        values = {key: float(args[key]) for key in keys}
+    except (KeyError, TypeError, ValueError, OverflowError):
+        audit["reason"] = "coordinate_missing_or_non_numeric"
+        return audit
+    if any(not math.isfinite(value) for value in values.values()):
+        audit["reason"] = "coordinate_not_finite"
+        return audit
+    if any(isinstance(args[key], bool) or not isinstance(args[key], numbers.Real) for key in keys):
+        audit["reason"] = "coordinate_must_be_numeric"
+        return audit
+    for key, value in values.items():
+        axis = "x" if key.startswith("x") else "y"
+        upper = MODEL_W if axis == "x" else MODEL_H
+        if value < 0 or value >= upper:
+            audit["reason"] = f"{key}_outside_model_screenshot_[0,{upper})"
+            audit["mapped_guest_coordinates"] = {
+                k: [int(round(values[pair[0]] * scale[0])),
+                    int(round(values[pair[1]] * scale[1]))]
+                for k, pair in (("start", ("x1", "y1")), ("end", ("x2", "y2")))
+                if pair[0] in values
+            } if name == "drag" else [int(round(values["x"] * scale[0])),
+                                      int(round(values["y"] * scale[1]))]
+            return audit
+    if name == "drag":
+        mapped = {"start": [int(round(values["x1"] * scale[0])), int(round(values["y1"] * scale[1]))],
+                  "end": [int(round(values["x2"] * scale[0])), int(round(values["y2"] * scale[1]))]}
+        mapped_points = mapped.values()
+    else:
+        mapped = [int(round(values["x"] * scale[0])), int(round(values["y"] * scale[1]))]
+        mapped_points = (mapped,)
+    audit["mapped_guest_coordinates"] = mapped
+    if any(x < 0 or x >= guest_size[0] or y < 0 or y >= guest_size[1]
+           for x, y in mapped_points):
+        audit["reason"] = "mapped_coordinate_outside_guest_screenshot"
+        return audit
+    audit["status"] = "accepted"
+    return audit
 
 
 def _k(name: str) -> str:
@@ -145,6 +215,21 @@ def _log(rec: dict) -> None:
             f.write(json.dumps(rec) + "\n")
 
 
+def _wait_before_tool_result() -> float:
+    """Throttle successive model turns by delaying tool results, without changing actions."""
+    global _last_tool_result_at
+    if TOOL_RESULT_COOLDOWN <= 0:
+        return 0.0
+    with _cooldown_lock:
+        now = time.monotonic()
+        delay = TOOL_RESULT_COOLDOWN if _last_tool_result_at is None else max(
+            0.0, TOOL_RESULT_COOLDOWN - (now - _last_tool_result_at))
+        if delay:
+            time.sleep(delay)
+        _last_tool_result_at = time.monotonic()
+        return round(delay, 3)
+
+
 def run_tool(name: str, args: dict) -> tuple[str, bytes | None]:
     """Execute one tool call; returns (text, png bytes or None)."""
     with _state() as st:  # reserve a call number (and read the latest scale) atomically
@@ -152,29 +237,74 @@ def run_tool(name: str, args: dict) -> tuple[str, bytes | None]:
             return OUT_OF_BUDGET, None
         st["calls"] += 1
         n, scale = st["calls"], st["scale"]
+        input_guest_size = st.get("guest_screenshot_size")
     if name == "declare_infeasible":
         if LOG:
             with open(os.path.join(os.path.dirname(LOG), "INFEASIBLE"), "w") as f:
                 f.write(str(args.get("reason", "")))
         _log({"t": time.time(), "n": n, "tool": name, "args": args, "window_before": None, "code": None})
         return "Recorded the task as infeasible. Stop now.", None
+    audit = _coordinate_audit(name, args, scale, input_guest_size)
+    if audit is not None and audit["status"] == "rejected":
+        reason = audit["reason"]
+        mapped = audit.get("mapped_guest_coordinates")
+        message = (f"REJECTED: no desktop action was executed. {reason}; raw model coordinates="
+                   f"{audit['raw_model_coordinates']}, mapped Guest coordinates={mapped}, "
+                   f"model screenshot={audit['model_screenshot_size']}, "
+                   f"source Guest screenshot={input_guest_size}, scale={scale}. "
+                   f"Coordinates are screenshot pixels (x 0..{MODEL_W-1}, y 0..{MODEL_H-1}); "
+                   "re-observe and choose a valid coordinate. No coordinate was clamped or corrected.")
+        before = _active_window()
+        png, new_scale, guest_size = _shot()
+        _store_observation(new_scale, guest_size)
+        _save_screenshot(n, png)
+        cooldown = _wait_before_tool_result()
+        _log({"t": time.time(), "n": n, "tool": name, "args": args,
+              "window_before": before, "code": None, "executed": False,
+              "coordinate_audit": audit,
+              "tool_result_cooldown_s": cooldown,
+              "returned_observation": {"model_screenshot_size": [MODEL_W, MODEL_H],
+                                       "guest_screenshot_size": guest_size,
+                                       "scale": new_scale},
+              "result": message})
+        return message, png
     code = _code(name, args, scale)
     if name == "wait":
         time.sleep(min(float(args.get("seconds", 2.0)), 30))
     before = _active_window() if code else None
     if code:
         _py(code)
-    _log({"t": time.time(), "n": n, "tool": name, "args": args, "window_before": before, "code": code})
-    png, scale = _shot()
+    png, new_scale, guest_size = _shot()
+    _store_observation(new_scale, guest_size)
+    _save_screenshot(n, png)
+    cooldown = _wait_before_tool_result()
+    _log({"t": time.time(), "n": n, "tool": name, "args": args,
+          "window_before": before, "code": code, "executed": bool(code),
+          "tool_result_cooldown_s": cooldown,
+          "coordinate_audit": audit,
+          "input_observation": {"model_screenshot_size": [MODEL_W, MODEL_H],
+                                "guest_screenshot_size": input_guest_size,
+                                "scale": scale},
+          "returned_observation": {"model_screenshot_size": [MODEL_W, MODEL_H],
+                                   "guest_screenshot_size": guest_size,
+                                   "scale": new_scale}})
+    left = BUDGET - n
+    return (f"OK. {left} tool calls left." if left <= 5 else "OK."), png
+
+
+def _store_observation(scale: list[float], guest_size: list[int]) -> None:
     with _state() as st:
         st["scale"] = scale
-    if LOG:  # what the model saw, for trajectory viewers
+        st["guest_screenshot_size"] = guest_size
+        st["model_screenshot_size"] = [MODEL_W, MODEL_H]
+
+
+def _save_screenshot(n: int, png: bytes) -> None:
+    if LOG:
         shots = os.path.join(os.path.dirname(LOG), "shots")
         os.makedirs(shots, exist_ok=True)
         with open(os.path.join(shots, f"{n:03d}.png"), "wb") as f:
             f.write(png)
-    left = BUDGET - n
-    return (f"OK. {left} tool calls left." if left <= 5 else "OK."), png
 
 
 def mcp_main() -> None:
