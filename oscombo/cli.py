@@ -5,6 +5,7 @@ matrix   expand a combo file into a run list (modes x task orders x repeats, plu
 queue    a list of runs with a concurrency cap, one infra-retry pass, optional tarball
 analyze  aggregate results (see oscombo/analyze.py)
 cleanup  remove the Guest containers of a run that was killed (docker label ``oscombo.run``)
+tasks    paraGUI task pairs: list them, install them into the OSWorld checkout and build their assets
 
 Agent spec (model + harness) for ``run``: either flags shared by all agents (``--harness``, ``--policy``,
 ``--model``, ``--effort``, ``--opt key=value``), or ``--agents`` with a json list (inline or a file) holding one
@@ -79,6 +80,7 @@ def add_run_args(ap: argparse.ArgumentParser) -> None:
     ap.add_argument("--label", action="append", default=[], metavar="KEY=VALUE", help="extra field in result.json")
     ap.add_argument("--mediation", default="none", choices=("none", "broker1", "broker2", "selfguard"),
                     help="parallel mode, step harness: input broker / + window ownership / per-agent self-guard")
+    ap.add_argument("--defense", help="per-harness defense: noop | v1 | pkg.module (see oscombo/defense)")
     ap.add_argument("--coagent-hint", action="store_true",
                     help="tell every agent the desktop may be shared (prompt ablation)")
 
@@ -93,7 +95,7 @@ def cmd_run(a: argparse.Namespace) -> int:
     cfg = runner.RunConfig(mode=a.mode, tasks=tasks, out=Path(a.out).resolve(),
                            agents=with_hint(agent_specs(a), a.coagent_hint), max_steps=a.max_steps,
                            image=str(Path(a.image).resolve()) if a.image else None, setup_settle=a.setup_settle,
-                           mediation=a.mediation, extra=extra)
+                           mediation=a.mediation, defense=a.defense, extra=extra)
     osworld.activate()
     result = runner.run(cfg)
     print(json.dumps({k: result.get(k) for k in ("mode", "tasks", "scores", "agents", "error")}, indent=1))
@@ -246,6 +248,7 @@ def main(argv: list[str] | None = None) -> int:
     q.epilog = "Arguments after `--` are passed to every `run` (model, harness, max steps, ...)."
 
     sub.add_parser("analyze", help="aggregate results (see `oscombo analyze --help`)")
+    sub.add_parser("tasks", help="paraGUI task pairs: list / install (see `oscombo tasks --help`)")
 
     c = sub.add_parser("cleanup", help="remove the Guest containers of a killed run")
     c.add_argument("run_name")
@@ -254,6 +257,9 @@ def main(argv: list[str] | None = None) -> int:
     if argv[:1] == ["analyze"]:
         from .analyze import main as analyze_main
         return analyze_main(argv[1:])
+    if argv[:1] == ["tasks"]:
+        from .tasks import main as tasks_main
+        return tasks_main(argv[1:])
     run_args = argv[argv.index("--") + 1:] if "--" in argv else []
     a = ap.parse_args(argv[:argv.index("--")] if "--" in argv else argv)
     a.run_args = run_args

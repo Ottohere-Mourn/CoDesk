@@ -60,5 +60,25 @@ class Guest:
         return self.env.controller.execute_python_command(code)
 
     def quiet_notifications(self) -> None:
-        """GNOME notification banners (e.g. "Low Disk Space") can cover click targets; turn them off."""
+        """GNOME notification banners (e.g. "Low Disk Space") can cover click targets; turn them off. Long runs
+        also must not blank or lock the screen."""
         self.execute(["gsettings", "set", "org.gnome.desktop.notifications", "show-banners", "false"])
+        self.execute(["bash", "-c", "gsettings set org.gnome.desktop.session idle-delay 0; "
+                                    "gsettings set org.gnome.desktop.screensaver lock-enabled false"])
+
+    def wait_desktop(self, patience: float | None = None) -> bytes:
+        """Under heavy host load the screen sometimes stays black after setup (a black 1080p PNG is ~6.5 KB) and
+        agents starting on it give up within a few steps: nudge the pointer until the desktop is drawn, else INFRA."""
+        patience = float(os.environ.get("OSCOMBO_DESKTOP_PATIENCE", "240")) if patience is None else patience
+        t0 = time.time()
+        while True:
+            shot = self.env.controller.get_screenshot() or b""
+            if len(shot) > 20000:
+                return shot
+            if time.time() - t0 > patience:
+                raise InfraError(f"Guest screen still black {patience:.0f} s after setup")
+            try:
+                self.execute(["bash", "-c", "DISPLAY=:0 xdotool mousemove_relative -- 1 1 mousemove_relative -- -1 -1"])
+            except Exception:
+                pass
+            time.sleep(15)

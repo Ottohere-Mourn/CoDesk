@@ -26,7 +26,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from . import combo, mediation
+from . import combo, defense as defenses, mediation
 from .guest import Guest, InfraError
 from .harness import AgentContext, AgentResult, make_harness
 from .osworld import load_task, osworld_dir, task_get
@@ -51,6 +51,7 @@ class RunConfig:
     quiet_notifications: bool = True
     isolated_boot_stagger: float = 30.0
     mediation: str = "none"             # none | broker1 | broker2 | selfguard (parallel mode, step harness)
+    defense: str | None = None          # per-harness defense (oscombo/defense), every shared-Guest mode
     extra: dict[str, Any] = field(default_factory=dict)  # free-form labels copied into result.json
 
     def check(self) -> None:
@@ -64,6 +65,8 @@ class RunConfig:
             raise ValueError("give one agent spec per task, or one shared spec")
         if self.mediation not in mediation.MODES:
             raise ValueError(f"mediation must be one of {mediation.MODES}")
+        if self.defense and (self.mediation != "none" or self.mode == "isolated"):
+            raise ValueError("a defense runs alone (no --mediation) and in shared-Guest modes only")
 
     def agent_spec(self, i: int) -> dict:
         return self.agents[i if len(self.agents) > 1 else 0]
@@ -71,6 +74,8 @@ class RunConfig:
     def variant(self) -> str:
         """Condition label beyond the mode, used by ``analyze``: mediation and prompt ablations."""
         parts = [] if self.mediation == "none" else [self.mediation]
+        if self.defense:
+            parts.append(f"defense:{self.defense}")
         if any(a.get("coagent_hint") for a in self.agents):
             parts.append("hint")
         if any(a.get("instruction_suffix") for a in self.agents):
@@ -221,15 +226,18 @@ def _run_shared(cfg: RunConfig, image: str, cache: Path, tasks: list, result: di
         if cfg.quiet_notifications:
             guest.quiet_notifications()
         mediate = cfg.mediation != "none" and cfg.mode == "parallel"
-        result.update(combo.setup_tasks(env, tasks, mediation.window_probe(guest) if mediate else None))
+        track = mediate or bool(cfg.defense)
+        result.update(combo.setup_tasks(env, tasks, mediation.window_probe(guest) if track else None))
         time.sleep(cfg.setup_settle)
-        _shot(guest, cfg.out / "start.png")
+        (cfg.out / "start.png").write_bytes(guest.wait_desktop())
         result["setup_s"] = round(time.time() - t0 - result["boot_s"], 1)
 
         active = tasks[:1] if cfg.mode == "shadow" else tasks  # shadow: only agent A acts and is evaluated
         slots += [AgentSlot(i, t, cfg.agent_spec(i), guest, cfg.out, cfg.max_steps) for i, t in enumerate(active)]
         if mediate:
             _attach_mediation(cfg, guest, slots, result)
+        if cfg.defense:
+            _attach_defense(cfg, guest, slots, result)
         for s in slots:
             s.prepare()
         t_agents = time.time()
@@ -256,6 +264,8 @@ def _run_shared(cfg: RunConfig, image: str, cache: Path, tasks: list, result: di
             stats = [s.ctx.broker.stats for s in slots[:1] if s.ctx.broker]
             stats += [s.ctx.guard.stats for s in slots if s.ctx.guard]
             result["mediation_stats"] = [dict(x) for x in stats]
+        if cfg.defense:
+            result["defense_stats"] = {s.name: dict(s.ctx.defense.stats) for s in slots if s.ctx.defense}
         _shot(guest, cfg.out / "end.png")
 
         if any(s.infra_failed for s in slots):  # dead Guest: evaluation would hang; the run gets retried
@@ -284,6 +294,22 @@ def _attach_mediation(cfg: RunConfig, guest: Guest, slots: list, result: dict) -
     unmediated = [s.name for s in slots if s.spec.get("harness", "step") != "step"]
     if unmediated:  # external harnesses run unmodified
         result["mediation_skipped"] = unmediated
+
+
+def _attach_defense(cfg: RunConfig, guest: Guest, slots: list, result: dict) -> None:
+    cls = defenses.load(cfg.defense)
+    windows = result.get("setup_windows", [])
+
+    def guest_sh(cmd: str) -> str:
+        return guest.execute(["bash", "-lc", cmd], 120).get("output") or ""
+
+    for i, s in enumerate(slots):
+        if s.spec.get("harness", "step") != "step":
+            result.setdefault("defense_skipped", []).append(s.name)  # external harnesses run unmodified
+            continue
+        s.ctx.defense = cls(guest.env, s.name, guest_sh)
+        s.ctx.setup_windows = list(windows[i]) if i < len(windows) else []
+    result["defense"] = cfg.defense
 
 
 def _run_isolated(cfg: RunConfig, image: str, cache: Path, tasks: list, result: dict, slots: list,

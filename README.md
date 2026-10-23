@@ -49,6 +49,8 @@ oscombo/
     scripted.py       "scripted": fixed actions, no model (smoke tests)
   desktop_tools.py  desktop tools over the Guest HTTP API: MCP server (codex) or one call per process (pi)
   mediation.py      optional harness-level fixes for shared desktops: input broker, window ownership, self-guard
+  defense/          per-harness defense plugins (DefenseBase hooks; noop control; v1) for attack/defense rounds
+  tasks.py          paraGUI task pairs: list, install into the OSWorld checkout, build assets
   analyze.py        success by condition/position, partial credit, joint outcomes, cross-window interference
   cli.py            python -m oscombo {run, matrix, queue, analyze, cleanup}
 infra/
@@ -58,7 +60,8 @@ infra/
   build_runtime.sh  build it
   make_pngfast_image.sh  derive a Guest image with fast (non-optimized) PNG screenshots, for TCG hosts
 configs/env.example.sh   every environment variable in one place (copy to env.sh, git-ignored)
-lists/              combo definitions (OSWorld 1 and 2.0) and a smoke list
+tasks/paragui/      paraGUI task pairs: two tasks sharing one live app/session (35 pairs, specs, builders, checkers)
+lists/              combo definitions (OSWorld 1, OSWorld 2.0, paraGUI v1, attack round 1) and a smoke list
 docs/NOTES.md       operational notes and pitfalls found while running this at scale
 tests/              unit tests with an in-memory DesktopEnv (no Guest needed)
 ```
@@ -166,6 +169,31 @@ agent's window is refused and the agent told), `selfguard` (each agent refocuses
 ownership comes from the windows each task's setup opened (`setup_windows` in result.json). `--coagent-hint`
 appends "this computer may be shared ..." to every instruction. Both are recorded as `variant` and reported as
 separate conditions by `analyze` (e.g. `parallel[broker2]-1`).
+
+## paraGUI task pairs
+
+`tasks/paragui/` holds pairs of long-horizon tasks built so that the two tasks naturally share one *live*
+application instance or session (one Thunderbird, one Chrome window + intranet web-app session, one open
+LibreOffice document, one VS Code + repo + dev server, ...), with deterministic asset builders and partial-credit
+checkers (`eval_checks` in result.json). `python -m oscombo tasks install` copies the task classes into the OSWorld
+checkout and builds their assets; specs are `v2/pg<pair><name>` (`python -m oscombo tasks list`). See
+`tasks/paragui/README.md`.
+
+## Per-harness defenses (attack / defense rounds)
+
+`--defense NAME` loads `oscombo/defense/NAME.py` (`class Defense(DefenseBase)`) into every `step`-harness agent in
+solo, sequential, parallel and shadow runs. Hooks: `start(setup_windows)`, `instruction`, `before_observe`,
+`observe`, `transform_action`, `after_action`, `notice`. A defense lives inside one harness: no shared state with
+the other agent, never tells the model about anyone else (instruction addenda and notices matching
+`defense.FORBIDDEN` are dropped and counted), the same code for every task. `noop` is the control, `v1` the first
+defender version ("own view, own input, own browser profile, own terminal"; design notes in
+`docs/defense/v1_NOTES.md`). Rules and scoring of the rounds: `tasks/paragui/ATTACK_DEFENSE.md`.
+
+## Long runs
+
+The step harness restarts the model conversation every `chain_steps` predictions (default 40) with a carry-over
+note of the agent's own recent steps, so tasks can run past the 50-image limit of some computer-use endpoints;
+`wall_s` (default 7200) caps an agent's wall clock. Both are agent options (`--opt chain_steps=60`).
 
 ## Tests
 

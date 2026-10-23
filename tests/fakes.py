@@ -11,7 +11,7 @@ class FakeController:
         self.lock = threading.Lock()
 
     def get_screenshot(self):
-        return b"\x89PNG fake" if self.shots else None
+        return b"\x89PNG" + b"x" * 30000 if self.shots else None  # large enough to count as a drawn desktop
 
     def get_accessibility_tree(self):
         return "<tree/>"
@@ -70,6 +70,7 @@ class FakeEnv:
 
     def close(self):
         self.closed = True
+
 
 
 def task(tid: str, config=None, postconfig=None) -> dict:

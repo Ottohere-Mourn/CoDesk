@@ -76,9 +76,11 @@ def test_dead_guest_is_infra_and_skips_evaluation(fake_osworld, tmp_path, monkey
     monkeypatch.setenv("OSCOMBO_SHOT_PATIENCE", "0")
     orig_boot = combo.boot
 
-    def dead_boot(image, cache_dir):
+    def dead_boot(image, cache_dir):  # the Guest dies right after the start screenshot
         env = orig_boot(image, cache_dir)
-        env.controller.shots = False
+        first = env.controller.get_screenshot
+        calls = []
+        env.controller.get_screenshot = lambda: (calls.append(1), first() if len(calls) == 1 else None)[1]
         return env
 
     monkeypatch.setattr(combo, "boot", dead_boot)
@@ -115,3 +117,32 @@ def test_parallel_with_mediation_and_hint(fake_osworld, tmp_path, monkeypatch, m
     assert r["variant"] == f"{med}+hint" and len(r["setup_windows"]) == 2
     assert {v["status"] for v in r["agents"].values()} == {"done"}
     assert "mediation_stats" in r
+
+
+def test_defense_in_solo_and_checks_kept(fake_osworld, tmp_path, monkeypatch):
+    monkeypatch.setattr("oscombo.mediation.time.sleep", lambda s: None)
+
+    def ev(self):
+        return {"score": 1.0, "checks": {"saved": True}} if self.controller.executed else 0.0
+
+    monkeypatch.setattr("fakes.FakeEnv.evaluate", ev)
+    r = runner.run(config(tmp_path, "solo", ["chrome/a"], defense="noop"))
+    assert r.get("error") is None, r.get("traceback")
+    assert r["variant"] == "defense:noop" and r["defense"] == "noop" and "agentA" in r["defense_stats"]
+    assert r["scores"] == {"a": 1.0} and r["eval_checks"] == {"a": {"saved": True}}
+    with pytest.raises(ValueError):
+        runner.RunConfig("parallel", ["a", "b"], None, [{}], mediation="broker1", defense="v1").check()
+
+
+def test_black_screen_after_setup_is_infra(fake_osworld, tmp_path, monkeypatch):
+    monkeypatch.setenv("OSCOMBO_DESKTOP_PATIENCE", "0")
+    orig_boot = combo.boot
+
+    def black_boot(image, cache_dir):
+        env = orig_boot(image, cache_dir)
+        env.controller.get_screenshot = lambda: b"tiny"
+        return env
+
+    monkeypatch.setattr(combo, "boot", black_boot)
+    r = runner.run(config(tmp_path, "solo", ["chrome/a"]))
+    assert "INFRA" in r["error"] and "black" in r["error"]

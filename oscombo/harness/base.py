@@ -34,6 +34,8 @@ class AgentContext:
     stop: threading.Event = field(default_factory=threading.Event)  # set by the runner to abort
     broker: Any = None        # shared mediation.DesktopBroker (step harness only)
     guard: Any = None         # this agent's mediation.SelfGuard (step harness only)
+    defense: Any = None       # this agent's oscombo.defense.DefenseBase (step harness only)
+    setup_windows: list = field(default_factory=list)  # X window ids that appeared during this agent's task setup
 
 
 @dataclass

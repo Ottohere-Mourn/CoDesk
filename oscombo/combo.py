@@ -145,9 +145,13 @@ def evaluate_tasks(env: Any, tasks: list[Any], declared_fail: list[bool], result
 
 
 def evaluate_one(env: Any, task: Any, result: dict) -> float | None:
-    """Official evaluation of the task currently loaded in ``env``; ``None`` if the evaluator itself crashed."""
+    """Official evaluation of the task currently loaded in ``env``; ``None`` if the evaluator itself crashed.
+    Evaluators returning ``{"score", "checks"}`` (the paraGUI tasks) keep their sub-checks in ``eval_checks``."""
     try:
-        return score_value(env.evaluate())
+        ev = env.evaluate()
+        if isinstance(ev, dict) and "checks" in ev:
+            result.setdefault("eval_checks", {})[task_get(task, "id")] = ev["checks"]
+        return score_value(ev)
     except Exception as exc:
         result.setdefault("eval_errors", {})[task_get(task, "id")] = f"{type(exc).__name__}: {exc}"[:300]
         return None

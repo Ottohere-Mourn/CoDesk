@@ -60,6 +60,9 @@ in code; the notes say where, so they are not undone by accident.
 - Concurrency: on a 96-core host, ~6 TCG Guests at once were stable; 8 made Guests stop answering mid-run.
   Other CPU-heavy jobs on the host cause the same symptom. `queue --lanes` caps runs, `isolated` runs count N.
 - GNOME notification banners (e.g. "Low Disk Space") cover click targets; the runner turns banners off.
+- Under heavy load the screen can stay black after setup; agents starting on a black screen give up within a few
+  steps. The runner waits for a drawn desktop (nudging the pointer) and marks the run INFRA otherwise
+  (`OSCOMBO_DESKTOP_PATIENCE`, default 240 s). Screen blanking and the lock screen are turned off for long runs.
 - An evaluation against a dead Guest hangs: when any agent fails with `INFRA`, evaluation is skipped and the run
   is marked for the retry pass.
 
