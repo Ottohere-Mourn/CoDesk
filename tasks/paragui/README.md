@@ -31,7 +31,8 @@ python -m oscombo run --mode parallel --tasks v2/pgw1reply v2/pgw1triage --polic
 ```
 
 `install` copies `task_pg*.py` and `pg_*.py` into `$OSWORLD_DIR/evaluation_examples/task_class/` and runs
-`build_assets.py`, which writes every pair's assets and `expected.json` deterministically (fixed seeds) into
+`build_assets.py`, which writes every pair's assets and `expected.json` (fixed seeds; generated PDFs carry a build
+timestamp, so their checksums differ between builds but always match that build's `expected.json`) into
 `$PARAGUI_TASK_ASSETS/<pair>/`. The builders need the OSWorld venv (PIL, openpyxl, python-docx, python-pptx,
 PyMuPDF, pypdf, ...). Mail pairs start from the public OSWorld blank Thunderbird profile (downloaded once).
 Ground truth stays on the host: setups upload only the task's input files.
@@ -43,7 +44,7 @@ restarts the model conversation every `chain_steps` predictions with a progress 
 
 | file | content |
 |---|---|
-| `build_<p>.py` | `build(out_dir)`: all assets + `expected.json`, deterministic (pairs c1–c6 are in `build_assets.py`) |
+| `build_<p>.py` | `build(out_dir)`: all assets + `expected.json`, fixed seeds (pairs c1–c6 are in `build_assets.py`) |
 | `pg_<p>.py` | `setup(sc)` shared by both tasks (idempotent: it runs once per task in a dual run) and `evaluate_<a>(env, dest)`, `evaluate_<b>(env, dest)` returning `{"score", "checks"}` |
 | `task_pg<p><a>.py`, `task_pg<p><b>.py` | thin OSWorld 2.0 task classes (id, instruction, related apps, evaluate call) |
 | `app_<p>.py` | single-file stdlib intranet web app (`http.server` + `sqlite3`, cookie login), started in the Guest |
