@@ -402,8 +402,10 @@ def _run_actor(role: str, guest: LoggedGuest, instruction: str, actions: list[st
     from oscombo.harness.base import AgentContext
     from oscombo.harness.step_loop import StepLoopHarness
     guest.actor = role
-    actor_root = run_root / "actor_runs" / role
-    actor_root.mkdir(parents=True, exist_ok=True)
+    role_root = run_root / "actor_runs" / role
+    role_root.mkdir(parents=True, exist_ok=True)
+    actor_root = role_root / f"stage-{len(list(role_root.glob('stage-*'))) + 1:02d}"
+    actor_root.mkdir(exist_ok=False)
     actor_spec = {"harness": "step", "policy": "scripted", "options": {
         "actions": actions, "action_pause": 0.25, "step_pause": 0.2,
         "save_screenshots": True}}
@@ -916,6 +918,25 @@ def run_pilot(condition: str, run_root: Path, image: str, provider: Path,
         oracle = evaluate(fixture_dir / spec.FIXTURE_NAMES["authority"], analysis_path,
                           fixture_dir / spec.FIXTURE_NAMES["draft"], deck_path)
         (run_root / "oracle.json").write_text(json.dumps(oracle, indent=2, sort_keys=True) + "\n")
+
+        # Post-execution lifecycle check: close/reopen via real GUI, without
+        # editing. Preserve the scored bytes and do not rely on historical runs.
+        reopen_evidence = []
+        for role in artifact_roles:
+            guest, guest_path = role_paths[role]
+            before_bytes = guest.env.controller.get_file(guest_path)
+            _activate_ready_document(guest, guest_path, f"reopen-{role}-before")
+            guest.actor = "system"
+            guest.run_pyautogui("import pyautogui, time; pyautogui.hotkey('ctrl','w'); time.sleep(2)")
+            _launch(guest, "calc" if role == "A" else "impress", guest_path,
+                    f"/tmp/{run_id}/reopen-{role}.log")
+            after_bytes = guest.env.controller.get_file(guest_path)
+            if not before_bytes or before_bytes != after_bytes:
+                raise RuntimeError(f"saved {role} artifact changed or disappeared during GUI reopen")
+            reopen_evidence.append({"actor": role, "guest_key": guest.guest_key,
+                                    "sha256": __import__("hashlib").sha256(after_bytes).hexdigest(),
+                                    "same_bytes_after_gui_reopen": True, "time": time.time()})
+        (run_root / "reopen_evidence.json").write_text(json.dumps(reopen_evidence, indent=2) + "\n")
 
         reset_results = []
         for key, env in envs.items():
