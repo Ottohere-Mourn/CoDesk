@@ -95,6 +95,17 @@ def main() -> None:
     a = ap.parse_args()
     path = a.osworld_dir / "desktop_env/providers/docker/provider.py"
     print(f"{'patched' if patch(path) else 'already patched'}: {path}")
+    controller = a.osworld_dir / "desktop_env/controllers/python.py"
+    source = controller.read_text()
+    old = 'requests.get(self.http_server + "/screenshot", timeout=10)'
+    new = 'requests.get(self.http_server + "/screenshot", timeout=120)  # OSCOMBO_TCG_SCREENSHOT_TIMEOUT'
+    if old in source:
+        if source.count(old) != 1:
+            raise RuntimeError("ambiguous screenshot timeout patch")
+        controller.write_text(source.replace(old, new))
+        print(f"patched screenshot timeout: {controller}")
+    elif new not in source:
+        raise RuntimeError("unrecognized screenshot client; timeout not patched")
 
 
 if __name__ == "__main__":

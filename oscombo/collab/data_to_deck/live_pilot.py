@@ -120,32 +120,43 @@ def _calc_actions() -> list[str]:
     ]
 
 
+def _impress_replace_actions(find: str, replacement: str) -> list[str]:
+    # Separate field edits into observable steps. Under TCG a compound fast
+    # click/Ctrl+A/type sequence can outrun LO's dialog event processing.
+    actions = []
+    for y, text in ((446, find), (538, replacement)):
+        actions.append("import pyautogui, time; pyautogui.click(1000," + str(y) +
+                       "); time.sleep(1); pyautogui.hotkey('ctrl','a'); time.sleep(1); "
+                       "pyautogui.write(" + repr(text) + ", interval=0.05); time.sleep(2)")
+    actions.append("import pyautogui, time; pyautogui.click(1195,594); time.sleep(5)")
+    return actions
+
+
 def _impress_initial_actions() -> list[str]:
-    return [
-        "import pyautogui, time; pyautogui.hotkey('ctrl','h'); time.sleep(1)",
-        "import pyautogui, time; pyautogui.click(1000,446); pyautogui.hotkey('ctrl','a'); pyautogui.write('Q3 revenue: $310k', interval=0.01); pyautogui.click(1000,538); pyautogui.hotkey('ctrl','a'); pyautogui.write('Q3 revenue: $300k', interval=0.01); pyautogui.click(1195,594); time.sleep(0.7)",
-        "import pyautogui, time; pyautogui.click(1000,446); pyautogui.hotkey('ctrl','a'); pyautogui.write('Gross Margin: 31% (Q3)', interval=0.01); pyautogui.click(1000,538); pyautogui.hotkey('ctrl','a'); pyautogui.write('Gross Margin: 45% (Q3)', interval=0.01); pyautogui.click(1195,594); time.sleep(0.7)",
-        "import pyautogui, time; pyautogui.click(1000,446); pyautogui.hotkey('ctrl','a'); pyautogui.write('Q3 revenue is $310k.', interval=0.01); pyautogui.click(1000,538); pyautogui.hotkey('ctrl','a'); pyautogui.write('Q3 revenue: $300k', interval=0.01); pyautogui.click(1195,594); time.sleep(0.7)",
-        # Close the dialog so the following actor stage starts from a known
-        # presentation context in both shared and isolated conditions.
-        "import pyautogui, time; pyautogui.click(1240,775); time.sleep(0.4)",
-        "DONE",
-    ]
+    actions = ["import pyautogui, time; pyautogui.hotkey('ctrl','h'); time.sleep(5)"]
+    for find, replacement in (
+        ('Q3 revenue: $310k', 'Q3 revenue: $300k'),
+        ('Gross Margin: 31% (Q3)', 'Gross Margin: 45% (Q3)'),
+        ('Q3 revenue is $310k.', 'Q3 revenue: $300k'),
+    ):
+        actions.extend(_impress_replace_actions(find, replacement))
+    return actions + ["import pyautogui, time; pyautogui.click(1240,775); time.sleep(5)", "DONE"]
 
 
 def _impress_final_actions(shared: bool) -> list[str]:
     actions = []
     if shared:
-        actions.append("import pyautogui, time; pyautogui.hotkey('alt','tab'); time.sleep(1)")
-    actions.extend([
-        "import pyautogui, time; pyautogui.hotkey('ctrl','h'); time.sleep(0.7)",
-        "import pyautogui, time; pyautogui.click(1000,446); pyautogui.hotkey('ctrl','a'); pyautogui.write('West discount campaign caused the Q3 profit decline.', interval=0.005); pyautogui.click(1000,538); pyautogui.hotkey('ctrl','a'); pyautogui.write('West: revenue +$15k, promotion expense +$14k, operating profit -$11k. The data do not establish causality.', interval=0.005); pyautogui.click(1195,594); time.sleep(0.7)",
-        "import pyautogui, time; pyautogui.click(1000,446); pyautogui.hotkey('ctrl','a'); pyautogui.write('Complete the regional profit bridge and distinguish evidence from explanation.', interval=0.005); pyautogui.click(1000,538); pyautogui.hotkey('ctrl','a'); pyautogui.write('Q2-Q3 bridge: revenue +$30k; total cost +$35k; operating profit -$5k.', interval=0.005); pyautogui.click(1195,594); time.sleep(0.7)",
-        "import pyautogui, time; pyautogui.click(1240,775); time.sleep(0.4)",
-        "import pyautogui, time; pyautogui.hotkey('ctrl','s'); time.sleep(2)",
-        "DONE",
-    ])
-    return actions
+        actions.append("import pyautogui, time; pyautogui.hotkey('alt','tab'); time.sleep(5)")
+    actions.append("import pyautogui, time; pyautogui.hotkey('ctrl','h'); time.sleep(5)")
+    for find, replacement in (
+        ('West discount campaign caused the Q3 profit decline.',
+         'West: revenue +$15k, promotion expense +$14k, operating profit -$11k. The data do not establish causality.'),
+        ('Complete the regional profit bridge and distinguish evidence from explanation.',
+         'Q2-Q3 bridge: revenue +$30k; total cost +$35k; operating profit -$5k.'),
+    ):
+        actions.extend(_impress_replace_actions(find, replacement))
+    return actions + ["import pyautogui, time; pyautogui.click(1240,775); time.sleep(5)",
+                      "import pyautogui, time; pyautogui.hotkey('ctrl','s'); time.sleep(5)", "DONE"]
 
 
 class LoggedGuest:
@@ -1036,7 +1047,8 @@ def run_pilot(condition: str, run_root: Path, image: str, provider: Path,
                 raise RuntimeError(f"reset Guest overlay is not owned by this run: {overlay}")
             probe = envs[key].controller.run_bash_script(
                 f"test ! -e {shlex.quote(task_root)} && ! pgrep -x soffice.bin >/dev/null", timeout=30)
-            reset_ok = isinstance(probe, dict) and probe.get("status") == "success"
+            reset_ok = (isinstance(probe, dict) and probe.get("status") == "success"
+                        and probe.get("returncode", 0) == 0)
             if not reset_ok:
                 raise RuntimeError(f"Guest reset verification failed for {key}: {probe}")
             reset_results.append({"guest_key": key, "old_container_id": old_id,
