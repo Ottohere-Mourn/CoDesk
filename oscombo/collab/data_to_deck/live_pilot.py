@@ -108,14 +108,13 @@ def _gold_tsv() -> bytes:
 
 def _calc_actions() -> list[str]:
     return [
-        # The tab is explicitly selected because Ctrl+PageDown may be captured
-        # by Calc's page/application shortcuts on some LO builds.  Selecting
-        # A1 through the name box avoids relying on whichever cell happened to
-        # be active when the output copy opened.
-        "import pyautogui, time; pyautogui.click(625,1045); time.sleep(0.4); pyautogui.click(125,185); pyautogui.hotkey('ctrl','a'); pyautogui.write('A1'); pyautogui.press('enter'); time.sleep(0.4)",
-        "import pyautogui, time; pyautogui.hotkey('ctrl','v'); time.sleep(2)",
-        "import pyautogui, time; pyautogui.press('enter'); time.sleep(1)",
-        "import pyautogui, time; pyautogui.hotkey('ctrl','s'); time.sleep(2)",
+        # Enter in the name box can retain its edit focus on this LO build.
+        # Select the sheet, then focus the grid and navigate to A1 instead.
+        "import pyautogui, time; pyautogui.click(625,1045); time.sleep(5)",
+        "import pyautogui, time; pyautogui.click(500,500); time.sleep(2); pyautogui.hotkey('ctrl','home'); time.sleep(3)",
+        "import pyautogui, time; pyautogui.hotkey('ctrl','v'); time.sleep(5)",
+        "import pyautogui, time; pyautogui.press('enter'); time.sleep(5)",
+        "import pyautogui, time; pyautogui.hotkey('ctrl','s'); time.sleep(5)",
         "DONE",
     ]
 
