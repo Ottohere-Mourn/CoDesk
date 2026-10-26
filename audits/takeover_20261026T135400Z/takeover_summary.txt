@@ -1,0 +1,165 @@
+CoDesk 七题接管与环境验收完整汇报（阅读版）
+2026-10-26 23:49 北京时间；结果口径：真实Guest脚本正控 / 离线验证 / 未验证假设分别标注。
+
+本轮结论
+已接管collab-cases七题，在独立分支完成审计与适配修复，固定OSWorld镜像和Python环境。Data-to-Deck的Shared、Isolated真实GUI脚本正控均完成：A/B/联合原Oracle、独立复评、保存关闭重开、reset及精确清理通过；Isolated另有双向版本传输、对方Guest实际只读打开及hash一致性证据。
+按用户最新指示，模型名、base URL和密钥配置留空。没有执行任务模型Pilot或正式双Agent对照，没有模型成功率、token或active overlap结果，也没有Shared干扰或Isolated优势的实验结论。
+离线全仓回归174 passed / 1 skipped；最后的定向回归24 passed。跳过项是真实Blender文件解析，不能视为通过。77个原版受保护任务/Fixture/Gold/Oracle等路径相对collab-cases无变化，未实现lite。
+全部8次脚本/环境诊断均保留。最终无本轮Guest容器、run驱动/监控进程或overlay残留；镜像、runtime、Python环境及本项目独立Docker daemon保留复用。
+
+────────────────
+一、环境复现
+原始报告：/data3/whn/Project2/CoDesk/audits/takeover_20261026T135400Z/environment_report.txt
+
+仓库：/data3/whn/Project2/CoDesk；独立分支experiment/codesk-seven-20261026，未推送。
+通过最终Smoke的实现提交为a683b5c（实验分支），每run完整源码身份见source_identity.json。
+七题基线collab-cases@659c4171617d4a51732ffdc5fdb16772d9487e5e；yuke-osworld@976024720adba9a6087ec4c8526f26be0c8555db；共同祖先688e4d109ec9b76c750a00809708f7d90488ab1d。默认v0不是七题当前版本，两分支未强行合并。
+collab-cases没有AGENTS.md/HANDOFF.md；已读默认分支AGENTS及旧prep分支HANDOFF，后者描述30-workflow旧套件。七题以oscombo/collab/CASE_REGISTRY.md和各case源码为准。历史文档中的PASS未当成本机复现证据。
+机器：Ubuntu22.04.5/Linux5.15，Xeon8368，152 logical CPU，约1TiB RAM。/dev/kvm存在但账号无读写权限，默认Docker无权限、无免密sudo。已使用现有Docker Provider + 项目QEMU6.2 TCG runtime，无需重写Guest Provider。最终/data3可用约156GB；未使用GPU。
+独立rootless Docker29.0.2：unix:///data3/whn/Project2/.codesk-docker/docker.sock。未修改系统权限或他人资源。每Guest8vCPU/8GiB，Shared总8/8、Isolated总16/16，不能忽略资源差异。
+OSWorld-V2固定osworld-v2.1@3d778a3c9a34a079316f70df023b166700445792；路径/data3/whn/Project2/OSWorld-V2。Python3.12.13按uv锁文件安装，CoDesk/MCP附加依赖受原freeze约束。宿主LibreOffice7.3.7.2；Guest Calc/Impress真实界面为LibreOffice7.3。
+Guest压缩包14891811084 bytes，artifact commit=6e16459a2feb5a8f1ed65babcfe7a2a6205d049d。
+压缩包SHA256=14b08aa7ba6c023ecb91d46de8df5de32af4d1d6bd75ea925519caf9677fc8b3，发布值核对一致。
+qcow2 SHA256=28b617987f3edf14edd835069cdde6a6e4708be8e4ae4eb957200d5da335186a；qemu-img check返回0、check-errors=0、dirty=false。原镜像只读，每Guest独立overlay。
+Runtime image=sha256:4696860fc79a4a6815f61f2a063f473eb8df33534aef3107d126199cb3f2a116。
+已修复：协作token重生成、已保存产物桥缺失、KVM权限误判、黑帧/应用未绘制就绪误判、截图10秒超时、脚本输入节奏、Calc名称框焦点、多阶段轨迹覆盖；添加原始输入只读、GUI重开、并发起跑和时间/资源日志、provider密钥与Actor环境隔离。原任务语义和Oracle保持不动。
+实际桌面MCP通过STDIO启动、枚举9个工具并返回真实1280×720截图（含启动等总计约5.40秒）；仅调用截图，不含模型或GUI修改。模型图像接收/理解、完整MCP工具行为和并发尚未验证。
+复现：cd /data3/whn/Project2/CoDesk；source env.local.sh；使用OSWorld-V2/.venv/bin/python运行infra/patch_osworld.py、pytest或oscombo.collab.data_to_deck.live_pilot。完整命令、daemon重启方法及依赖证据见环境报告。env.local.sh不含模型或密钥。
+
+────────────────
+二、七题审计
+原始报告：/data3/whn/Project2/CoDesk/audits/takeover_20261026T135400Z/seven_case_audit.txt
+机器可读表：/data3/whn/Project2/CoDesk/audits/takeover_20261026T135400Z/seven_case_audit.tsv
+以下桌面干扰机制是待检验假设，不是本次实测协作结果。
+
+
+Data-to-Deck（0.2.1）
+离线：17 passed（基线）。运行证据：真实Guest Calc/Impress GUI保存回收、原Oracle及重开已验证；完整生命周期状态见guest_smoke_report.txt；未运行模型
+协作链：A分析→B引用并修订；业务依赖中等，B可独立重算。复杂度：中高：16行×5列分析，3页修订；240步/角色未校准
+干扰假设：跨应用焦点、剪贴板、错误窗口粘贴、打开已保存版本
+适配/桥：live_pilot.py真实运行；双向保存revision传输、hash回读及peer只读GUI打开已验证；权限/故障负控仍仅离线
+建议：继续首例原版；建议另建lite：保留成本/利润桥、一个区域解释、margin辨别与证据边界，缩至约6–8分析行、2页；须确认后新建版本
+
+
+Ticket-to-Resolution（0.1.0）
+离线：23 passed。运行证据：Browser+合成SQLite业务服务；本次无Guest
+协作链：A核验Review→B退款→工单关闭；应用强制可审计前置依赖。复杂度：低中：1工单、1退款行、Review+处理+关闭
+干扰假设：独立profile窗口焦点、键盘误路由、页面上下文
+适配/桥：guest_smoke.py 有部分Guest流程；同一backend双Guest可达性未验
+建议：保留原版；不扩展客户/订单数；先打通同DB和role profile
+
+
+Build-and-Verify（0.1.0）
+离线：6 passed。运行证据：GUI编辑器+Browser+Python/Node；HTTP/fake-DOM仅离线
+协作链：A修复→B对最终revision回归→必要时反馈；可双向闭环。复杂度：中：2处缺陷、6类公开检查；160步占位
+干扰假设：编辑器/浏览器焦点、Enter误投、热加载版本与UI混淆
+适配/桥：integration.py仅消息绑定；无完整Guest coordinator；模型代码须在Guest执行
+建议：保留原版两个缺陷；预先启动编辑器与应用，避免安装/构建杂务；暂不拆分
+
+
+Timeline-and-Assets（0.1.0）
+离线：17 passed。运行证据：Kdenlive/MLT+视频音频字幕；仅离线XML/媒体检查
+协作链：A源片段与范围清单→B时间线；依赖中等且可独立复核。复杂度：高：4选3、精确帧trim、3字幕、2轨、音乐长度、JSON清单
+干扰假设：素材箱选中项、源/项目监视器、播放头、活动轨道
+适配/桥：workspace/backend仅计划声明；Kdenlive真实保存兼容性未验
+建议：先暂缓模型；建议新lite预置音乐/字幕，保留3镜头选择+trim+有序拼接；不机械拆成素材题和剪辑题
+
+
+Model-and-Review（0.1.0）
+离线：25 passed / 1 skipped。运行证据：Blender 5.2.2为上游文件生成声明；本机真实解析跳过
+协作链：A灯罩几何→B间隙审查/展示→必要时A改；需单文件版本交接。复杂度：高：九对象保护、几何、净空、镜头方向、三灯参数
+干扰假设：Object/Edit Mode、活动对象、选区、视口、活动相机
+适配/桥：RevisionStore有lease/CAS但无Guest桥；原卡“动作边界交接控制权”须澄清是否引入GUI锁
+建议：保留应用多样性；建议lite仅灯罩尺寸/净空+相机，灯光预置；文件lease不能被实现为输入锁
+
+
+Spreadsheet Handoff（V0）
+离线：13 passed（含宿主LO）。运行证据：Calc；ODS版本库离线已实现
+协作链：A预测→B箱规采购/预算→A复核；七题中强交接链。复杂度：高：四SKU、多sheet、公式、证据文本、A二次复核；240步未校准
+干扰假设：活动sheet/cell、选择区、公式栏、粘贴目标
+适配/桥：WorkbookStore lease/CAS通过离线；没有真实Guest checkout/commit工具
+建议：保留四SKU以覆盖整箱与零采购；建议新lite预填源值引用与模板，保留计算/采购/复核核心；不拆A/B为独立题
+
+
+Workspace Assembly（V0）
+离线：11 passed（含宿主LO）。运行证据：File Manager+Writer；Guest挂载未实现
+协作链：A文件路径/manifest→B相对链接→双方复核；依赖中等。复杂度：中高：四附件移动重命名+4个64hex摘要+CSV+ODT四链接
+干扰假设：目录/选区、文件选择器、剪贴板、保存路径
+适配/桥：canonical workspace仅配置；同路径跨Guest重命名传播未验
+建议：保留但先解决GUI可获得SHA问题；建议新lite给公开原文件hash/manifest骨架，保留重命名与链接解析；可减少到3附件但不急于拆题
+
+
+共性限制与Oracle审计
+多数Case声明Shared/Isolated信息、消息和评分相同，但尚无完整双Guest coordinator。Data-to-Deck新桥已有真实双Guest证据；其他Case不能用离线plan当作可运行证明。
+A/B通常都能读取同一原始资料；专业分工不等于不可替代的信息不对称。要从revision引用、具体反馈和最终回归判断实质协作，不能仅数消息或产物。
+Data-to-Deck：Evidence只验非空；deck引用revision/hash的要求未被Oracle检查；部分判断依赖固定英文片段。脚本正控通过不保证所有未评分语义或视觉呈现质量。
+Spreadsheet：整个sheet及理由文本精确匹配可能拒绝语义等价结果；公式规范化删除小数点存在错误合并风险。只提出审计，不改原Oracle。
+Workspace：A分数包含最终整个路径集，可能被B未完成报告连带影响；纯GUI获取/输入四个SHA摘要有可解性风险。
+Build：fake-DOM/HTTP不是浏览器；模型候选代码必须在Guest/受限环境执行，不能直接在宿主运行。
+Timeline/Model：必须先过实际Kdenlive/Blender加载、保存和版本兼容性；不得把XML/bpy后台操作当GUI模型成功。
+文件lease与GUI输入锁必须区分。Model-and-Review原卡的控制交接措辞需要澄清；Shared不得人为串行化输入。
+原Task Card中有答案说明，只供评测员审计。未来Actor只给spec角色指令和公开fixture，不挂载hidden Gold、Oracle或整个宿主仓库。
+
+────────────────
+三、Data-to-Deck真实Guest脚本验收
+原始报告：/data3/whn/Project2/CoDesk/audits/takeover_20261026T135400Z/guest_smoke_report.txt
+紧凑指标：/data3/whn/Project2/CoDesk/audits/takeover_20261026T135400Z/smoke_summary.json
+
+两个最终run：
+Shared: cdd-scripted-shared-20261026T151600Z
+Isolated: cdd-scripted-isolated-20261026T151600Z
+路径前缀：/data3/whn/Project2/CoDesk/runs/
+两者A=true、B=true、joint=true、protected=true，原Oracle与独立进程重评分一致。Shared两条GUI重开证据；Isolated四条（作者重开+peer只读打开），均hash一致。Shared reset一个Guest、Isolated reset两个Guest，均工作区清空后精确清理。
+这些是按阶段串行执行的预设脚本正控，不是两个模型Agent并发。不能计算模型成功率，也不能将脚本耗时差解释为隔离收益。
+
+拓扑 | setup至首次GUI输入(s) | 脚本阶段合计(s) | 总时长含reset(s) | 采样QEMU CPU秒下界 | PNG数
+
+Shared | 302.82 | 622.38 | 1190.36 | 4165.01 | 90
+
+Isolated | 574.0 | 591.15 | 1739.25 | 7567.43 | 120
+
+setup列不是完整模型实验setup口径：脚本B的应用在中途启动。脚本阶段包含截图/等待。总时长截至结果写入，不含最后close数秒。CPU包含启动与reset，rootless cgroup不可用，改采本run QEMU进程；不含Docker daemon开销。两种拓扑总Guest资源不同，脚本动作也不同。
+原scripted harness没有单独累计全部截图耗时，因此该项不编造；模型耗时、token和实际active overlap均N/A。PNG数量包含setup、重开及step前后截图，不等于动作数。
+
+Isolated桥：留存5个revision；A revision1/2和B revision1共3次传输回读验证，0个同步错误。传输阶段分别约1.127/1.310/1.144秒，不含最长约2秒轮询等待，不等于完整保存到可读延迟。双方确实用GUI打开了对方文件，窗口标题和截图显示read-only。
+每个最终run有3条双向消息、2个附件并校验收取内容。此项是实际协议客户端，不能冒充模型通过协作MCP调用工具。坏ZIP、越权发布、peer异常写入、失败重试等负控仍是离线controller/HTTP测试。
+ownership记录固定发布路径/source Guest，不证明共享桌面里的实际操作者。transfer_verified事件中的delivered字段是更新前值，peer回读完成后写事件，最终current.json已为true；原始日志未改写。
+
+全部8次尝试（均无任务模型）：
+shared-142900：黑帧阶段提前输入，受保护Sales被修改，无效基础设施尝试。
+shared-143800：文档尚未绘制就输入，后续Impress未就绪；无效基础设施尝试。
+shared-145900：A通过，B的R1失败，R2/R3通过；截图显示连续快速替换的查找文字混杂，属于串行脚本输入失败。
+isolated-145800：第一个Guest截图超过固定10秒超时，后续未执行。
+shared-150700：TSV粘贴进入仍持焦点的名称框，中止保留。
+isolated-150700：因共同脚本缺陷随同中止，不声称该run已观察到同一失败。
+shared-151600：完整脚本正控PASS。
+isolated-151600：完整双Guest脚本正控PASS。
+完整run_id和路径见原始报告。全部失败轨迹/版本保留，不将诊断尝试当模型失败或刷成功率样本。
+这些失败没有双Agent同时输入，不能归因为共享桌面干扰。当前没有焦点抢占、跨Agent误路由或恢复行为的模型证据。
+
+每个最终run的产物：artifacts/A/verified_analysis.ods、artifacts/B/final_management_brief.odp。
+独立评分：oracle.json、oracle_independent_recheck.json；完整SHA在artifact_manifest.json及原始报告。
+真实轨迹：screenshots/、actor_runs/、gui_events.jsonl、observations.jsonl。
+保存/同步：guest_save_evidence.json、reopen_evidence.json、workspace_versions/。
+消息：collaboration/events.jsonl和collaboration/attachments/。
+版本/资源：source_identity.json、provenance.json、ownership.json、resource_actions.jsonl、qemu_process_resources.jsonl。
+最终cleanup-verification.json确认8个run均无残留Guest、run进程或overlay。
+
+────────────────
+四、正式模型实验状态及后续计划
+原始状态报告：/data3/whn/Project2/CoDesk/audits/takeover_20261026T135400Z/model_experiment_status.txt
+原始计划：/data3/whn/Project2/CoDesk/audits/takeover_20261026T135400Z/next_steps.txt
+
+模型、base URL、密钥配置按用户指示留空。Pilot、完整Shared、完整Isolated均NOT_RUN，A/B/联合模型成功率为N/A而非0%。用户回复前仅做过API_READY最小连通性探测，没有任务/截图/Gold输入，生成请求未成功；用户要求留空后停止探测，未修改已有模型服务。
+正式恢复前必须明确12,000 model_tokens口径：上游local Qwen只限制output，remote未实施cap。当前不能声称已满足总token预算。两条件需统一input/output/reasoning/cache记账及停止策略。
+未来上游密钥仅进入协调器/loopback relay，Actor只持临时run token；先做一次小预算真实并发Pilot，验证图像、模型工具链、消息附件和记录，再做一次完整Shared及一次完整Isolated。Shared共享一个桌面，不加输入锁；Isolated两个独立桌面，等价保存产物桥。每角色Prompt、输入、模型、执行预算和Oracle相同。
+只在真实轨迹支持时归因：窗口采样非原子，最终失败不能单独证明共享干扰；模型误写与桥异常要分别判断。分别报告Actor/API/GUI实际活动重叠，不把线程同时存活当作有效重叠。每条件n=1不能估计总体成功率优势。
+
+扩展顺序与建议组合
+1. Data-to-Deck先完成正式Pilot/对照；保留本次原版正控，lite仅作为后续新版本提案。
+2. Ticket保持一工单/一退款，补同DB双Guest和profile身份；最短且事务依赖明确，适合直接扩展。
+3. Build保持两个缺陷/六类检查，补真实编辑器/浏览器及最终revision回归；代码在Guest执行。
+4. Spreadsheet补真实checkout/commit并审计Oracle等价性；Workspace补路径传播和纯GUI hash可得性。若确认lite，分别预填引用/模板、提供公开源hash/manifest骨架，保留协作核心。
+5. Timeline/Model先过固定应用版本的真实保存兼容性，再考虑预置音乐字幕或灯光的新lite，保留trim/拼接或几何净空/相机审查。
+建议最终保留七个领域互补Case。若Kdenlive或Blender之一长期未过门槛，先六题核心组合；第八题须新增独立协作机制，不拆角色凑数量。
+所有lite先经确认，再新建版本/目录和独立Task Card、Fixture、Gold、Oracle、manifest，完成正负控与真实Guest验收后才能进入正式实验。本轮没有实现或覆盖任何原版任务。

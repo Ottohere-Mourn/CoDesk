@@ -1,0 +1,40 @@
+CoDesk 模型实验状态与恢复入口
+更新：2026-10-26；用户最新指示：模型和API配置先留空。
+
+当前状态
+模型名：未配置。
+base URL：未配置。
+密钥环境变量：未配置。
+模型Pilot：NOT_RUN。
+完整Shared：NOT_RUN。
+完整Isolated：NOT_RUN。
+A/B/联合模型成功率、模型token、模型active overlap：N/A。不是0%，也不是失败。
+
+用户回复前曾对已有本地服务进行最小API连通性探测，仅输入API_READY，不含任务、截图或Gold。/models返回200；两个生成请求返回500，后续探测超时，备用路由503 auth_unavailable。没有成功的任务模型调用。用户要求留空后停止探测，不修改或修复其已有模型服务。对应脱敏证据：model-api-smoke.json、model-api-diagnostic.json、model-blocker.json。
+
+env.local.sh仅配置OSWorld、Docker、镜像、CPU/RAM和Python路径，不保存模型配置或密钥。已有机器全局模型配置未修改。不要把发现的旧配置当成本实验默认模型。
+
+正式实验恢复门槛
+1. 单Guest scripted Smoke的真实GUI输入、保存、回收、原Oracle及重开验收。
+2. 双Guest的产物同步、不可变revision、ownership元数据、对方Guest回读hash及GUI打开；双向消息/附件保持同等功能。文件ownership只表示固定发布路径和source Guest，不保证共享桌面中真实鼠标操作者身份。
+3. 明确指定同一模型、端点和凭据位置。上游密钥仅进入协调器及loopback relay；Actor只持有本run临时token。不得向Actor挂载hidden Gold/Oracle文件、整个Task Card或宿主仓库。
+4. 原版每角色240 GUI调用、12,000 model_tokens。上游代码只在local Qwen模式限制生成output token，remote模式未执行token cap；该口径尚未解决。正式实验前明确input/output/reasoning/cache记账及停止策略，两条件完全一致，不声称当前已满足token预算。
+5. 先一次小预算真实并发Pilot及A/B普通GUI能力校准，验证MCP工具、图像、调用链和时间日志。保留失败，不以反复重跑刷成功率。
+6. 门槛满足后，共享1 Guest和隔离2 Guest各执行一次完整预算；两个模型Agent真实并发，共享GUI无输入锁。等Prompt、任务输入、保存文件可见性、消息附件能力和Oracle。
+7. 报告每条件n=1的联合/A/B结果，不能从一对结果推断总体成功率优势。
+
+成本与归因口径
+setup、Agent执行、截图、模型请求分别计时；单列input/output/cache/reasoning token。共享8vCPU/8GiB、隔离总16vCPU/16GiB，不能把全部时差解释为桌面隔离收益。
+Rootless Docker CPU cgroup统计不可用；使用本run完整容器ID对应QEMU进程的CPU秒和RSS作替代，注明不含rootless Docker守护进程开销。
+分别计算Actor执行区间、模型请求区间和GUI动作区间的重叠。线程同时存在并不等于模型计算或GUI输入实际重叠。
+焦点/窗口采样非原子，只支持关联。输入误路由、焦点抢占、应用状态变化、同步延迟、模型普通操作错误和恢复行为，必须逐项结合截图、动作与版本记录分析；最终失败本身不能证明共享干扰。
+
+复用现有入口
+cd /data3/whn/Project2/CoDesk
+source env.local.sh
+/data3/whn/Project2/OSWorld-V2/.venv/bin/python -m oscombo.collab.data_to_deck.live_pilot --help
+
+脚本Smoke不传--model。每次显式给出唯一--run-root、--condition、--provider、--image、--runtime。正式模型入口还需要--model、--base-url、--api-key-env、--mcp-python。小预算使用--diagnostic-step-limit；不要把诊断预算结果冒充完整版。
+
+补充限制：版本桥ownership记录的是固定发布路径/source Guest，并非共享桌面中真实鼠标操作者身份。正式模型实验中若出现非owner产物变化，需结合GUI轨迹区分模型误写与桥故障；当前运行器对桥异常统一标为基础设施无效，不能据此直接作行为归因。
+桌面MCP的真实STDIO截图调用已验证；尚未验证模型对图像的实际接收、理解或并发工具执行。

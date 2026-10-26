@@ -1,0 +1,82 @@
+CoDesk 环境复现报告
+日期：2026-10-26。证据目录：/data3/whn/Project2/CoDesk/audits/takeover_20261026T135400Z。
+本报告区分代码/离线验证、真实Guest功能验收与模型实验。模型配置按用户最新指示留空，正式模型实验不执行。
+
+1. 仓库接管与版本
+工作目录：/data3/whn/Project2/CoDesk。
+独立实验分支：experiment/codesk-seven-20261026；未修改或推送协作者远端分支。
+七题基线：origin/collab-cases@659c4171617d4a51732ffdc5fdb16772d9487e5e。
+yuke-osworld：976024720adba9a6087ec4c8526f26be0c8555db。
+共同祖先：688e4d109ec9b76c750a00809708f7d90488ab1d；七题与paraGUI两条工作已分叉，未强行合并。
+远端默认v0：433e498；不能当作七题最新分支。
+已读默认分支AGENTS.md；collab-cases不含AGENTS.md/HANDOFF.md。旧交接在origin/prep/codesk-v1-handoff:docs/handoff/HANDOFF.md，属于30-workflow旧套件。
+七题注册表：oscombo/collab/CASE_REGISTRY.md。已读各Task Card、README、docs/NOTES.md、infra/setup_osworld.sh、configs/env.example.sh及运行器。
+历史Guest通过声明缺少当前分支中可追溯的完整轨迹，故不作为本次验收证据。
+
+2. 机器能力（实测）
+Ubuntu 22.04.5，Linux5.15，Xeon Platinum8368，152 logical CPU；内存约1TiB，开始时可用804GiB。
+开始时/data3可用210GB、根盘可用50GB；本次镜像、Python环境、runtime和轨迹占用独立目录。
+CPU支持VT-x，但/dev/kvm对whn无读写权限；默认Docker socket无权限，无免密sudo。
+通过rootlesskit/slirp4netns/subuid/subgid启动独立rootless Docker29.0.2。
+DOCKER_HOST=unix:///data3/whn/Project2/.codesk-docker/docker.sock；data-root=/data3/whn/Project2/.codesk-docker/data。
+QEMU6.2在用户目录和真实容器中验证；本次使用标准Docker Provider + 项目TCG runtime，无需重写Guest Provider。
+未找到请求中提到的独立Native QEMU Provider实现；可复用的TCG入口为infra/qemu-runtime/entrypoint.sh。
+未使用GPU，未调整系统权限，未修改/终止他人进程或容器。
+每Guest配置8vCPU/8GiB。Shared总8/8，Isolated总16/16。rootless CPU cgroup计数不可用，改采本run容器PID对应QEMU进程CPU秒/RSS；不含守护进程开销。
+
+3. 固定OSWorld、镜像与依赖
+OSWorld目录：/data3/whn/Project2/OSWorld-V2。
+固定osworld-v2.1提交：3d778a3c9a34a079316f70df023b166700445792；本机兼容补丁另存于每run的source_identity.json。
+Guest artifact提交：6e16459a2feb5a8f1ed65babcfe7a2a6205d049d。
+压缩包：/data3/whn/Project2/images/osworld-v2-ubuntu-x86.qcow2.zip，14891811084 bytes。
+压缩包SHA256：14b08aa7ba6c023ecb91d46de8df5de32af4d1d6bd75ea925519caf9677fc8b3，已与固定发布值核对一致。
+解压qcow2 SHA256：28b617987f3edf14edd835069cdde6a6e4708be8e4ae4eb957200d5da335186a。
+qemu-img check返回0、check-errors=0、dirty-flag=false。verification.json位于images目录。
+原始镜像chmod0444，只读挂载；每Guest使用本run独立overlay，不改原始镜像。
+Runtime：sha256:4696860fc79a4a6815f61f2a063f473eb8df33534aef3107d126199cb3f2a116。
+正式Python：OSWorld-V2/.venv，3.12.13；uv sync --frozen --no-dev --no-install-package osworld-ffmpeg，系统ffmpeg/ffprobe可用。
+CoDesk[test,mcp]作为附加依赖安装，以原OSWorld freeze作constraints，没有升级原锁定包；DesktopEnv/MCP导入成功。
+独立初始离线环境CoDesk/.venv为Python3.14.3；正式回归另在上述3.12环境完成。
+宿主LibreOffice7.3.7.2、Node20.20.1。Guest实际截图显示LibreOffice7.3，Calc/Impress真实启动；Blender和Kdenlive真实GUI仍未验收。
+
+4. 已验证层级
+离线基线：166 passed / 1 skipped，pytest.xml；正式Python修复后全仓174 passed / 1 skipped，pytest-final.xml/log。
+跳过项仅真实Blender文件解析（未配置CODESK_BLENDER_BIN），不能据此宣称Blender可运行。
+七题基线：Data-to-Deck17；Ticket23；Build6；Timeline17；Model25通过+1跳过；Spreadsheet13；Workspace11，共112通过。
+Fixture确定性、Oracle正负控、协议认证/消息附件、版本桥故障负控均有离线测试。桥的单元测试使用替身controller，不替代真实双Guest。
+宿主LibreOffice：Data-to-Deck local-office-smoke和Spreadsheet/Workspace保存重开回归通过，属于宿主headless兼容性。
+真实Guest：已有实际桌面、Calc/Impress截图、鼠标键盘输入、保存回收、原Oracle判定及关闭重开证据。完整脚本验收结果及失败尝试见guest_smoke_report.txt，不把部分功能成功称为整题PASS。
+模型：按用户指示留空。Pilot、完整Shared、完整Isolated均NOT_RUN；成功率/token/模型active overlap为N/A。
+
+5. 实验分支的适配修复
+- 模型启动时不再重复生成协作token；复用已注册身份，HTTP回归通过。
+- 新增固定ODS/ODP已保存产物桥：双读、ZIP CRC/类型、不可变revision/hash、ownership、原子传输、peer回读、非owner异常拒绝、失败重试。只保护发布路径，不把文件lease转化为GUI输入锁。
+- 上游模型密钥只进入协调器/loopback relay；Actor只用临时run token，移除其他角色token；不保存生产密钥。
+- 保留相同角色Prompt路径/tmp/codesk-data-to-deck，公开input只读；未向Guest挂载hidden Gold或Oracle。脚本正控的Gold只在评测员控制的Smoke使用，不能复用该Guest给模型。
+- 模型并发barrier及起止时间、动作/截图/窗口采样、请求耗时/token日志；无GUI输入锁。当前仅代码/离线验证，尚无真实模型并发证据。
+- KVM权限检测、强制TCG、镜像/资源环境参数、仅loopback端口、按完整ID和run标签清理。
+- 桌面黑帧、LibreOffice未绘制/禁用toolbar就绪检查；真实截图回归已验证。就绪筛选只在setup，不能过滤Actor执行中的异常画面。
+- OSWorld截图请求固定10秒不足以覆盖TCG编码，改为120秒；没有压缩/伪造截图或修改像素。
+- scripted Impress字段输入拆为可观察步骤并增加处理等待；不改变模型Agent输入调度。
+- 脚本多阶段轨迹分目录留存，保存后实际GUI关闭/重开；reset检查同时验证returncode。
+原版Task Card、spec、Fixture、Gold、Oracle相对collab-cases没有修改。未实现lite版本。
+
+6. 已知限制与后续
+真实STDIO桌面MCP启动、工具枚举及1280×720真实Guest截图已验证（约5.40秒，mcp_readonly_probe/result.json）；这次为只读截图，不含模型或GUI输入。模型视觉/推理及完整工具链、真实模型active overlap、remote token预算执行仍未验收。原12,000 model_tokens口径与上游仅output cap实现不一致，正式实验前须解决。
+共享/隔离脚本Smoke为按阶段串行的预设正控，不是双模型并发实验，不据此报告协作效率优势。
+PNG编码和TCG桌面绘制影响成本。现有make_pngfast_image.sh含按名称删除和--rm，未直接执行；任何镜像优化需独立衍生镜像、像素一致性验证和两条件统一使用。
+其他六题实际Guest适配差距、任务复杂度及精简建议见seven_case_audit.txt；优先Ticket、Build，随后Spreadsheet/Workspace，最后Blender/Kdenlive。
+
+7. 复现入口
+cd /data3/whn/Project2/CoDesk
+source env.local.sh
+/data3/whn/Project2/OSWorld-V2/.venv/bin/python infra/patch_osworld.py "$OSWORLD_DIR"
+/data3/whn/Project2/OSWorld-V2/.venv/bin/python -m pytest -q
+/data3/whn/Project2/OSWorld-V2/.venv/bin/python -m oscombo.collab.data_to_deck.live_pilot --help
+实际Smoke使用collaborative_shared/collaborative_isolated、唯一run-root和上述固定image/runtime。env.local.sh不含模型配置或密钥。运行结束按完整ID+本run ownership证据精确清理，不运行全局prune。
+
+独立Docker守护进程重启说明（仅在本项目socket已停止时使用）
+当前运行实例专用于本项目，状态目录带ownership.json；不要重复启动第二个实例，也不要操作系统默认Docker。
+启动时使用以下仅作用于该进程的环境和参数（本机host代理为127.0.0.1:7890，rootless命名空间通过10.0.2.2访问）：
+env XDG_RUNTIME_DIR=/data3/whn/Project2/.codesk-docker/run DOCKERD_ROOTLESS_ROOTLESSKIT_STATE_DIR=/data3/whn/Project2/.codesk-docker/rootlesskit DOCKERD_ROOTLESS_ROOTLESSKIT_DISABLE_HOST_LOOPBACK=false HTTP_PROXY=http://10.0.2.2:7890 HTTPS_PROXY=http://10.0.2.2:7890 ALL_PROXY=http://10.0.2.2:7890 http_proxy=http://10.0.2.2:7890 https_proxy=http://10.0.2.2:7890 all_proxy=http://10.0.2.2:7890 /usr/bin/dockerd-rootless.sh --data-root /data3/whn/Project2/.codesk-docker/data --exec-root /data3/whn/Project2/.codesk-docker/exec --pidfile /data3/whn/Project2/.codesk-docker/dockerd.pid --host unix:///data3/whn/Project2/.codesk-docker/docker.sock
+本轮保留runtime、只读镜像、Python环境和独立daemon供复用；临时Guest逐个按run完整ID清理。精确清理结果见guest_smoke_report.txt和各run/resource_actions.jsonl。

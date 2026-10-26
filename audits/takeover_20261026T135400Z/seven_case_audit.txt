@@ -1,0 +1,123 @@
+CoDesk 七题审计与后续组合建议
+基线：collab-cases@659c417；本次审计日期2026-10-26。
+范围：本次代码/文档/离线验证。尚无本机真实Guest模型结果。以下干扰机制均为可检验假设，不是已经观察到的结论。
+
+定位规则
+每题 Task Card：oscombo/collab/<case>/TASK_CARD_ZH.md；README同目录。
+每题 Oracle：同目录/oracle.py；固定业务参数和角色指令：spec.py；测试 tests/test_<case>.py。
+Data-to-Deck：fixtures.py确定性生成ODS/ODP；Gold由oracle.py辅助函数生成；plan.py定义条件；__main__.py提供prepare/plan/evaluate；live_pilot.py提供真实Guest脚本/模型入口。
+Ticket-to-Resolution：database.py构造SQLite；runner.py准备/serve/evaluate/reset；guest_smoke.py提供单Guest门槛；integration.py绑定消息。
+Build-and-Verify：template/workspace公开工程；template/correct_app.js为测试Gold不可挂载；webapp.py业务服务；runner.py入口；integration.py仅消息绑定。
+Timeline-and-Assets：template含MLT工程/媒体/SRT；fixture.py+mlt_project.py+media_fixture.py生成及解析；Gold由fixture逻辑生成；runner.py入口；integration.py不是Guest workspace桥。
+Model-and-Review：fixtures/initial.blend；fixtures/private/gold.blend和fixtures/gold_state.json均隐藏；blender/生成/提取；runner.py+revision_store.py入口与版本库；integration.py状态/消息契约。
+Spreadsheet Handoff：fixtures/initial.ods、fixtures/private/gold.ods、fixtures/private/oracle_manifest.json；fixtures.py生成；runner.py、workbook_store.py。
+Workspace Assembly：fixtures/initial_workspace、fixtures/private/gold_workspace、fixtures/private/oracle_manifest.json；fixtures.py、runner.py。
+原始Task Card包含答案说明，只能评测员阅读；Actor仅获得spec角色指令和公开fixture，不能把整张Task Card复制给Actor。
+
+逐题结论
+
+Data-to-Deck
+version：0.2.1
+本次离线验证：17 passed（基线）
+应用/运行证据：Calc+Impress已有真实Guest启动、输入、保存回收及GUI重开；脚本完整验收见guest_smoke_report.txt，模型未执行
+最小完整协作链：A分析→B引用并修订；业务依赖中等，B可独立重算
+复杂度与预算：中高：16行×5列分析，3页修订；240步/角色未校准
+可能的桌面干扰机制（非实测）：跨应用焦点、剪贴板、错误窗口粘贴、打开已保存版本
+Guest Adapter / Isolated桥：live_pilot.py有Docker/模型并发入口；双Guest桥已实测双向传输、hash回读及peer只读GUI打开；权限/故障负控仍仅离线，模型并发未验。
+建议（未实施语义变更）：继续首例原版；建议另建lite：保留成本/利润桥、一个区域解释、margin辨别与证据边界，缩至约6–8分析行、2页；须确认后新建版本
+
+Ticket-to-Resolution
+version：0.1.0
+本次离线验证：23 passed
+应用/运行证据：Browser+合成SQLite业务服务；本次无Guest
+最小完整协作链：A核验Review→B退款→工单关闭；应用强制可审计前置依赖
+复杂度与预算：低中：1工单、1退款行、Review+处理+关闭
+可能的桌面干扰机制（非实测）：独立profile窗口焦点、键盘误路由、页面上下文
+Guest Adapter / Isolated桥：guest_smoke.py 有部分Guest流程；同一backend双Guest可达性未验
+建议（未实施语义变更）：保留原版；不扩展客户/订单数；先打通同DB和role profile
+
+Build-and-Verify
+version：0.1.0
+本次离线验证：6 passed
+应用/运行证据：GUI编辑器+Browser+Python/Node；HTTP/fake-DOM仅离线
+最小完整协作链：A修复→B对最终revision回归→必要时反馈；可双向闭环
+复杂度与预算：中：2处缺陷、6类公开检查；160步占位
+可能的桌面干扰机制（非实测）：编辑器/浏览器焦点、Enter误投、热加载版本与UI混淆
+Guest Adapter / Isolated桥：integration.py仅消息绑定；无完整Guest coordinator；模型代码须在Guest执行
+建议（未实施语义变更）：保留原版两个缺陷；预先启动编辑器与应用，避免安装/构建杂务；暂不拆分
+
+Timeline-and-Assets
+version：0.1.0
+本次离线验证：17 passed
+应用/运行证据：Kdenlive/MLT+视频音频字幕；仅离线XML/媒体检查
+最小完整协作链：A源片段与范围清单→B时间线；依赖中等且可独立复核
+复杂度与预算：高：4选3、精确帧trim、3字幕、2轨、音乐长度、JSON清单
+可能的桌面干扰机制（非实测）：素材箱选中项、源/项目监视器、播放头、活动轨道
+Guest Adapter / Isolated桥：workspace/backend仅计划声明；Kdenlive真实保存兼容性未验
+建议（未实施语义变更）：先暂缓模型；建议新lite预置音乐/字幕，保留3镜头选择+trim+有序拼接；不机械拆成素材题和剪辑题
+
+Model-and-Review
+version：0.1.0
+本次离线验证：25 passed / 1 skipped
+应用/运行证据：Blender 5.2.2为上游文件生成声明；本机真实解析跳过
+最小完整协作链：A灯罩几何→B间隙审查/展示→必要时A改；需单文件版本交接
+复杂度与预算：高：九对象保护、几何、净空、镜头方向、三灯参数
+可能的桌面干扰机制（非实测）：Object/Edit Mode、活动对象、选区、视口、活动相机
+Guest Adapter / Isolated桥：RevisionStore有lease/CAS但无Guest桥；原卡“动作边界交接控制权”须澄清是否引入GUI锁
+建议（未实施语义变更）：保留应用多样性；建议lite仅灯罩尺寸/净空+相机，灯光预置；文件lease不能被实现为输入锁
+
+Spreadsheet Handoff
+version：V0
+本次离线验证：13 passed（含宿主LO）
+应用/运行证据：Calc；ODS版本库离线已实现
+最小完整协作链：A预测→B箱规采购/预算→A复核；七题中强交接链
+复杂度与预算：高：四SKU、多sheet、公式、证据文本、A二次复核；240步未校准
+可能的桌面干扰机制（非实测）：活动sheet/cell、选择区、公式栏、粘贴目标
+Guest Adapter / Isolated桥：WorkbookStore lease/CAS通过离线；没有真实Guest checkout/commit工具
+建议（未实施语义变更）：保留四SKU以覆盖整箱与零采购；建议新lite预填源值引用与模板，保留计算/采购/复核核心；不拆A/B为独立题
+
+Workspace Assembly
+version：V0
+本次离线验证：11 passed（含宿主LO）
+应用/运行证据：File Manager+Writer；Guest挂载未实现
+最小完整协作链：A文件路径/manifest→B相对链接→双方复核；依赖中等
+复杂度与预算：中高：四附件移动重命名+4个64hex摘要+CSV+ODT四链接
+可能的桌面干扰机制（非实测）：目录/选区、文件选择器、剪贴板、保存路径
+Guest Adapter / Isolated桥：canonical workspace仅配置；同路径跨Guest重命名传播未验
+建议（未实施语义变更）：保留但先解决GUI可获得SHA问题；建议新lite给公开原文件hash/manifest骨架，保留重命名与链接解析；可减少到3附件但不急于拆题
+
+共同公平性检查
+所有任务文档均声明相同原始资料、角色目标、消息与评分。声明不等于运行实现：除Data-to-Deck部分运行器和Ticket smoke外，多数case只有离线计划，没有完整双Guest协调器。
+Data-to-Deck原始Isolated只复制初始fixture，没有已保存产物桥；原消息附件工具只能收发文本/base64，不能从Guest自动导出已保存ODS。当前分支新增的桥已实测两Guest双向传输、hash回读及peer只读GUI打开；故障/越权负控仍仅离线，完整模型工具链尚未验证。
+Shared不加输入锁；两个模型调用须并发。文件版本库的单写lease可在两条件保持一致，但不能串行化模型或GUI鼠标键盘。Model-and-Review原卡的“动作边界交接”措辞需要在协议确认时区分保存lease和GUI控制权锁。
+A/B起始资料对称可读，因此不能把专业分工描述为信息论上的不可替代性。证据应显示B用了A的revision、A回应了具体问题，或B回归了A最终修订；仅有两个产物/消息数不能证明实质协作。
+
+发现的Oracle/可解性风险（只审计，不更改原Oracle）
+1. Data-to-Deck：Evidence列只验证非空，不验证来源真的可追溯；角色指令要求deck引用revision/hash，但oracle.py不检查；R3依赖固定英文片段。任务长度与用词匹配可能掩盖协作效应。正式结果仍用原Oracle，额外报告引用与溯源诊断，不替代原分数。
+2. Spreadsheet Handoff：gold_values比较整个sheet，连理由/证据字符串也精确匹配；formula_locations_and_semantics实际上是公式规范化后精确字符串比较，等价公式可能失败。normalize_formula删除所有小数点，存在把不同数值字面量合并的风险，需单独负控与版本化修订。A/B分数还混合共同保护条件与跨角色公式，不能轻率解释为纯角色能力。
+3. Workspace Assembly：A分数含最终整个路径集，B若未移动报告会连带使A失败；这是原Oracle角色分解的限制。手工输入4个SHA-256摘要缺少明确GUI获取工具，是可解性风险，不是协作问题。
+4. Build-and-Verify：fake-DOM/HTTP不是浏览器；最终回归事件需与真实动作/截图对齐。模型修改的Python会在webapp/oracle中执行，正式运行服务应在Guest/受限环境，不能把模型候选代码直接在宿主执行。
+5. Timeline-and-Assets：XML结构正确仍不保证目标Kdenlive版本打开/保存不改结构，需真实应用roundtrip正控；精确帧、字幕和音频组合很可能使普通剪辑操作主导失败。
+6. Model-and-Review：现有真实.blend的版本兼容性和GUI加载未核验；scene结构Gold/单写lease不能替代真实场景状态观测。不得把后台bpy操作算成GUI模型动作。
+7. Ticket-to-Resolution：强事务Oracle最接近短程完整协作；要核验A/B浏览器profile凭据身份隔离、同DB可达性和相同原始信息，不能用两份数据库做Isolated。
+
+推荐最终组合与扩展顺序
+建议保留7个领域互补Case：Data-to-Deck、Ticket-to-Resolution、Build-and-Verify、Spreadsheet Handoff、Workspace Assembly、Timeline-and-Assets、Model-and-Review。
+先扩展前3题：Data-to-Deck先完成可信端到端；Ticket作为短程业务强依赖对照；Build-and-Verify作为自然反馈/回归闭环。
+随后接入Spreadsheet Handoff和Workspace Assembly，解决文件/版本服务与纯GUI可解性。
+最后处理Kdenlive和Blender的版本及长程问题。若其中一题在固定资源/应用门槛下仍不可运行，暂形成6题核心组合；不通过拆分A/B职责凑数量。第8题仅在新增独立协作机制时考虑，本轮不新增。
+所有lite建议只停留于审计。原版Task Card、Fixture、Gold、Oracle保持不动；若确认实施，使用新case_version/目录、独立manifest与正负控，绝不混入原版正式对照。
+
+首题实验预注册计划
+先原版Data-to-Deck：固定fixture hash、OSWorld release与Guest镜像SHA、应用版本、同模型/端点/角色prompt、每角色240 GUI调用预算。CLI旧默认60秒工具冷却已修正为0，两个条件显式同值。12,000 model tokens的口径需在模型接入时明确（上游本地Qwen只限制输出token；不能默认为总token）。
+1. 新run_id的单Guest scripted smoke：截图、应用就绪、真实输入、保存、重新打开、文件回收、原Oracle正控；不把预设Gold驱动的脚本算为模型可解性。
+2. 新run_id的双Guest smoke：同时存活的独立桌面；A保存后B实际回读hash并GUI打开正确revision；反向传递、消息附件、越权发布、旧版本/传输失败负控；任何同步不一致单列INVALID_INFRA。
+3. 模型API参数就绪后，先一次小预算端到端Pilot及角色可解性检查；保留所有失败。若普通GUI能力不成立，停止把失败解释为协作干扰。
+4. 门槛满足后一次完整Shared、一次完整Isolated，模型执行真实并发、无输入锁，保存每步真实截图和动作/消息/版本/产物/Oracle。
+5. 分别报setup、执行、截图、API耗时和input/output/cache/reasoning token；报告每Guest及总Guest资源；分别计算Actor运行区间、API调用区间、GUI动作区间的重叠，不把线程共存当成实际推理/动作重叠。
+6. 单次对照是每条件n=1的结果，不能据此估计总体成功率优势或归因所有时差。A/B/联合成功可报0/1；基础设施无效不计模型失败。
+7. 干扰归因须有时间对齐的目标动作、窗口/应用状态及后果。非原子焦点采样只支持关联；同步延迟、保存重开、普通模型错误和恢复分别列出。
+
+目前正式实验状态
+Shared完整预算：NOT_RUN；Isolated完整预算：NOT_RUN；模型Pilot：NOT_RUN。
+原因：用户明确要求模型/API配置留空，正式模型实验暂不执行；镜像已完成校验，Guest脚本验收另见guest_smoke_report.txt。不是“Shared模型失败”或“Isolated模型失败”。
