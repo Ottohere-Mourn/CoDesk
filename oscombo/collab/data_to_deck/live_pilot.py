@@ -313,7 +313,7 @@ def _boot_guest(run_root: Path, run_id: str, key: str, image: str, provider: Pat
 
 def _shell(guest: LoggedGuest, script: str, timeout: int = 45) -> dict[str, Any]:
     result = guest.env.controller.run_bash_script(script, timeout=timeout)
-    if not isinstance(result, dict) or result.get("status") != "success":
+    if not isinstance(result, dict) or result.get("status") != "success" or result.get("returncode", 0):
         raise RuntimeError(f"Guest setup command failed: {result}")
     return result
 
@@ -327,9 +327,12 @@ def _install_fixture(guest: LoggedGuest, fixture_dir: Path, task_root: str) -> N
         dest = f"{task_root}/input/{name}"
         pieces.append(f"printf %s {shlex.quote(payload)} | base64 -d > {shlex.quote(dest)}")
     pieces.extend([
+        f"chmod -R a-w {shlex.quote(task_root + '/input')}",
         f"cp {shlex.quote(task_root + '/input/' + spec.FIXTURE_NAMES['authority'])} "
         f"{shlex.quote(task_root + '/outputs/agent_A/verified_analysis.ods')}",
         f"cp {shlex.quote(task_root + '/input/' + spec.FIXTURE_NAMES['draft'])} "
+        f"{shlex.quote(task_root + '/outputs/agent_B/final_management_brief.odp')}",
+        f"chmod u+w {shlex.quote(task_root + '/outputs/agent_A/verified_analysis.ods')} "
         f"{shlex.quote(task_root + '/outputs/agent_B/final_management_brief.odp')}",
     ])
     _shell(guest, "set -e\n" + "\n".join(pieces), timeout=60)
@@ -487,7 +490,16 @@ def _sample_guest_resources(root: Path, container_ids: dict, stop: threading.Eve
     client = docker.from_env(timeout=5)
     try:
         while not stop.wait(5):
-            for key, cid in list(container_ids.items()):
+            known = dict(container_ids)
+            try:
+                # Include boot/reset costs before DesktopEnv returns readiness.
+                for container in client.containers.list(filters={"label": ["oscombo=1", f"oscombo.run={root.name}"]}):
+                    if container.id not in known.values():
+                        known[f"boot-or-reset-{container.short_id}"] = container.id
+            except Exception as exc:
+                _append(root / "guest_resources.jsonl", {"time": time.time(), "phase": "discover_owned",
+                                                        "error_type": type(exc).__name__})
+            for key, cid in list(known.items()):
                 try:
                     stats = client.containers.get(cid).stats(stream=False)
                     _append(root / "guest_resources.jsonl", {
@@ -787,7 +799,9 @@ def run_pilot(condition: str, run_root: Path, image: str, provider: Path,
                         "\nSaved role outputs are versioned and copied to the same paths on both desktops. "
                         "Use publish_saved_artifact after saving to verify delivery, and list_saved_artifacts "
                         "to obtain revision/hash metadata. Open the other role's file read-only through the GUI; "
-                        "reopen it to read a newly saved revision. Do not write the other role's output.")
+                        "reopen it to read a newly saved revision. Do not write the other role's output. "
+                        "Edit documents through Calc and Impress; do not use Terminal commands, scripts, "
+                        "macros or evaluator files to generate document contents.")
             actor_barrier = threading.Barrier(len(actor_roles))
             def actor_task(role: str) -> dict[str, Any]:
                 actor_guest = guest_a if role == "A" else guest_b
