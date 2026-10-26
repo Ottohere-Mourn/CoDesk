@@ -338,13 +338,13 @@ def _install_fixture(guest: LoggedGuest, fixture_dir: Path, task_root: str) -> N
     _shell(guest, "set -e\n" + "\n".join(pieces), timeout=60)
 
 
-def _launch(guest: LoggedGuest, application: str, path: str, log: str) -> None:
+def _launch(guest: LoggedGuest, application: str, path: str, log: str, readonly: bool = False) -> None:
     title_hint = Path(path).name
     # A generic 'libreoffice' wmctrl match can be only the splash window.
     # Wait for the requested document title, activate that real window, and
     # let its first frame paint before declaring application readiness.
     cmd = (f"mkdir -p {shlex.quote(str(Path(log).parent))}; "
-           f"nohup soffice --{application} {shlex.quote(path)} >{shlex.quote(log)} 2>&1 </dev/null & "
+           f"nohup soffice --{application} {'--view ' if readonly else ''}{shlex.quote(path)} >{shlex.quote(log)} 2>&1 </dev/null & "
            f"for i in $(seq 1 60); do sleep 1; "
            f"wmctrl -l 2>/dev/null | grep -Fq {shlex.quote(title_hint)} && "
            f"wmctrl -a {shlex.quote(title_hint)} && sleep 2 && exit 0; done; "
@@ -928,6 +928,9 @@ def run_pilot(condition: str, run_root: Path, image: str, provider: Path,
             _activate_ready_document(guest, guest_path, f"reopen-{role}-before")
             guest.actor = "system"
             guest.run_pyautogui("import pyautogui, time; pyautogui.hotkey('ctrl','w'); time.sleep(2)")
+            _shell(guest, f"for i in $(seq 1 30); do "
+                          f"wmctrl -l | grep -Fq {shlex.quote(Path(guest_path).name)} || exit 0; "
+                          "sleep 1; done; exit 1", timeout=40)
             _launch(guest, "calc" if role == "A" else "impress", guest_path,
                     f"/tmp/{run_id}/reopen-{role}.log")
             after_bytes = guest.env.controller.get_file(guest_path)
@@ -936,6 +939,16 @@ def run_pilot(condition: str, run_root: Path, image: str, provider: Path,
             reopen_evidence.append({"actor": role, "guest_key": guest.guest_key,
                                     "sha256": __import__("hashlib").sha256(after_bytes).hexdigest(),
                                     "same_bytes_after_gui_reopen": True, "time": time.time()})
+            if condition == "collaborative_isolated":
+                peer_guest = guest_b if role == "A" else guest_a
+                _launch(peer_guest, "calc" if role == "A" else "impress", guest_path,
+                        f"/tmp/{run_id}/peer-read-{role}.log", readonly=True)
+                peer_bytes = peer_guest.env.controller.get_file(guest_path)
+                if peer_bytes != after_bytes:
+                    raise RuntimeError(f"peer Guest read a different {role} revision")
+                reopen_evidence.append({"actor": role, "guest_key": peer_guest.guest_key,
+                    "sha256": __import__("hashlib").sha256(peer_bytes).hexdigest(),
+                    "peer_gui_opened_readonly": True, "time": time.time()})
         (run_root / "reopen_evidence.json").write_text(json.dumps(reopen_evidence, indent=2) + "\n")
 
         reset_results = []
