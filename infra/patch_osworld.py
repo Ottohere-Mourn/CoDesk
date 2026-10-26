@@ -26,6 +26,8 @@ PINNED = "happysixd/osworld-docker@sha256:0e6497a9295647cf05bf2b2af522fdd79bdeba
 
 EDITS = [
     ("import time\n", f"import time\nimport uuid  {MARKER}\n"),
+    ('                if os.path.exists("/dev/kvm"):\n',
+     '                if os.access("/dev/kvm", os.R_OK | os.W_OK) and os.environ.get("OSCOMBO_FORCE_TCG") != "1":\n'),
     ('        self.environment = {"DISK_SIZE": "32G", "RAM_SIZE": "4G", "CPU_CORES": "4"}  # Modify if needed\n',
      '        self.environment = {"DISK_SIZE": "32G", "RAM_SIZE": os.environ.get("OSCOMBO_GUEST_RAM", "8G"),\n'
      '                            "CPU_CORES": os.environ.get("OSCOMBO_GUEST_CPUS", "8")}  # oscombo\n'),

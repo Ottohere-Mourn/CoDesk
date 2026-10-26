@@ -232,6 +232,7 @@ def _wait_before_tool_result() -> float:
 
 def run_tool(name: str, args: dict) -> tuple[str, bytes | None]:
     """Execute one tool call; returns (text, png bytes or None)."""
+    tool_started_at = time.time()
     with _state() as st:  # reserve a call number (and read the latest scale) atomically
         if name != "declare_infeasible" and st["calls"] >= BUDGET:
             return OUT_OF_BUDGET, None
@@ -272,14 +273,38 @@ def run_tool(name: str, args: dict) -> tuple[str, bytes | None]:
     if name == "wait":
         time.sleep(min(float(args.get("seconds", 2.0)), 30))
     before = _active_window() if code else None
-    if code:
-        _py(code)
-    png, new_scale, guest_size = _shot()
+    action_started_at = time.time()
+    action_error = None
+    try:
+        if code:
+            _py(code)
+    except Exception as exc:
+        action_error = exc
+    action_ended_at = time.time()
+    after = _active_window() if code else None
+    shot_started_at = time.time()
+    try:
+        png, new_scale, guest_size = _shot()
+    except Exception as exc:
+        _log({"t": time.time(), "n": n, "tool": name, "args": args, "code": code,
+              "started_at": tool_started_at, "action_started_at": action_started_at,
+              "action_ended_at": action_ended_at, "window_before": before,
+              "window_after": after, "window_samples_atomic": False,
+              "error": f"{type(exc).__name__}: {exc}", "phase": "screenshot",
+              "action_error": str(action_error) if action_error else None})
+        raise
+    shot_ended_at = time.time()
     _store_observation(new_scale, guest_size)
     _save_screenshot(n, png)
     cooldown = _wait_before_tool_result()
     _log({"t": time.time(), "n": n, "tool": name, "args": args,
           "window_before": before, "code": code, "executed": bool(code),
+          "window_after": after, "window_samples_atomic": False,
+          "started_at": tool_started_at, "action_started_at": action_started_at,
+          "action_ended_at": action_ended_at, "screenshot_started_at": shot_started_at,
+          "screenshot_ended_at": shot_ended_at,
+          "screenshot_s": shot_ended_at - shot_started_at,
+          "action_error": str(action_error) if action_error else None,
           "tool_result_cooldown_s": cooldown,
           "coordinate_audit": audit,
           "input_observation": {"model_screenshot_size": [MODEL_W, MODEL_H],
@@ -288,6 +313,8 @@ def run_tool(name: str, args: dict) -> tuple[str, bytes | None]:
           "returned_observation": {"model_screenshot_size": [MODEL_W, MODEL_H],
                                    "guest_screenshot_size": guest_size,
                                    "scale": new_scale}})
+    if action_error is not None:
+        raise action_error
     left = BUDGET - n
     return (f"OK. {left} tool calls left." if left <= 5 else "OK."), png
 

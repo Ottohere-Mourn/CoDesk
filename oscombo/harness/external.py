@@ -257,6 +257,9 @@ class CodexHarness(CommandHarness):
             raise ValueError("options.auth_mode must be auto, env, or none")
         collaboration_server = ""
         if self.collaboration:
+            collaboration_tools = ["send_message", "read_messages", "send_attachment", "read_attachment"]
+            if self.collaboration.get("workspace_bridge"):
+                collaboration_tools += ["publish_saved_artifact", "list_saved_artifacts"]
             collab_env = {
                 "PYTHONPATH": _pythonpath(),
                 "CODESK_COLLAB_URL": self.collaboration["url"],
@@ -272,7 +275,7 @@ command = {json.dumps(mcp_python)}
 args = ["-m", "oscombo.collab.data_to_deck.collab_tools"]
 enabled = true
 required = true
-enabled_tools = ["send_message", "read_messages", "send_attachment", "read_attachment"]
+enabled_tools = {json.dumps(collaboration_tools)}
 startup_timeout_sec = 30
 tool_timeout_sec = 30
 env = {{ {collab_env_toml} }}
@@ -335,6 +338,9 @@ env = {{ {env_toml} }}
         for name in self.opts.get("redact_env_keys", []):
             env.pop(name, None)
         if self.collaboration:
+            for name in list(env):
+                if name.startswith("CODESK_CDD_COLLAB_TOKEN_"):
+                    env.pop(name)
             env.update({
                 "CODESK_COLLAB_URL": self.collaboration["url"],
                 "CODESK_COLLAB_ACTOR": self.collaboration["actor"],

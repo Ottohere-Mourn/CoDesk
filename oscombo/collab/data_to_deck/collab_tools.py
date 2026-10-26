@@ -66,6 +66,14 @@ class CollaborationClient:
         return {"attachment_id": attachment_id, "encoding": encoding, "content": text,
                 "bytes": len(body), "sha256": hashlib.sha256(body).hexdigest()}
 
+    def publish_saved_artifact(self) -> dict[str, Any]:
+        result, _ = self._request("/artifacts/publish", "POST", {})
+        return result
+
+    def list_saved_artifacts(self) -> dict[str, Any]:
+        result, _ = self._request("/artifacts")
+        return result
+
 
 def _client_from_env() -> CollaborationClient:
     try:
@@ -101,6 +109,14 @@ def mcp_main() -> None:
     @mcp.tool(description="Read an attachment by ID. UTF-8 content is returned as text; other files as base64.")
     def read_attachment(attachment_id: str) -> dict[str, Any]:
         return _client_from_env().read_attachment(attachment_id)
+
+    @mcp.tool(description="Publish your own already saved output to the peer Guest. Returns the verified revision/hash; cannot write document contents or choose another role's path.")
+    def publish_saved_artifact() -> dict[str, Any]:
+        return _client_from_env().publish_saved_artifact()
+
+    @mcp.tool(description="List published output revisions, hashes and Guest paths. Open files through the GUI to read their contents.")
+    def list_saved_artifacts() -> dict[str, Any]:
+        return _client_from_env().list_saved_artifacts()
 
     mcp.run()
 

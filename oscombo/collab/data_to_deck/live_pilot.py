@@ -243,8 +243,9 @@ def _boot_guest(run_root: Path, run_id: str, key: str, image: str, provider: Pat
         "OSCOMBO_OVERLAY_DIR": str(run_root / "overlay" / key),
         "SWCUB_VM_OVERLAY": str(run_root / "overlay" / key),
         "OSCOMBO_RUN_LABEL": run_id,
-        "OSCOMBO_GUEST_RAM": "4G", "OSCOMBO_GUEST_CPUS": "4",
-        "OSCOMBO_VM_READY_TIMEOUT": "600",
+        "OSCOMBO_GUEST_RAM": os.environ.get("OSCOMBO_GUEST_RAM", "4G"),
+        "OSCOMBO_GUEST_CPUS": os.environ.get("OSCOMBO_GUEST_CPUS", "4"),
+        "OSCOMBO_VM_READY_TIMEOUT": os.environ.get("OSCOMBO_VM_READY_TIMEOUT", "1800"),
     })
     if str(provider) not in sys.path:
         sys.path.insert(0, str(provider))
@@ -318,7 +319,8 @@ def _shell(guest: LoggedGuest, script: str, timeout: int = 45) -> dict[str, Any]
 
 
 def _install_fixture(guest: LoggedGuest, fixture_dir: Path, task_root: str) -> None:
-    pieces = [f"mkdir -p {shlex.quote(task_root + '/input')} {shlex.quote(task_root + '/outputs/agent_A')} "
+    pieces = [f"test ! -e {shlex.quote(task_root)}",
+              f"mkdir -p {shlex.quote(task_root + '/input')} {shlex.quote(task_root + '/outputs/agent_A')} "
               f"{shlex.quote(task_root + '/outputs/agent_B')}"]
     for name in (spec.FIXTURE_NAMES["authority"], spec.FIXTURE_NAMES["draft"], spec.FIXTURE_NAMES["brief"]):
         payload = base64.b64encode((fixture_dir / name).read_bytes()).decode("ascii")
@@ -338,7 +340,8 @@ def _launch(guest: LoggedGuest, application: str, path: str, log: str) -> None:
     # A generic 'libreoffice' wmctrl match can be only the splash window.
     # Wait for the requested document title, activate that real window, and
     # let its first frame paint before declaring application readiness.
-    cmd = (f"nohup soffice --{application} {shlex.quote(path)} >{shlex.quote(log)} 2>&1 </dev/null & "
+    cmd = (f"mkdir -p {shlex.quote(str(Path(log).parent))}; "
+           f"nohup soffice --{application} {shlex.quote(path)} >{shlex.quote(log)} 2>&1 </dev/null & "
            f"for i in $(seq 1 60); do sleep 1; "
            f"wmctrl -l 2>/dev/null | grep -Fq {shlex.quote(title_hint)} && "
            f"wmctrl -a {shlex.quote(title_hint)} && sleep 2 && exit 0; done; "
@@ -423,7 +426,8 @@ def _run_model_actor(role: str, guest: LoggedGuest, instruction: str, run_root: 
                      effort: str = "medium", timeout: float = 1200,
                      local_qwen: bool = False, request_retries: int = 5,
                      tool_cooldown_sec: float = 0.0,
-                     relay_client_token_env: str | None = None) -> dict[str, Any]:
+                     relay_client_token_env: str | None = None,
+                     workspace_bridge: bool = False) -> dict[str, Any]:
     """Run the existing CodexHarness against a real Guest and the case message API."""
     from oscombo.harness.base import AgentContext
     from oscombo.harness.external import CodexHarness
@@ -438,19 +442,22 @@ def _run_model_actor(role: str, guest: LoggedGuest, instruction: str, run_root: 
     if relay_client_token_env:
         options["redact_env_keys"] = [api_key_env]
     if collab_url and token_env:
-        options["collaboration"] = {"actor": role, "url": collab_url, "token_env": token_env}
+        options["collaboration"] = {"actor": role, "url": collab_url, "token_env": token_env,
+                                    "workspace_bridge": workspace_bridge}
     actor_spec = {"harness": "codex", "model": model, "effort": effort, "options": options}
     ctx = AgentContext(name=role, task_id=spec.CASE_ID, instruction=instruction,
                        guest=guest, out=actor_root, max_steps=max_steps,
                        spec=actor_spec, t0=time.time())
     harness = CodexHarness(actor_spec)
     harness.prepare(ctx)
+    started_at = time.time()
     started = time.monotonic()
     result = harness.run(ctx)
     trace_path = actor_root / "trace.json"
     trace_path.write_text(json.dumps(result.trace, indent=2, ensure_ascii=False) + "\n")
     summary = {"actor": role, "guest_key": guest.guest_key, "status": result.status,
                "steps": result.steps, "elapsed_s": round(time.monotonic() - started, 2),
+               "started_at": started_at, "ended_at": time.time(),
                "model": model, "endpoint": base_url, "effort": effort,
                "trace_path": str(trace_path.relative_to(run_root)), "error": result.error,
                "harness_version": harness.harness_version}
@@ -465,6 +472,36 @@ def _effective_role_steps(role: str, diagnostic_step_limit: int | None) -> int:
     if diagnostic_step_limit < 1:
         raise ValueError("diagnostic step limit must be positive")
     return min(baseline, int(diagnostic_step_limit))
+
+
+def _model_collaboration_tokens(tokens: dict[str, str], roles: tuple[str, ...]) -> dict[str, str]:
+    """Publish the credentials already registered with the running message server."""
+    token_envs = {role: f"CODESK_CDD_COLLAB_TOKEN_{role}" for role in roles}
+    for role, name in token_envs.items():
+        os.environ[name] = tokens[role]
+    return token_envs
+
+
+def _sample_guest_resources(root: Path, container_ids: dict, stop: threading.Event) -> None:
+    import docker
+    client = docker.from_env(timeout=5)
+    try:
+        while not stop.wait(5):
+            for key, cid in list(container_ids.items()):
+                try:
+                    stats = client.containers.get(cid).stats(stream=False)
+                    _append(root / "guest_resources.jsonl", {
+                        "time": time.time(), "guest_key": key, "container_id": cid,
+                        "read": stats.get("read"), "cpu_stats": stats.get("cpu_stats"),
+                        "precpu_stats": stats.get("precpu_stats"), "memory_stats": stats.get("memory_stats"),
+                        "pids_stats": stats.get("pids_stats"),
+                        "caveat": "rootless cgroup counters may be absent; missing is not zero",
+                    })
+                except Exception as exc:
+                    _append(root / "guest_resources.jsonl", {"time": time.time(), "guest_key": key,
+                        "container_id": cid, "error_type": type(exc).__name__})
+    finally:
+        client.close()
 
 
 def _verify_container(cid: str, run_id: str) -> Any:
@@ -591,6 +628,10 @@ def run_pilot(condition: str, run_root: Path, image: str, provider: Path,
         raise ValueError("local Qwen mode requires python, worker script, and model path")
     if codex_compat_relay and (not model or local_qwen):
         raise ValueError("Codex compatibility relay requires a remote model endpoint")
+    # Remote provider credentials stay in the coordinator/relay process only.
+    # Actors receive a disposable loopback capability, never the provider key.
+    if model and not local_qwen:
+        codex_compat_relay = True
     if local_qwen and qwen_max_new_tokens < 1:
         raise ValueError("local Qwen per-response output cap must be positive")
     if model_request_retries < 0 or model_request_retries > 5:
@@ -653,14 +694,21 @@ def run_pilot(condition: str, run_root: Path, image: str, provider: Path,
     envs: dict[str, Any] = {}
     guests: dict[str, LoggedGuest] = {}
     container_ids: dict[str, str] = {}
+    resource_stop = threading.Event()
+    resource_thread = threading.Thread(target=_sample_guest_resources,
+                                      args=(run_root, container_ids, resource_stop), daemon=True)
+    resource_thread.start()
     outcomes: dict[str, Any] = {}
     model_token_envs: list[str] = []
     qwen_process: subprocess.Popen | None = None
     qwen_base_url = base_url
     relay_process: subprocess.Popen | None = None
+    workspace_bridge = None
     model_base_url = base_url
     relay_client_token_env: str | None = None
-    task_root = "/tmp/" + run_id
+    # Guest overlays are episode-private; a fixed public path keeps the role
+    # prompts identical across conditions without exposing the treatment name.
+    task_root = "/tmp/codesk-data-to-deck"
     try:
         if local_qwen:
             assert qwen_python and qwen_worker and qwen_model_path
@@ -700,6 +748,14 @@ def run_pilot(condition: str, run_root: Path, image: str, provider: Path,
             guests["solo"] if is_solo else guests["A"])
         guest_b = guests["shared"] if condition == "collaborative_shared" else (
             guests["solo"] if is_solo else guests["B"])
+        if not is_solo:
+            from .workspace_bridge import SavedArtifactBridge
+            workspace_bridge = SavedArtifactBridge(
+                run_root / "workspace_versions", run_id, task_root,
+                {"A": guest_a.env.controller, "B": guest_b.env.controller},
+                {"A": guest_a.guest_key, "B": guest_b.guest_key})
+            server.workspace_bridge = workspace_bridge
+            workspace_bridge.start()
         _launch(guest_a, "calc", f"{task_root}/outputs/agent_A/verified_analysis.ods",
                 f"/tmp/{run_id}/calc.log")
         if model:
@@ -714,11 +770,8 @@ def run_pilot(condition: str, run_root: Path, image: str, provider: Path,
                     "solo_A_calc_foreground")
             actor_roles = (solo_role,) if is_solo else ("A", "B")
             collaboration_roles = () if is_solo else actor_roles
-            tokens = {role: secrets.token_urlsafe(32) for role in collaboration_roles}
-            token_envs = {role: f"CODESK_CDD_COLLAB_TOKEN_{role}" for role in ("A", "B")}
-            for role in collaboration_roles:
-                os.environ[token_envs[role]] = tokens[role]
-                model_token_envs.append(token_envs[role])
+            token_envs = _model_collaboration_tokens(tokens, collaboration_roles)
+            model_token_envs.extend(token_envs.values())
 
             instructions = {
                 "A": spec.AGENT_A_INSTRUCTION +
@@ -728,9 +781,20 @@ def run_pilot(condition: str, run_root: Path, image: str, provider: Path,
             }
             if is_solo:
                 instructions[solo_role] += "\nThis is a role-only solvability run. Complete your assigned role goal without waiting for or messaging another Actor."
+            else:
+                for role in actor_roles:
+                    instructions[role] += (
+                        "\nSaved role outputs are versioned and copied to the same paths on both desktops. "
+                        "Use publish_saved_artifact after saving to verify delivery, and list_saved_artifacts "
+                        "to obtain revision/hash metadata. Open the other role's file read-only through the GUI; "
+                        "reopen it to read a newly saved revision. Do not write the other role's output.")
+            actor_barrier = threading.Barrier(len(actor_roles))
             def actor_task(role: str) -> dict[str, Any]:
                 actor_guest = guest_a if role == "A" else guest_b
                 actor_base_url = f"{qwen_base_url}/actor/{role}/v1" if local_qwen else model_base_url
+                if relay_client_token_env:
+                    actor_base_url = model_base_url.removesuffix("/v1") + f"/actor/{role}/v1"
+                actor_barrier.wait(timeout=60)
                 return _run_model_actor(
                     role, actor_guest, instructions[role], run_root, model, actor_base_url,
                     api_key_env, mcp_python or sys.executable,
@@ -740,7 +804,8 @@ def run_pilot(condition: str, run_root: Path, image: str, provider: Path,
                     timeout=model_timeout, local_qwen=local_qwen,
                     request_retries=model_request_retries,
                     tool_cooldown_sec=model_tool_cooldown_sec,
-                    relay_client_token_env=relay_client_token_env)
+                    relay_client_token_env=relay_client_token_env,
+                    workspace_bridge=workspace_bridge is not None)
             if is_solo:
                 outcomes[solo_role] = actor_task(solo_role)
             else:
@@ -793,6 +858,15 @@ def run_pilot(condition: str, run_root: Path, image: str, provider: Path,
                 max_steps=spec.ROLE_BUDGET["B"]["steps"])
             if outcomes["B_final"]["status"] != "done":
                 raise RuntimeError(f"Actor B GUI step loop did not finish: {outcomes['B_final']}")
+
+        if workspace_bridge is not None:
+            workspace_bridge.stop()
+            (run_root / "workspace_sync_result.json").write_text(json.dumps({
+                "final_versions": workspace_bridge.snapshot(), "verified": True,
+                "transient_errors": workspace_bridge.errors,
+                "scope": "saved output bytes verified in both Guests; does not prove GUI reopen",
+            }, indent=2) + "\n")
+            workspace_bridge = None
 
         # Verify each saved output is present and hash it in the Guest before
         # collection.  Do not SIGKILL LibreOffice to force a reopen check: that
@@ -900,6 +974,13 @@ def run_pilot(condition: str, run_root: Path, image: str, provider: Path,
         (run_root / "result.json").write_text(json.dumps(summary, indent=2, sort_keys=True) + "\n")
         return summary
     finally:
+        resource_stop.set()
+        resource_thread.join(timeout=10)
+        if workspace_bridge is not None:
+            try:
+                workspace_bridge.stop()
+            except Exception as exc:
+                _append(run_root / "workspace_sync_errors.jsonl", {"error": str(exc), "time": time.time()})
         for name in model_token_envs:
             os.environ.pop(name, None)
         # Only close resources whose full container IDs still carry this run's
@@ -989,7 +1070,7 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--model-timeout", type=float, default=1200)
     parser.add_argument("--model-request-retries", type=int, default=5,
                         help="Codex transport retries for transient request errors; never replays GUI actions")
-    parser.add_argument("--model-tool-cooldown-sec", type=float, default=60.0,
+    parser.add_argument("--model-tool-cooldown-sec", type=float, default=0.0,
                         help="minimum seconds between desktop tool results and subsequent model turns")
     parser.add_argument("--diagnostic-step-limit", type=int,
                         help="temporary per-actor GUI-call cap for bounded calibration; does not change the 240-step task budget")

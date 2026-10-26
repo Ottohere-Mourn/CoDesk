@@ -26,7 +26,8 @@ def test_move_latest_tool_image_keeps_tool_text_and_prior_observation():
     assert body["input"][-1]["content"][-1]["image_url"].endswith("new")
 
 
-def test_default_relay_keeps_body_and_strips_codex_headers(tmp_path):
+@pytest.mark.parametrize("route,actor", [("/v1/responses", None), ("/actor/A/v1/responses", "A")])
+def test_default_relay_keeps_body_and_strips_codex_headers(tmp_path, route, actor):
     captured = {}
 
     class Upstream(BaseHTTPRequestHandler):
@@ -36,7 +37,7 @@ def test_default_relay_keeps_body_and_strips_codex_headers(tmp_path):
         def do_POST(self):
             captured["body"] = self.rfile.read(int(self.headers["Content-Length"]))
             captured["headers"] = dict(self.headers)
-            response = b'data: {"type":"response.completed"}\n\n'
+            response = b'data: {"type":"response.completed","response":{"usage":{"input_tokens":17,"output_tokens":3}}}\n\n'
             self.send_response(200)
             self.send_header("Content-Type", "text/event-stream")
             self.send_header("Content-Length", str(len(response)))
@@ -56,7 +57,7 @@ def test_default_relay_keeps_body_and_strips_codex_headers(tmp_path):
                                      data=raw, timeout=5)
         assert unauthorized.status_code == 401
         assert captured == {}
-        result = requests.post(f"http://127.0.0.1:{relay.server_port}/v1/responses",
+        result = requests.post(f"http://127.0.0.1:{relay.server_port}{route}",
                                data=raw, headers={"Content-Type": "application/json",
                                                   "Authorization": "Bearer run-token",
                                                   "originator": "codex_cli_rs",
@@ -70,6 +71,10 @@ def test_default_relay_keeps_body_and_strips_codex_headers(tmp_path):
         log = (tmp_path / "events.jsonl").read_text()
         assert "test-secret" not in log and "data:image" not in log
         assert json.loads(log)["image_moved"] is False
+        event = json.loads(log)
+        assert event["actor"] == actor
+        assert event["started_at"] <= event["first_byte_at"] <= event["time"]
+        assert event["usage"] == {"input_tokens": 17, "output_tokens": 3}
     finally:
         for server in (relay, upstream):
             server.shutdown()

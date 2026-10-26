@@ -15,6 +15,7 @@ import argparse
 import hmac
 import json
 import os
+import re
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -80,7 +81,8 @@ def make_server(host: str, port: int, upstream: str, api_key: str,
             self.wfile.write(raw)
 
         def do_POST(self):
-            if self.path != "/v1/responses":
+            route = re.fullmatch(r"/(?:actor/([ABS])/)?v1/responses", self.path)
+            if route is None:
                 self.send_error(404)
                 return
             if not hmac.compare_digest(self.headers.get("Authorization", ""),
@@ -88,12 +90,15 @@ def make_server(host: str, port: int, upstream: str, api_key: str,
                 self.send_error(401)
                 return
             started = time.monotonic()
+            started_at = time.time()
+            actor = route.group(1)
             try:
                 length = int(self.headers.get("Content-Length", "0"))
                 if length < 1 or length > 32 * 1024 * 1024:
                     self.send_error(413)
                     return
                 raw = self.rfile.read(length)
+                model = json.loads(raw).get("model")
                 moved = False
                 if promote_tool_image:
                     body = json.loads(raw)
@@ -110,21 +115,40 @@ def make_server(host: str, port: int, upstream: str, api_key: str,
                         "Content-Type", "text/event-stream"))
                     self.send_header("Connection", "close")
                     self.end_headers()
+                    first_byte_at = None
+                    response_tail = b""
                     for chunk in upstream_response.iter_content(chunk_size=8192):
                         if chunk:
+                            if first_byte_at is None:
+                                first_byte_at = time.time()
+                            response_tail = (response_tail + chunk)[-2 * 1024 * 1024:]
                             self.wfile.write(chunk)
                             self.wfile.flush()
                     self.close_connection = True
                     status = upstream_response.status_code
+                    usage = None
+                    candidates = [response_tail] if "text/event-stream" not in upstream_response.headers.get("Content-Type", "") else [
+                        line[6:] for line in response_tail.splitlines() if line.startswith(b"data: ")]
+                    for candidate in candidates:
+                        try:
+                            item = json.loads(candidate)
+                            record = item.get("response", item)
+                            if isinstance(record.get("usage"), dict):
+                                usage = record["usage"]
+                        except (ValueError, AttributeError):
+                            pass
                 if event_log is not None:
                     with event_log.open("a", encoding="utf-8") as log:
-                        log.write(json.dumps({"time": time.time(), "image_moved": moved,
+                        log.write(json.dumps({"time": time.time(), "started_at": started_at,
+                                              "first_byte_at": first_byte_at, "actor": actor,
+                                              "model": model, "usage": usage, "image_moved": moved,
                                               "request_bytes": len(raw), "upstream_status": status,
                                               "elapsed_s": round(time.monotonic() - started, 3)}) + "\n")
             except Exception as exc:
                 if event_log is not None:
                     with event_log.open("a", encoding="utf-8") as log:
-                        log.write(json.dumps({"time": time.time(), "error_type": type(exc).__name__,
+                        log.write(json.dumps({"time": time.time(), "started_at": started_at,
+                                              "actor": actor, "error_type": type(exc).__name__,
                                               "elapsed_s": round(time.monotonic() - started, 3)}) + "\n")
                 try:
                     self.send_error(502, "Responses relay upstream error")

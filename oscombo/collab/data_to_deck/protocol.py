@@ -116,6 +116,16 @@ def make_server(store: ProtocolStore, actor_tokens: dict[str, str], host: str = 
                 if n > store.max_attachment_bytes + 100_000:
                     return self._json(413, {"error": "request too large"})
                 payload = json.loads(self.rfile.read(n) or b"{}")
+                if self.path == "/artifacts/publish":
+                    bridge = getattr(self.server, "workspace_bridge", None)
+                    if bridge is None:
+                        return self._json(404, {"error": "workspace bridge unavailable"})
+                    if payload:
+                        return self._json(400, {"error": "publication uses the authenticated actor's fixed path"})
+                    try:
+                        return self._json(200, bridge.publish(actor))
+                    except Exception as exc:
+                        return self._json(409, {"error": str(exc)})
                 if self.path == "/messages":
                     event = store.send(actor, str(payload.get("recipient", "all")),
                                        str(payload.get("body", "")), list(payload.get("attachment_ids", [])))
@@ -135,6 +145,11 @@ def make_server(store: ProtocolStore, actor_tokens: dict[str, str], host: str = 
             parsed = urlparse(self.path)
             query = parse_qs(parsed.query)
             try:
+                if parsed.path == "/artifacts":
+                    bridge = getattr(self.server, "workspace_bridge", None)
+                    if bridge is None:
+                        return self._json(404, {"error": "workspace bridge unavailable"})
+                    return self._json(200, bridge.snapshot())
                 if parsed.path == "/messages":
                     return self._json(200, store.messages(actor, float(query.get("after", [0])[0])))
                 if parsed.path.startswith("/attachments/"):

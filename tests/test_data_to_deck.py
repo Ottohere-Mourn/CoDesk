@@ -241,6 +241,32 @@ def test_actor_collaboration_clients_exchange_messages_and_attachments(tmp_path)
         thread.join(timeout=5)
 
 
+def test_model_tokens_authenticate_with_the_already_started_server(tmp_path, monkeypatch):
+    import os
+    from oscombo.collab.data_to_deck.live_pilot import _model_collaboration_tokens
+
+    tokens = {"A": "registered-a", "B": "registered-b"}
+    server = make_server(ProtocolStore(tmp_path / "protocol", "model-auth"), tokens)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    for role in tokens:
+        monkeypatch.setenv(f"CODESK_CDD_COLLAB_TOKEN_{role}", "previous-episode")
+    try:
+        envs = _model_collaboration_tokens(tokens, ("A", "B"))
+        base = f"http://127.0.0.1:{server.server_port}"
+        a = CollaborationClient(base, "A", os.environ[envs["A"]])
+        b = CollaborationClient(base, "B", os.environ[envs["B"]])
+        message = a.send_message("B", "saved output available")
+        assert b.read_messages()[0]["message_id"] == message["message_id"]
+        with pytest.raises(RuntimeError, match="401"):
+            CollaborationClient(base, "A", "previous-episode").read_messages()
+        assert _model_collaboration_tokens(tokens, ()) == {}
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=5)
+
+
 def test_codex_harness_exposes_case_collaboration_mcp_only_when_opted_in(tmp_path):
     from types import SimpleNamespace
     from oscombo.harness.external import CodexHarness
