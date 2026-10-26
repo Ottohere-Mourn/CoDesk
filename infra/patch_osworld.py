@@ -28,6 +28,10 @@ EDITS = [
     ("import time\n", f"import time\nimport uuid  {MARKER}\n"),
     ('                if os.path.exists("/dev/kvm"):\n',
      '                if os.access("/dev/kvm", os.R_OK | os.W_OK) and os.environ.get("OSCOMBO_FORCE_TCG") != "1":\n'),
+    ('                        8006: self.vnc_port,\n', '                        8006: ("127.0.0.1", self.vnc_port),\n'),
+    ('                        5000: self.server_port,\n', '                        5000: ("127.0.0.1", self.server_port),\n'),
+    ('                        9222: self.chromium_port,\n', '                        9222: ("127.0.0.1", self.chromium_port),\n'),
+    ('                        8080: self.vlc_port\n', '                        8080: ("127.0.0.1", self.vlc_port)\n'),
     ('        self.environment = {"DISK_SIZE": "32G", "RAM_SIZE": "4G", "CPU_CORES": "4"}  # Modify if needed\n',
      '        self.environment = {"DISK_SIZE": "32G", "RAM_SIZE": os.environ.get("OSCOMBO_GUEST_RAM", "8G"),\n'
      '                            "CPU_CORES": os.environ.get("OSCOMBO_GUEST_CPUS", "8")}  # oscombo\n'),

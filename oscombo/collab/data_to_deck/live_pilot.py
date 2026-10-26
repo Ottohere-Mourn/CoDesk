@@ -10,6 +10,7 @@ import argparse
 import base64
 import datetime as dt
 import json
+import io
 import os
 import re
 import secrets
@@ -35,6 +36,38 @@ from .collab_tools import CollaborationClient
 
 def _stamp() -> str:
     return dt.datetime.now(dt.timezone.utc).isoformat()
+
+
+def _desktop_frame_ready(png: bytes) -> bool:
+    """Reject boot-time black frames even when the screenshot HTTP API is live."""
+    from PIL import Image
+    with Image.open(io.BytesIO(png)) as frame:
+        if frame.size != (1920, 1080):
+            return False
+        histogram = frame.convert("L").histogram()
+        # A cursor on a black X root is not a usable desktop. This is only a
+        # startup gate, never a filter of observations during actor execution.
+        return sum(histogram[24:]) / (frame.width * frame.height) > 0.02
+
+
+def _wait_for_visible_desktop(guest, timeout: float = 300) -> bytes:
+    deadline = time.monotonic() + timeout
+    consecutive = 0
+    attempt = 0
+    while time.monotonic() < deadline:
+        attempt += 1
+        shot = guest.screenshot(patience=60)
+        ready = _desktop_frame_ready(shot)
+        path = guest.root / "screenshots" / f"{guest.guest_key}-readiness-{attempt:03d}.png"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(shot)
+        _append(guest.root / "desktop_readiness.jsonl", {"time": time.time(), "guest_key": guest.guest_key,
+                "ready_frame": ready, "screenshot": str(path.relative_to(guest.root))})
+        consecutive = consecutive + 1 if ready else 0
+        if consecutive >= 2:
+            return shot
+        time.sleep(5)
+    raise RuntimeError("Guest HTTP is live but no stable visible 1920x1080 desktop became ready")
 
 
 def _append(path: Path, value: dict[str, Any]) -> None:
@@ -301,7 +334,14 @@ def _boot_guest(run_root: Path, run_id: str, key: str, image: str, provider: Pat
     # DesktopEnv's Docker constructor already starts a clean Guest. Do not
     # call reset here: the first explicit reset is reserved for the end-of-run
     # cleanliness check and must correspond to the Guest we logged above.
-    shot = lg.screenshot(patience=60)
+    try:
+        shot = _wait_for_visible_desktop(lg)
+    except BaseException:
+        _verify_container(cid, run_id)
+        _append(run_root / "resource_actions.jsonl", {"action": "visible_readiness_failed_cleanup",
+                "container_id": cid, "run_id": run_id, "ownership_verified": True, "time_utc": _stamp()})
+        env.close()
+        raise
     path = run_root / "screenshots" / f"{key}-initial.png"
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_bytes(shot)
