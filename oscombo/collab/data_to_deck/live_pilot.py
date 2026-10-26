@@ -378,30 +378,43 @@ def _install_fixture(guest: LoggedGuest, fixture_dir: Path, task_root: str) -> N
     _shell(guest, "set -e\n" + "\n".join(pieces), timeout=60)
 
 
+def _office_frame_ready(png: bytes) -> bool:
+    """Reject unpainted or disabled LO toolbars during setup on the pinned Guest."""
+    from PIL import Image
+    with Image.open(io.BytesIO(png)) as frame:
+        if frame.size != (1920, 1080):
+            return False
+        toolbar = frame.convert("L").crop((100, 85, 1800, 220))
+        return sum(toolbar.histogram()[:128]) / (toolbar.width * toolbar.height) > 0.01
+
+
 def _launch(guest: LoggedGuest, application: str, path: str, log: str, readonly: bool = False) -> None:
     title_hint = Path(path).name
-    # A generic 'libreoffice' wmctrl match can be only the splash window.
-    # Wait for the requested document title, activate that real window, and
-    # let its first frame paint before declaring application readiness.
     cmd = (f"mkdir -p {shlex.quote(str(Path(log).parent))}; "
-           f"nohup soffice --{application} {'--view ' if readonly else ''}{shlex.quote(path)} >{shlex.quote(log)} 2>&1 </dev/null & "
-           f"for i in $(seq 1 60); do sleep 1; "
-           f"wmctrl -l 2>/dev/null | grep -Fq {shlex.quote(title_hint)} && "
-           f"wmctrl -a {shlex.quote(title_hint)} && sleep 2 && exit 0; done; "
-           "exit 1")
-    _shell(guest, cmd, timeout=75)
-    # Screenshot is the readiness evidence offered to an Agent; window
-    # information is supplementary and its sample is explicitly non-atomic.
-    shot = guest.screenshot(patience=45)
-    active = guest.active_window() or ""
-    if title_hint.casefold() not in active.casefold():
-        raise RuntimeError(f"requested application did not become active: expected {title_hint!r}, got {active!r}")
-    path_out = guest.root / "screenshots" / f"{application}-ready-{int(time.time())}.png"
-    path_out.write_bytes(shot)
-    _append(guest.root / "observations.jsonl", {"actor": "system", "guest_key": guest.guest_key,
-        "time_utc": _stamp(), "application": application,
-        "screenshot": str(path_out.relative_to(guest.root)), "window": guest._window_sample("app_ready"),
-        "atomic": False})
+           f"nohup soffice --{application} {'--view ' if readonly else ''}{shlex.quote(path)} >{shlex.quote(log)} 2>&1 </dev/null & ")
+    _shell(guest, cmd, timeout=15)
+    deadline = time.monotonic() + 300
+    consecutive = 0
+    attempt = 0
+    while time.monotonic() < deadline:
+        attempt += 1
+        # Setup only: make the initial app geometry reproducible. This is never
+        # called to arbitrate concurrent Actor input during a model episode.
+        _shell(guest, f"wmctrl -r {shlex.quote(title_hint)} -b add,maximized_vert,maximized_horz; "
+                     f"wmctrl -a {shlex.quote(title_hint)}; sleep 5; true", timeout=15)
+        shot = guest.screenshot(patience=60)
+        active = guest.active_window() or ""
+        ready = title_hint.casefold() in active.casefold() and _office_frame_ready(shot)
+        path_out = guest.root / "screenshots" / f"{application}-ready-{time.time_ns()}-{attempt}.png"
+        path_out.write_bytes(shot)
+        _append(guest.root / "observations.jsonl", {"actor": "system", "guest_key": guest.guest_key,
+            "time_utc": _stamp(), "application": application, "ready_frame": ready,
+            "screenshot": str(path_out.relative_to(guest.root)), "window": guest._window_sample("app_ready"),
+            "atomic": False})
+        consecutive = consecutive + 1 if ready else 0
+        if consecutive >= 2:
+            return
+    raise RuntimeError(f"application did not render a usable foreground document: {title_hint!r}")
 
 
 def _activate_ready_document(guest: LoggedGuest, path: str, phase: str) -> None:
