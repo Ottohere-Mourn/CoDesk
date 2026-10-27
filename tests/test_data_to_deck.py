@@ -292,6 +292,7 @@ def test_codex_harness_exposes_case_collaboration_mcp_only_when_opted_in(tmp_pat
     assert 'PYTHONPATH = ' in config
     assert 'CODESK_COLLAB_ACTOR = "A"' in config
     assert 'CODESK_COLLAB_TOKEN = "must-not-appear-in-config"' in config
+    assert 'default_tools_approval_mode = "approve"' in config.split("[mcp_servers.collaboration]", 1)[1]
     assert "send_message" in harness.prompt(ctx)
 
     default = CodexHarness({"model": "test-model", "options": {}})

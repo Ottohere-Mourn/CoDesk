@@ -278,6 +278,7 @@ required = true
 enabled_tools = {json.dumps(collaboration_tools)}
 startup_timeout_sec = 30
 tool_timeout_sec = 30
+default_tools_approval_mode = "approve"
 env = {{ {collab_env_toml} }}
 """
         request_retries = int(o.get("request_retries", 6))
