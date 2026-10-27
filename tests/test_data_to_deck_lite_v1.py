@@ -93,3 +93,15 @@ def test_fixture_bytes_are_deterministic(tmp_path):
     fixtures.build_fixture(second)
     for name in spec.FIXTURE_NAMES.values():
         assert (first / name).read_bytes() == (second / name).read_bytes()
+
+
+def test_deck_citation_goes_stale_after_valid_analysis_resave(tmp_path):
+    _, authority, analysis, draft, deck = _control(tmp_path)
+    old_digest = hashlib.sha256(analysis.read_bytes()).hexdigest()
+    sheets = read_ods(analysis)
+    sheets["Findings"][1][3] += "; independently checked"
+    _ods(analysis, sheets)
+    assert hashlib.sha256(analysis.read_bytes()).hexdigest() != old_digest
+    result = oracle.evaluate(authority, analysis, draft, deck)
+    assert result["actors"]["A"]["success"]
+    assert not result["actors"]["B"]["checks"]["actual_final_analysis_digest"]
