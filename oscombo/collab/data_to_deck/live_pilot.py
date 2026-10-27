@@ -1078,29 +1078,48 @@ def run_pilot(condition: str, run_root: Path, image: str, provider: Path,
                     "saved_sha256": __import__("hashlib").sha256(before_bytes).hexdigest(),
                     "screenshot": str(shot_path.relative_to(run_root)), "time": time.time()})
                 continue
-            guest.actor = "system"
-            guest.run_pyautogui("import pyautogui, time; pyautogui.hotkey('ctrl','w'); time.sleep(2)")
-            _shell(guest, f"for i in $(seq 1 30); do "
-                          f"wmctrl -l | grep -Fq {shlex.quote(Path(guest_path).name)} || exit 0; "
-                          "sleep 1; done; exit 1", timeout=40)
-            _launch(guest, "calc" if role == "A" else "impress", guest_path,
-                    f"/tmp/{run_id}/reopen-{role}.log")
-            after_bytes = guest.env.controller.get_file(guest_path)
-            if not before_bytes or before_bytes != after_bytes:
-                raise RuntimeError(f"saved {role} artifact changed or disappeared during GUI reopen")
-            reopen_evidence.append({"actor": role, "guest_key": guest.guest_key,
-                                    "sha256": __import__("hashlib").sha256(after_bytes).hexdigest(),
-                                    "same_bytes_after_gui_reopen": True, "time": time.time()})
-            if condition == "collaborative_isolated":
-                peer_guest = guest_b if role == "A" else guest_a
-                _launch(peer_guest, "calc" if role == "A" else "impress", guest_path,
-                        f"/tmp/{run_id}/peer-read-{role}.log", readonly=True)
-                peer_bytes = peer_guest.env.controller.get_file(guest_path)
-                if peer_bytes != after_bytes:
-                    raise RuntimeError(f"peer Guest read a different {role} revision")
-                reopen_evidence.append({"actor": role, "guest_key": peer_guest.guest_key,
-                    "sha256": __import__("hashlib").sha256(peer_bytes).hexdigest(),
-                    "peer_gui_opened_readonly": True, "time": time.time()})
+            try:
+                guest.actor = "system"
+                guest.run_pyautogui("import pyautogui, time; pyautogui.hotkey('ctrl','w'); time.sleep(2)")
+                _shell(guest, f"for i in $(seq 1 30); do "
+                              f"wmctrl -l | grep -Fq {shlex.quote(Path(guest_path).name)} || exit 0; "
+                              "sleep 1; done; exit 1", timeout=40)
+                _launch(guest, "calc" if role == "A" else "impress", guest_path,
+                        f"/tmp/{run_id}/reopen-{role}.log")
+                after_bytes = guest.env.controller.get_file(guest_path)
+                if not before_bytes or before_bytes != after_bytes:
+                    raise RuntimeError(f"saved {role} artifact changed or disappeared during GUI reopen")
+                reopen_evidence.append({"actor": role, "guest_key": guest.guest_key,
+                                        "sha256": __import__("hashlib").sha256(after_bytes).hexdigest(),
+                                        "same_bytes_after_gui_reopen": True, "time": time.time()})
+                if condition == "collaborative_isolated":
+                    peer_guest = guest_b if role == "A" else guest_a
+                    _launch(peer_guest, "calc" if role == "A" else "impress", guest_path,
+                            f"/tmp/{run_id}/peer-read-{role}.log", readonly=True)
+                    peer_bytes = peer_guest.env.controller.get_file(guest_path)
+                    if peer_bytes != after_bytes:
+                        raise RuntimeError(f"peer Guest read a different {role} revision")
+                    reopen_evidence.append({"actor": role, "guest_key": peer_guest.guest_key,
+                        "sha256": __import__("hashlib").sha256(peer_bytes).hexdigest(),
+                        "peer_gui_opened_readonly": True, "time": time.time()})
+            except RuntimeError as exc:
+                if not model:
+                    raise
+                # A timed-out model can leave LibreOffice in a state where
+                # closing or reopening stalls. The saved bytes were collected
+                # and scored above; record the lifecycle failure, then still
+                # attempt the run-owned Guest reset.
+                reopen_complete = False
+                shot_path = run_root / "screenshots" / f"reopen-{role}-failed.png"
+                try:
+                    shot_path.write_bytes(guest.screenshot(patience=45))
+                    shot = str(shot_path.relative_to(run_root))
+                except Exception:
+                    shot = None
+                reopen_evidence.append({"actor": role, "guest_key": guest.guest_key,
+                    "same_bytes_after_gui_reopen": False, "error": str(exc),
+                    "saved_sha256": __import__("hashlib").sha256(before_bytes).hexdigest(),
+                    "screenshot": shot, "time": time.time()})
         (run_root / "reopen_evidence.json").write_text(json.dumps(reopen_evidence, indent=2) + "\n")
 
         reset_results = []
