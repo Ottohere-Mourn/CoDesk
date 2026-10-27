@@ -47,6 +47,8 @@ Shared 有两条直接可见的干扰链：B 在 Impress 打开文件对话框�
 
 两次正式模型运行均已从真实 Guest 回收文件、生成 Oracle，并由评分侧对回收产物独立复评；没有任何条件取得成功。Shared 在重开时被模型遗留的 `Save Document?` 阻塞；Isolated 在重开 A 文件时 Guest shell 3 次重试失败。两次在此后跳过了 reset，finally 均按各自 run_id 精确删除了自己的容器；这是后处理生命周期未通过，不改变已回收文件的任务评分。此前 scripted Shared/Isolated 正控均完成了文件重开和 reset。后处理代码现已改为在模型运行遇到重开错误时保留截图/错误并继续尝试 reset，离线 181 项测试通过；**该补丁尚无新的真实模型运行验证**。
 
+原始证据保存在各自的 `runs/<run_id>/`：`actor_runs/A/A` 与 `actor_runs/B/B` 下有真实截图、逐步动作和完整模型会话；`artifacts/` 有回收的 ODS/ODP，`oracle.json` 是评分，`model_metrics.json` 是时间/token/资源汇总。Shared 的 `focus_event_shared_001.json`、`focus_event_shared_002.json` 指向干扰截图，`collaboration/events.jsonl` 记录消息。Isolated 的 `workspace_versions/events.jsonl`、`current.json` 和 `workspace_sync_result.json` 记录 ownership、revision、目标 Guest 字节回读；两次 `audit_decision.json` 均明确区分模型任务评分与后处理错误。Actor 环境没有 Gold/Oracle，密钥没有进入这些记录。
+
 ## 与原版比较及后续建议
 
 原版是三页和更长的调和链；Lite 为两项 Calc 核验加一页 PPT 的三处业务修订与来源行。原版 Shared scripted 正控有 30 个 GUI 动作，Lite 为 22 个，约减少 27%；但同一 TCG 环境下完整 Guest 启动、重开与 reset 占大头，脚本总墙钟时间没有同比下降。Lite 完整模型执行在 20 分钟预算内仍失败：A 的证据填写/保存和 B 的跨文件 GUI 打开显著消耗时间。它保留真实信息依赖，并在 Shared 中捕获了可复核的焦点/编辑状态干扰；但本组 **0/1 对 0/1** 不支持隔离提高成功率，也不能估计成功率差异。
