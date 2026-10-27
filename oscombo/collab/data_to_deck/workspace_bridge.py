@@ -26,12 +26,13 @@ def digest(data: bytes) -> str:
 class SavedArtifactBridge:
     def __init__(self, root: Path, run_id: str, task_root: str, controllers: dict,
                  guest_ids: dict[str, str], poll_seconds: float = 2,
-                 case_id: str = spec.CASE_ID):
+                 case_id: str = spec.CASE_ID, peer_read_only: bool = False):
         self.root = Path(root)
         self.root.mkdir(parents=True, exist_ok=False)
         self.run_id, self.task_root = run_id, task_root
         self.controllers, self.guest_ids = controllers, guest_ids
         self.poll_seconds = poll_seconds
+        self.peer_read_only = peer_read_only
         self.current: dict[str, dict] = {}
         self.peer_hashes: dict[str, str] = {}
         self._lock = threading.RLock()
@@ -43,6 +44,7 @@ class SavedArtifactBridge:
             "outputs": spec.OUTPUTS, "writer_roles": {p: r for r, p in spec.OUTPUTS.items()},
             "guest_ids": guest_ids, "root": str(self.root.resolve()),
             "scope": "saved-file publication ownership; GUI role discipline is separate",
+            "peer_read_only": peer_read_only,
         }, indent=2) + "\n")
 
     def _record(self, **event):
@@ -61,12 +63,26 @@ class SavedArtifactBridge:
         encoded = base64.b64encode(data).decode("ascii")
         script = ("set -e\numask 022\n"
                   f"printf %s {shlex.quote(encoded)} | base64 -d > {shlex.quote(temporary)}\n"
-                  f"mv -f -- {shlex.quote(temporary)} {shlex.quote(path)}\n")
+                  + (f"chmod a-w -- {shlex.quote(temporary)}\n" if self.peer_read_only else "")
+                  + f"mv -f -- {shlex.quote(temporary)} {shlex.quote(path)}\n")
         result = self.controllers[role].run_bash_script(script, timeout=30)
         if not isinstance(result, dict) or result.get("status") != "success" or result.get("returncode", 0):
             raise RuntimeError("Guest artifact transfer command failed")
         if digest(self._read(role, path)) != digest(data):
             raise RuntimeError("Guest artifact read-back hash mismatch")
+
+    def _protect_peer(self, owner: str) -> None:
+        if not self.peer_read_only or self.guest_ids["A"] == self.guest_ids["B"]:
+            return
+        peer = "B" if owner == "A" else "A"
+        path = f"{self.task_root}/{spec.OUTPUTS[owner]}"
+        result = self.controllers[peer].run_bash_script(
+            f"set -e\nchmod a-w -- {shlex.quote(path)}\nstat -c %a -- {shlex.quote(path)}", timeout=30)
+        mode = (result.get("output") or "").strip() if isinstance(result, dict) else ""
+        if not isinstance(result, dict) or result.get("status") != "success" or mode != "444":
+            raise RuntimeError(f"peer output is not read-only in Guest {self.guest_ids[peer]}")
+        self._record(event="peer_readonly_verified", actor=owner, peer=peer,
+                     destination_guest=self.guest_ids[peer], mode=mode)
 
     def publish(self, actor: str) -> dict:
         """Publish only this actor's fixed output; callers cannot select a path."""
@@ -111,6 +127,7 @@ class SavedArtifactBridge:
                              source_guest=self.guest_ids[actor], file=str(local.relative_to(self.root)))
             if distinct and peer_hash != sha:
                 self._write(peer, path, data)
+                self._protect_peer(actor)
                 self._record(event="transfer_verified", **{**self.current[actor], "delivered": True},
                              destination_guest=self.guest_ids[peer], elapsed_s=time.time() - started)
             self.peer_hashes[actor] = sha
@@ -131,6 +148,8 @@ class SavedArtifactBridge:
 
     def start(self):
         self.sync()  # initial peer copies must already be byte-identical
+        for owner in ("A", "B"):
+            self._protect_peer(owner)
         def loop():
             while not self._stop.wait(self.poll_seconds):
                 try:

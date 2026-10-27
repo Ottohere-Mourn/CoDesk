@@ -17,6 +17,7 @@ class Files:
     """In-memory controller double. No Guest or GUI success is claimed here."""
     def __init__(self, files):
         self.files = dict(files)
+        self.modes = {path: "644" for path in files}
         self.fail_transfer = False
 
     def get_file(self, path):
@@ -26,7 +27,16 @@ class Files:
         if self.fail_transfer:
             return {"status": "error"}
         lines = script.splitlines()
-        self.files[shlex.split(lines[-1])[-1]] = base64.b64decode(shlex.split(lines[-2])[2])
+        if lines[-1].startswith("stat -c %a"):
+            path = shlex.split(lines[-1])[-1]
+            if lines[-2].startswith("chmod a-w"):
+                self.modes[path] = "444"
+            return {"status": "success", "output": self.modes[path] + "\n"}
+        source_line = next(line for line in lines if "base64 -d >" in line)
+        data = base64.b64decode(shlex.split(source_line)[2])
+        destination = shlex.split(lines[-1])[-1]
+        self.files[destination] = data
+        self.modes[destination] = "444" if any(line.startswith("chmod a-w") for line in lines) else "644"
         return {"status": "success"}
 
 
@@ -88,6 +98,28 @@ def test_failed_transfer_can_retry_without_losing_revision(tmp_path):
     b.fail_transfer = False
     assert bridge.publish("A")["revision"] == 1
     assert a.files[path] == b.files[path]
+
+
+def test_lite_peer_outputs_are_read_only_before_actor_start_and_after_transfer(tmp_path):
+    fixture = tmp_path / "fixture"
+    build_fixture(fixture)
+    files = {f"/task/{spec.OUTPUTS[r]}": (fixture / spec.FIXTURE_NAMES[n]).read_bytes()
+             for r, n in (("A", "authority"), ("B", "draft"))}
+    a, b = Files(files), Files(files)
+    bridge = SavedArtifactBridge(tmp_path / "versions", "lite", "/task", {"A": a, "B": b},
+                                 {"A": "A", "B": "B"}, peer_read_only=True)
+    bridge.start()
+    try:
+        a_path, b_path = (f"/task/{spec.OUTPUTS[r]}" for r in "AB")
+        assert a.modes[a_path] == b.modes[b_path] == "644"
+        assert b.modes[a_path] == a.modes[b_path] == "444"
+        a.files[a_path] = edited_workbook(tmp_path)
+        revision = bridge.publish("A")
+        assert revision["revision"] == 1
+        assert b.files[a_path] == a.files[a_path]
+        assert b.modes[a_path] == "444"
+    finally:
+        bridge.stop()
 
 
 def test_partial_save_and_wrong_type_are_not_transferred(tmp_path):

@@ -789,6 +789,8 @@ def run_pilot(condition: str, run_root: Path, image: str, provider: Path,
                 "effective_role_step_budget": {role: _effective_role_steps(role, diagnostic_step_limit, case_spec.ROLE_BUDGET)
                                                 for role in ((solo_role,) if is_solo else ("A", "B"))},
                 "message_api_enabled": True, "attachment_api_enabled": True,
+                "lite_peer_documents_preopened": bool(case_lite_v1 and model and
+                                                      condition == "collaborative_isolated"),
                 "guest_count": guest_count, "provider_commit": "3d778a3c9a34a079316f70df023b166700445792",
                 "provider_path": str(provider), "base_qcow2": image,
                 "runtime_image": runtime, "started_at": time.time()}
@@ -867,12 +869,24 @@ def run_pilot(condition: str, run_root: Path, image: str, provider: Path,
             workspace_bridge = SavedArtifactBridge(
                 run_root / "workspace_versions", run_id, task_root,
                 {"A": guest_a.env.controller, "B": guest_b.env.controller},
-                {"A": guest_a.guest_key, "B": guest_b.guest_key}, case_id=case_spec.CASE_ID)
+                {"A": guest_a.guest_key, "B": guest_b.guest_key},
+                case_id=case_spec.CASE_ID, peer_read_only=case_lite_v1)
             server.workspace_bridge = workspace_bridge
             workspace_bridge.start()
         _launch(guest_a, "calc", f"{task_root}/outputs/agent_A/verified_analysis.ods",
                 f"/tmp/{run_id}/calc.log")
         if model:
+            if case_lite_v1 and condition == "collaborative_isolated":
+                # The Shared desktop already has both role documents open.
+                # Give each Isolated desktop the same open-document choices;
+                # restore the role's own application to the foreground before
+                # either Actor starts. Peer copies are read-only on disk.
+                _launch(guest_a, "impress", f"{task_root}/outputs/agent_B/final_management_brief.odp",
+                        f"/tmp/{run_id}/peer-impress.log", readonly=True)
+                _launch(guest_b, "calc", f"{task_root}/outputs/agent_A/verified_analysis.ods",
+                        f"/tmp/{run_id}/peer-calc.log", readonly=True)
+                _activate_ready_document(guest_a,
+                    f"{task_root}/outputs/agent_A/verified_analysis.ods", "isolated-A-own-foreground")
             _launch(guest_b, "impress", f"{task_root}/outputs/agent_B/final_management_brief.odp",
                     f"/tmp/{run_id}/impress.log")
             # Solo A and Solo B share one Guest object. Opening Impress after Calc
@@ -1081,6 +1095,14 @@ def run_pilot(condition: str, run_root: Path, image: str, provider: Path,
             try:
                 guest.actor = "system"
                 guest.run_pyautogui("import pyautogui, time; pyautogui.hotkey('ctrl','w'); time.sleep(2)")
+                # A timed-out Actor may have left unsaved edits. Ctrl+W then
+                # opens a modal instead of closing the document; polling for
+                # its window title through the Guest shell can stall and hide
+                # the already collected Oracle score. Keep the modal evidence
+                # and proceed to the run-owned reset without answering it.
+                active_after_close = guest.active_window() or ""
+                if model and "Save Document?" in active_after_close:
+                    raise RuntimeError("postscore reopen blocked by unsaved document dialog")
                 _shell(guest, f"for i in $(seq 1 30); do "
                               f"wmctrl -l | grep -Fq {shlex.quote(Path(guest_path).name)} || exit 0; "
                               "sleep 1; done; exit 1", timeout=40)
