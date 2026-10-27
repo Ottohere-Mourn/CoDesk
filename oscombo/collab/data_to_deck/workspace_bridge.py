@@ -25,7 +25,8 @@ def digest(data: bytes) -> str:
 
 class SavedArtifactBridge:
     def __init__(self, root: Path, run_id: str, task_root: str, controllers: dict,
-                 guest_ids: dict[str, str], poll_seconds: float = 2):
+                 guest_ids: dict[str, str], poll_seconds: float = 2,
+                 case_id: str = spec.CASE_ID):
         self.root = Path(root)
         self.root.mkdir(parents=True, exist_ok=False)
         self.run_id, self.task_root = run_id, task_root
@@ -38,7 +39,7 @@ class SavedArtifactBridge:
         self._thread = None
         self.errors: list[str] = []
         (self.root / "ownership.json").write_text(json.dumps({
-            "run_id": run_id, "case_id": spec.CASE_ID,
+            "run_id": run_id, "case_id": case_id,
             "outputs": spec.OUTPUTS, "writer_roles": {p: r for r, p in spec.OUTPUTS.items()},
             "guest_ids": guest_ids, "root": str(self.root.resolve()),
             "scope": "saved-file publication ownership; GUI role discipline is separate",
@@ -110,7 +111,7 @@ class SavedArtifactBridge:
                              source_guest=self.guest_ids[actor], file=str(local.relative_to(self.root)))
             if distinct and peer_hash != sha:
                 self._write(peer, path, data)
-                self._record(event="transfer_verified", **self.current[actor],
+                self._record(event="transfer_verified", **{**self.current[actor], "delivered": True},
                              destination_guest=self.guest_ids[peer], elapsed_s=time.time() - started)
             self.peer_hashes[actor] = sha
             self.current[actor]["delivered"] = True

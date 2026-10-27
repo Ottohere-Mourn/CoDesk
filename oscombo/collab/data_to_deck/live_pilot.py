@@ -158,6 +158,34 @@ def _impress_final_actions(shared: bool) -> list[str]:
                       "import pyautogui, time; pyautogui.hotkey('ctrl','s'); time.sleep(5)", "DONE"]
 
 
+def _lite_calc_actions() -> list[str]:
+    return [
+        "import pyautogui, time; pyautogui.click(470,1045); time.sleep(5)",
+        "import pyautogui, time; pyautogui.click(500,500); time.sleep(2); pyautogui.hotkey('ctrl','home'); time.sleep(3)",
+        "import pyautogui, time; pyautogui.hotkey('ctrl','v'); time.sleep(5)",
+        "import pyautogui, time; pyautogui.press('enter'); time.sleep(5)",
+        "import pyautogui, time; pyautogui.hotkey('ctrl','s'); time.sleep(5)",
+        "DONE",
+    ]
+
+
+def _lite_impress_actions(digest_prefix: str) -> list[str]:
+    actions = ["import pyautogui, time; pyautogui.hotkey('ctrl','h'); time.sleep(5)"]
+    changes = (
+        ("Q3 gross margin: 31%", "Q3 gross margin: 45%."),
+        ("West operating profit increased $11k from Q2 to Q3.",
+         "West operating profit fell $11k from Q2 to Q3."),
+        ("West promotion spending increased and caused the profit change.",
+         "West promotion spending rose $14k; the figures do not establish causation."),
+        ("Verified source: pending Agent A analysis.",
+         f"Verified source: verified_analysis.ods SHA-256 {digest_prefix}"),
+    )
+    for old, new in changes:
+        actions.extend(_impress_replace_actions(old, new))
+    return actions + ["import pyautogui, time; pyautogui.click(1240,775); time.sleep(5)",
+                      "import pyautogui, time; pyautogui.hotkey('ctrl','s'); time.sleep(5)", "DONE"]
+
+
 class LoggedGuest:
     """Narrow logging facade consumed by the existing StepLoopHarness."""
 
@@ -444,8 +472,8 @@ def _activate_ready_document(guest: LoggedGuest, path: str, phase: str) -> None:
         "window": guest._window_sample(phase), "atomic": False})
 
 
-def _clipboard(guest: LoggedGuest, run_id: str) -> None:
-    payload = _gold_tsv()
+def _clipboard(guest: LoggedGuest, run_id: str, payload: bytes | None = None) -> None:
+    payload = payload if payload is not None else _gold_tsv()
     payload_path = f"/tmp/{run_id}/analysis.tsv"
     encoded = base64.b64encode(payload).decode("ascii")
     script = (f"mkdir -p {shlex.quote('/tmp/' + run_id)}; "
@@ -461,7 +489,7 @@ def _clipboard(guest: LoggedGuest, run_id: str) -> None:
 
 
 def _run_actor(role: str, guest: LoggedGuest, instruction: str, actions: list[str],
-               run_root: Path, max_steps: int = 30) -> dict[str, Any]:
+               run_root: Path, max_steps: int = 30, case_id: str = spec.CASE_ID) -> dict[str, Any]:
     from oscombo.harness.base import AgentContext
     from oscombo.harness.step_loop import StepLoopHarness
     guest.actor = role
@@ -472,7 +500,7 @@ def _run_actor(role: str, guest: LoggedGuest, instruction: str, actions: list[st
     actor_spec = {"harness": "step", "policy": "scripted", "options": {
         "actions": actions, "action_pause": 0.25, "step_pause": 0.2,
         "save_screenshots": True}}
-    ctx = AgentContext(name=role, task_id=spec.CASE_ID, instruction=instruction,
+    ctx = AgentContext(name=role, task_id=case_id, instruction=instruction,
                        guest=guest, out=actor_root, max_steps=max_steps,
                        spec=actor_spec, t0=time.time())
     harness = StepLoopHarness(actor_spec)
@@ -495,7 +523,8 @@ def _run_model_actor(role: str, guest: LoggedGuest, instruction: str, run_root: 
                      local_qwen: bool = False, request_retries: int = 5,
                      tool_cooldown_sec: float = 0.0,
                      relay_client_token_env: str | None = None,
-                     workspace_bridge: bool = False) -> dict[str, Any]:
+                     workspace_bridge: bool = False,
+                     case_id: str = spec.CASE_ID) -> dict[str, Any]:
     """Run the existing CodexHarness against a real Guest and the case message API."""
     from oscombo.harness.base import AgentContext
     from oscombo.harness.external import CodexHarness
@@ -513,7 +542,7 @@ def _run_model_actor(role: str, guest: LoggedGuest, instruction: str, run_root: 
         options["collaboration"] = {"actor": role, "url": collab_url, "token_env": token_env,
                                     "workspace_bridge": workspace_bridge}
     actor_spec = {"harness": "codex", "model": model, "effort": effort, "options": options}
-    ctx = AgentContext(name=role, task_id=spec.CASE_ID, instruction=instruction,
+    ctx = AgentContext(name=role, task_id=case_id, instruction=instruction,
                        guest=guest, out=actor_root, max_steps=max_steps,
                        spec=actor_spec, t0=time.time())
     harness = CodexHarness(actor_spec)
@@ -533,8 +562,9 @@ def _run_model_actor(role: str, guest: LoggedGuest, instruction: str, run_root: 
     return summary
 
 
-def _effective_role_steps(role: str, diagnostic_step_limit: int | None) -> int:
-    baseline = int(spec.ROLE_BUDGET[role]["steps"])
+def _effective_role_steps(role: str, diagnostic_step_limit: int | None,
+                          role_budget: dict | None = None) -> int:
+    baseline = int((role_budget or spec.ROLE_BUDGET)[role]["steps"])
     if diagnostic_step_limit is None:
         return baseline
     if diagnostic_step_limit < 1:
@@ -691,7 +721,14 @@ def run_pilot(condition: str, run_root: Path, image: str, provider: Path,
               qwen_worker: Path | None = None, qwen_model_path: Path | None = None,
               qwen_visible_gpus: str = "6,7", qwen_max_new_tokens: int = 512,
               diagnostic_step_limit: int | None = None,
-              codex_compat_relay: bool = False) -> dict[str, Any]:
+              codex_compat_relay: bool = False,
+              case_lite_v1: bool = False) -> dict[str, Any]:
+    if case_lite_v1:
+        from oscombo.collab.data_to_deck_lite_v1 import spec as case_spec
+        from oscombo.collab.data_to_deck_lite_v1.fixtures import build_fixture as case_build_fixture
+        from oscombo.collab.data_to_deck_lite_v1.oracle import evaluate as case_evaluate
+    else:
+        case_spec, case_build_fixture, case_evaluate = spec, build_fixture, evaluate
     if condition not in {"solo_A", "solo_B", "collaborative_shared", "collaborative_isolated"}:
         raise ValueError("unsupported condition")
     # `_boot_guest` changes cwd into the pinned OSWorld provider. Resolve an
@@ -718,9 +755,9 @@ def run_pilot(condition: str, run_root: Path, image: str, provider: Path,
     run_root.mkdir(parents=True, exist_ok=False)
     run_id = run_root.name
     fixture_dir = run_root / "fixtures"
-    build_fixture(fixture_dir)
+    case_build_fixture(fixture_dir)
     guest_count = 1 if condition in {"solo_A", "solo_B", "collaborative_shared"} else 2
-    metadata = {"run_id": run_id, "case_id": spec.CASE_ID, "case_version": spec.CASE_VERSION,
+    metadata = {"run_id": run_id, "case_id": case_spec.CASE_ID, "case_version": case_spec.CASE_VERSION,
                 "condition": condition,
                 "actor_type": "codex_harness_local_qwen" if model and local_qwen else
                               "codex_cli_real_model" if model else "scripted_steps_on_real_osworld_guest",
@@ -746,10 +783,10 @@ def run_pilot(condition: str, run_root: Path, image: str, provider: Path,
                 "qwen_output_token_cap_per_actor": 12000 if local_qwen else None,
                 "qwen_max_new_tokens_per_response": qwen_max_new_tokens if local_qwen else None,
                 "qwen_budget_basis": "generated-output-token cap; input usage unavailable from worker" if local_qwen else None,
-                "total_model_token_budget": spec.TOTAL_MODEL_TOKEN_BUDGET,
-                "role_budget_contract": spec.ROLE_BUDGET,
+                "total_model_token_budget": case_spec.TOTAL_MODEL_TOKEN_BUDGET,
+                "role_budget_contract": case_spec.ROLE_BUDGET,
                 "diagnostic_step_limit": diagnostic_step_limit,
-                "effective_role_step_budget": {role: _effective_role_steps(role, diagnostic_step_limit)
+                "effective_role_step_budget": {role: _effective_role_steps(role, diagnostic_step_limit, case_spec.ROLE_BUDGET)
                                                 for role in ((solo_role,) if is_solo else ("A", "B"))},
                 "message_api_enabled": True, "attachment_api_enabled": True,
                 "guest_count": guest_count, "provider_commit": "3d778a3c9a34a079316f70df023b166700445792",
@@ -785,7 +822,7 @@ def run_pilot(condition: str, run_root: Path, image: str, provider: Path,
     relay_client_token_env: str | None = None
     # Guest overlays are episode-private; a fixed public path keeps the role
     # prompts identical across conditions without exposing the treatment name.
-    task_root = "/tmp/codesk-data-to-deck"
+    task_root = "/tmp/codesk-data-to-deck-lite-v1" if case_lite_v1 else "/tmp/codesk-data-to-deck"
     try:
         if local_qwen:
             assert qwen_python and qwen_worker and qwen_model_path
@@ -830,7 +867,7 @@ def run_pilot(condition: str, run_root: Path, image: str, provider: Path,
             workspace_bridge = SavedArtifactBridge(
                 run_root / "workspace_versions", run_id, task_root,
                 {"A": guest_a.env.controller, "B": guest_b.env.controller},
-                {"A": guest_a.guest_key, "B": guest_b.guest_key})
+                {"A": guest_a.guest_key, "B": guest_b.guest_key}, case_id=case_spec.CASE_ID)
             server.workspace_bridge = workspace_bridge
             workspace_bridge.start()
         _launch(guest_a, "calc", f"{task_root}/outputs/agent_A/verified_analysis.ods",
@@ -851,9 +888,9 @@ def run_pilot(condition: str, run_root: Path, image: str, provider: Path,
             model_token_envs.extend(token_envs.values())
 
             instructions = {
-                "A": spec.AGENT_A_INSTRUCTION +
+                "A": case_spec.AGENT_A_INSTRUCTION +
                     f"\nThe open editable output workbook is {task_root}/outputs/agent_A/verified_analysis.ods.",
-                "B": spec.AGENT_B_INSTRUCTION +
+                "B": case_spec.AGENT_B_INSTRUCTION +
                     f"\nThe open editable output presentation is {task_root}/outputs/agent_B/final_management_brief.odp.",
             }
             if is_solo:
@@ -879,12 +916,13 @@ def run_pilot(condition: str, run_root: Path, image: str, provider: Path,
                     api_key_env, mcp_python or sys.executable,
                     None if is_solo else f"http://127.0.0.1:{server.server_port}",
                     None if is_solo else token_envs[role],
-                    max_steps=_effective_role_steps(role, diagnostic_step_limit), effort=effort,
+                    max_steps=_effective_role_steps(role, diagnostic_step_limit, case_spec.ROLE_BUDGET), effort=effort,
                     timeout=model_timeout, local_qwen=local_qwen,
                     request_retries=model_request_retries,
                     tool_cooldown_sec=model_tool_cooldown_sec,
                     relay_client_token_env=relay_client_token_env,
-                    workspace_bridge=workspace_bridge is not None)
+                    workspace_bridge=workspace_bridge is not None,
+                    case_id=case_spec.CASE_ID)
             if is_solo:
                 outcomes[solo_role] = actor_task(solo_role)
             else:
@@ -892,11 +930,43 @@ def run_pilot(condition: str, run_root: Path, image: str, provider: Path,
                     futures = {role: pool.submit(actor_task, role) for role in ("A", "B")}
                     for role, future in futures.items():
                         outcomes[role] = future.result()
+        elif case_lite_v1:
+            from oscombo.collab.data_to_deck_lite_v1.private.gold import gold_findings_rows
+            payload = ("\n".join("\t".join(str(cell) for cell in row)
+                                  for row in gold_findings_rows()) + "\n").encode("utf-8")
+            _clipboard(guest_a, run_id, payload)
+            outcomes["A"] = _run_actor(
+                "A", guest_a, case_spec.AGENT_A_INSTRUCTION,
+                _lite_calc_actions(), run_root,
+                max_steps=case_spec.ROLE_BUDGET["A"]["steps"],
+                case_id=case_spec.CASE_ID)
+            if outcomes["A"]["status"] != "done":
+                raise RuntimeError(f"Lite A scripted GUI did not finish: {outcomes['A']}")
+            a_revision = workspace_bridge.publish("A")
+            a_path = f"{task_root}/outputs/agent_A/verified_analysis.ods"
+            if guest_b.env.controller.get_file(a_path) != guest_a.env.controller.get_file(a_path):
+                raise RuntimeError("Lite B Guest cannot read saved A revision")
+            attachment = clients["A"].send_attachment("verified-findings.tsv", payload)
+            clients["A"].send_message("B", "Saved Findings with the verified margin and West profit change; see the attached source cells. The numbers do not prove causation.",
+                                      [attachment["attachment_id"]])
+            if not clients["B"].read_messages() or clients["B"].read_attachment(attachment["attachment_id"])["sha256"] != attachment["sha256"]:
+                raise RuntimeError("Lite B cannot read A's message or attachment")
+            _launch(guest_b, "calc", a_path, f"/tmp/{run_id}/peer-findings.log", readonly=True)
+            _launch(guest_b, "impress", f"{task_root}/outputs/agent_B/final_management_brief.odp",
+                    f"/tmp/{run_id}/impress.log")
+            outcomes["B"] = _run_actor(
+                "B", guest_b, case_spec.AGENT_B_INSTRUCTION,
+                _lite_impress_actions(a_revision["sha256"][:12]), run_root,
+                max_steps=case_spec.ROLE_BUDGET["B"]["steps"],
+                case_id=case_spec.CASE_ID)
+            if outcomes["B"]["status"] != "done":
+                raise RuntimeError(f"Lite B scripted GUI did not finish: {outcomes['B']}")
+            workspace_bridge.publish("B")
         else:
             _clipboard(guest_a, run_id)
             outcomes["A_initial"] = _run_actor(
-                "A", guest_a, spec.AGENT_A_INSTRUCTION, _calc_actions(), run_root,
-                max_steps=spec.ROLE_BUDGET["A"]["steps"])
+                "A", guest_a, case_spec.AGENT_A_INSTRUCTION, _calc_actions(), run_root,
+                max_steps=case_spec.ROLE_BUDGET["A"]["steps"])
             if outcomes["A_initial"]["status"] != "done":
                 raise RuntimeError(f"Actor A GUI step loop did not finish: {outcomes['A_initial']}")
 
@@ -909,8 +979,8 @@ def run_pilot(condition: str, run_root: Path, image: str, provider: Path,
             _launch(guest_b, "impress", f"{task_root}/outputs/agent_B/final_management_brief.odp",
                     f"/tmp/{run_id}/impress.log")
             outcomes["B_initial"] = _run_actor(
-                "B", guest_b, spec.AGENT_B_INSTRUCTION, _impress_initial_actions(), run_root,
-                max_steps=spec.ROLE_BUDGET["B"]["steps"])
+                "B", guest_b, case_spec.AGENT_B_INSTRUCTION, _impress_initial_actions(), run_root,
+                max_steps=case_spec.ROLE_BUDGET["B"]["steps"])
             question = clients["B"].send_message("A", "Please confirm the West profit change and whether the workbook supports a causal claim.")
             received_b = clients["A"].read_messages()
             if not any(m["message_id"] == question["message_id"] for m in received_b):
@@ -923,7 +993,7 @@ def run_pilot(condition: str, run_root: Path, image: str, provider: Path,
                 resume_actions = ["import pyautogui, time; pyautogui.hotkey('ctrl','s'); time.sleep(1)", "DONE"]
             outcomes["A_resume"] = _run_actor(
                 "A", guest_a, "Reopen your saved Calc analysis, verify the West Q2-Q3 figures and save it.",
-                resume_actions, run_root, max_steps=spec.ROLE_BUDGET["A"]["steps"])
+                resume_actions, run_root, max_steps=case_spec.ROLE_BUDGET["A"]["steps"])
             response_attachment = clients["A"].send_attachment(
                 "west-evidence.txt", b"West operating profit changes from 24k to 13k (-11k). The workbook shows concurrent revenue and promotion changes but does not establish causality.")
             clients["A"].send_message("B", "Confirmed. The source supports a -11k West operating-profit change, not a causal explanation.", [response_attachment["attachment_id"]])
@@ -934,7 +1004,7 @@ def run_pilot(condition: str, run_root: Path, image: str, provider: Path,
             outcomes["B_final"] = _run_actor(
                 "B", guest_b, "Finish the three-slide report using the verified evidence from Actor A.",
                 _impress_final_actions(condition == "collaborative_shared"), run_root,
-                max_steps=spec.ROLE_BUDGET["B"]["steps"])
+                max_steps=case_spec.ROLE_BUDGET["B"]["steps"])
             if outcomes["B_final"]["status"] != "done":
                 raise RuntimeError(f"Actor B GUI step loop did not finish: {outcomes['B_final']}")
 
@@ -975,11 +1045,11 @@ def run_pilot(condition: str, run_root: Path, image: str, provider: Path,
         (run_root / "guest_save_evidence.json").write_text(
             json.dumps(guest_save_evidence, indent=2, sort_keys=True) + "\n")
         analysis_path = (run_root / "artifacts/A/verified_analysis.ods" if "A" in artifact_roles
-                         else fixture_dir / spec.FIXTURE_NAMES["authority"])
+                         else fixture_dir / case_spec.FIXTURE_NAMES["authority"])
         deck_path = (run_root / "artifacts/B/final_management_brief.odp" if "B" in artifact_roles
-                     else fixture_dir / spec.FIXTURE_NAMES["draft"])
-        oracle = evaluate(fixture_dir / spec.FIXTURE_NAMES["authority"], analysis_path,
-                          fixture_dir / spec.FIXTURE_NAMES["draft"], deck_path)
+                     else fixture_dir / case_spec.FIXTURE_NAMES["draft"])
+        oracle = case_evaluate(fixture_dir / case_spec.FIXTURE_NAMES["authority"], analysis_path,
+                          fixture_dir / case_spec.FIXTURE_NAMES["draft"], deck_path)
         (run_root / "oracle.json").write_text(json.dumps(oracle, indent=2, sort_keys=True) + "\n")
 
         # Post-execution lifecycle check: close/reopen via real GUI, without
@@ -1160,6 +1230,8 @@ def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--condition", required=True,
                         choices=("solo_A", "solo_B", "collaborative_shared", "collaborative_isolated"))
+    parser.add_argument("--case-lite-v1", action="store_true",
+                        help="run the independent Data-to-Deck Lite v1 profile")
     parser.add_argument("--run-root", type=Path, required=True)
     parser.add_argument("--provider", type=Path, required=True)
     parser.add_argument("--image", required=True)
@@ -1210,7 +1282,8 @@ def main(argv: list[str] | None = None) -> None:
                            qwen_visible_gpus=args.qwen_visible_gpus,
                            qwen_max_new_tokens=args.qwen_max_new_tokens,
                            diagnostic_step_limit=args.diagnostic_step_limit,
-                           codex_compat_relay=args.codex_compat_relay)
+                           codex_compat_relay=args.codex_compat_relay,
+                           case_lite_v1=args.case_lite_v1)
     except Exception as exc:
         failure = {"status": "INVALID_INFRA_OR_RUNNER_ERROR", "condition": args.condition,
                    "run_id": run_root.name, "error": f"{type(exc).__name__}: {exc}",
