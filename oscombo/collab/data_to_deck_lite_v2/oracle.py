@@ -102,6 +102,8 @@ def evaluate(authority_path: str | Path, analysis_path: str | Path,
                                             and "q2" in body and "q3" in body),
         "correct_direction": _direction(body, numeric_source),
         "correct_amount_and_unit": _amount(body, numeric_source),
+        "matches_saved_analysis_value": bool(actual is not None and _direction(body, actual)
+                                            and _amount(body, actual)),
         "names_saved_analysis": "verified_analysis.ods" in body,
         "analysis_verified_for_handoff": a_success,
     }

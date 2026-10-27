@@ -32,6 +32,7 @@ def test_wrong_analysis_or_evidence_rejected(tmp_path):
     _ods(analysis, sheets)
     checks = oracle.evaluate(authority, analysis, draft, deck)["actors"]["A"]["checks"]
     assert not checks["correct_signed_profit_change"]
+    assert not oracle.evaluate(authority, analysis, draft, deck)["actors"]["B"]["checks"]["matches_saved_analysis_value"]
     sheets["West_Finance"][5][1] = -11
     sheets["West_Finance"][5][3] = "B4:E4 only"
     _ods(analysis, sheets)
