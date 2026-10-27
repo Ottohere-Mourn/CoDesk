@@ -12,6 +12,8 @@ v2 保留一项真正需要核算的 West Q3 减 Q2 营业利润变动，A 在�
 
 ## 工程控件
 
+实验机使用 rootless Docker 承载 OSWorld Ubuntu Guest、QEMU TCG 软件虚拟化；没有 `/dev/kvm`。每个 Guest 配置 8 vCPU、8 GiB RAM。OSWorld base 镜像运行时 SHA-256 为 `4696860fc79a4a6815f61f2a063f473eb8df33534aef3107d126199cb3f2a116`。Shared 启动 1 台，Isolated 启动 2 台；相应 setup 和资源成本应分开看。
+
 离线全仓测试：`186 passed, 1 skipped`。`gpt-6-astra` 最小真实截图加受控工具调用返回 HTTP 200，工具名 `report_visible`，见 `api_compat_probe.json`；此探针不等于端到端可解性。
 
 首次 Shared 真实 scripted 正控 `cdd-lite-v2-scripted-shared-pos-20261027T140300Z` 为 PASS：Calc GUI 公式得出正确带符号变动，Impress GUI 保存结论，独立 Oracle A/B/联合均通过，A/B saved revision 1，两个文件 GUI 关闭重开 SHA 不变，单 Guest reset 通过。该轮使用最初的固定坐标脚本，共 12 次任务 GUI 调用。
