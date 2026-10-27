@@ -200,12 +200,18 @@ def _lite_v2_calc_actions(negative: bool = False) -> list[str]:
     ]
 
 
-def _lite_v2_impress_actions() -> list[str]:
-    return [
-        "import pyautogui, time; pyautogui.doubleClick(500,389, interval=0.15); time.sleep(1)",
-        "import pyautogui, time; pyautogui.hotkey('ctrl','a'); time.sleep(1)",
-        "import pyautogui, time; pyautogui.hotkey('ctrl','v'); time.sleep(1)",
-        "import pyautogui, time; pyautogui.press('escape'); time.sleep(1)",
+def _lite_v2_impress_actions(change: float) -> list[str]:
+    # The optional LibreOffice donation banners shift the slide canvas down
+    # about 40 pixels on a fresh Guest. Search the unique draft sentence in
+    # Impress instead of clicking a fixed canvas position. This is the same
+    # scripted policy in Shared and Isolated; model Actors remain unrestricted.
+    actions = ["import pyautogui, time; pyautogui.hotkey('ctrl','h'); time.sleep(3)"]
+    actions.extend(_impress_replace_actions(
+        "West Q3 vs Q2 profit: [await A result]. Source: [await A analysis].",
+        f"West operating profit fell ${abs(change):g}k from Q2 to Q3. "
+        "Source: verified_analysis.ods."))
+    return actions + [
+        "import pyautogui, time; pyautogui.click(1240,775); time.sleep(1)",
         "import pyautogui, time; pyautogui.hotkey('ctrl','s'); time.sleep(3)",
         "DONE",
     ]
@@ -1004,14 +1010,11 @@ def run_pilot(condition: str, run_root: Path, image: str, provider: Path,
                      "Evidence: West_Finance!B3:E4 in verified_analysis.ods; please use saved revision.")
             if not any(m["message_id"] == message["message_id"] for m in clients["B"].read_messages()):
                 raise RuntimeError("Lite v2 B cannot read A's message")
-            slide_text = (f"West operating profit fell ${abs(change):g}k from Q2 to Q3. "
-                          "Source: verified_analysis.ods.")
-            _clipboard(guest_b, run_id, slide_text.encode("utf-8"))
             _launch(guest_b, "impress", f"{task_root}/outputs/agent_B/final_management_brief.odp",
                     f"/tmp/{run_id}/impress.log")
             outcomes["B"] = _run_actor(
                 "B", guest_b, case_spec.AGENT_B_INSTRUCTION,
-                _lite_v2_impress_actions(), run_root,
+                _lite_v2_impress_actions(change), run_root,
                 max_steps=case_spec.ROLE_BUDGET["B"]["steps"], case_id=case_spec.CASE_ID)
             if outcomes["B"]["status"] != "done":
                 raise RuntimeError(f"Lite v2 B scripted GUI did not finish: {outcomes['B']}")

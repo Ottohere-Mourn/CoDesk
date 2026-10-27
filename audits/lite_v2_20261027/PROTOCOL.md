@@ -1,6 +1,6 @@
 # CDD-LITE-002 v2 experiment protocol (frozen before model runs)
 
-The task, three public fixture files, role prompts, hidden Gold and artifact Oracle live in `oscombo/collab/data_to_deck_lite_v2/`. V1 and original case assets and experiment runs are untouched. The evaluation target is one genuine saved-workbook handoff followed by one saved Impress conclusion. The 12-call scripted path validates the GUI, not model performance.
+The task, three public fixture files, role prompts, hidden Gold and artifact Oracle live in `oscombo/collab/data_to_deck_lite_v2/`. V1 and original case assets and experiment runs are untouched. The evaluation target is one genuine saved-workbook handoff followed by one saved Impress conclusion. The 13-call scripted path validates the GUI, not model performance. An initial 12-call fixed-coordinate script failed the Isolated control because LibreOffice donation banners shifted the slide; the adapter-only correction was made before model experiments.
 
 Before model use: run offline Gold/negative controls, real Shared and Isolated scripted positive controls, and a real GUI negative control. Inspect actual screenshots, recovered files, revision propagation, peer read-only permissions, GUI reopen and reset. A failed bridge/setup is infrastructure-invalid, not an Actor failure.
 
