@@ -1,0 +1,3 @@
+# West Q3 management brief
+
+The workbook gives West Q2 and Q3 revenue and three expense categories, all in USD thousands. Operating profit = Revenue - COGS - Fulfillment - Promotion. A enters the signed Q3-minus-Q2 profit change in B6 and cites the source cells in D6, then saves, publishes and sends B a verified handoff. B may prepare the slide immediately, but must use A's saved analysis and message before finalizing the one conclusion box and citing verified_analysis.ods. The output copies are already open. Only each role's output may be edited. Both roles have the same collaboration tools in either desktop condition.
