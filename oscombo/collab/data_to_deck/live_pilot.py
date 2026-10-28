@@ -821,16 +821,22 @@ def run_pilot(condition: str, run_root: Path, image: str, provider: Path,
               codex_compat_relay: bool = False,
               case_lite_v1: bool = False,
               case_lite_v2: bool = False,
+              case_lite_v2_1: bool = False,
               handoff_lifecycle: bool = False,
               scripted_negative: bool = False) -> dict[str, Any]:
-    if case_lite_v1 and case_lite_v2:
+    if sum(bool(value) for value in (case_lite_v1, case_lite_v2, case_lite_v2_1)) > 1:
         raise ValueError("select only one case version")
-    if scripted_negative and (not case_lite_v2 or model):
-        raise ValueError("scripted_negative applies only to v2 scripted controls")
-    if handoff_lifecycle and (not case_lite_v2 or not model or condition not in
+    lite_v2_family = case_lite_v2 or case_lite_v2_1
+    if scripted_negative and (not lite_v2_family or model):
+        raise ValueError("scripted_negative applies only to v2 family scripted controls")
+    if handoff_lifecycle and (not lite_v2_family or not model or condition not in
                               {"collaborative_shared", "collaborative_isolated"}):
         raise ValueError("handoff_lifecycle requires a collaborative v2 model run")
-    if case_lite_v2:
+    if case_lite_v2_1:
+        from oscombo.collab.data_to_deck_lite_v2_1 import spec as case_spec
+        from oscombo.collab.data_to_deck_lite_v2_1.fixtures import build_fixture as case_build_fixture
+        from oscombo.collab.data_to_deck_lite_v2_1.oracle import evaluate as case_evaluate
+    elif case_lite_v2:
         from oscombo.collab.data_to_deck_lite_v2 import spec as case_spec
         from oscombo.collab.data_to_deck_lite_v2.fixtures import build_fixture as case_build_fixture
         from oscombo.collab.data_to_deck_lite_v2.oracle import evaluate as case_evaluate
@@ -900,7 +906,7 @@ def run_pilot(condition: str, run_root: Path, image: str, provider: Path,
                 "effective_role_step_budget": {role: _effective_role_steps(role, diagnostic_step_limit, case_spec.ROLE_BUDGET)
                                                 for role in ((solo_role,) if is_solo else ("A", "B"))},
                 "message_api_enabled": True, "attachment_api_enabled": True,
-                "lite_peer_documents_preopened": bool((case_lite_v1 or case_lite_v2) and model and
+                "lite_peer_documents_preopened": bool((case_lite_v1 or lite_v2_family) and model and
                                                       condition == "collaborative_isolated"),
                 "scripted_negative_control": scripted_negative,
                 "handoff_lifecycle": handoff_lifecycle,
@@ -937,7 +943,8 @@ def run_pilot(condition: str, run_root: Path, image: str, provider: Path,
     relay_client_token_env: str | None = None
     # Guest overlays are episode-private; a fixed public path keeps the role
     # prompts identical across conditions without exposing the treatment name.
-    task_root = ("/tmp/codesk-data-to-deck-lite-v2" if case_lite_v2 else
+    task_root = ("/tmp/codesk-data-to-deck-lite-v2-1" if case_lite_v2_1 else
+                 "/tmp/codesk-data-to-deck-lite-v2" if case_lite_v2 else
                  "/tmp/codesk-data-to-deck-lite-v1" if case_lite_v1 else
                  "/tmp/codesk-data-to-deck")
     try:
@@ -985,13 +992,13 @@ def run_pilot(condition: str, run_root: Path, image: str, provider: Path,
                 run_root / "workspace_versions", run_id, task_root,
                 {"A": guest_a.env.controller, "B": guest_b.env.controller},
                 {"A": guest_a.guest_key, "B": guest_b.guest_key},
-                case_id=case_spec.CASE_ID, peer_read_only=case_lite_v1 or case_lite_v2)
+                case_id=case_spec.CASE_ID, peer_read_only=case_lite_v1 or lite_v2_family)
             server.workspace_bridge = workspace_bridge
             workspace_bridge.start()
         _launch(guest_a, "calc", f"{task_root}/outputs/agent_A/verified_analysis.ods",
                 f"/tmp/{run_id}/calc.log")
         if model:
-            if (case_lite_v1 or case_lite_v2) and condition == "collaborative_isolated":
+            if (case_lite_v1 or lite_v2_family) and condition == "collaborative_isolated":
                 # The Shared desktop already has both role documents open.
                 # Give each Isolated desktop the same open-document choices;
                 # restore the role's own application to the foreground before
@@ -1031,7 +1038,7 @@ def run_pilot(condition: str, run_root: Path, image: str, provider: Path,
                         "Use publish_saved_artifact after saving to verify delivery, and list_saved_artifacts "
                         "to obtain revision/hash metadata. "
                         + ("You may open the other role's file read-only through the GUI if needed. "
-                           if case_lite_v2 else
+                           if lite_v2_family else
                            "Open the other role's file read-only through the GUI; reopen it to read a newly saved revision. ")
                         + "Do not write the other role's output. "
                         "Edit documents through Calc and Impress; do not use Terminal commands, scripts, "
@@ -1064,9 +1071,13 @@ def run_pilot(condition: str, run_root: Path, image: str, provider: Path,
                     futures = {role: pool.submit(actor_task, role) for role in ("A", "B")}
                     for role, future in futures.items():
                         outcomes[role] = future.result()
-        elif case_lite_v2:
-            from oscombo.collab.data_to_deck_lite_v2.private.gold import expected_change
-            from oscombo.collab.data_to_deck_lite_v2.fixtures import authority_sheets
+        elif lite_v2_family:
+            if case_lite_v2_1:
+                from oscombo.collab.data_to_deck_lite_v2_1.private.gold import expected_change
+                from oscombo.collab.data_to_deck_lite_v2_1.fixtures import authority_sheets
+            else:
+                from oscombo.collab.data_to_deck_lite_v2.private.gold import expected_change
+                from oscombo.collab.data_to_deck_lite_v2.fixtures import authority_sheets
             change = expected_change(authority_sheets())
             outcomes["A"] = _run_actor(
                 "A", guest_a, case_spec.AGENT_A_INSTRUCTION,
@@ -1444,6 +1455,8 @@ def main(argv: list[str] | None = None) -> None:
                         help="run the independent Data-to-Deck Lite v1 profile")
     parser.add_argument("--case-lite-v2", action="store_true",
                         help="run the independent Data-to-Deck Lite v2 profile")
+    parser.add_argument("--case-lite-v2-1", action="store_true",
+                        help="run Lite v2.1 with the versioned equivalent-unit Oracle")
     parser.add_argument("--handoff-lifecycle", action="store_true",
                         help="suspend a v2 B Actor that exits before A's public handoff, then resume it")
     parser.add_argument("--scripted-negative", action="store_true",
@@ -1501,6 +1514,7 @@ def main(argv: list[str] | None = None) -> None:
                            codex_compat_relay=args.codex_compat_relay,
                            case_lite_v1=args.case_lite_v1,
                            case_lite_v2=args.case_lite_v2,
+                           case_lite_v2_1=args.case_lite_v2_1,
                            handoff_lifecycle=args.handoff_lifecycle,
                            scripted_negative=args.scripted_negative)
     except Exception as exc:
