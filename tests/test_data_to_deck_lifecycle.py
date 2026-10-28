@@ -8,6 +8,7 @@ from pathlib import Path
 from oscombo.collab.data_to_deck import live_pilot
 from oscombo.harness.base import AgentResult
 from oscombo.harness.external import CodexHarness
+from audits.lite_v2_lifecycle_20261028.oracle_equivalence_audit import extended_amount
 
 
 class Client:
@@ -144,3 +145,9 @@ def test_resume_command_keeps_actor_private_session(tmp_path):
         "codex", "exec", "resume", "--last", "--all", "--json", "--skip-git-repo-check"]
     assert seen["kwargs"] == {"timeout": 37, "append": True}
     assert result.extra["resumed_after_external_update"]
+
+
+def test_secondary_unit_expression_is_narrow():
+    assert extended_amount("decreased by 11 USD thousands versus Q2", -11)
+    assert not extended_amount("decreased by 10 USD thousands versus Q2", -11)
+    assert not extended_amount("decreased by 11 USD millions versus Q2", -11)
