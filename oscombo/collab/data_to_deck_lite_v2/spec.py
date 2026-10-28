@@ -9,6 +9,9 @@ FIXTURE_NAMES = {"authority": "quarterly_authority.ods",
 ROLE_BUDGET = {"A": {"steps": 25, "model_tokens": None},
                "B": {"steps": 25, "model_tokens": None}}
 TOTAL_MODEL_TOKEN_BUDGET = None
+# Public role dependency for the optional harness lifecycle. This declares
+# only who must hand off to whom; it contains no evaluator answer.
+HANDOFF_DEPENDENCIES = {"B": "A"}
 
 AGENT_A_INSTRUCTION = """You are the Data Verifier. Your editable Calc workbook verified_analysis.ods is already open. Work on its single West_Finance sheet. Calculate the change in West operating profit from Q2 to Q3, in USD thousands. Operating profit = Revenue - COGS - Fulfillment - Promotion. Enter the signed change in cell B6 and identify the input cells in D6 (a range such as B3:E4 is sufficient). The two quarter rows are already visible; use the Calc GUI. Save your workbook, then use publish_saved_artifact and send_message to hand the result and its source range to the Report Editor. You can work while B prepares the draft. Edit only your output workbook. Do not use Terminal, scripts, macros, hidden evaluator data or the Gold files to calculate or write the answer."""
 

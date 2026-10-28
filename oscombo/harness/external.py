@@ -80,11 +80,16 @@ class CommandHarness(Harness):
         return env
 
     def run(self, ctx: AgentContext) -> AgentResult:
+        return self._run_command(ctx, self.command(ctx))
+
+    def _run_command(self, ctx: AgentContext, command: list[str], *,
+                     timeout: float | None = None, append: bool = False) -> AgentResult:
         res = AgentResult(status="running")
-        timeout = float(self.opts.get("timeout", 2400))
+        timeout = float(timeout if timeout is not None else self.opts.get("timeout", 2400))
         started = time.monotonic()
-        with open(self.dir / "stdout.log", "w") as out, open(self.dir / "stderr.log", "w") as err:
-            proc = subprocess.Popen(self.command(ctx), env=self.env(ctx), cwd=self.dir, stdout=out, stderr=err,
+        mode = "a" if append else "w"
+        with open(self.dir / "stdout.log", mode) as out, open(self.dir / "stderr.log", mode) as err:
+            proc = subprocess.Popen(command, env=self.env(ctx), cwd=self.dir, stdout=out, stderr=err,
                                     stdin=subprocess.DEVNULL, start_new_session=True)
             while proc.poll() is None:
                 if ctx.stop.is_set() or time.monotonic() - started > timeout:
@@ -361,6 +366,22 @@ env = {{ {env_toml} }}
     def run(self, ctx: AgentContext) -> AgentResult:
         res = super().run(ctx)
         res.extra["harness_version"] = self.harness_version
+        return res
+
+    def resume_after_external_update(self, ctx: AgentContext, timeout: float) -> AgentResult:
+        """Continue this Actor's own Codex thread after an external handoff arrives.
+
+        Each Actor has a private CODEX_HOME, so the saved session and MCP
+        capabilities remain the same. The scheduler supplies no task answer.
+        """
+        prompt = ("A collaboration update is available. Continue your original task. "
+                  "Inspect messages and saved artifact revisions using the collaboration tools; "
+                  "do not assume what the update says. Your original desktop-call budget still applies.")
+        command = [self.binary, "exec", "resume", "--last", "--all", "--json",
+                   "--skip-git-repo-check", prompt]
+        res = self._run_command(ctx, command, timeout=timeout, append=True)
+        res.extra["harness_version"] = self.harness_version
+        res.extra["resumed_after_external_update"] = True
         return res
 
 

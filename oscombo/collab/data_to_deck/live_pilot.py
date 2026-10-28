@@ -555,6 +555,7 @@ def _run_model_actor(role: str, guest: LoggedGuest, instruction: str, run_root: 
                      tool_cooldown_sec: float = 0.0,
                      relay_client_token_env: str | None = None,
                      workspace_bridge: bool = False,
+                     handoff_from: str | None = None,
                      case_id: str = spec.CASE_ID) -> dict[str, Any]:
     """Run the existing CodexHarness against a real Guest and the case message API."""
     from oscombo.harness.base import AgentContext
@@ -581,6 +582,40 @@ def _run_model_actor(role: str, guest: LoggedGuest, instruction: str, run_root: 
     started_at = time.time()
     started = time.monotonic()
     result = harness.run(ctx)
+    if handoff_from and result.status == "done" and collab_url and token_env:
+        # A model's final reply is not a completed task when it explicitly
+        # awaits an external prerequisite that has not arrived. Suspend this
+        # Actor without model calls or GUI actions, then resume its own saved
+        # conversation once the public handoff exists. No answer is supplied.
+        client = CollaborationClient(collab_url, role, os.environ[token_env])
+        state = _public_handoff_state(client, handoff_from, role)
+        seen_ids = _observed_peer_message_ids(actor_root / role / "stdout.log")
+        newest_unseen = bool(state["peer_message_ids"] and
+                             state["peer_message_ids"][-1] not in seen_ids)
+        if state["own_revision"] == 0 and (not state["ready"] or newest_unseen):
+            _append(run_root / "actor_lifecycle.jsonl", {
+                "event": "suspended_for_peer_handoff", "actor": role, "peer": handoff_from,
+                "time": time.time(), "elapsed_s": round(time.monotonic() - started, 3),
+                "desktop_steps": result.steps, "state": state,
+                "newest_peer_message_seen": not newest_unseen})
+            deadline = started + timeout
+            while not state["ready"] and time.monotonic() < deadline and not ctx.stop.is_set():
+                time.sleep(min(1.0, max(0.0, deadline - time.monotonic())))
+                state = _public_handoff_state(client, handoff_from, role)
+                if state["ready"]:
+                    break
+            if state["ready"] and deadline - time.monotonic() > 5:
+                _append(run_root / "actor_lifecycle.jsonl", {
+                    "event": "woken_by_peer_handoff", "actor": role, "peer": handoff_from,
+                    "time": time.time(), "elapsed_s": round(time.monotonic() - started, 3),
+                    "state": state})
+                result = harness.resume_after_external_update(ctx, deadline - time.monotonic())
+            else:
+                result.status = "timeout"
+                _append(run_root / "actor_lifecycle.jsonl", {
+                    "event": "peer_handoff_wait_expired", "actor": role, "peer": handoff_from,
+                    "time": time.time(), "elapsed_s": round(time.monotonic() - started, 3),
+                    "state": state})
     trace_path = actor_root / "trace.json"
     trace_path.write_text(json.dumps(result.trace, indent=2, ensure_ascii=False) + "\n")
     summary = {"actor": role, "guest_key": guest.guest_key, "status": result.status,
@@ -591,6 +626,37 @@ def _run_model_actor(role: str, guest: LoggedGuest, instruction: str, run_root: 
                "harness_version": harness.harness_version}
     _append(run_root / "actors.jsonl", summary)
     return summary
+
+
+def _public_handoff_state(client: CollaborationClient, peer: str, actor: str) -> dict[str, Any]:
+    """Inspect public revisions and messages only; no evaluator or file contents."""
+    versions = client.list_saved_artifacts()
+    peer_revision = int(versions.get(peer, {}).get("revision", 0))
+    own_revision = int(versions.get(actor, {}).get("revision", 0))
+    messages = [m for m in client.read_messages() if m.get("actor") == peer]
+    return {"ready": peer_revision > 0 and bool(messages),
+            "peer_revision": peer_revision, "own_revision": own_revision,
+            "peer_message_ids": [m["message_id"] for m in messages]}
+
+
+def _observed_peer_message_ids(stdout_path: Path) -> set[str]:
+    """Return message IDs delivered in this Actor's actual read_messages results."""
+    if not stdout_path.exists():
+        return set()
+    observed: set[str] = set()
+    for line in stdout_path.read_text(errors="replace").splitlines():
+        try:
+            event = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        item = event.get("item") or {}
+        if (event.get("type") == "item.completed" and
+                item.get("server") == "collaboration" and item.get("tool") == "read_messages"):
+            result = item.get("result") or {}
+            records = (result.get("structured_content") or {}).get("result") or []
+            observed.update(str(m["message_id"]) for m in records if isinstance(m, dict) and
+                            m.get("message_id"))
+    return observed
 
 
 def _effective_role_steps(role: str, diagnostic_step_limit: int | None,
@@ -755,11 +821,15 @@ def run_pilot(condition: str, run_root: Path, image: str, provider: Path,
               codex_compat_relay: bool = False,
               case_lite_v1: bool = False,
               case_lite_v2: bool = False,
+              handoff_lifecycle: bool = False,
               scripted_negative: bool = False) -> dict[str, Any]:
     if case_lite_v1 and case_lite_v2:
         raise ValueError("select only one case version")
     if scripted_negative and (not case_lite_v2 or model):
         raise ValueError("scripted_negative applies only to v2 scripted controls")
+    if handoff_lifecycle and (not case_lite_v2 or not model or condition not in
+                              {"collaborative_shared", "collaborative_isolated"}):
+        raise ValueError("handoff_lifecycle requires a collaborative v2 model run")
     if case_lite_v2:
         from oscombo.collab.data_to_deck_lite_v2 import spec as case_spec
         from oscombo.collab.data_to_deck_lite_v2.fixtures import build_fixture as case_build_fixture
@@ -833,6 +903,7 @@ def run_pilot(condition: str, run_root: Path, image: str, provider: Path,
                 "lite_peer_documents_preopened": bool((case_lite_v1 or case_lite_v2) and model and
                                                       condition == "collaborative_isolated"),
                 "scripted_negative_control": scripted_negative,
+                "handoff_lifecycle": handoff_lifecycle,
                 "guest_count": guest_count, "provider_commit": "3d778a3c9a34a079316f70df023b166700445792",
                 "provider_path": str(provider), "base_qcow2": image,
                 "runtime_image": runtime, "started_at": time.time()}
@@ -983,6 +1054,8 @@ def run_pilot(condition: str, run_root: Path, image: str, provider: Path,
                     tool_cooldown_sec=model_tool_cooldown_sec,
                     relay_client_token_env=relay_client_token_env,
                     workspace_bridge=workspace_bridge is not None,
+                    handoff_from=(getattr(case_spec, "HANDOFF_DEPENDENCIES", {}).get(role)
+                                  if handoff_lifecycle else None),
                     case_id=case_spec.CASE_ID)
             if is_solo:
                 outcomes[solo_role] = actor_task(solo_role)
@@ -1371,6 +1444,8 @@ def main(argv: list[str] | None = None) -> None:
                         help="run the independent Data-to-Deck Lite v1 profile")
     parser.add_argument("--case-lite-v2", action="store_true",
                         help="run the independent Data-to-Deck Lite v2 profile")
+    parser.add_argument("--handoff-lifecycle", action="store_true",
+                        help="suspend a v2 B Actor that exits before A's public handoff, then resume it")
     parser.add_argument("--scripted-negative", action="store_true",
                         help="v2 scripted control deliberately saves an incorrect Calc result")
     parser.add_argument("--run-root", type=Path, required=True)
@@ -1426,6 +1501,7 @@ def main(argv: list[str] | None = None) -> None:
                            codex_compat_relay=args.codex_compat_relay,
                            case_lite_v1=args.case_lite_v1,
                            case_lite_v2=args.case_lite_v2,
+                           handoff_lifecycle=args.handoff_lifecycle,
                            scripted_negative=args.scripted_negative)
     except Exception as exc:
         failure = {"status": "INVALID_INFRA_OR_RUNNER_ERROR", "condition": args.condition,
