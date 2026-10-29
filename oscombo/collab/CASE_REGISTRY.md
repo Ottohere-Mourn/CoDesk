@@ -6,7 +6,7 @@ This registry covers the seven standalone collaboration cases in this checkout. 
 
 | # | Case | Fixture / Oracle evidence | Offline tests | Application / Guest / Agent boundary |
 |---:|---|---|---|---|
-| 1 | [Data-to-Deck](data_to_deck/TASK_CARD_ZH.md) (`CDD-RECON-001`) | Real ODS/ODP fixtures; positive/negative Oracle. Historical Guest run performed actual Calc/Impress GUI save/reopen, artifact collection and reset. Initial official score failed on ODS protected sheets; a later standards-aware parser patch rescored the same collected Guest outputs and a host-LO-resaved ODS to official PASS. | `tests/test_data_to_deck.py` | **Guest scripted GUI: PASS** for application and lifecycle; **official post-fix artifact Oracle: PASS**. It was not an Agent episode. Qwen grounding attempts did not establish successful task solvability; Solo/MA-ID/MA-SD model evidence is not closed. |
+| 1 | [Data-to-Deck](data_to_deck/TASK_CARD_ZH.md) (`CDD-RECON-001`); independent [Lite v2.1](data_to_deck_lite_v2_1/TASK_CARD_ZH.md) (`CDD-LITE-002`, version 2.0.1) | Original real ODS/ODP fixtures and Oracle retained. Lite v2.1 has separate Fixture, Gold, Oracle and Adapter; real Guest Shared/Isolated positive and wrong-value negative scripted controls are recorded. | `tests/test_data_to_deck.py`, `tests/test_data_to_deck_lite_v2_1.py` | Original long task evidence is unchanged. Lite v2.0.0 has one real concurrent model Shared/Isolated pair, with frozen Shared joint FAIL from an equivalent-unit scoring omission and Isolated joint PASS. Lite v2.1 re-scores both retained artifacts PASS; this is retrospective, not new model episodes. [Lifecycle report](../../audits/lite_v2_lifecycle_20261028/REPORT.md), [v2.1 Guest controls](../../audits/lite_v2_lifecycle_20261028/V2_1_GUEST_CONTROLS_20261029.md). |
 | 2 | [Ticket-to-Resolution](ticket_to_resolution/TASK_CARD_ZH.md) (`CDD-TTR-001`) | Deterministic SQLite fixture, web UI, transactional Oracle, positive/negative controls and reset are offline implemented. | `tests/test_ticket_to_resolution.py` | **Offline: PASS. Guest: BLOCKED_RESOURCE** at the documented resource gate; no Guest GUI episode, Single Agent, MA-ID, MA-SD or model result. The Guest report records that the Guest was not started. |
 | 3 | [Build-and-Verify](build_and_verify/TASK_CARD_ZH.md) (`CDD-BV-001`) | Deterministic web-app fixture and code-state/function Oracle; API/fake-DOM controls. | `tests/test_build_and_verify.py` | **Offline: PASS.** Fake-DOM and HTTP checks are not a real browser. Guest, Solo, MA-ID, MA-SD and model are pending. |
 | 4 | [Timeline-and-Assets](timeline_and_assets/TASK_CARD_ZH.md) (`CDD-TLA-001`) | Real MLT/Kdenlive project XML, media fixtures and parser Oracle; deterministic Gold/negative controls. | `tests/test_timeline_and_assets.py` | **Offline: PASS.** Kdenlive is unavailable in the documented environment; application open/save, Guest, Solo, MA-ID and MA-SD are pending. |
@@ -44,6 +44,8 @@ python -m oscombo.collab.data_to_deck evaluate --authority AUTHORITY.ods --analy
 ```
 
 Dependencies: Python project environment; LibreOffice is used by the optional headless format smoke; real GUI execution requires the pinned OSWorld V2.1 provider/Guest and a Guest-safe actor/message bridge. The committed Guest report documents the historical Guest and run ID; its original score and post-fix rescoring artifacts are both retained.
+
+Lite v2.1 uses the existing Guest runner through `python -m oscombo.collab.data_to_deck_lite_v2_1.live_pilot --condition collaborative_shared --run-root RUN_ROOT --provider OSWORLD_PROVIDER --image GUEST_IMAGE --runtime RUNTIME_IMAGE`. Use `collaborative_isolated` for two Guests or `--scripted-negative` for the wrong-value scripted control. The new Adapter and scorer were validated with real Guest GUI runs on 2026-10-29. Model comparison results remain the frozen Lite v2.0.0 pair with separately labeled v2.1 retrospective re-scoring.
 
 ### 2. Ticket-to-Resolution
 
@@ -136,7 +138,7 @@ These are planning requirements for future validation, not claims that the runs 
 
 | Case | Minimum Guest application/runtime | Guest count by condition | Additional runtime/data needs |
 |---|---|---|---|
-| Data-to-Deck | LibreOffice Calc + Impress; browser is not required for the core case | Solo 1; Isolated 2; Shared 1 | The historical Guest scripted GUI lifecycle passed. A Guest-safe actor/message bridge is still needed for agent episodes. |
+| Data-to-Deck | LibreOffice Calc + Impress; browser is not required for the core case | Solo 1; Isolated 2; Shared 1 | Lite v2 has a validated Guest-safe message/artifact bridge, scripted Shared/Isolated controls and one real concurrent model pair; see the Lite reports above. |
 | Ticket-to-Resolution | Browser + local simulated service | Solo 1; Isolated 2; Shared 1 | Each condition must use the same episode database and service semantics; local-service reachability from both Guests remains to be validated. |
 | Build-and-Verify | GUI code editor + browser + local web app | Solo 1; Isolated 2; Shared 1 | Node.js is used by offline tests; Guest validation needs the editor/browser app setup and service bridge. |
 | Timeline-and-Assets | Kdenlive + fixture media | Solo 1; Isolated 2; Shared 1 | Kdenlive/MLT availability and codec compatibility must be established in the Guest image. |
