@@ -107,6 +107,30 @@ def test_invalid_gui_saved_python_scores_fail_instead_of_crashing(tmp_path: Path
     assert result["python_filter_tests"]["error_type"] == "IndentationError"
 
 
+@pytest.mark.parametrize("source,error_type", [
+    ("def filter_orders(orders, query=''):\n    return []\n", "TypeError"),
+    ("def filter_orders(orders, query='', status='All'):\n    raise ValueError('bad candidate')\n", "ValueError"),
+])
+def test_callable_candidate_errors_score_fail_instead_of_aborting(
+        tmp_path: Path, source: str, error_type: str):
+    root = _prepare(tmp_path, "collaborative_shared")
+    (root / "workspace/filtering.py").write_text(source)
+    result = evaluate(root)
+    assert not result["joint_business_success"]
+    assert not result["checks"]["python_filter_acceptance_pass"]
+    assert result["python_filter_tests"]["error_type"] == error_type
+    assert result["python_filter_tests"]["cases"][-1]["pass"] is False
+
+
+def test_deleted_candidate_scores_fail_instead_of_aborting(tmp_path: Path):
+    root = _prepare(tmp_path, "collaborative_shared")
+    (root / "workspace/filtering.py").unlink()
+    result = evaluate(root)
+    assert not result["joint_business_success"]
+    assert not result["checks"]["python_filter_acceptance_pass"]
+    assert result["code_revision"]["filtering.py"] == ""
+
+
 def test_all_status_is_unrestricted_in_hidden_acceptance(tmp_path: Path):
     root = _prepare(tmp_path, "single_agent")
     (root / "workspace/filtering.py").write_text(

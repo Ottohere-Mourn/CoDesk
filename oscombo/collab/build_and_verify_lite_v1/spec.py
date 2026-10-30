@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 CASE_ID = "CDD-BV-LITE-001"
-CASE_VERSION = "1.4.2"
+CASE_VERSION = "1.4.4"
 PAIR_MAX_STEPS = 12
 CONDITIONS = ("single_agent", "collaborative_isolated", "collaborative_shared")
 DATA_FILE = "data/orders.json"

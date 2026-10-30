@@ -150,6 +150,50 @@ def open_browser(env, root: Path, run_id: str, key: str, role: str,
                                           "time": time.time()})
 
 
+def stabilize_editor(env, root: Path, run_id: str, key: str,
+                     restore_browser: bool = False) -> None:
+    """Leave A's source file open after delayed VS Code startup settles."""
+    browser_id = None
+    if restore_browser:
+        active = guest_shell(env, "xdotool getactivewindow getwindowname; true", 15)
+        if "Northstar OrderDesk" not in active:
+            raise RuntimeError("B browser is not active before editor stabilization")
+        browser_id = guest_shell(env, "xdotool getactivewindow; true", 15).strip()
+        if not browser_id.isdecimal():
+            raise RuntimeError("could not capture B browser window ID")
+    profile = f"/tmp/{run_id}-{key}-vscode"
+    file_path = f"{GUEST_ROOT}/filtering.py"
+    log = f"/tmp/{run_id}-{key}-code.log"
+    guest_shell(env, f"nohup code --reuse-window --user-data-dir={profile} "
+                     f"--no-sandbox {file_path} >>{log} 2>&1 </dev/null & true", 30)
+    for attempt in range(1, 21):
+        time.sleep(3)
+        windows = guest_shell(env, "wmctrl -lpG; true", 20)
+        record(root, "editor_stabilization.jsonl", {"key": key, "attempt": attempt,
+                                                    "windows": windows, "time": time.time()})
+        if "filtering.py - Visual Studio Code" in windows:
+            break
+    else:
+        raise RuntimeError(f"{key} source file not visible after browser setup")
+    guest_shell(env, "wmctrl -l | awk '/Welcome - Visual Studio Code/{print $1}' "
+                     "| while read id; do wmctrl -ic \"$id\"; done; true", 20)
+    windows = guest_shell(env, "sleep 1; wmctrl -lpG; true", 20)
+    if "filtering.py - Visual Studio Code" not in windows or \
+            "Welcome - Visual Studio Code" in windows:
+        raise RuntimeError(f"{key} editor did not settle on filtering.py")
+    if restore_browser:
+        active = guest_shell(env, f"wmctrl -ia {browser_id}; sleep 1; "
+                             "xdotool getactivewindow getwindowname; true", 20)
+        if "Northstar OrderDesk" not in active:
+            raise RuntimeError("B browser focus was not restored after editor stabilization")
+    else:
+        active = guest_shell(env, "wmctrl -a 'filtering.py - Visual Studio Code'; "
+                             "sleep 1; xdotool getactivewindow getwindowname; true", 20)
+        if "filtering.py - Visual Studio Code" not in active:
+            raise RuntimeError("A editor focus was not restored after stabilization")
+    (root / f"guest_{key}_stabilized.png").write_bytes(env.controller.get_screenshot())
+
+
 def make_harness(role: str, env, root: Path, relay_base: str,
                  collab_url: str, actor_timeout: int,
                  desktop_lock_file: Path | None = None) -> tuple[CodexHarness, AgentContext]:
@@ -184,7 +228,7 @@ def main() -> None:
     parser.add_argument("--provider", type=Path, required=True)
     parser.add_argument("--image", type=Path, required=True)
     parser.add_argument("--runtime", required=True)
-    parser.add_argument("--api-base", default="https://api.haogpt.net/v1")
+    parser.add_argument("--api-base", default="https://docode.cc/v1")
     parser.add_argument("--actor-timeout", type=int, default=1800)
     parser.add_argument("--desktop-lock", action="store_true",
                         help="serialize each tool action plus screenshot on its Guest desktop")
@@ -264,6 +308,8 @@ def main() -> None:
             open_editor(envs["B"], root, run_id, "B")
         open_browser(envs["B"], root, run_id, "B", "B", app_url, tickets["B"],
                      expected_windows=2 if args.condition == "collaborative_shared" else 1)
+        stabilize_editor(envs["A"], root, run_id, "A",
+                         restore_browser=args.condition == "collaborative_shared")
         result["guest_initial_hashes"] = {
             role: guest_shell(envs[role], f"sha256sum {GUEST_ROOT}/filtering.py")
             for role in ("A", "B")}
@@ -442,9 +488,13 @@ def main() -> None:
             try:
                 result["oracle"] = evaluate_run(root)
                 result["status"] = "PASS" if result["oracle"]["joint_business_success"] else "FAIL"
-                result["reset"] = reset_owned_run(root, run_id)
             except Exception as exc:
                 result["evaluation_error"] = f"{type(exc).__name__}: {str(exc)[:500]}"
+                result["status"] = "EVALUATION_ERROR"
+            try:
+                result["reset"] = reset_owned_run(root, run_id)
+            except Exception as exc:
+                result["reset_error"] = f"{type(exc).__name__}: {str(exc)[:500]}"
         result["finished_epoch"] = time.time()
         (root / "pair_pilot_result.json").write_text(
             json.dumps(result, ensure_ascii=False, indent=2) + "\n")

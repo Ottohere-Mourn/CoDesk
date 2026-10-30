@@ -45,8 +45,15 @@ def _python_filter_check(workspace: Path) -> dict[str, Any]:
                 "error": str(exc)[:500]}
     cases = []
     for test in spec.ORACLE_CASES:
-        got = module.filter_orders(rows, test["query"], test["status"])
-        ids = [row.get("order_id") for row in got]
+        try:
+            got = module.filter_orders(rows, test["query"], test["status"])
+            ids = [row.get("order_id") for row in got]
+        except Exception as exc:
+            cases.append({"query": test["query"], "status": test["status"],
+                          "expected_ids": list(test["ids"]), "actual_ids": None,
+                          "pass": False})
+            return {"pass": False, "cases": cases,
+                    "error_type": type(exc).__name__, "error": str(exc)[:500]}
         cases.append({"query": test["query"], "status": test["status"],
                       "expected_ids": list(test["ids"]), "actual_ids": ids,
                       "pass": ids == list(test["ids"])})
@@ -182,7 +189,8 @@ def evaluate(run_root: str | Path, condition: str | None = None) -> dict[str, An
         '<label for="order-query">', '<label for="order-status">',
         'role="status" aria-live="polite"', 'id="apply-filters" type="submit"',
     ))
-    current_filter_hash = _sha(workspace / spec.FILTER_FILE)
+    filter_path = workspace / spec.FILTER_FILE
+    current_filter_hash = _sha(filter_path) if filter_path.is_file() else ""
     events = _jsonl(root / "web_events.jsonl")
     initial_filter_hash = json.loads((root / "run_config.template.json").read_text(
         encoding="utf-8"))["workspace_initial_sha256"][spec.FILTER_FILE]

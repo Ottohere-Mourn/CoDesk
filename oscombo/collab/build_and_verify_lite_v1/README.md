@@ -3,6 +3,7 @@
 Independent, versioned Case 3 reduction. See [TASK_CARD_ZH.md](TASK_CARD_ZH.md) for the frozen public task. The original `build_and_verify` package remains unchanged.
 
 Real-Guest pilot outcomes and limitations are recorded in [PILOT_EVIDENCE.md](PILOT_EVIDENCE.md).
+The v1.4.3/v1.4.4 follow-up, including editor-window stabilization, evaluator error handling, and new paired results, is recorded in [the follow-up audit](../../../audits/case3_followup_20261030.md). Earlier shared-desktop passes remain valid counterexamples to any claim of guaranteed shared failure.
 
 `python -m oscombo.collab.build_and_verify_lite_v1 prepare RUN_ROOT --run-id RUN_ID` creates the run-scoped fixture, credentials and private Oracle manifest. `configure`, `serve`, `collab-serve`, `evaluate` and `reset` use the same CLI verbs as the original case.
 
