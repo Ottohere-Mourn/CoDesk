@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Patch the OSWorld-V2 docker provider (desktop_env/providers/docker/provider.py) for oscombo. Idempotent.
+"""Patch pinned OSWorld provider dispatch and Docker provider for CoDesk. Idempotent.
 
 All changes are opt-in through environment variables; unset, the provider behaves as upstream except for the
 longer readiness waits:
@@ -83,12 +83,48 @@ def patch(path: Path) -> bool:
     return True
 
 
+def patch_native_registry(osworld_dir: Path) -> list[str]:
+    """Register the CoDesk host-QEMU provider without changing OSWorld task semantics."""
+    changes: list[str] = []
+    registry = osworld_dir / "desktop_env/providers/__init__.py"
+    marker = "# OSCOMBO_NATIVE_QEMU_PROVIDER"
+    source = registry.read_text(encoding="utf-8")
+    if marker not in source:
+        old = '    elif provider_name == "docker":\n'
+        new = ('    elif provider_name == "native-qemu-tcg":  ' + marker + '\n'
+               '        from oscombo.native_qemu import NativeQemuVMManager, NativeQemuTcgProvider\n'
+               '        return NativeQemuVMManager(), NativeQemuTcgProvider(region)\n'
+               + old)
+        if source.count(old) != 1:
+            raise RuntimeError(f"{registry}: expected exactly one Docker provider registration")
+        registry.write_text(source.replace(old, new), encoding="utf-8")
+        changes.append(str(registry))
+
+    env_path = osworld_dir / "desktop_env/desktop_env.py"
+    env_marker = "# OSCOMBO_NATIVE_QEMU_ENV"
+    source = env_path.read_text(encoding="utf-8")
+    if env_marker not in source:
+        old = 'if self.provider_name in {"docker", "aws", "gcp", "azure", "aliyun", "volcengine"}:\n'
+        new = ('if self.provider_name in {"docker", "aws", "gcp", "azure", "aliyun", "volcengine", '
+               '"native-qemu-tcg"}:  ' + env_marker + '\n')
+        if source.count(old) != 1:
+            raise RuntimeError(f"{env_path}: expected exactly one fresh-provider classification")
+        env_path.write_text(source.replace(old, new), encoding="utf-8")
+        changes.append(str(env_path))
+    return changes
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("osworld_dir", type=Path)
     a = ap.parse_args()
     path = a.osworld_dir / "desktop_env/providers/docker/provider.py"
     print(f"{'patched' if patch(path) else 'already patched'}: {path}")
+    native_changes = patch_native_registry(a.osworld_dir)
+    for changed in native_changes:
+        print(f"registered native-qemu-tcg: {changed}")
+    if not native_changes:
+        print("native-qemu-tcg provider already registered")
 
 
 if __name__ == "__main__":

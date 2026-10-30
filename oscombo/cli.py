@@ -88,12 +88,16 @@ def cmd_run(a: argparse.Namespace) -> int:
     extra: dict = {}
     for item in a.label:
         _set_opt(extra, item)
+    if extra.get("run"):
+        os.environ.setdefault("OSCOMBO_RUN_LABEL", str(extra["run"]))
     # resolve user paths before activate() changes into the OSWorld checkout
     tasks = [str(Path(t).resolve()) if t.endswith((".json", ".py")) else t for t in a.tasks]
     cfg = runner.RunConfig(mode=a.mode, tasks=tasks, out=Path(a.out).resolve(),
                            agents=with_hint(agent_specs(a), a.coagent_hint), max_steps=a.max_steps,
                            image=str(Path(a.image).resolve()) if a.image else None, setup_settle=a.setup_settle,
                            mediation=a.mediation, extra=extra)
+    if os.environ.get("OSCOMBO_BACKEND", "docker").lower() == "native-qemu-tcg":
+        os.environ.setdefault("OSCOMBO_NATIVE_STATE_DIR", str(cfg.out / "native-qemu"))
     osworld.activate()
     result = runner.run(cfg)
     print(json.dumps({k: result.get(k) for k in ("mode", "tasks", "scores", "agents", "error")}, indent=1))
@@ -134,7 +138,11 @@ def matrix(combos: list[list[str]], prefix: str, modes: list[str], solo: int) ->
     return lines
 
 
-def remove_containers(run_name: str) -> int:
+def remove_containers(run_name: str, native_state_dir: Path | None = None) -> int:
+    if os.environ.get("OSCOMBO_BACKEND", "docker").lower() == "native-qemu-tcg":
+        from .native_qemu import cleanup_native_run
+        report = cleanup_native_run(run_name, native_state_dir)
+        return len(report.get("stopped", []))
     ids = subprocess.run(["docker", "ps", "-aq", "--filter", f"label=oscombo.run={run_name}"],
                          capture_output=True, text=True).stdout.split()
     if ids:
@@ -164,17 +172,25 @@ def cmd_queue(a: argparse.Namespace) -> int:
         out.mkdir(parents=True)
         cmd = [sys.executable, "-m", "oscombo", "run", "--mode", mode, "--tasks", *tasks, "--out", str(out),
                "--label", f"run={name}", *passthrough]
+        child_env = {**os.environ, "OSCOMBO_RUN_LABEL": name, "PYTHONPATH": pythonpath}
+        if child_env.get("OSCOMBO_BACKEND", "docker").lower() == "native-qemu-tcg":
+            child_env["OSCOMBO_NATIVE_STATE_DIR"] = str(out / "native-qemu")
         with open(out / "driver.log", "w") as driver:
             p = subprocess.Popen(cmd, stdout=driver, stderr=subprocess.STDOUT, start_new_session=True,
-                                 env={**os.environ, "OSCOMBO_RUN_LABEL": name, "PYTHONPATH": pythonpath})
+                                 env=child_env)
         active[name] = (p, time.monotonic())
         say(f"start {name}")
 
     def finished(name: str) -> None:
+        native_cleanup = None
+        if os.environ.get("OSCOMBO_BACKEND", "docker").lower() == "native-qemu-tcg":
+            from .native_qemu import cleanup_native_run
+            native_cleanup = cleanup_native_run(name, root / name / "native-qemu")
         f = root / name / "result.json"
         r = json.loads(f.read_text()) if f.exists() else {}
         agents = {k: (v["status"], v["steps"]) for k, v in (r.get("agents") or {}).items()}
-        say(f"done  {name} scores={r.get('scores')} agents={agents} {(r.get('error') or '')[:120]}")
+        say(f"done  {name} scores={r.get('scores')} agents={agents} {(r.get('error') or '')[:120]} "
+            f"runtime_cleanup={native_cleanup.get('status') if native_cleanup else 'n/a'}")
 
     def drain(runs: list[list[str]]) -> None:
         todo = [r for r in runs if not (root / r[0] / "result.json").exists()]
@@ -187,7 +203,9 @@ def cmd_queue(a: argparse.Namespace) -> int:
                     os.killpg(p.pid, signal.SIGKILL)
                     p.wait()
                     del active[name]
-                    say(f"kill  {name} after {a.run_timeout:.0f}s, removed {remove_containers(name)} container(s)")
+                    native_root = root / name / "native-qemu"
+                    say(f"kill  {name} after {a.run_timeout:.0f}s, removed "
+                        f"{remove_containers(name, native_root)} runtime resource(s)")
             if todo and len(active) < a.lanes:
                 launch(todo.pop(0))
                 time.sleep(a.stagger)  # do not boot several Guests in the same second
@@ -247,8 +265,9 @@ def main(argv: list[str] | None = None) -> int:
 
     sub.add_parser("analyze", help="aggregate results (see `oscombo analyze --help`)")
 
-    c = sub.add_parser("cleanup", help="remove the Guest containers of a killed run")
+    c = sub.add_parser("cleanup", help="remove Guest resources of a killed run")
     c.add_argument("run_name")
+    c.add_argument("--state-dir", type=Path, help="native-qemu state directory for this run")
 
     argv = list(sys.argv[1:] if argv is None else argv)
     if argv[:1] == ["analyze"]:
@@ -267,6 +286,6 @@ def main(argv: list[str] | None = None) -> int:
     if a.cmd == "queue":
         return cmd_queue(a)
     if a.cmd == "cleanup":
-        print(f"removed {remove_containers(a.run_name)} container(s)")
+        print(f"removed {remove_containers(a.run_name, a.state_dir)} runtime resource(s)")
         return 0
     return 2

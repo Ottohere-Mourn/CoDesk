@@ -121,6 +121,14 @@ class CommandHarness(Harness):
             recs.append({"step": c.get("n", i), "t": t, "tool": c.get("tool"), "args": c.get("args"),
                          "actions": ([{"t": t, "window_before": c.get("window_before"), "code": c["code"]}]
                                      if c.get("code") else []),
+                         "tool_elapsed_s": c.get("tool_elapsed_s"),
+                         "http_requests": c.get("http_requests", []),
+                         "coordinate_audit": c.get("coordinate_audit"),
+                         "action_attempted": c.get("action_attempted"),
+                         "action_succeeded": c.get("action_succeeded"),
+                         "input_observation": c.get("input_observation"),
+                         "returned_observation": c.get("returned_observation"),
+                         "tool_error": c.get("error"),
                          "done": False, "fail": c.get("tool") == "declare_infeasible"})
         return recs
 
@@ -171,7 +179,7 @@ class CodexHarness(CommandHarness):
         catalog_path.write_text(json.dumps({"models": [{
             "slug": model,
             "display_name": model,
-            "description": "Local Qwen vision-language model for CoDesk computer-use tasks.",
+            "description": "Configured vision-capable GUI agent model for CoDesk computer-use tasks.",
             "default_reasoning_level": self.spec.get("effort") or "medium",
             "supported_reasoning_levels": [
                 {"effort": level, "description": f"{level} reasoning"}
@@ -242,8 +250,20 @@ class CodexHarness(CommandHarness):
         base_url = o.get("base_url") or os.environ.get("OPENAI_BASE_URL", "https://api.openai.com/v1")
         mcp_env = {"OSCOMBO_GUEST_URL": ctx.guest.url, "OSCOMBO_ACTION_LOG": str(self.action_log),
                    "OSCOMBO_MAX_STEPS": str(ctx.max_steps), "PYTHONPATH": _pythonpath()}
+        if "min_non_black_pixel_fraction" in o:
+            mcp_env["OSCOMBO_SCREENSHOT_MIN_NON_BLACK_FRACTION"] = str(
+                float(o["min_non_black_pixel_fraction"]))
+        if o.get("require_nonflat_screenshot"):
+            mcp_env["OSCOMBO_SCREENSHOT_REQUIRE_NONFLAT"] = "1"
+        if o.get("screenshot_stop_file"):
+            mcp_env["OSCOMBO_SCREENSHOT_STOP_FILE"] = str(o["screenshot_stop_file"])
         if "desktop_tool_cooldown_sec" in o:
             mcp_env["OSCOMBO_MCP_TURN_COOLDOWN_SEC"] = str(float(o["desktop_tool_cooldown_sec"]))
+        if "desktop_screenshot_settle_sec" in o:
+            settle = float(o["desktop_screenshot_settle_sec"])
+            if not 0 <= settle <= 30:
+                raise ValueError("desktop_screenshot_settle_sec must be between 0 and 30")
+            mcp_env["OSCOMBO_MCP_SETTLE"] = str(settle)
         env_toml = ", ".join(f"{k} = {json.dumps(v)}" for k, v in mcp_env.items())
         key_env = o.get("api_key_env", "OPENAI_API_KEY")
         auth_mode = o.get("auth_mode", "auto")
@@ -263,6 +283,9 @@ class CodexHarness(CommandHarness):
                 "CODESK_COLLAB_ACTOR": self.collaboration["actor"],
                 "CODESK_COLLAB_TOKEN": os.environ[self.collaboration["token_env"]],
             }
+            if self.collaboration.get('guest_root'):
+                collab_env['CODESK_COLLAB_GUEST_ROOT'] = self.collaboration['guest_root']
+                collab_env['CODESK_COLLAB_GUEST_URL'] = ctx.guest.url
             collab_env_toml = ", ".join(
                 f"{key} = {json.dumps(value)}" for key, value in collab_env.items())
             collaboration_server = f"""

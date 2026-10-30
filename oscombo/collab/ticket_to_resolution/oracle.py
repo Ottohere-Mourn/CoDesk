@@ -221,6 +221,10 @@ def evaluate(db_path: str | Path, manifest_path: str | Path,
             "order_status": order["status"] if order else None,
             "order_remaining_cents": order["remaining_cents"] if order else None,
             "review_author_role_ok": expected_review_actor_ok,
+            # Unlike review_author_role_ok, this records authorship even when
+            # the latest review is intentionally invalid (negative controls).
+            "review_recorded_by_expected_actor": bool(
+                latest_review and latest_review["actor_id"] == expected_review_actor),
             "refund_actor_role_ok": expected_refund_actor_ok,
         },
         "process_evidence": {

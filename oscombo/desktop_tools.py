@@ -29,6 +29,7 @@ from contextlib import contextmanager
 
 import requests
 from PIL import Image as PILImage
+from PIL import ImageStat
 
 URL = os.environ.get("OSCOMBO_GUEST_URL", "http://localhost:5000").rstrip("/")
 LOG = os.environ.get("OSCOMBO_ACTION_LOG")
@@ -37,12 +38,26 @@ SETTLE = float(os.environ.get("OSCOMBO_MCP_SETTLE", "1.0"))
 TOOL_RESULT_COOLDOWN = max(0.0, float(os.environ.get("OSCOMBO_MCP_TURN_COOLDOWN_SEC", "0")))
 _cooldown_lock = threading.Lock()
 _last_tool_result_at: float | None = None
+_request_metrics = threading.local()
 MODEL_W, MODEL_H = 1280, 720
 PREFIX = "import pyautogui; import time; pyautogui.FAILSAFE = False; {cmd}"
 KEYMAP = {"return": "enter", "escape": "esc", "control": "ctrl", "super": "win", "page_up": "pageup",
           "page_down": "pagedown", "prior": "pageup", "next": "pagedown", "kp_enter": "enter", "alt_l": "alt",
           "control_l": "ctrl", "shift_l": "shift"}
 OUT_OF_BUDGET = f"Action budget used up ({BUDGET} tool calls). Stop now and reply with one line saying what you did."
+
+
+def frame_content(image: PILImage.Image) -> dict:
+    """Use the existing Guest smoke criteria to reject blank desktop frames."""
+    thumbnail = image.convert("RGB").resize((96, 54))
+    pixels = list(thumbnail.getdata())
+    spread = max(ImageStat.Stat(thumbnail).stddev)
+    fraction = sum(max(pixel) > 20 for pixel in pixels) / len(pixels)
+    colors = len(set(pixels))
+    return {"nonblack_fraction": round(fraction, 4), "max_channel_stddev": round(spread, 3),
+            "thumbnail_colors": colors,
+            "content_ready": fraction > 0.05 and spread > 5 and colors >= 32}
+
 COORDINATE_CONTRACT = ("Coordinates use pixels in the most recently returned 1280x720 screenshot, "
                        "origin at top-left; valid x is 0..1279 and y is 0..719. "
                        "Out-of-range coordinates are rejected without execution or clamping, "
@@ -83,9 +98,19 @@ def _state():
 
 
 def _guest(argv: list[str], timeout: float = 120) -> dict:
-    r = requests.post(URL + "/execute", json={"command": argv, "shell": False}, timeout=timeout)
-    r.raise_for_status()
-    return r.json()
+    started = time.monotonic()
+    record = {"method": "POST", "path": "/execute"}
+    try:
+        r = requests.post(URL + "/execute", json={"command": argv, "shell": False}, timeout=timeout)
+        record.update({"status_code": r.status_code, "response_bytes": len(r.content)})
+        r.raise_for_status()
+        return r.json()
+    except Exception as exc:
+        record.update({"error_type": type(exc).__name__})
+        raise
+    finally:
+        record["elapsed_s"] = round(time.monotonic() - started, 4)
+        getattr(_request_metrics, "records", []).append(record)
 
 
 def _active_window() -> str | None:
@@ -106,16 +131,42 @@ def _shot() -> tuple[bytes, list[float], list[int]]:
     time.sleep(SETTLE)
     r = None
     for _ in range(5):
-        r = requests.get(URL + "/screenshot", timeout=120)
+        started = time.monotonic()
+        record = {"method": "GET", "path": "/screenshot"}
+        try:
+            r = requests.get(URL + "/screenshot", timeout=120)
+            record.update({"status_code": r.status_code, "response_bytes": len(r.content)})
+        except Exception as exc:
+            record["error_type"] = type(exc).__name__
+            raise
+        finally:
+            record["elapsed_s"] = round(time.monotonic() - started, 4)
+            getattr(_request_metrics, "records", []).append(record)
         if r.status_code == 200 and r.content:
             break
         time.sleep(2)
     r.raise_for_status()
     im = PILImage.open(io.BytesIO(r.content)).convert("RGB")
+    content = frame_content(im)
+    gray_histogram = im.convert("L").histogram()
+    non_black_fraction = sum(gray_histogram[9:]) / (im.width * im.height)
+    if _request_metrics.records:
+        _request_metrics.records[-1]["non_black_pixel_fraction"] = round(non_black_fraction, 6)
+        _request_metrics.records[-1]["frame_content"] = content
     scale = [im.width / MODEL_W, im.height / MODEL_H]
     buf = io.BytesIO()
     im.resize((MODEL_W, MODEL_H), PILImage.LANCZOS).save(buf, "PNG")
-    return buf.getvalue(), scale, [im.width, im.height]
+    png = buf.getvalue()
+    threshold = float(os.environ.get("OSCOMBO_SCREENSHOT_MIN_NON_BLACK_FRACTION", "0"))
+    require_content = os.environ.get("OSCOMBO_SCREENSHOT_REQUIRE_NONFLAT") == "1"
+    if (threshold > 0 and non_black_fraction < threshold) or (require_content and not content["content_ready"]):
+        call_no = getattr(_request_metrics, "call_no", 0)
+        if call_no:
+            _save_screenshot(call_no, png)
+        raise RuntimeError(
+            f"Guest HTTP screenshot is black or flat: non_black_fraction={non_black_fraction:.6f}, "
+            f"required={threshold:.6f}, content={content}; stopping model actions")
+    return png, scale, [im.width, im.height]
 
 
 def _coordinate_audit(name: str, args: dict, scale: list[float],
@@ -230,7 +281,7 @@ def _wait_before_tool_result() -> float:
         return round(delay, 3)
 
 
-def run_tool(name: str, args: dict) -> tuple[str, bytes | None]:
+def _run_tool(name: str, args: dict) -> tuple[str, bytes | None]:
     """Execute one tool call; returns (text, png bytes or None)."""
     with _state() as st:  # reserve a call number (and read the latest scale) atomically
         if name != "declare_infeasible" and st["calls"] >= BUDGET:
@@ -238,11 +289,17 @@ def run_tool(name: str, args: dict) -> tuple[str, bytes | None]:
         st["calls"] += 1
         n, scale = st["calls"], st["scale"]
         input_guest_size = st.get("guest_screenshot_size")
+    _request_metrics.call_no = n
+    _request_metrics.action_code = None
+    _request_metrics.action_attempted = False
+    _request_metrics.action_succeeded = False
     if name == "declare_infeasible":
         if LOG:
             with open(os.path.join(os.path.dirname(LOG), "INFEASIBLE"), "w") as f:
                 f.write(str(args.get("reason", "")))
-        _log({"t": time.time(), "n": n, "tool": name, "args": args, "window_before": None, "code": None})
+        _log({"t": time.time(), "n": n, "tool": name, "args": args, "window_before": None,
+              "code": None, "tool_elapsed_s": round(time.monotonic() - _request_metrics.started, 4),
+              "http_requests": list(_request_metrics.records)})
         return "Recorded the task as infeasible. Stop now.", None
     audit = _coordinate_audit(name, args, scale, input_guest_size)
     if audit is not None and audit["status"] == "rejected":
@@ -262,6 +319,8 @@ def run_tool(name: str, args: dict) -> tuple[str, bytes | None]:
         _log({"t": time.time(), "n": n, "tool": name, "args": args,
               "window_before": before, "code": None, "executed": False,
               "coordinate_audit": audit,
+              "tool_elapsed_s": round(time.monotonic() - _request_metrics.started, 4),
+              "http_requests": list(_request_metrics.records),
               "tool_result_cooldown_s": cooldown,
               "returned_observation": {"model_screenshot_size": [MODEL_W, MODEL_H],
                                        "guest_screenshot_size": guest_size,
@@ -273,13 +332,18 @@ def run_tool(name: str, args: dict) -> tuple[str, bytes | None]:
         time.sleep(min(float(args.get("seconds", 2.0)), 30))
     before = _active_window() if code else None
     if code:
+        _request_metrics.action_code = code
+        _request_metrics.action_attempted = True
         _py(code)
+        _request_metrics.action_succeeded = True
     png, new_scale, guest_size = _shot()
     _store_observation(new_scale, guest_size)
     _save_screenshot(n, png)
     cooldown = _wait_before_tool_result()
     _log({"t": time.time(), "n": n, "tool": name, "args": args,
           "window_before": before, "code": code, "executed": bool(code),
+          "tool_elapsed_s": round(time.monotonic() - _request_metrics.started, 4),
+          "http_requests": list(_request_metrics.records),
           "tool_result_cooldown_s": cooldown,
           "coordinate_audit": audit,
           "input_observation": {"model_screenshot_size": [MODEL_W, MODEL_H],
@@ -290,6 +354,34 @@ def run_tool(name: str, args: dict) -> tuple[str, bytes | None]:
                                    "scale": new_scale}})
     left = BUDGET - n
     return (f"OK. {left} tool calls left." if left <= 5 else "OK."), png
+
+
+def run_tool(name: str, args: dict) -> tuple[str, bytes | None]:
+    """Run one MCP action and record Guest HTTP/tool timings, including failures."""
+    _request_metrics.records = []
+    _request_metrics.started = time.monotonic()
+    try:
+        return _run_tool(name, args)
+    except Exception as exc:
+        stop_file = os.environ.get("OSCOMBO_SCREENSHOT_STOP_FILE")
+        if stop_file:
+            try:
+                with open(stop_file, "w", encoding="utf-8") as stream:
+                    json.dump({"time": time.time(), "tool": name,
+                               "error_type": type(exc).__name__, "reason": str(exc)}, stream)
+                    stream.write("\n")
+            except OSError:
+                pass
+        _log({"t": time.time(), "n": getattr(_request_metrics, "call_no", None),
+              "tool": name, "args": args,
+              "code": getattr(_request_metrics, "action_code", None),
+              "action_attempted": getattr(_request_metrics, "action_attempted", False),
+              "action_succeeded": getattr(_request_metrics, "action_succeeded", False),
+              "executed": getattr(_request_metrics, "action_succeeded", False),
+              "tool_elapsed_s": round(time.monotonic() - _request_metrics.started, 4),
+              "http_requests": list(_request_metrics.records),
+              "error": f"{type(exc).__name__}: {exc}"})
+        raise
 
 
 def _store_observation(scale: list[float], guest_size: list[int]) -> None:

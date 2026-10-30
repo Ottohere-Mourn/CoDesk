@@ -184,6 +184,7 @@ def cli(argv: list[str] | None = None) -> int:
     p = sub.add_parser("serve", help="serve the GUI application for a prepared episode")
     p.add_argument("--db", type=Path, required=True); p.add_argument("--credentials", type=Path, required=True)
     p.add_argument("--host", default="127.0.0.1"); p.add_argument("--port", type=int, default=8765)
+    p.add_argument("--variant", choices=("full", "lite-v1"), default="full")
     p = sub.add_parser("collab-serve", help="serve this run's existing message/attachment protocol")
     p.add_argument("--run-root", type=Path, required=True); p.add_argument("--port", type=int, default=0)
     p = sub.add_parser("evaluate", help="run the hidden-state business oracle")
@@ -224,7 +225,7 @@ def cli(argv: list[str] | None = None) -> int:
         return 0
     if args.command == "serve":
         credentials = json.loads(args.credentials.read_text(encoding="utf-8"))
-        run_server(args.db, credentials, args.host, args.port); return 0
+        run_server(args.db, credentials, args.host, args.port, args.variant); return 0
     if args.command == "collab-serve":
         from oscombo.collab.data_to_deck.protocol import ProtocolStore, make_server
         root = args.run_root.resolve()

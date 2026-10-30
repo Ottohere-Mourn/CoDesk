@@ -182,7 +182,8 @@ def run(cfg: RunConfig) -> dict:
     slots: list[AgentSlot] = []
     t0 = time.time()
     try:
-        if not image:
+        local_backend = os.environ.get("OSCOMBO_BACKEND", "docker").lower() in {"local", "x11", "xephyr"}
+        if not image and not local_backend:
             raise ValueError("no Guest image: set OSCOMBO_GUEST_IMAGE or pass --image")
         tasks = [load_task(s) for s in cfg.tasks]
         result["task_ids"] = [str(task_get(t, "id")) for t in tasks]

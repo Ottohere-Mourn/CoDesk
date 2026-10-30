@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import json
 
+import pytest
+
 
 def test_screenshot_coordinate_mapping_and_bounds():
     from oscombo.desktop_tools import _coordinate_audit
@@ -94,3 +96,27 @@ def test_tool_result_cooldown_throttles_model_turns_and_is_observable(monkeypatc
     now[0] += 65
     assert dt._wait_before_tool_result() == 0.0
     assert sleeps == [60.0, 50.0]
+
+
+def test_http_gray_frame_with_cursor_is_rejected_even_when_nonblack(monkeypatch):
+    import io
+    from types import SimpleNamespace
+    from PIL import Image, ImageDraw
+    import oscombo.desktop_tools as dt
+
+    image = Image.new("RGB", (1920, 1080), (32, 32, 32))
+    ImageDraw.Draw(image).polygon([(1730, 975), (1730, 990), (1740, 985)], fill="white")
+    payload = io.BytesIO()
+    image.save(payload, format="PNG")
+    response = SimpleNamespace(status_code=200, content=payload.getvalue(), raise_for_status=lambda: None)
+    monkeypatch.setattr(dt.requests, "get", lambda *_args, **_kwargs: response)
+    monkeypatch.setattr(dt, "SETTLE", 0)
+    monkeypatch.setenv("OSCOMBO_SCREENSHOT_REQUIRE_NONFLAT", "1")
+    monkeypatch.setenv("OSCOMBO_SCREENSHOT_MIN_NON_BLACK_FRACTION", "0.01")
+    dt._request_metrics.records = []
+    dt._request_metrics.call_no = 0
+    with pytest.raises(RuntimeError, match="black or flat"):
+        dt._shot()
+    record = dt._request_metrics.records[-1]
+    assert record["non_black_pixel_fraction"] == 1.0
+    assert record["frame_content"]["content_ready"] is False

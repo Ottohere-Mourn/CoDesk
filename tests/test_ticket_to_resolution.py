@@ -394,3 +394,15 @@ def test_guest_smoke_resource_block_does_not_start_guest(tmp_path, monkeypatch):
     assert result["gates"]["gate_1_guest_web_readiness"] == "BLOCKED_RESOURCE"
     assert not (root / "provenance.json").exists()
     assert not (root / "overlay").exists()
+
+
+def test_oracle_reports_expected_author_for_an_intentionally_invalid_review(tmp_path):
+    root = tmp_path / "invalid-review-author"
+    _, store = _prepare(root)
+    review = _review(store, refund_cents=8000)
+    assert review["actor_id"] == "A"
+    result = _oracle(root)
+    assert not result["review_pass"]
+    assert result["observed"]["review_count"] == 1
+    assert result["observed"]["review_author_role_ok"] is False
+    assert result["observed"]["review_recorded_by_expected_actor"] is True

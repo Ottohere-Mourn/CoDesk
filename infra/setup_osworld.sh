@@ -17,8 +17,12 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+export UV_PYTHON_INSTALL_DIR="${UV_PYTHON_INSTALL_DIR:-/opt/data/private/mjh/deps/uv/python}"
+export UV_CACHE_DIR="${UV_CACHE_DIR:-/opt/data/private/mjh/cache/uv}"
+export UV_LINK_MODE="${UV_LINK_MODE:-copy}"
 : "${OSWORLD_DIR:?set OSWORLD_DIR (where to clone OSWorld-V2)}"
 : "${OSWORLD_IMAGE_DIR:?set OSWORLD_IMAGE_DIR (where to store the ~15 GB Guest image)}"
+OSWORLD_VENV="${OSWORLD_VENV:-$OSWORLD_DIR/.venv}"
 RELEASE="osworld-v2.1"
 TAG_COMMIT="3d778a3c9a34a079316f70df023b166700445792"
 ARTIFACT_COMMIT="6e16459a2feb5a8f1ed65babcfe7a2a6205d049d"
@@ -27,7 +31,10 @@ ARTIFACT_SIZE="14891811084"
 ARTIFACT_SHA256="14b08aa7ba6c023ecb91d46de8df5de32af4d1d6bd75ea925519caf9677fc8b3"
 HF_ENDPOINT="${HF_ENDPOINT:-https://huggingface.co}"
 
-for tool in git uv curl unzip; do
+if ! command -v uv >/dev/null && [[ -x "$ROOT/.venv/bin/uv" ]]; then
+  export PATH="$ROOT/.venv/bin:$PATH"
+fi
+for tool in git uv curl unzip python3; do
   command -v "$tool" >/dev/null || { echo "missing host tool: $tool" >&2; exit 2; }
 done
 
@@ -42,9 +49,17 @@ zip_path="$OSWORLD_IMAGE_DIR/$ARTIFACT_NAME"
 qcow_path="$OSWORLD_IMAGE_DIR/osworld-v2-ubuntu-x86.qcow2"
 if [[ ! -s "$qcow_path" ]]; then
   if [[ ! -f "$zip_path" || "$(stat -c %s "$zip_path")" != "$ARTIFACT_SIZE" ]]; then
-    curl --fail --location --retry 5 --retry-delay 5 --retry-all-errors --connect-timeout 20 \
-      --continue-at - --output "$zip_path" \
-      "$HF_ENDPOINT/datasets/xlangai/v2-image/resolve/$ARTIFACT_COMMIT/$ARTIFACT_NAME"
+    if [[ "$HF_ENDPOINT" == "https://huggingface.co" ]]; then
+      download_args=(--workers "${OSWORLD_DOWNLOAD_WORKERS:-8}")
+      if [[ -n "${OSWORLD_DOWNLOAD_PARTS_DIR:-}" ]]; then
+        download_args+=(--parts-dir "$OSWORLD_DOWNLOAD_PARTS_DIR")
+      fi
+      python3 "$ROOT/infra/download_osworld_guest.py" "$zip_path" "${download_args[@]}"
+    else
+      curl --fail --location --retry 5 --retry-delay 5 --connect-timeout 20 \
+        --continue-at - --output "$zip_path" \
+        "$HF_ENDPOINT/datasets/xlangai/v2-image/resolve/$ARTIFACT_COMMIT/$ARTIFACT_NAME"
+    fi
   fi
   [[ "$(stat -c %s "$zip_path")" == "$ARTIFACT_SIZE" ]] || { echo "Guest archive size mismatch" >&2; exit 5; }
   echo "$ARTIFACT_SHA256  $zip_path" | sha256sum --check --status || { echo "Guest archive SHA256 mismatch" >&2; exit 6; }
@@ -54,18 +69,18 @@ fi
 
 sync_args=(--frozen --no-dev)
 [[ "${OSWORLD_SKIP_FFMPEG:-0}" == "1" ]] && sync_args+=(--no-install-package osworld-ffmpeg)
-(cd "$OSWORLD_DIR" && uv sync "${sync_args[@]}") || {
+(cd "$OSWORLD_DIR" && UV_PROJECT_ENVIRONMENT="$OSWORLD_VENV" uv sync "${sync_args[@]}") || {
   echo "uv sync failed; if the osworld-ffmpeg build could not download ffmpeg, rerun with OSWORLD_SKIP_FFMPEG=1" >&2
   exit 4
 }
 extras=""
 [[ " $* " == *" --with-mcp "* ]] && extras="[mcp]"
-uv pip install --python "$OSWORLD_DIR/.venv/bin/python" -e "$ROOT$extras"
-"$OSWORLD_DIR/.venv/bin/python" "$ROOT/infra/patch_osworld.py" "$OSWORLD_DIR"
+uv pip install --python "$OSWORLD_VENV/bin/python" -e "$ROOT$extras"
+"$OSWORLD_VENV/bin/python" "$ROOT/infra/patch_osworld.py" "$OSWORLD_DIR"
 if [[ " $* " == *" --with-v2-tasks "* ]]; then
-  (cd "$OSWORLD_DIR" && .venv/bin/python scripts/tools/download_osworld_v2_tasks.py --benchmark-release "$RELEASE")
+  (cd "$OSWORLD_DIR" && "$OSWORLD_VENV/bin/python" scripts/tools/download_osworld_v2_tasks.py --benchmark-release "$RELEASE")
 fi
 
 echo "OSWorld code:  $OSWORLD_DIR ($actual)"
 echo "Guest image:   $qcow_path"
-echo "Python:        $OSWORLD_DIR/.venv/bin/python   (python -m oscombo ...)"
+echo "Python:        $OSWORLD_VENV/bin/python   (python -m oscombo ...)"

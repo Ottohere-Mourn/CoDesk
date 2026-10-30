@@ -43,8 +43,17 @@ def _options(items, selected: str = "") -> str:
 
 
 def _layout(title: str, body: str, actor: str | None = None, *, error: str | None = None,
-            success: str | None = None) -> bytes:
-    nav = "" if actor is None else f'''<nav>
+            success: str | None = None, variant: str = "full") -> bytes:
+    page_title = f"{actor} · {title}" if variant == "lite-v1" and actor else title
+    if actor is None:
+        nav = ""
+    elif variant == "lite-v1":
+        nav = f'''<nav>
+          <span class="who">Signed in as {escape(actor)}</span>
+          <a href="/lite">T-1042 case</a><a href="/logout">Sign out</a>
+        </nav>'''
+    else:
+        nav = f'''<nav>
       <span class="who">Signed in as {escape(actor)}</span>
       <a href="/queue">Case queue</a><a href="/ticket/{spec.TICKET_ID}">Target ticket</a>
       <a href="/order/{spec.ORDER_ID}">Order</a><a href="/policy/{spec.POLICY_ID}">Policy</a>
@@ -54,13 +63,17 @@ def _layout(title: str, body: str, actor: str | None = None, *, error: str | Non
     if success:
         banner += f'<div role="status" class="success">{escape(success)}</div>'
     html = f'''<!doctype html><html lang="en"><head><meta charset="utf-8">
-      <meta name="viewport" content="width=device-width,initial-scale=1"><title>{escape(title)} — Case Desk</title>
+      <meta name="viewport" content="width=device-width,initial-scale=1"><title>{escape(page_title)} — Case Desk</title>
       <style>
       body{{font:18px/1.5 sans-serif;margin:0;background:#f4f6f8;color:#17212b}} header{{background:#17324d;color:white;padding:18px 32px}}
       main{{max-width:1000px;margin:24px auto;padding:24px;background:white;border:1px solid #d4dde5;border-radius:8px}}
       nav{{display:flex;gap:14px;align-items:center;flex-wrap:wrap;background:#e7edf3;padding:12px 24px}}
       nav a,.button{{color:#064e79;font-weight:600}} .who{{font-weight:bold;margin-right:12px}}
       label{{display:block;font-weight:600;margin:16px 0 5px}} input,select,textarea{{font:inherit;min-height:42px;width:100%;max-width:720px;padding:7px;border:1px solid #718397;border-radius:4px}}
+      fieldset.choices{{border:0;padding:0;margin:16px 0;max-width:720px}}
+      fieldset.choices legend{{font-weight:600;margin:0 0 5px;padding:0}}
+      fieldset.choices label{{display:flex;align-items:center;gap:10px;margin:7px 0;font-weight:400;cursor:pointer}}
+      fieldset.choices input[type=radio]{{width:auto;min-height:0;margin:0;accent-color:#135e8a}}
       textarea{{min-height:90px}} button,.button{{display:inline-block;font:inherit;font-weight:700;padding:10px 18px;margin-top:18px;border:0;border-radius:5px;background:#135e8a;color:white;cursor:pointer;text-decoration:none}}
       table{{border-collapse:collapse;width:100%;margin:14px 0}} th,td{{padding:10px;border:1px solid #cbd5df;text-align:left;vertical-align:top}}
       th{{background:#e9f0f5}} .error,.success,.notice{{padding:12px;margin:12px 0;border-radius:4px}} .error{{background:#ffe9e7;color:#8b1d14}} .success{{background:#e5f7eb;color:#145b2b}} .notice{{background:#eef5ff}}
@@ -77,7 +90,10 @@ class CaseWebServer(ThreadingHTTPServer):
 
 
 def make_server(db_path: str | Path, actor_passwords: dict[str, str],
-                host: str = "127.0.0.1", port: int = 0) -> CaseWebServer:
+                host: str = "127.0.0.1", port: int = 0, *,
+                variant: str = "full") -> CaseWebServer:
+    if variant not in {"full", "lite-v1"}:
+        raise ValueError(f"unknown Ticket-to-Resolution UI variant: {variant}")
     store = CaseStore(db_path)
     sessions: dict[str, dict[str, str]] = {}
     session_lock = threading.Lock()
@@ -164,7 +180,7 @@ def make_server(db_path: str | Path, actor_passwords: dict[str, str],
                   <label for="actor">Role</label><select id="actor" name="actor">{roles}</select>
                   <label for="password">Run password</label><input id="password" name="password" type="password" autocomplete="current-password" required autofocus>
                   <button type="submit">Sign in</button></form>'''
-                self._send(_layout("Sign in", body))
+                self._send(_layout("Sign in", body, variant=variant))
                 return
             actor, token, error = self._actor()
             if not actor:
@@ -179,10 +195,23 @@ def make_server(db_path: str | Path, actor_passwords: dict[str, str],
                         sessions.pop(token, None)
                 self._redirect("/login", "ttr_session=; Path=/; Max-Age=0; HttpOnly; SameSite=Strict")
                 return
+            if variant == "lite-v1" and path == "/lite/review-ready":
+                reviews = store.list_reviews()
+                payload = {"ready": bool(reviews),
+                           "url": f"/lite/review/{quote(reviews[-1]['id'], safe='')}" if reviews else None}
+                self._send(json.dumps(payload).encode("utf-8"), 200, "application/json")
+                return
             query = parse_qs(parsed.query)
             context_id = next((query[k][0] for k in ("ticket", "order", "review", "refund")
                                if query.get(k)), "")
-            if path.startswith("/reviews/"):
+            audit_path = path
+            if path.startswith("/lite/review/"):
+                context_id = path.rsplit("/", 1)[1]
+                audit_path = "/reviews/" + context_id
+            elif path.startswith("/lite/refund/"):
+                context_id = path.rsplit("/", 1)[1]
+                audit_path = "/refunds/" + context_id
+            elif path.startswith("/reviews/"):
                 context_id = path.rsplit("/", 1)[1]
             elif path.startswith("/refunds/") and path != "/refunds/new":
                 context_id = path.rsplit("/", 1)[1]
@@ -193,36 +222,44 @@ def make_server(db_path: str | Path, actor_passwords: dict[str, str],
                 context_id = spec.TICKET_ID
             elif path == f"/order/{spec.ORDER_ID}":
                 context_id = spec.ORDER_ID
-            store.record_view(actor, path, context_id)
+            store.record_view(actor, audit_path, context_id)
             try:
-                if path in {"/", "/queue"}:
+                if variant == "lite-v1" and path == "/lite":
+                    self._page_lite(actor)
+                elif variant == "lite-v1" and path.startswith("/lite/review/"):
+                    self._page_lite_review(actor, context_id)
+                elif variant == "lite-v1" and path.startswith("/lite/refund/"):
+                    self._page_lite_refund(actor, context_id)
+                elif path.startswith("/lite/"):
+                    self._send(_layout("Not found", "<p>This page does not exist.</p>", actor, variant=variant), 404)
+                elif path in {"/", "/queue"} and variant == "full":
                     self._page_queue(actor)
-                elif path == f"/ticket/{spec.TICKET_ID}":
+                elif path == f"/ticket/{spec.TICKET_ID}" and variant == "full":
                     self._page_ticket(actor)
-                elif path == f"/order/{spec.ORDER_ID}":
+                elif path == f"/order/{spec.ORDER_ID}" and variant == "full":
                     self._page_order(actor)
-                elif path == f"/policy/{spec.POLICY_ID}":
+                elif path == f"/policy/{spec.POLICY_ID}" and variant == "full":
                     self._page_policy(actor)
-                elif path == "/reviews":
+                elif path == "/reviews" and variant == "full":
                     self._page_reviews(actor)
-                elif path == "/reviews/current":
+                elif path == "/reviews/current" and variant == "full":
                     self._page_current_review(actor)
-                elif path == "/reviews/new":
+                elif path == "/reviews/new" and variant == "full":
                     self._page_review_form(actor)
-                elif path.startswith("/reviews/"):
+                elif path.startswith("/reviews/") and variant == "full":
                     self._page_review(actor, path.rsplit("/", 1)[1])
-                elif path == "/refunds/new":
+                elif path == "/refunds/new" and variant == "full":
                     self._page_refund_form(actor)
-                elif path.startswith("/refunds/"):
+                elif path.startswith("/refunds/") and variant == "full":
                     self._page_refund(actor, path.rsplit("/", 1)[1])
-                elif path == "/resolve":
+                elif path == "/resolve" and variant == "full":
                     self._page_resolution(actor)
-                elif path == "/audit":
+                elif path == "/audit" and variant == "full":
                     self._page_audit(actor)
                 else:
-                    self._send(_layout("Not found", "<p>This page does not exist.</p>", actor), 404)
+                    self._send(_layout("Not found", "<p>This page does not exist.</p>", actor, variant=variant), 404)
             except FileNotFoundError:
-                self._send(_layout("Not found", "<p>The requested case record does not exist.</p>", actor), 404)
+                self._send(_layout("Not found", "<p>The requested case record does not exist.</p>", actor, variant=variant), 404)
 
         def do_POST(self) -> None:
             path = urlparse(self.path).path
@@ -232,13 +269,14 @@ def make_server(db_path: str | Path, actor_passwords: dict[str, str],
                 supplied = form.get("password", "")
                 expected = actor_passwords.get(actor, "")
                 if not expected or not hmac.compare_digest(supplied, expected):
-                    self._send(_layout("Sign in", "<p>Return to the sign-in page.</p>", error="Invalid run credential."), 401)
+                    self._send(_layout("Sign in", "<p>Return to the sign-in page.</p>", error="Invalid run credential.", variant=variant), 401)
                     return
                 token = secrets.token_urlsafe(32)
                 csrf = secrets.token_urlsafe(24)
                 with session_lock:
                     sessions[token] = {"actor": actor, "csrf": csrf}
-                self._redirect("/queue", f"ttr_session={token}; Path=/; HttpOnly; SameSite=Strict")
+                self._redirect("/lite" if variant == "lite-v1" else "/queue",
+                               f"ttr_session={token}; Path=/; HttpOnly; SameSite=Strict")
                 return
             actor, token, error = self._actor()
             if not actor:
@@ -249,7 +287,48 @@ def make_server(db_path: str | Path, actor_passwords: dict[str, str],
                 return
             service_called = False
             try:
-                if path == "/reviews/save":
+                if variant == "lite-v1" and path == "/lite/reviews/save":
+                    order = store.get_order()
+                    line = next((row for row in order["lines"] if row["id"] == form.get("line_id")), None)
+                    if line is None:
+                        raise BusinessRuleError("INVALID_REVIEW", "Choose an order line shown in the case.")
+                    principal = int(line["quantity"]) * int(line["unit_price_cents"])
+                    tax = (principal * int(line["tax_rate_bps"]) + 5000) // 10000
+                    review_fields = {
+                        "ticket_id": spec.TICKET_ID, "order_id": spec.ORDER_ID, "order_revision": order["revision"],
+                        "decision": form.get("decision", ""), "line_id": line["id"],
+                        "evidence_id": form.get("evidence_id", ""), "policy_id": spec.POLICY_ID,
+                        "principal_cents": principal, "tax_cents": tax,
+                        "shipping_cents": parse_money(form.get("shipping_amount", "")),
+                        "refund_cents": parse_money(form.get("refund_amount", "")),
+                        "rationale": "Structured review recorded from the linked ticket, order, evidence, and policy."}
+                    service_called = True
+                    review = store.save_review(actor, review_fields)
+                    self._redirect("/lite/review/" + quote(review["id"], safe=""))
+                elif variant == "lite-v1" and path == "/lite/refunds/issue":
+                    review_id = form.get("review_id", "")
+                    review = store.get_review(review_id)
+                    order = store.get_order(review["order_id"])
+                    line = next((row for row in order["lines"] if row["id"] == form.get("line_id")), None)
+                    if line is None:
+                        raise BusinessRuleError("INVALID_REFUND", "Choose an order line shown in the case.")
+                    principal = int(line["quantity"]) * int(line["unit_price_cents"])
+                    tax = (principal * int(line["tax_rate_bps"]) + 5000) // 10000
+                    service_called = True
+                    refund = store.issue_refund(actor, ticket_id=review["ticket_id"],
+                        order_id=review["order_id"], review_id=review_id, line_id=line["id"],
+                        principal_cents=principal, tax_cents=tax,
+                        shipping_cents=parse_money(form.get("shipping_amount", "")),
+                        amount_cents=parse_money(form.get("refund_amount", "")),
+                        idempotency_key=form.get("idempotency_key", ""))
+                    self._redirect("/lite/refund/" + quote(refund["id"], safe=""))
+                elif variant == "lite-v1" and path == "/lite/tickets/resolve":
+                    service_called = True
+                    ticket = store.resolve_ticket(actor, ticket_id=form.get("ticket_id", ""),
+                        refund_id=form.get("refund_id", ""),
+                        resolution_code=form.get("resolution_code", ""), notes=form.get("notes", ""))
+                    self._redirect("/lite/refund/" + quote(ticket["refund_id"], safe=""))
+                elif path == "/reviews/save" and variant == "full":
                     review_fields = {
                         "ticket_id": form.get("ticket_id", ""), "order_id": form.get("order_id", ""),
                         "order_revision": 1, "decision": form.get("decision", ""),
@@ -263,7 +342,7 @@ def make_server(db_path: str | Path, actor_passwords: dict[str, str],
                     service_called = True
                     review = store.save_review(actor, review_fields)
                     self._redirect("/reviews/" + quote(review["id"], safe=""))
-                elif path == "/refunds/issue":
+                elif path == "/refunds/issue" and variant == "full":
                     refund_fields = {
                         "ticket_id": form.get("ticket_id", ""), "order_id": form.get("order_id", ""),
                         "review_id": form.get("review_id", ""), "line_id": form.get("line_id", ""),
@@ -276,23 +355,24 @@ def make_server(db_path: str | Path, actor_passwords: dict[str, str],
                     refund = store.issue_refund(actor,
                         **refund_fields)
                     self._redirect("/refunds/" + quote(refund["id"], safe=""))
-                elif path == "/tickets/resolve":
+                elif path == "/tickets/resolve" and variant == "full":
                     service_called = True
                     ticket = store.resolve_ticket(actor, ticket_id=form.get("ticket_id", ""),
                         refund_id=form.get("refund_id", ""),
                         resolution_code=form.get("resolution_code", ""), notes=form.get("notes", ""))
                     self._send(_layout("Case resolved", self._ticket_html(ticket), actor,
-                                       success="Ticket resolution saved. The transaction is unchanged."))
+                                       success="Ticket resolution saved. The transaction is unchanged.", variant=variant))
                 else:
-                    self._send(_layout("Not found", "<p>Unknown form.</p>", actor), 404)
+                    self._send(_layout("Not found", "<p>Unknown form.</p>", actor, variant=variant), 404)
             except (BusinessRuleError, InvalidOperation) as exc:
                 message = exc.message if isinstance(exc, BusinessRuleError) else "Enter valid currency amounts."
                 if not service_called:
                     code = exc.code if isinstance(exc, BusinessRuleError) else "INVALID_AMOUNT"
                     store.record_rejection(actor, path.lstrip("/").replace("/", "_") + "_rejected",
                                            "gui_request", path, {"error_code": code, "message": message})
-                body = "<p>Review the visible case record and correct the form before retrying.</p><a href='/queue'>Return to queue</a>"
-                self._send(_layout("Action not completed", body, actor, error=message), 400)
+                home = "/lite" if variant == "lite-v1" else "/queue"
+                body = f"<p>Review the visible case record and correct the form before retrying.</p><a href='{home}'>Return to case</a>"
+                self._send(_layout("Action not completed", body, actor, error=message, variant=variant), 400)
 
         def _page_queue(self, actor: str) -> None:
             ticket = store.get_ticket()
@@ -482,6 +562,194 @@ def make_server(db_path: str | Path, actor_passwords: dict[str, str],
             body = f"<table><thead><tr><th>#</th><th>Time</th><th>Actor</th><th>Event</th><th>Target</th><th>Details</th></tr></thead><tbody>{rows}</tbody></table>"
             self._send(_layout("Append-only Audit History", body, actor))
 
+        def _lite_sources(self) -> tuple[dict, dict, dict, list[dict]]:
+            ticket = store.get_ticket()
+            order = store.get_order()
+            policy = store.get_policy()
+            conn = connect(store.db_path)
+            try:
+                evidence = [dict(row) for row in conn.execute(
+                    "SELECT * FROM evidence WHERE order_id=? ORDER BY id", (order["id"],))]
+            finally:
+                conn.close()
+            return ticket, order, policy, evidence
+
+        def _lite_source_html(self) -> tuple[str, dict, dict]:
+            ticket, order, policy, evidence = self._lite_sources()
+            rows = "".join(
+                f"<tr><td>{escape(line['id'])}</td><td>{escape(line['description'])}</td>"
+                f"<td>{escape(line['condition'])}</td><td>{money(line['unit_price_cents'])}</td>"
+                f"<td>{int(line['tax_rate_bps']) / 100:.2f}%</td></tr>" for line in order["lines"])
+            evidence_rows = "".join(
+                f"<li><strong>{escape(item['id'])}</strong>: line {escape(item['line_id'])} — "
+                f"{escape(item['description'])}</li>" for item in evidence)
+            source = f'''<section class="card"><h3>{escape(ticket['id'])} · {escape(ticket['subject'])}</h3>
+              <p>{escape(ticket['body'])}</p>
+              <p>Order {escape(order['id'])} · {escape(order['status'])} · {money(order['total_cents'])} total</p>
+              <table><thead><tr><th>Order line</th><th>Item</th><th>Condition</th><th>Price</th><th>Tax rate</th></tr></thead>
+              <tbody>{rows}</tbody></table>
+              <p>Shipping: {money(1500)}. Delivered {escape(order['delivered_at'])}; ticket opened {escape(ticket['created_at'][:10])}.</p>
+              <h4>Delivery evidence</h4><ul>{evidence_rows}</ul>
+              <h4>{escape(policy['id'])} · version {escape(policy['version'])}</h4>
+              <p>{escape(policy['body'])}</p></section>'''
+            return source, order, policy
+
+        @staticmethod
+        def _lite_review_html(review: dict) -> str:
+            validity = "Current and consistent" if review["is_valid_current_review"] else "Needs rechecking"
+            return f'''<section class="card"><h3>Saved Case Review</h3>
+              <p class="status">{escape(validity)} · {escape(review['id'])} · version {review['version']}</p>
+              <table><tbody><tr><th>Eligibility</th><td>{escape(review['decision'])}</td></tr>
+              <tr><th>Order line</th><td>{escape(review['line_id'])}</td></tr>
+              <tr><th>Evidence / policy</th><td>{escape(review['evidence_id'])} / {escape(review['policy_id'])}</td></tr>
+              <tr><th>Item / tax / shipping</th><td>{money(review['principal_cents'])} / {money(review['tax_cents'])} / {money(review['shipping_cents'])}</td></tr>
+              <tr><th>Proposed total</th><td>{money(review['refund_cents'])}</td></tr>
+              <tr><th>Order revision</th><td>{review['order_revision']}</td></tr></tbody></table>
+              <p>{escape(review['validation_message'])}</p></section>'''
+
+        def _lite_review_form(self, actor: str, order: dict) -> str:
+            if actor not in {"A", "S"}:
+                return ""
+            lines = [(line["id"], f"{line['description']} — {money(line['unit_price_cents'])}")
+                     for line in order["lines"]]
+            conn = connect(store.db_path)
+            try:
+                evidence = [dict(row) for row in conn.execute(
+                    "SELECT id,description FROM evidence WHERE order_id=? ORDER BY id", (spec.ORDER_ID,))]
+            finally:
+                conn.close()
+            csrf = escape(self._session()[1]["csrf"])
+            body = f'''<section class="card"><h3>Order verification</h3>
+              <form method="post" action="/lite/reviews/save">
+              <input type="hidden" name="csrf" value="{csrf}">
+              <fieldset class="choices"><legend>Eligibility</legend>
+                <label><input type="radio" name="decision" value="ELIGIBLE" required autofocus> Eligible</label>
+                <label><input type="radio" name="decision" value="NOT_ELIGIBLE"> Not eligible</label></fieldset>
+              <fieldset class="choices"><legend>Affected order line</legend>
+                {''.join(f'<label><input type="radio" name="line_id" value="{escape(str(value))}" required> {escape(str(label))}</label>' for value, label in lines)}</fieldset>
+              <fieldset class="choices"><legend>Supporting delivery evidence</legend>
+                {''.join(f'<label><input type="radio" name="evidence_id" value="{escape(str(row["id"]))}" required> {escape(str(row["id"]))} — {escape(str(row["description"]))}</label>' for row in evidence)}</fieldset>
+              <fieldset class="choices"><legend>Shipping treatment</legend>
+                <label><input type="radio" name="shipping_amount" value="0.00" required> Exclude shipping</label>
+                <label><input type="radio" name="shipping_amount" value="15.00"> Include shipping</label></fieldset>
+              <label for="refund_amount">Total proposed refund (USD)</label>
+              <input id="refund_amount" name="refund_amount" inputmode="decimal" required>
+              <button type="submit">Save Case Review</button></form></section>'''
+            return body
+
+        def _lite_refund_form(self, actor: str, review: dict) -> str:
+            if actor not in {"B", "S"}:
+                return "<p>The saved review is ready for the Support Processor.</p>"
+            order = store.get_order(review["order_id"])
+            lines = [(line["id"], f"{line['description']} — {money(line['unit_price_cents'])}")
+                     for line in order["lines"]]
+            csrf = escape(self._session()[1]["csrf"])
+            return f'''<section class="card"><h3>Refund processing</h3>
+              <p>Recheck the source records and review before submitting the transaction.</p>
+              <form method="post" action="/lite/refunds/issue">
+              <input type="hidden" name="csrf" value="{csrf}">
+              <input type="hidden" name="review_id" value="{escape(review['id'])}">
+              <input type="hidden" name="idempotency_key" value="{spec.IDEMPOTENCY_KEY}">
+              <fieldset class="choices"><legend>Order line to refund</legend>
+                {''.join(f'<label><input type="radio" name="line_id" value="{escape(str(value))}" required autofocus> {escape(str(label))}</label>' for value, label in lines)}</fieldset>
+              <fieldset class="choices"><legend>Shipping treatment</legend>
+                <label><input type="radio" name="shipping_amount" value="0.00" required> Exclude shipping</label>
+                <label><input type="radio" name="shipping_amount" value="15.00"> Include shipping</label></fieldset>
+              <label for="refund_amount">Refund total (USD)</label>
+              <input id="refund_amount" name="refund_amount" inputmode="decimal" required>
+              <button type="submit">Issue Refund</button></form></section>'''
+
+        def _lite_resolution_form(self, actor: str, refund: dict) -> str:
+            if actor not in {"B", "S"}:
+                return "<p>The Support Processor can now resolve the ticket.</p>"
+            csrf = escape(self._session()[1]["csrf"])
+            return f'''<section class="card"><h3>Ticket resolution</h3>
+              <form method="post" action="/lite/tickets/resolve">
+              <input type="hidden" name="csrf" value="{csrf}">
+              <input type="hidden" name="ticket_id" value="{spec.TICKET_ID}">
+              <input type="hidden" name="refund_id" value="{escape(refund['id'])}">
+              <fieldset class="choices"><legend>Resolution code</legend>
+                <label><input type="radio" name="resolution_code" value="{escape(spec.EXPECTED_RESOLUTION_CODE)}" required autofocus> Partial refund — damaged item</label></fieldset>
+              <label for="notes">Customer resolution note (brief text, not the refund amount)</label>
+              <input id="notes" name="notes" placeholder="Approved partial refund for the damaged USB-C dock." required>
+              <button type="submit">Resolve Ticket</button></form></section>'''
+
+        def _page_lite(self, actor: str) -> None:
+            source, order, _policy = self._lite_source_html()
+            reviews = store.list_reviews()
+            if actor == "B":
+                if reviews:
+                    review_url = "/lite/review/" + quote(reviews[-1]["id"], safe="")
+                    body = f'''{source}<p>A saved Case Review is available.
+                      <a class="button" href="{review_url}">Open the verifier's review</a></p>
+                      <script>setTimeout(() => location.replace({json.dumps(review_url)}), 800);</script>'''
+                else:
+                    body = f'''{source}<p role="status">Waiting for the verifier's saved review. You may inspect the source records while A works.</p>
+                      <script>
+                      const reviewPoll = setInterval(async () => {{
+                        try {{
+                          const response = await fetch('/lite/review-ready', {{cache: 'no-store'}});
+                          const state = await response.json();
+                          if (state.ready) {{ clearInterval(reviewPoll); location.assign(state.url); }}
+                        }} catch (_) {{}}
+                      }}, 3000);
+                      </script>'''
+                self._send(_layout("T-1042 Support Case", body, actor, variant="lite-v1"))
+                return
+            if actor == "S" and reviews:
+                refunds = self._lite_refunds()
+                if refunds:
+                    self._page_lite_refund(actor, refunds[-1]["id"])
+                else:
+                    self._page_lite_review(actor, reviews[-1]["id"])
+                return
+            if actor == "A" and reviews:
+                body = f'''{source}<p class="success">Review saved. Send the Support Processor a short handoff message.</p>'''
+            else:
+                body = source + self._lite_review_form(actor, order)
+            self._send(_layout("T-1042 Support Case", body, actor, variant="lite-v1"))
+
+        def _lite_refunds(self) -> list[dict]:
+            conn = connect(store.db_path)
+            try:
+                return [dict(row) for row in conn.execute(
+                    "SELECT * FROM refunds WHERE ticket_id=? ORDER BY created_at,id", (spec.TICKET_ID,))]
+            finally:
+                conn.close()
+
+        def _page_lite_review(self, actor: str, review_id: str) -> None:
+            if actor not in {"A", "B", "S"}:
+                self._send(_layout("Role error", "", actor, error="Unknown case role.", variant="lite-v1"), 403)
+                return
+            review = store.get_review(review_id)
+            source, _order, _policy = self._lite_source_html()
+            body = source + self._lite_review_html(review)
+            refunds = self._lite_refunds()
+            if refunds:
+                self._page_lite_refund(actor, refunds[-1]["id"])
+                return
+            if actor in {"B", "S"}:
+                body += self._lite_refund_form(actor, review)
+            else:
+                body += self._lite_refund_form(actor, review)
+            self._send(_layout("Review and Process T-1042", body, actor, variant="lite-v1"))
+
+        def _page_lite_refund(self, actor: str, refund_id: str) -> None:
+            refund = store.get_refund(refund_id)
+            review = store.get_review(refund["review_id"])
+            ticket = store.get_ticket(refund["ticket_id"])
+            source, _order, _policy = self._lite_source_html()
+            body = source + self._lite_review_html(review)
+            body += f'''<section class="card"><h3>Refund transaction</h3>
+              <p class="status">{escape(refund['status'])} · {escape(refund['id'])}</p>
+              <p>{escape(refund['line_id'])} · {money(refund['amount_cents'])}</p></section>'''
+            if ticket["status"] == "RESOLVED":
+                body += f'''<p class="success">Ticket resolved as {escape(ticket['resolution_code'])}.
+                  The saved transaction is {escape(ticket['refund_id'])}.</p>'''
+            else:
+                body += self._lite_resolution_form(actor, refund)
+            self._send(_layout("Refund and Resolve T-1042", body, actor, variant="lite-v1"))
+
     server = CaseWebServer((host, port), Handler)
     server.store = store
     server.sessions = sessions
@@ -490,9 +758,11 @@ def make_server(db_path: str | Path, actor_passwords: dict[str, str],
     return server
 
 
-def run_server(db_path: str | Path, actor_passwords: dict[str, str], host: str = "127.0.0.1", port: int = 0) -> None:
-    server = make_server(db_path, actor_passwords, host, port)
-    print(json.dumps({"ready": True, "host": host, "port": server.server_address[1]}, flush=True))
+def run_server(db_path: str | Path, actor_passwords: dict[str, str], host: str = "127.0.0.1",
+               port: int = 0, variant: str = "full") -> None:
+    server = make_server(db_path, actor_passwords, host, port, variant=variant)
+    print(json.dumps({"ready": True, "host": host, "port": server.server_address[1],
+                      "variant": variant}, flush=True))
     try:
         server.serve_forever()
     finally:
