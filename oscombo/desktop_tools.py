@@ -3,7 +3,7 @@
 Both harnesses get exactly the same tool surface and behaviour: screenshot, click, drag, move, type_text, key,
 scroll, wait, declare_infeasible. Screenshots are downscaled to 1280x720 for the model and coordinates are mapped
 back; actions run as pyautogui code inside the Guest. Every call (screenshots included) counts against the budget
-and returns a fresh screenshot. Nothing here coordinates with other agents on the same desktop.
+and returns a fresh screenshot. An optional per-desktop file lock can serialize one action and its screenshot.
 
   python -m oscombo.desktop_tools --mcp                 # MCP stdio server (codex); needs the ``mcp`` package (<2)
   python -m oscombo.desktop_tools <tool> '<json args>'  # one call, prints {"text": ..., "image": base64|null} (pi)
@@ -34,6 +34,8 @@ URL = os.environ.get("OSCOMBO_GUEST_URL", "http://localhost:5000").rstrip("/")
 LOG = os.environ.get("OSCOMBO_ACTION_LOG")
 BUDGET = int(os.environ.get("OSCOMBO_MAX_STEPS") or "45")
 SETTLE = float(os.environ.get("OSCOMBO_MCP_SETTLE", "1.0"))
+TYPE_TEXT_MODE = os.environ.get("OSCOMBO_TYPE_TEXT_MODE", "write")
+DESKTOP_LOCK_FILE = os.environ.get("OSCOMBO_DESKTOP_LOCK_FILE")
 TOOL_RESULT_COOLDOWN = max(0.0, float(os.environ.get("OSCOMBO_MCP_TURN_COOLDOWN_SEC", "0")))
 _cooldown_lock = threading.Lock()
 _last_tool_result_at: float | None = None
@@ -80,6 +82,19 @@ def _state():
             yield st
         finally:
             json.dump(st, open(path, "w"))
+
+
+@contextmanager
+def _desktop_lock():
+    if not DESKTOP_LOCK_FILE:
+        yield
+        return
+    with open(DESKTOP_LOCK_FILE, "a") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        try:
+            yield
+        finally:
+            fcntl.flock(lock, fcntl.LOCK_UN)
 
 
 def _guest(argv: list[str], timeout: float = 120) -> dict:
@@ -194,6 +209,16 @@ def _code(name: str, args: dict, scale: list[float]) -> str | None:
         X, Y = xy(args["x"], args["y"])
         return f"pyautogui.moveTo({X}, {Y})"
     if name == "type_text":
+        if TYPE_TEXT_MODE == "paste":
+            # VSCode auto-indents physical Enter keys, so writing multiline
+            # source character by character does not preserve the text.
+            encoded = base64.b64encode(args["text"].encode("utf-8")).decode("ascii")
+            return ("import base64, subprocess; "
+                    "_clip = subprocess.Popen(['xclip', '-selection', 'clipboard'], "
+                    "stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, "
+                    "stderr=subprocess.DEVNULL, start_new_session=True); "
+                    f"_clip.stdin.write(base64.b64decode({encoded!r})); "
+                    "_clip.stdin.close(); time.sleep(0.4); pyautogui.hotkey('ctrl', 'v')")
         return f"pyautogui.write({args['text']!r}, interval=0.02)"
     if name == "key":
         return "; ".join(f"pyautogui.hotkey(*{[_k(p) for p in chord.split('+')]!r}); time.sleep(0.06)"
@@ -232,6 +257,11 @@ def _wait_before_tool_result() -> float:
 
 def run_tool(name: str, args: dict) -> tuple[str, bytes | None]:
     """Execute one tool call; returns (text, png bytes or None)."""
+    with _desktop_lock():
+        return _run_tool_locked(name, args)
+
+
+def _run_tool_locked(name: str, args: dict) -> tuple[str, bytes | None]:
     tool_started_at = time.time()
     with _state() as st:  # reserve a call number (and read the latest scale) atomically
         if name != "declare_infeasible" and st["calls"] >= BUDGET:
@@ -289,7 +319,7 @@ def run_tool(name: str, args: dict) -> tuple[str, bytes | None]:
         _log({"t": time.time(), "n": n, "tool": name, "args": args, "code": code,
               "started_at": tool_started_at, "action_started_at": action_started_at,
               "action_ended_at": action_ended_at, "window_before": before,
-              "window_after": after, "window_samples_atomic": False,
+              "window_after": after, "window_samples_atomic": bool(DESKTOP_LOCK_FILE),
               "error": f"{type(exc).__name__}: {exc}", "phase": "screenshot",
               "action_error": str(action_error) if action_error else None})
         raise
@@ -299,7 +329,7 @@ def run_tool(name: str, args: dict) -> tuple[str, bytes | None]:
     cooldown = _wait_before_tool_result()
     _log({"t": time.time(), "n": n, "tool": name, "args": args,
           "window_before": before, "code": code, "executed": bool(code),
-          "window_after": after, "window_samples_atomic": False,
+          "window_after": after, "window_samples_atomic": bool(DESKTOP_LOCK_FILE),
           "started_at": tool_started_at, "action_started_at": action_started_at,
           "action_ended_at": action_ended_at, "screenshot_started_at": shot_started_at,
           "screenshot_ended_at": shot_ended_at,
