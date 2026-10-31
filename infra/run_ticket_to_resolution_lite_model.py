@@ -478,8 +478,8 @@ def run_episode(args: argparse.Namespace) -> int:
                 "redact_env_keys": [f"CODESK_TTR_LITE_UPSTREAM_{role}"],
                 "auth_mode": "auto",
                 "wire_api": "responses",
-                "mcp_python": str(PROJECT / ".venv" / "bin" / "python"),
-                "codex_bin": "/opt/data/private/mjh/tools/bin/codex",
+                "mcp_python": os.environ.get("CODESK_TTR_MCP_PYTHON", str(PROJECT / ".venv" / "bin" / "python")),
+                "codex_bin": os.environ.get("CODESK_TTR_CODEX_BIN", "/opt/data/private/mjh/tools/bin/codex"),
                 "timeout": wall_seconds,
                 "request_retries": 1,
                 "stream_retries": 1,
@@ -520,6 +520,7 @@ def run_episode(args: argparse.Namespace) -> int:
             active_seconds = 0.0
             suspended_seconds = 0.0
             lifecycle_timeout = False
+            handoff_unavailable = False
             try:
                 barrier.wait(timeout=300)
                 record["started_unix"] = time.time()
@@ -591,6 +592,15 @@ def run_episode(args: argparse.Namespace) -> int:
                                 record["resumed_at_unix"] = wake_started
                                 record["resume_finished_unix"] = model_finished
                                 break
+                            if "A" in results:
+                                handoff_unavailable = True
+                                event = {"type": "handoff_unavailable", "time_unix": time.time(),
+                                         "reason": "A finished without both a saved review and message",
+                                         "handoff_state": handoff}
+                                native._append(root / "actor_lifecycle.jsonl", event)
+                                record["lifecycle_events"].append(event)
+                                suspended_seconds = max(0.0, time.time() - suspend_started)
+                                break
                             time.sleep(1)
                         else:
                             lifecycle_timeout = True
@@ -602,7 +612,8 @@ def run_episode(args: argparse.Namespace) -> int:
                 trace = outcome.trace
                 native._write_json(root / "actor_runs" / role / "trace.json", trace)
                 record.update({
-                    "status": "handoff_wait_timeout" if lifecycle_timeout else outcome.status,
+                    "status": ("handoff_wait_timeout" if lifecycle_timeout else
+                               "handoff_unavailable" if handoff_unavailable else outcome.status),
                     "steps": len(trace), "agent_s": round(active_seconds, 2),
                     "model_active_seconds": round(active_seconds, 2),
                     "suspended_seconds": round(suspended_seconds, 2),
@@ -632,7 +643,7 @@ def run_episode(args: argparse.Namespace) -> int:
                 report["resource_samples"].append({
                     "time_unix": time.time(),
                     "guests": {key: native._process_metrics(
-                        env.provider.process.pid if env.provider.process else None)
+                        getattr(getattr(env.provider, "process", None), "pid", None))
                         for key, env in environments.items()},
                 })
                 with report_lock:
@@ -702,8 +713,11 @@ def run_episode(args: argparse.Namespace) -> int:
         if args.reset_after and post_actor_drain["settled"]:
             report["pre_reset_database"] = snapshot_database(
                 root / "db" / "case.sqlite3", root / "evidence" / "pre-reset-case.sqlite3")
-            report["reset"] = native._reset_for_next_control(
-                root, run_id, condition, guests, actor_guest_keys, browser_profiles, app_port)
+            try:
+                report["reset"] = native._reset_for_next_control(
+                    root, run_id, condition, guests, actor_guest_keys, browser_profiles, app_port)
+            except Exception as exc:
+                report["reset_failure"] = {"type": type(exc).__name__, "message": str(exc)}
         elif args.reset_after:
             report["reset_skipped"] = "actor side effects did not become quiescent"
         report["artifact_manifest"] = artifact_manifest(root, roles)

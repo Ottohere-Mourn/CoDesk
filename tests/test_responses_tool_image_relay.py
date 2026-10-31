@@ -41,6 +41,22 @@ def test_move_latest_tool_image_prunes_superseded_screenshots_but_keeps_task_ima
     assert image_urls == ["data:image/png;base64,task", "data:image/png;base64,new"]
 
 
+def test_promoted_screenshot_repeats_only_public_task_instruction():
+    body = {"input": [{"role": "user", "content": [{"type": "input_text", "text": "Original task"}]},
+                      {"type": "function_call_output", "output": [
+                          {"type": "input_image", "image_url": "data:image/png;base64,new"}]}]}
+    assert move_latest_tool_image(body, "Save review, issue refund, and resolve ticket.")
+    latest = body["input"][-1]
+    assert latest["role"] == "user"
+    assert "Save review, issue refund, and resolve ticket." in latest["content"][0]["text"]
+    assert body["input"][0]["content"][0]["text"] == "Original task"
+    previous = latest
+    body["input"].append({"type": "function_call_output", "output": [
+        {"type": "input_image", "image_url": "data:image/png;base64,newer"}]})
+    assert move_latest_tool_image(body, "Save review, issue refund, and resolve ticket.")
+    assert previous not in body["input"]
+
+
 def test_default_relay_keeps_body_and_strips_codex_headers(tmp_path):
     captured = {}
 

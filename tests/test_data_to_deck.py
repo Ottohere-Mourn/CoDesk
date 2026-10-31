@@ -261,6 +261,7 @@ def test_codex_harness_exposes_case_collaboration_mcp_only_when_opted_in(tmp_pat
 
     config = harness.config(ctx)
     assert "[mcp_servers.collaboration]" in config
+    assert 'default_tools_approval_mode = "approve"' in config.split("[mcp_servers.collaboration]", 1)[1]
     assert "oscombo.collab.data_to_deck.collab_tools" in config
     assert 'command = "/tmp/codesk-mcp/bin/python"' in config
     assert 'PYTHONPATH = ' in config

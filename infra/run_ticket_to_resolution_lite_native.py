@@ -303,6 +303,7 @@ def _probe_model_catalog(config: dict[str, Any]) -> dict[str, Any]:
 
 
 def _start_model_relay(root: Path, role: str, config: dict[str, Any]) -> tuple[subprocess.Popen, str, str]:
+    from oscombo.collab.ticket_to_resolution.lite_v1 import spec as lite_spec
     from_env = f"CODESK_TTR_LITE_UPSTREAM_{role}"
     token_env = f"CODESK_TTR_LITE_RELAY_{role}"
     token = secrets.token_urlsafe(32)
@@ -322,10 +323,19 @@ def _start_model_relay(root: Path, role: str, config: dict[str, Any]) -> tuple[s
         "--event-log", str(event_path),
         "--output-token-budget", str(MODEL_RELAY_OUTPUT_BUDGET),
         "--size-aware-upload-timeout",
+        *(["--promote-tool-image"] if os.environ.get("CODESK_TTR_PROMOTE_TOOL_IMAGE") == "1" else []),
+        *(["--task-reminder-env", "CODESK_TTR_TASK_REMINDER"]
+          if os.environ.get("CODESK_TTR_REPEAT_TASK") == "1" else []),
     ]
     relay_env = os.environ.copy()
     relay_env[from_env] = config["api_key"]
     relay_env[token_env] = token
+    if os.environ.get("CODESK_TTR_REPEAT_TASK") == "1":
+        relay_env["CODESK_TTR_TASK_REMINDER"] = {
+            "S": lite_spec.SINGLE_AGENT_INSTRUCTION,
+            "A": lite_spec.ACTOR_A_INSTRUCTION,
+            "B": lite_spec.ACTOR_B_INSTRUCTION,
+        }[role]
     log = (folder / "relay.log").open("w", encoding="utf-8")
     process = subprocess.Popen(command, cwd=PROJECT, env=relay_env, stdout=log,
                                stderr=subprocess.STDOUT, start_new_session=True)
@@ -683,6 +693,21 @@ def _role_window(guest: Any, role: str, profile: str) -> dict[str, Any]:
             f"process_probe_error={probe.get('error', '')[-1000:]!r}"
         )
     activated = guest.execute(["wmctrl", "-ia", selected], 15)
+    target_id = int(selected, 16)
+    active_id = None
+    for _ in range(15):
+        probe_active = guest.execute(["xdotool", "getactivewindow"], 15)
+        try:
+            active_id = int((probe_active.get("output") or "").strip())
+        except ValueError:
+            active_id = None
+        if active_id == target_id:
+            break
+        time.sleep(0.2)
+        activated = guest.execute(["wmctrl", "-ia", selected], 15)
+    if active_id != target_id:
+        raise RuntimeError(f"{role} browser activation did not settle: "
+                           f"target={selected}, active={active_id}")
     return {"role": role, "window_id": selected, "profile_process_ids": sorted(pids),
             "window_list": windows, "activation_status": activated.get("status")}
 
@@ -1265,11 +1290,11 @@ def _control_gui_actions(run_root: Path, run_id: str, scenario: str, condition: 
 
     verifier = guest_for["A"]
     _role_window(verifier, "A", browser_profiles["A"])
-    # The Lite form uses radio inputs. Each field is a separately logged GUI
-    # action: select the focused first option with Space, then advance through
+    # Click the first radio directly so a transient desktop notification
+    # cannot consume the initial Space key. Then advance through the remaining
     # groups with Tab. ArrowDown selects the USB-C dock (L2).
     _logged_gui_action(verifier, run_root, scenario, "A", "eligibility",
-                       "import pyautogui; pyautogui.press('space')", guest_key_for["A"])
+                       "import pyautogui; pyautogui.click(1024,447)", guest_key_for["A"])
     _logged_gui_action(verifier, run_root, scenario, "A", "affected-line",
                        "import pyautogui; pyautogui.press('tab'); pyautogui.press('down'); pyautogui.press('space')", guest_key_for["A"])
     _logged_gui_action(verifier, run_root, scenario, "A", "delivery-evidence",

@@ -129,7 +129,7 @@ def summarize_request(raw: bytes) -> dict:
             "tool_names": tool_names, "input_image_parts": image_parts}
 
 
-def move_latest_tool_image(body: dict) -> bool:
+def move_latest_tool_image(body: dict, task_reminder: str = "") -> bool:
     """Promote the latest screenshot and prune superseded tool images.
 
     Codex resends the conversation history on each Responses request. Keeping
@@ -178,15 +178,16 @@ def move_latest_tool_image(body: dict) -> bool:
         if item.get("role") == "user" and isinstance(content, list):
             has_promoted_screenshot = (
                 any(isinstance(part, dict) and part.get("type") == "input_text"
-                    and part.get("text") == screenshot_marker for part in content)
+                    and str(part.get("text", "")).startswith(screenshot_marker) for part in content)
                 and any(isinstance(part, dict) and part.get("type") in {"input_image", "image_url"}
                         for part in content))
             if has_promoted_screenshot:
                 continue
         pruned_history.append(item)
 
+    reminder = (" Continue the original task: " + task_reminder) if task_reminder else ""
     pruned_history.append({"role": "user", "content": [
-        {"type": "input_text", "text": screenshot_marker},
+        {"type": "input_text", "text": screenshot_marker + reminder},
         *latest_images,
     ]})
     history[:] = pruned_history
@@ -199,7 +200,8 @@ def make_server(host: str, port: int, upstream: str, api_key: str,
                 client_token: str | None = None,
                 fallback_upstream: str | None = None,
                 output_token_budget: int | None = None,
-                size_aware_upload_timeout: bool = False) -> ThreadingHTTPServer:
+                size_aware_upload_timeout: bool = False,
+                task_reminder: str = "") -> ThreadingHTTPServer:
     if host not in {"127.0.0.1", "localhost"}:
         raise ValueError("the image relay must bind to loopback")
     url = urlparse(upstream.rstrip("/"))
@@ -278,7 +280,7 @@ def make_server(host: str, port: int, upstream: str, api_key: str,
                 moved = False
                 if promote_tool_image:
                     body = json.loads(raw)
-                    moved = move_latest_tool_image(body)
+                    moved = move_latest_tool_image(body, task_reminder)
                     if moved:
                         raw = json.dumps(body, separators=(",", ":")).encode("utf-8")
                 request_meta = summarize_request(raw)
@@ -433,6 +435,8 @@ def main() -> None:
     parser.add_argument("--event-log", type=Path)
     parser.add_argument("--promote-tool-image", action="store_true",
                         help="diagnostic only: move the latest tool image into a user message")
+    parser.add_argument("--task-reminder-env",
+                        help="environment variable containing the actor's public task instruction")
     parser.add_argument('--output-token-budget', type=int, default=None)
     parser.add_argument('--size-aware-upload-timeout', action='store_true',
                         help='separate bounded request-body writes from the 15s TLS connect deadline')
@@ -448,7 +452,9 @@ def main() -> None:
                          client_token=client_token,
                          fallback_upstream=args.fallback_upstream,
                          output_token_budget=args.output_token_budget,
-                         size_aware_upload_timeout=args.size_aware_upload_timeout)
+                         size_aware_upload_timeout=args.size_aware_upload_timeout,
+                         task_reminder=os.environ.get(args.task_reminder_env, "")
+                         if args.task_reminder_env else "")
     if args.ready_file:
         args.ready_file.write_text(json.dumps({"pid": os.getpid(),
                                                "host": args.host,

@@ -125,7 +125,7 @@ def test_single_agent_task_card_requires_full_workflow_completion():
     assert "Do not stop after saving the review or issuing the refund" in instruction
 
 
-def test_resolution_form_marks_notes_as_text_and_gives_customer_facing_example(tmp_path):
+def test_resolution_form_requires_an_empty_customer_note(tmp_path):
     root = tmp_path / "resolution-form"
     prepare_run(root, "ttr-lite-resolution-form-copy")
     credentials = json.loads((root / "secrets" / "browser_credentials.json").read_text())
@@ -155,7 +155,7 @@ def test_resolution_form_marks_notes_as_text_and_gives_customer_facing_example(t
         assert refund.status_code == 303
         resolution_page = actor.get(f"{base_url}{refund.headers['Location']}", timeout=10)
         assert "Customer resolution note (brief text, not the refund amount)" in resolution_page.text
-        assert 'placeholder="Approved partial refund for the damaged USB-C dock."' in resolution_page.text
+        assert '<input id="notes" name="notes" required>' in resolution_page.text
         assert 'type="radio" name="resolution_code"' in resolution_page.text
         assert "Resolve Ticket" in resolution_page.text
     finally:

@@ -45,6 +45,29 @@ def _options(items, selected: str = "") -> str:
 def _layout(title: str, body: str, actor: str | None = None, *, error: str | None = None,
             success: str | None = None, variant: str = "full") -> bytes:
     page_title = f"{actor} · {title}" if variant == "lite-v1" and actor else title
+    lite_class = "lite" if variant == "lite-v1" else ""
+    lite_style = """main.lite{max-width:1600px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;align-items:start;padding:12px}
+      body.lite-page header{padding:6px 24px}
+      body.lite-page header h1{font-size:22px;margin:0}
+      body.lite-page header div{font-size:13px}
+      body.lite-page nav{padding:6px 24px}
+      body.lite-page main.lite{margin:8px auto}
+      main.lite>h2{grid-column:1/-1;margin:0 0 2px}
+      main.lite>section.card:first-of-type{grid-column:1;grid-row:2/span 4}
+      main.lite>section.card:not(:first-of-type){grid-column:2}
+      main.lite .card{padding:10px;min-width:0}
+      main.lite h3,main.lite h4{margin:5px 0}
+      main.lite p,main.lite ul,main.lite table{margin:5px 0}
+      main.lite td,main.lite th{padding:4px}
+      main.lite fieldset.choices{margin:5px 0}
+      main.lite fieldset.choices label{margin:2px 0;padding:2px 5px;border-radius:4px}
+      main.lite fieldset.choices label:has(input:checked){background:#d5f3df;outline:2px solid #167047}
+      main.lite fieldset.choices label:has(input:checked)::after{content:"Selected";margin-left:auto;color:#125c39;font-size:14px;font-weight:700}
+      main.lite label{margin:5px 0 2px}
+      main.lite input,main.lite textarea{box-sizing:border-box;min-height:32px}
+      main.lite button{margin-top:4px}
+      @media(max-width:900px){main.lite{display:block}}
+      """ if variant == "lite-v1" else ""
     if actor is None:
         nav = ""
     elif variant == "lite-v1":
@@ -79,8 +102,8 @@ def _layout(title: str, body: str, actor: str | None = None, *, error: str | Non
       th{{background:#e9f0f5}} .error,.success,.notice{{padding:12px;margin:12px 0;border-radius:4px}} .error{{background:#ffe9e7;color:#8b1d14}} .success{{background:#e5f7eb;color:#145b2b}} .notice{{background:#eef5ff}}
       .cards{{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px}} .card{{border:1px solid #cbd5df;padding:16px;border-radius:6px}}
       .mono{{font-family:monospace}} .small{{font-size:15px;color:#425466}} .status{{font-weight:700}}
-      </style></head><body><header><h1>Case Desk — Synthetic Support Environment</h1><div>Training fixture only; no real customer or payment data.</div></header>
-      {nav}<main><h2>{escape(title)}</h2>{banner}{body}</main></body></html>'''
+      {lite_style}</style></head><body class="{'lite-page' if variant == 'lite-v1' else ''}"><header><h1>Case Desk — Synthetic Support Environment</h1><div>Training fixture only; no real customer or payment data.</div></header>
+      {nav}<main class="{lite_class}"><h2>{escape(title)}</h2>{banner}{body}</main></body></html>'''
     return html.encode("utf-8")
 
 
@@ -664,6 +687,7 @@ def make_server(db_path: str | Path, actor_passwords: dict[str, str],
                 return "<p>The Support Processor can now resolve the ticket.</p>"
             csrf = escape(self._session()[1]["csrf"])
             return f'''<section class="card"><h3>Ticket resolution</h3>
+              <p>Refund confirmed: {escape(refund['id'])} · {escape(refund['line_id'])} · {money(refund['amount_cents'])}.</p>
               <form method="post" action="/lite/tickets/resolve">
               <input type="hidden" name="csrf" value="{csrf}">
               <input type="hidden" name="ticket_id" value="{spec.TICKET_ID}">
@@ -671,7 +695,7 @@ def make_server(db_path: str | Path, actor_passwords: dict[str, str],
               <fieldset class="choices"><legend>Resolution code</legend>
                 <label><input type="radio" name="resolution_code" value="{escape(spec.EXPECTED_RESOLUTION_CODE)}" required autofocus> Partial refund — damaged item</label></fieldset>
               <label for="notes">Customer resolution note (brief text, not the refund amount)</label>
-              <input id="notes" name="notes" placeholder="Approved partial refund for the damaged USB-C dock." required>
+              <input id="notes" name="notes" required>
               <button type="submit">Resolve Ticket</button></form></section>'''
 
         def _page_lite(self, actor: str) -> None:
@@ -739,15 +763,16 @@ def make_server(db_path: str | Path, actor_passwords: dict[str, str],
             review = store.get_review(refund["review_id"])
             ticket = store.get_ticket(refund["ticket_id"])
             source, _order, _policy = self._lite_source_html()
-            body = source + self._lite_review_html(review)
-            body += f'''<section class="card"><h3>Refund transaction</h3>
+            transaction = f'''<section class="card"><h3>Refund transaction</h3>
               <p class="status">{escape(refund['status'])} · {escape(refund['id'])}</p>
               <p>{escape(refund['line_id'])} · {money(refund['amount_cents'])}</p></section>'''
             if ticket["status"] == "RESOLVED":
+                body = source + self._lite_review_html(review) + transaction
                 body += f'''<p class="success">Ticket resolved as {escape(ticket['resolution_code'])}.
                   The saved transaction is {escape(ticket['refund_id'])}.</p>'''
             else:
-                body += self._lite_resolution_form(actor, refund)
+                body = source + self._lite_resolution_form(actor, refund)
+                body += transaction + self._lite_review_html(review)
             self._send(_layout("Refund and Resolve T-1042", body, actor, variant="lite-v1"))
 
     server = CaseWebServer((host, port), Handler)
