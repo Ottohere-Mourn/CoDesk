@@ -5,6 +5,7 @@ import re
 import sys
 import threading
 import time
+from datetime import datetime, timezone
 from pathlib import Path
 
 import pytest
@@ -18,7 +19,48 @@ from oscombo.collab.ticket_to_resolution.runner import hidden_manifest_path, pre
 from oscombo.collab.ticket_to_resolution.webapp import make_server
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "infra"))
-from run_ticket_to_resolution_lite_model import public_handoff_state
+from run_ticket_to_resolution_lite_model import event_epoch, handoff_audit, public_handoff_state
+
+
+def test_handoff_audit_accepts_protocol_unix_time_and_requires_post_read_review(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    root = tmp_path / "episode"
+    (root / "collaboration").mkdir(parents=True)
+    (root / "db").mkdir()
+    (root / "db/case.sqlite3").touch()
+    base = time.time()
+    def iso(offset: float) -> str:
+        return datetime.fromtimestamp(base + offset, timezone.utc).isoformat()
+
+    rows = [
+        {"event_type": "case_review_saved", "actor_id": "A", "target_id": "RV-1",
+         "timestamp": iso(1)},
+        {"event_type": "page_view", "actor_id": "B", "target_id": "/reviews/RV-1",
+         "timestamp": iso(2)},
+        {"event_type": "page_view", "actor_id": "B", "target_id": "/reviews/RV-1",
+         "timestamp": iso(5)},
+        {"event_type": "refund_issued", "actor_id": "B", "target_id": "RF-1",
+         "timestamp": iso(6)},
+    ]
+    monkeypatch.setattr(CaseStore, "list_audit", lambda self: rows)
+    (root / "collaboration/events.jsonl").write_text(json.dumps({
+        "type": "message", "actor": "A", "recipient": "B", "message_id": "m1",
+        "timestamp": base + 3,
+    }) + "\n")
+    (root / "collaboration_reads.jsonl").write_text(json.dumps({
+        "reader": "B", "message_ids": ["m1"], "time_unix": base + 4,
+    }) + "\n")
+    assert event_epoch(base + 3) == base + 3
+    report = handoff_audit(root, "collaborative_isolated", {}, {})
+    assert report["strict_review_message_read_gui_refund_order"]
+    assert report["B_pre_handoff_review_views"] == 1
+    assert report["B_opened_review_after_handoff"]
+    assert report["B_read_messages_tool_calls"] == 1
+    rows.pop(2)
+    report = handoff_audit(root, "collaborative_isolated", {}, {})
+    assert not report["strict_review_message_read_gui_refund_order"]
+    assert not report["B_opened_review_after_handoff"]
 
 
 def _csrf(response: requests.Response) -> str:

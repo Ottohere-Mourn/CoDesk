@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import os
 from pathlib import Path
 import signal
@@ -33,6 +34,21 @@ def read_jsonl(path: Path) -> list[dict]:
         except json.JSONDecodeError:
             continue
     return records
+
+
+def event_epoch(value: object) -> float | None:
+    """Accept both SQLite ISO timestamps and ProtocolStore Unix timestamps."""
+    from datetime import datetime
+
+    if value is None or isinstance(value, bool) or value == "":
+        return None
+    if isinstance(value, (int, float)):
+        number = float(value)
+        return number if math.isfinite(number) else None
+    try:
+        return datetime.fromisoformat(str(value).replace("Z", "+00:00")).timestamp()
+    except (TypeError, ValueError, OverflowError):
+        return None
 
 
 def wait_for_actor_side_effects(root: Path, roles: tuple[str, ...], *,
@@ -151,26 +167,17 @@ def usage_report(root: Path, roles: tuple[str, ...]) -> dict:
 
 
 def handoff_audit(root: Path, condition: str, oracle: dict, actor_results: dict[str, dict]) -> dict:
-    from datetime import datetime
     from oscombo.collab.ticket_to_resolution.database import CaseStore
 
     if condition == "single_agent":
         return {"applicable": False}
 
-    def epoch(value):
-        if not value:
-            return None
-        try:
-            return datetime.fromisoformat(str(value).replace("Z", "+00:00")).timestamp()
-        except (TypeError, ValueError):
-            return None
-
     audit = CaseStore(root / "db" / "case.sqlite3").list_audit()
     review = next((row for row in audit if row["event_type"] == "case_review_saved"
                    and row["actor_id"] == "A"), None)
-    gui_review = next((row for row in audit if row["event_type"] == "page_view"
-                       and row["actor_id"] == "B"
-                       and row["target_id"].startswith("/reviews/")), None)
+    gui_reviews = [row for row in audit if row["event_type"] == "page_view"
+                   and row["actor_id"] == "B"
+                   and row["target_id"].startswith("/reviews/")]
     refund = next((row for row in audit if row["event_type"] == "refund_issued"
                    and row["actor_id"] == "B"), None)
     protocol_events = read_jsonl(root / "collaboration" / "events.jsonl")
@@ -182,44 +189,47 @@ def handoff_audit(root: Path, condition: str, oracle: dict, actor_results: dict[
     message = next((row for row in sent if row.get("message_id") in read_ids), None)
     read_row = next((row for row in reads if message
                      and message.get("message_id") in row.get("message_ids", [])), None)
+    read_time = event_epoch(read_row.get("time_unix")) if read_row else None
+    post_handoff_gui_review = next((row for row in gui_reviews
+                                    if read_time is not None and
+                                    (event_epoch(row.get("timestamp")) or 0) >= read_time), None)
+    pre_handoff_gui_review_count = sum(
+        read_time is not None and (event_epoch(row.get("timestamp")) or 0) < read_time
+        for row in gui_reviews)
     times = (
-        epoch(review.get("timestamp")) if review else None,
-        epoch(message.get("timestamp")) if message else None,
-        read_row.get("time_unix") if read_row else None,
-        epoch(gui_review.get("timestamp")) if gui_review else None,
-        epoch(refund.get("timestamp")) if refund else None,
+        event_epoch(review.get("timestamp")) if review else None,
+        event_epoch(message.get("timestamp")) if message else None,
+        read_time,
+        event_epoch(post_handoff_gui_review.get("timestamp"))
+        if post_handoff_gui_review else None,
+        event_epoch(refund.get("timestamp")) if refund else None,
     )
     strict_order = all(value is not None for value in times) and all(
         earlier <= later for earlier, later in zip(times, times[1:]))
-    b_trace = actor_results.get("B", {}).get("trace", [])
     return {
         "applicable": True,
         "review_saved_by_A": review is not None,
         "A_message_count": len(sent),
         "B_read_event_count": len(reads),
         "A_message_id_read_by_B": message.get("message_id") if message else None,
-        "B_opened_review_in_gui": gui_review is not None,
+        "B_opened_review_in_gui": bool(gui_reviews),
+        "B_opened_review_after_handoff": post_handoff_gui_review is not None,
+        "B_pre_handoff_review_views": pre_handoff_gui_review_count,
         "refund_issued_by_B": refund is not None,
         "strict_review_message_read_gui_refund_order": strict_order,
         "timestamps_unix": {"review_saved": times[0], "message_sent": times[1],
                             "message_read": times[2], "review_opened_gui": times[3],
                             "refund_issued": times[4]},
-        "B_read_messages_tool_calls": sum(
-            str(row.get("tool", "")).endswith("read_messages") for row in b_trace),
+        # Desktop trace contains desktop calls only. The collaboration proxy
+        # records each actual read_messages invocation in this event log.
+        "B_read_messages_tool_calls": len(reads),
         "oracle_review_opened_in_gui_by_B": oracle.get("process_evidence", {}).get(
             "review_opened_in_gui_by_B"),
     }
 
 
 def public_handoff_state(root: Path) -> dict:
-    from datetime import datetime
     from oscombo.collab.ticket_to_resolution.database import CaseStore
-
-    def epoch(value):
-        try:
-            return datetime.fromisoformat(str(value).replace("Z", "+00:00")).timestamp()
-        except (TypeError, ValueError):
-            return None
 
     audit = CaseStore(root / "db" / "case.sqlite3").list_audit()
     reviews = [row for row in audit if row["event_type"] == "case_review_saved"
@@ -234,7 +244,7 @@ def public_handoff_state(root: Path) -> dict:
     read_ids = {message_id for row in reads for message_id in row.get("message_ids", [])}
     message_read = bool(latest_message and latest_message.get("message_id") in read_ids)
     last_read_time = max((row.get("time_unix", 0) for row in reads), default=0)
-    review_time = epoch(latest_review.get("timestamp")) if latest_review else None
+    review_time = event_epoch(latest_review.get("timestamp")) if latest_review else None
     review_not_seen = bool(latest_review and review_time is not None and last_read_time < review_time)
     review_saved = latest_review is not None
     message_sent = latest_message is not None
@@ -667,6 +677,12 @@ def run_episode(args: argparse.Namespace) -> int:
             root / "oracle" / "fixture_manifest.json",
             condition)
         report["handoff_audit"] = handoff_audit(root, condition, report["oracle"], results)
+        report["business_status"] = (
+            "PASS" if report["oracle"]["joint_business_success"] else "FAIL")
+        report["collaboration_process_status"] = (
+            "NOT_APPLICABLE" if condition == "single_agent" else
+            "PASS" if report["handoff_audit"]["strict_review_message_read_gui_refund_order"]
+            else "FAIL")
         report["desktop_interference"] = native._input_overlap(root / "desktop_requests.jsonl")
         report["actor_timing"] = {
             role: {"started_unix": record.get("started_unix"),
@@ -705,6 +721,12 @@ def run_episode(args: argparse.Namespace) -> int:
         report["model_called"] = any(
             report["model_usage"]["by_role"][role]["request_count"] > 0 for role in roles)
         report["status"] = "TASK_PASS" if report["oracle"]["joint_business_success"] else "TASK_FAIL"
+        report["execution_status"] = (
+            "INFRA_ERROR" if any(record.get("status") in {"INFRA_ERROR", "error"}
+                                 for record in results.values()) else
+            "BUDGET_STOP" if any(record.get("status") in {"timeout", "handoff_wait_timeout"}
+                                 for record in results.values()) else
+            "VALID" if post_actor_drain["settled"] else "EVIDENCE_UNSETTLED")
         if any(record.get("status") in {"INFRA_ERROR", "timeout", "error", "handoff_wait_timeout"}
                for record in results.values()):
             report["status"] = "INFRA_OR_BUDGET_STOP_WITH_ORACLE_SCORE"
