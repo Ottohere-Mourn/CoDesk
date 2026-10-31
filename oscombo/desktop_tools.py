@@ -39,6 +39,7 @@ DESKTOP_LOCK_FILE = os.environ.get("OSCOMBO_DESKTOP_LOCK_FILE")
 TOOL_RESULT_COOLDOWN = max(0.0, float(os.environ.get("OSCOMBO_MCP_TURN_COOLDOWN_SEC", "0")))
 _cooldown_lock = threading.Lock()
 _last_tool_result_at: float | None = None
+_lock_timing = threading.local()
 MODEL_W, MODEL_H = 1280, 720
 PREFIX = "import pyautogui; import time; pyautogui.FAILSAFE = False; {cmd}"
 KEYMAP = {"return": "enter", "escape": "esc", "control": "ctrl", "super": "win", "page_up": "pageup",
@@ -236,6 +237,7 @@ def _code(name: str, args: dict, scale: list[float]) -> str | None:
 
 def _log(rec: dict) -> None:
     if LOG:
+        rec.setdefault("desktop_lock_wait_s", round(getattr(_lock_timing, "wait_s", 0.0), 3))
         with open(LOG, "a") as f:
             f.write(json.dumps(rec) + "\n")
 
@@ -257,8 +259,13 @@ def _wait_before_tool_result() -> float:
 
 def run_tool(name: str, args: dict) -> tuple[str, bytes | None]:
     """Execute one tool call; returns (text, png bytes or None)."""
+    requested_at = time.monotonic()
     with _desktop_lock():
-        return _run_tool_locked(name, args)
+        _lock_timing.wait_s = time.monotonic() - requested_at if DESKTOP_LOCK_FILE else 0.0
+        try:
+            return _run_tool_locked(name, args)
+        finally:
+            _lock_timing.wait_s = 0.0
 
 
 def _run_tool_locked(name: str, args: dict) -> tuple[str, bytes | None]:

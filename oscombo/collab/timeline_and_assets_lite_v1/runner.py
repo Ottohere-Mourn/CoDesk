@@ -108,3 +108,34 @@ def evaluate_run(run_root: str | Path) -> dict:
         raise FileExistsError(target)
     _write_json(target, result, 0o644)
     return result
+
+
+def reset_owned_run(run_root: str | Path) -> dict:
+    """Archive the scored workspace, then restore only this run's fixture.
+
+    Oracle output and action evidence remain at the run root. The caller must
+    close Guests before invoking this, so no editor can write into the reset
+    workspace afterward.
+    """
+    root = Path(run_root).resolve()
+    _owned(root)
+    workspace = root / "workspace"
+    if workspace.is_symlink() or not workspace.is_dir() or workspace.resolve().parent != root:
+        raise PermissionError("refusing to reset a non-owned workspace")
+    if any(path.is_symlink() for path in workspace.rglob("*")):
+        raise PermissionError("refusing to reset a workspace containing symlinks")
+    stamp = str(time.time_ns())
+    archive = root / "pre_reset" / stamp
+    archive.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copytree(workspace, archive)
+    shutil.rmtree(workspace)
+    shutil.copytree(TEMPLATE, workspace)
+    baseline = json.loads((root / "oracle" / "baseline_manifest.json").read_text())
+    actual = {path.relative_to(workspace).as_posix(): sha256(path)
+              for path in workspace.rglob("*") if path.is_file()}
+    expected = baseline["initial_hashes"]
+    result = {"status": "RESET_VERIFIED" if actual == expected else "RESET_FAILED",
+              "run_id": root.name, "archive": str(archive),
+              "workspace_sha256": actual, "matches_initial": actual == expected}
+    _write_json(root / "reset_result.json", result, 0o644)
+    return result

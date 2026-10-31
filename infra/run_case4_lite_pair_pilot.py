@@ -16,7 +16,7 @@ from pathlib import Path
 
 from oscombo.collab.timeline_and_assets_lite_v1 import spec
 from oscombo.collab.timeline_and_assets_lite_v1.runner import (
-    configure_run, evaluate_run, prepare_run,
+    configure_run, evaluate_run, prepare_run, reset_owned_run,
 )
 from oscombo.collab.data_to_deck.live_pilot import _start_codex_compat_relay
 from oscombo.collab.data_to_deck.protocol import ProtocolStore, make_server
@@ -54,7 +54,7 @@ def open_kdenlive(env, root: Path, key: str) -> None:
     guest_shell(env, f"nohup kdenlive {project} >/tmp/case4-{key}-kdenlive.log "
                      "2>&1 </dev/null & sleep 2; true", 30)
     welcome_closed = False
-    for attempt in range(1, 41):
+    for attempt in range(1, 81):
         time.sleep(4)
         windows = guest_shell(env, "wmctrl -lpG; true", 20)
         record(root, "kdenlive_setup.jsonl", {"key": key, "attempt": attempt,
@@ -68,6 +68,13 @@ def open_kdenlive(env, root: Path, key: str) -> None:
         if "GreenLoop.kdenlive" in windows and "Kdenlive" in windows:
             break
     else:
+        diagnostic = guest_shell(
+            env, f"ps -C kdenlive -o pid,etime,pcpu,pmem,stat,cmd; "
+                 f"tail -60 /tmp/case4-{key}-kdenlive.log; true", 20)
+        record(root, "kdenlive_setup.jsonl", {"key": key, "event": "timeout",
+                                              "diagnostic": diagnostic, "time": time.time()})
+        (root / f"guest_{key}_kdenlive_timeout.png").write_bytes(
+            env.controller.get_screenshot())
         raise RuntimeError(f"{key} Kdenlive project window did not appear")
     guest_shell(env, "wmctrl -r 'GreenLoop.kdenlive' -b add,maximized_vert,maximized_horz; "
                      "wmctrl -a 'GreenLoop.kdenlive'; true", 20)
@@ -169,20 +176,20 @@ def main() -> None:
     envs = {}
     relay = None
     collab = None
+    model_released = False
     result = {"run_id": run_id, "condition": args.condition,
               "status": "STARTED", "started_epoch": time.time(),
               "desktop_lock": args.desktop_lock, "image": str(args.image)}
     try:
         envs["A"] = boot_guest(root, args.overlay_root, run_id, "A",
                               args.image, args.runtime, args.provider)
+        open_kdenlive(envs["A"], root, "A")
         if args.condition == "collaborative_isolated":
             envs["B"] = boot_guest(root, args.overlay_root, run_id, "B",
                                   args.image, args.runtime, args.provider)
+            open_kdenlive(envs["B"], root, "B")
         else:
             envs["B"] = envs["A"]
-        open_kdenlive(envs["A"], root, "A")
-        if args.condition == "collaborative_isolated":
-            open_kdenlive(envs["B"], root, "B")
         open_manifest_editor(envs["A"], root, run_id)
         result["guest_initial_hashes"] = {
             role: hashlib.sha256(envs[role].controller.get_file(
@@ -224,36 +231,67 @@ def main() -> None:
             harness, ctx = actors[role]
             release.wait()
             started = time.time()
-            outcome = harness.run(ctx)
-            return {"status": outcome.status, "steps": outcome.steps,
-                    "error": outcome.error, "started": started,
-                    "ended": time.time()}
+            try:
+                outcome = harness.run(ctx)
+                return {"status": outcome.status, "steps": outcome.steps,
+                        "error": outcome.error, "started": started,
+                        "ended": time.time()}
+            except Exception as exc:
+                return {"status": "error", "steps": None,
+                        "error": f"{type(exc).__name__}: {str(exc)[:500]}",
+                        "traceback": traceback.format_exc()[-2000:],
+                        "started": started, "ended": time.time()}
         with ThreadPoolExecutor(max_workers=2) as pool:
             futures = {role: pool.submit(run_role, role) for role in ("A", "B")}
             start = time.time()
             for _, ctx in actors.values():
                 ctx.t0 = start
             release.set()
+            model_released = True
             result["actors"] = {role: future.result() for role, future in futures.items()}
-        project = f"{spec.GUEST_ROOT}/{spec.PROJECT}"
-        final = envs["B"].controller.get_file(project)
-        if not final or len(final) > 1_000_000:
-            raise RuntimeError("missing or oversized final Kdenlive project from B Guest")
-        (root / "workspace" / spec.PROJECT).write_bytes(final)
-        result["guest_final_sha256"] = hashlib.sha256(final).hexdigest()
-        manifest_data = envs["A"].controller.get_file(
-            f"{spec.GUEST_ROOT}/shot_manifest.txt")
-        if not manifest_data or len(manifest_data) > 10_000:
-            raise RuntimeError("missing or oversized final shot manifest from A Guest")
-        (root / "workspace/shot_manifest.txt").write_bytes(manifest_data)
-        result["guest_final_manifest_sha256"] = hashlib.sha256(manifest_data).hexdigest()
-        for role in ("A", "B"):
-            (root / f"guest_{role}_final.png").write_bytes(
-                envs[role].controller.get_screenshot())
-        result["oracle"] = evaluate_run(root)
-        result["status"] = "PASS" if result["oracle"]["joint_business_success"] else "FAIL"
+        result["model_episode_status"] = {
+            role: item["status"] for role, item in result["actors"].items()}
+        result["model_episode_valid"] = all(
+            item["status"] in {"done", "max_steps"} for item in result["actors"].values())
+        result["status"] = "MODEL_COMPLETED"
+        try:
+            project = f"{spec.GUEST_ROOT}/{spec.PROJECT}"
+            final = envs["B"].controller.get_file(project)
+            if final is not None and len(final) <= 1_000_000:
+                (root / "workspace" / spec.PROJECT).write_bytes(final)
+                result["guest_final_sha256"] = hashlib.sha256(final).hexdigest()
+            else:
+                result["project_capture_missing_or_oversized"] = True
+            manifest_data = envs["A"].controller.get_file(
+                f"{spec.GUEST_ROOT}/shot_manifest.txt")
+            if manifest_data is not None and len(manifest_data) <= 10_000:
+                (root / "workspace/shot_manifest.txt").write_bytes(manifest_data)
+                result["guest_final_manifest_sha256"] = hashlib.sha256(manifest_data).hexdigest()
+            else:
+                result["manifest_capture_missing_or_oversized"] = True
+            for role in ("A", "B"):
+                (root / f"guest_{role}_final.png").write_bytes(
+                    envs[role].controller.get_screenshot())
+        except Exception as exc:
+            result["artifact_capture_error"] = f"{type(exc).__name__}: {str(exc)[:500]}"
+            result["status"] = "EVIDENCE_ERROR"
+        if result.get("project_capture_missing_or_oversized") or result.get(
+                "manifest_capture_missing_or_oversized"):
+            result["status"] = "EVIDENCE_ERROR"
+        if result.get("guest_final_sha256") and result.get("guest_final_manifest_sha256"):
+            try:
+                result["oracle"] = evaluate_run(root)
+                result["business_status"] = (
+                    "PASS" if result["oracle"]["joint_business_success"] else "FAIL")
+                if result["status"] == "MODEL_COMPLETED":
+                    result["status"] = (result["business_status"] if result["model_episode_valid"]
+                                        else "MODEL_INVALID")
+            except Exception as exc:
+                result["evaluation_error"] = f"{type(exc).__name__}: {str(exc)[:500]}"
+                result["status"] = "EVALUATION_ERROR"
     except Exception as exc:
-        result.update({"status": "INFRA_FAIL", "error_type": type(exc).__name__,
+        result.update({"status": "MODEL_OR_INFRA_ERROR" if model_released else "INFRA_FAIL",
+                       "error_type": type(exc).__name__,
                        "error": str(exc)[:1000],
                        "traceback": traceback.format_exc()[-4000:]})
     finally:
@@ -276,6 +314,13 @@ def main() -> None:
             except Exception as exc:
                 result.setdefault("cleanup_errors", []).append(
                     f"{role}: {type(exc).__name__}: {str(exc)[:200]}")
+        result["guest_cleanup_verified"] = not result.get("cleanup_errors")
+        if result.get("oracle") is not None or result["status"] in {
+                "EVALUATION_ERROR", "EVIDENCE_ERROR"}:
+            try:
+                result["reset"] = reset_owned_run(root)
+            except Exception as exc:
+                result["reset_error"] = f"{type(exc).__name__}: {str(exc)[:500]}"
         result["finished_epoch"] = time.time()
         (root / "pair_pilot_result.json").write_text(
             json.dumps(result, ensure_ascii=False, indent=2) + "\n")
