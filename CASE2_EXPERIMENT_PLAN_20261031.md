@@ -13,3 +13,5 @@ Use an explicit 1800-second wall limit for both actors in all three arms. The ol
 ## Guest storage amendment (2026-11-01)
 
 Case 4 setup on the mechanical-disk OSWorld image failed before model release twice under sustained I/O pressure; a byte-identical SSD copy passed setup quickly. Before Case 2 model calls, copy its existing OSWorld base image to the SSD, verify equal SHA-256 hashes, and put fresh overlays on the SSD. This changes storage placement only, not the Guest image bytes, application, task, or scoring. Run scripted positive and negative controls on the SSD image in both Isolated and Shared topology first. Use the SSD image and overlays identically for the three predeclared Case 2 model arms above. Preserve old HDD runs as a separate cohort and report setup/API failures independently.
+
+Predeclare the SSD control IDs: `ttr-v113-hardening-isolated-control-20261101a` and `ttr-v113-hardening-shared-control-20261101a`. Both run the default positive and negative scenarios in that order. The model IDs remain the three already declared above, even if executed on 2026-11-01.
