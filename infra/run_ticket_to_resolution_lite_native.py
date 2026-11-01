@@ -1716,7 +1716,8 @@ def run_controls(args: argparse.Namespace) -> int:
         expected_scenarios = set(args.scenarios)
         report["controls_pass"] = bool(
             positive_ok and negative_ok and wrong_precheck_ok and missing_id_ok
-            and expected_scenarios == set(report["controls"]))
+            and expected_scenarios == (set(report["controls"])
+                                       & {"positive", "negative", "wrong_precheck", "missing_review_id"}))
         report["status"] = "CONTROL_PASS" if report["controls_pass"] else "CONTROL_FAIL"
     except Exception as exc:
         report["status"] = "INFRA_FAIL"

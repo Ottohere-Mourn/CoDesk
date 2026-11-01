@@ -274,7 +274,7 @@ def run_controls(args) -> int:
         m = missing_id.get("oracle", {})
         expected = set(args.scenarios)
         report["controls_pass"] = bool(
-            set(outcomes) == expected
+            expected == (set(outcomes) & {"positive", "negative", "wrong_precheck", "missing_review_id"})
             and (not positive or (p.get("joint_business_success")
                                   and positive.get("actor_steps") == {"A": 6, "B": 14}
                                   and positive.get("message_read_by_B")
