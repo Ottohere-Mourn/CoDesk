@@ -106,6 +106,16 @@ def open_manifest_editor(env, root: Path, run_id: str) -> None:
                              f"--no-sandbox {manifest} >>{log} 2>&1 </dev/null & true", 30)
             reopened = True
     else:
+        diagnostic = guest_shell(
+            env,
+            f"ps -ef | grep -E '[c]ode|[e]lectron' ; "
+            f"tail -80 {log}; df -h {spec.GUEST_ROOT}; true",
+            20,
+        )
+        record(root, "manifest_editor_setup.jsonl", {
+            "event": "timeout", "diagnostic": diagnostic, "time": time.time()})
+        (root / "guest_A_manifest_editor_timeout.png").write_bytes(
+            env.controller.get_screenshot())
         raise RuntimeError("A manifest GUI editor did not become ready")
     for _ in range(6):
         active = guest_shell(
