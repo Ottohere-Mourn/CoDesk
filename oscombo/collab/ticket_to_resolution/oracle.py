@@ -3,11 +3,25 @@ from __future__ import annotations
 
 import json
 import hashlib
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 from . import spec
-from .database import business_snapshot, business_state_digest, connect, review_digest
+from .database import (business_snapshot, business_state_digest, connect,
+                       processor_check_digest, review_digest)
+
+
+def _epoch(value: object) -> float | None:
+    if isinstance(value, (int, float)):
+        return float(value)
+    if not isinstance(value, str) or not value:
+        return None
+    try:
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+        return (parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)).timestamp()
+    except ValueError:
+        return None
 
 
 def _asdicts(conn, query: str, args: tuple = ()) -> list[dict[str, Any]]:
@@ -37,6 +51,7 @@ def evaluate(db_path: str | Path, manifest_path: str | Path,
         order = conn.execute("SELECT * FROM orders WHERE id=?", (spec.ORDER_ID,)).fetchone()
         lines = _asdicts(conn, "SELECT * FROM order_lines WHERE order_id=? ORDER BY id", (spec.ORDER_ID,))
         reviews = _asdicts(conn, "SELECT * FROM reviews WHERE ticket_id=? ORDER BY version", (spec.TICKET_ID,))
+        processor_checks = _asdicts(conn, "SELECT * FROM processor_checks WHERE ticket_id=? ORDER BY version", (spec.TICKET_ID,))
         refunds = _asdicts(conn, "SELECT * FROM refunds WHERE ticket_id=? ORDER BY created_at,id", (spec.TICKET_ID,))
         audit = _asdicts(conn, "SELECT * FROM audit_events ORDER BY sequence")
     finally:
@@ -97,6 +112,30 @@ def evaluate(db_path: str | Path, manifest_path: str | Path,
     latest_valid_review = next((r for r in valid_reviews
                                 if latest_review and r["id"] == latest_review["id"]), None)
 
+    latest_processor_check = processor_checks[-1] if processor_checks else None
+    processor_check_exact = False
+    processor_check_integrity = False
+    if latest_processor_check:
+        try:
+            processor_check_integrity = (
+                processor_check_digest(latest_processor_check) == latest_processor_check["content_sha256"]
+            )
+        except (KeyError, ValueError, TypeError):
+            processor_check_integrity = False
+        processor_check_exact = (
+            latest_processor_check["ticket_id"] == spec.TICKET_ID
+            and latest_processor_check["order_id"] == spec.ORDER_ID
+            and int(latest_processor_check["order_revision"]) == int(initial_order["revision"] if initial_order else -1)
+            and latest_processor_check["decision"] == "ELIGIBLE"
+            and latest_processor_check["line_id"] == spec.TARGET_LINE_ID
+            and latest_processor_check["evidence_id"] == spec.TARGET_EVIDENCE_ID
+            and int(latest_processor_check["shipping_cents"]) == 0
+            and int(latest_processor_check["refund_cents"]) == spec.TARGET_REVIEW_AMOUNT_CENTS
+            and latest_processor_check["actor_id"] == "B"
+        )
+    processor_precheck_pass = (condition == "single_agent" or
+                               bool(latest_processor_check and processor_check_integrity and processor_check_exact))
+
     expected_review_actor = "A" if condition != "single_agent" else "S"
     expected_processor_actor = "B" if condition != "single_agent" else "S"
     review_pass = bool(latest_valid_review and latest_valid_review["actor_id"] == expected_review_actor)
@@ -142,6 +181,26 @@ def evaluate(db_path: str | Path, manifest_path: str | Path,
                          and latest_valid_review and e["target_id"] == latest_valid_review["id"]), None)
     refund_events = [e for e in audit if e["event_type"] == "refund_issued"
                      and refund and e["target_id"] == refund["id"]]
+    processor_check_event = next((e for e in audit if e["event_type"] == "processor_precheck_saved"
+                                  and latest_processor_check and e["target_id"] == latest_processor_check["id"]), None)
+    processor_check_audit_pass = False
+    if processor_check_event and latest_processor_check:
+        try:
+            check_details = json.loads(processor_check_event["details_json"])
+            processor_check_audit_pass = (
+                processor_check_event["actor_id"] == "B"
+                and processor_check_event["sequence"] > 0
+                and check_details.get("content_sha256") == latest_processor_check["content_sha256"]
+                and check_details.get("version") == int(latest_processor_check["version"])
+                and check_details.get("refund_cents") == int(latest_processor_check["refund_cents"])
+                and check_details.get("line_id") == latest_processor_check["line_id"]
+            )
+        except (KeyError, TypeError, ValueError, json.JSONDecodeError):
+            pass
+    review_open_events = [e for e in audit if e["event_type"] == "case_review_gui_opened"
+                          and e["actor_id"] == "B"]
+    opened_latest_review = next((e for e in review_open_events if latest_valid_review
+                                 and e["target_id"] == latest_valid_review["id"]), None)
     resolved_events = [e for e in audit if e["event_type"] == "ticket_resolved"
                        and e["target_id"] == spec.TICKET_ID]
     review_audit_payload_pass = False
@@ -174,18 +233,19 @@ def evaluate(db_path: str | Path, manifest_path: str | Path,
     except (KeyError, TypeError, ValueError, json.JSONDecodeError):
         pass
     audit_payload_pass = bool(review_audit_payload_pass and refund_audit_payload_pass
-                              and resolution_audit_payload_pass)
+                              and resolution_audit_payload_pass
+                              and (condition == "single_agent" or processor_check_audit_pass))
     sequence_pass = bool(review_event and len(refund_events) == 1 and len(resolved_events) == 1
                          and review_event["sequence"] < refund_events[0]["sequence"]
                          < resolved_events[0]["sequence"])
     expected_review_actor_ok = bool(latest_valid_review and latest_valid_review["actor_id"] == expected_review_actor)
     expected_refund_actor_ok = bool(refund and refund["actor_id"] == expected_processor_actor)
     joint = all((review_pass, refund_pass, cross_reference_pass, order_pass, ticket_pass,
-                 sequence_pass, audit_payload_pass, protected_rows_ok))
+                 processor_precheck_pass, sequence_pass, audit_payload_pass, protected_rows_ok))
 
     audit_types = [e["event_type"] for e in audit]
     retries = audit_types.count("refund_idempotent_replay")
-    rejected = [e for e in audit if e["event_type"] in {"refund_rejected", "ticket_resolution_rejected"}]
+    rejected = [e for e in audit if e["event_type"].endswith("_rejected")]
     read_events = [e for e in audit if e["event_type"] == "page_view"]
     messages_path = Path(manifest_path).resolve().parent.parent / "collaboration" / "events.jsonl"
     message_events = []
@@ -197,8 +257,54 @@ def evaluate(db_path: str | Path, manifest_path: str | Path,
                     message_events.append(event)
             except json.JSONDecodeError:
                 pass
-    review_reads_by_b = [e for e in read_events if e["actor_id"] == "B"
-                         and e["target_id"].startswith("/reviews/")]
+    review_reads_by_b = [e for e in audit if e["event_type"] == "case_review_gui_opened"
+                         and e["actor_id"] == "B"]
+    collaboration_reads_path = Path(manifest_path).resolve().parent.parent / "collaboration_reads.jsonl"
+    collaboration_reads = []
+    if collaboration_reads_path.is_file():
+        for raw in collaboration_reads_path.read_text(encoding="utf-8").splitlines():
+            try:
+                event = json.loads(raw)
+                if event.get("reader") == "B":
+                    collaboration_reads.append(event)
+            except json.JSONDecodeError:
+                pass
+    b_read_ids = {message_id for event in collaboration_reads for message_id in event.get("message_ids", [])}
+    review_id = latest_valid_review["id"] if latest_valid_review else None
+    matching_messages = [e for e in message_events if e.get("actor") == "A"
+                         and e.get("recipient") in {"B", "all"} and review_id
+                         and review_id in str(e.get("body", ""))]
+    handoff_message = next((e for e in matching_messages if e.get("message_id") in b_read_ids), None)
+    handoff_read = next((event for event in collaboration_reads if handoff_message
+                         and handoff_message.get("message_id") in event.get("message_ids", [])), None)
+    review_open_event = next((e for e in review_reads_by_b if review_id and e["target_id"] == review_id), None)
+    resolved_event = resolved_events[0] if len(resolved_events) == 1 else None
+    timeline = {
+        "A_review_saved": review_event.get("timestamp") if review_event else None,
+        "B_precheck_saved": processor_check_event.get("timestamp") if processor_check_event else None,
+        "A_message_sent_with_review_id": handoff_message.get("timestamp") if handoff_message else None,
+        "B_message_read": handoff_read.get("time_unix") if handoff_read else None,
+        "B_gui_opened_review": review_open_event.get("timestamp") if review_open_event else None,
+        "B_refund_issued": refund_events[0].get("timestamp") if len(refund_events) == 1 else None,
+        "B_ticket_resolved": resolved_event.get("timestamp") if resolved_event else None,
+    }
+    review_saved_at = _epoch(timeline["A_review_saved"])
+    check_saved_at = _epoch(timeline["B_precheck_saved"])
+    message_sent_at = _epoch(timeline["A_message_sent_with_review_id"])
+    message_read_at = _epoch(timeline["B_message_read"])
+    gui_open_at = _epoch(timeline["B_gui_opened_review"])
+    refund_at = _epoch(timeline["B_refund_issued"])
+    resolved_at = _epoch(timeline["B_ticket_resolved"])
+    strict_handoff_order = bool(
+        condition == "single_agent" or (
+            review_id and processor_precheck_pass and processor_check_audit_pass and handoff_message and handoff_read
+            and review_open_event and review_open_event["target_id"] == review_id and refund
+            and refund["review_id"] == review_id and all(value is not None for value in
+                (review_saved_at, check_saved_at, message_sent_at, message_read_at, gui_open_at, refund_at, resolved_at))
+            and review_saved_at <= message_sent_at <= message_read_at <= gui_open_at <= refund_at <= resolved_at
+            and check_saved_at <= message_read_at and check_saved_at <= gui_open_at
+        )
+    )
     review_revision_count = max((int(r["version"]) for r in reviews), default=0)
     return {
         "case_id": spec.CASE_ID, "case_version": spec.CASE_VERSION,
@@ -208,12 +314,15 @@ def evaluate(db_path: str | Path, manifest_path: str | Path,
         "order_state_pass": order_pass,
         "ticket_state_pass": ticket_pass,
         "cross_reference_pass": cross_reference_pass,
+        "processor_precheck_pass": processor_precheck_pass,
         "audit_sequence_pass": sequence_pass,
         "audit_payload_pass": audit_payload_pass,
         "protected_state_pass": protected_rows_ok,
         "joint_business_success": joint,
         "observed": {
             "review_count": len(reviews), "review_version_count": review_revision_count,
+            "processor_precheck_count": len(processor_checks),
+            "processor_precheck_version_count": int(latest_processor_check["version"]) if latest_processor_check else 0,
             "refund_count": len(refunds),
             "refund_transaction_id": refund["id"] if refund else None,
             "refund_amount_cents": refund["amount_cents"] if refund else None,
@@ -232,9 +341,18 @@ def evaluate(db_path: str | Path, manifest_path: str | Path,
             "messages_by_actor": {actor: sum(e.get("actor") == actor for e in message_events)
                                   for actor in ("A", "B", "S")},
             "review_opened_in_gui_by_B": bool(review_reads_by_b),
+            "review_opened_review_id_by_B": review_open_event["target_id"] if review_open_event else None,
+            "processor_precheck_recorded_by_expected_actor": bool(latest_processor_check and latest_processor_check["actor_id"] == "B"),
             "idempotent_retry_count": retries, "rejected_operation_count": len(rejected),
             "rejected_operations": rejected,
             "review_was_used": bool(cross_reference_pass),
+            "handoff_timeline": timeline,
+            "strict_handoff_timeline_pass": strict_handoff_order,
+            "A_handoff_included_review_id": handoff_message is not None,
+            "B_read_handoff_message": handoff_read is not None,
+            "precheck_saved_before_B_read": bool(check_saved_at and message_read_at and check_saved_at <= message_read_at),
+            "B_opened_same_review_as_handoff_and_refund": bool(review_open_event and refund
+                and review_open_event["target_id"] == refund["review_id"]),
             "message_feedback_observed": bool(message_events),
             "review_revision_evidence": review_revision_count > 1,
         },
@@ -243,6 +361,11 @@ def evaluate(db_path: str | Path, manifest_path: str | Path,
                    "review_audit_payload_pass": review_audit_payload_pass,
                    "refund_audit_payload_pass": refund_audit_payload_pass,
                    "resolution_audit_payload_pass": resolution_audit_payload_pass,
+                   "processor_precheck_integrity_pass": processor_check_integrity,
+                   "processor_precheck_exact_case_pass": processor_check_exact,
+                   "processor_precheck_audit_payload_pass": processor_check_audit_pass,
+                   "review_opened_id_matches_latest_review": bool(review_open_event and latest_valid_review
+                       and review_open_event["target_id"] == latest_valid_review["id"]),
                    "gold_line_present": line is not None,
                    "gold_damage_evidence_present": damage is not None},
     }

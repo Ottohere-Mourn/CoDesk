@@ -34,31 +34,33 @@ def test_handoff_audit_accepts_protocol_unix_time_and_requires_post_read_review(
         return datetime.fromtimestamp(base + offset, timezone.utc).isoformat()
 
     rows = [
+        {"event_type": "processor_precheck_saved", "actor_id": "B", "target_id": "PC-1",
+         "timestamp": iso(0.5)},
         {"event_type": "case_review_saved", "actor_id": "A", "target_id": "RV-1",
          "timestamp": iso(1)},
-        {"event_type": "page_view", "actor_id": "B", "target_id": "/reviews/RV-1",
-         "timestamp": iso(2)},
-        {"event_type": "page_view", "actor_id": "B", "target_id": "/reviews/RV-1",
+        {"event_type": "case_review_gui_opened", "actor_id": "B", "target_id": "RV-1",
          "timestamp": iso(5)},
         {"event_type": "refund_issued", "actor_id": "B", "target_id": "RF-1",
-         "timestamp": iso(6)},
+         "timestamp": iso(6), "details_json": json.dumps({"review_id": "RV-1"})},
+        {"event_type": "ticket_resolved", "actor_id": "B", "target_id": "T-1042",
+         "timestamp": iso(7)},
     ]
     monkeypatch.setattr(CaseStore, "list_audit", lambda self: rows)
     (root / "collaboration/events.jsonl").write_text(json.dumps({
         "type": "message", "actor": "A", "recipient": "B", "message_id": "m1",
-        "timestamp": base + 3,
+        "timestamp": base + 3, "body": "Case Review RV-1 is ready.",
     }) + "\n")
     (root / "collaboration_reads.jsonl").write_text(json.dumps({
         "reader": "B", "message_ids": ["m1"], "time_unix": base + 4,
     }) + "\n")
     assert event_epoch(base + 3) == base + 3
-    report = handoff_audit(root, "collaborative_isolated", {}, {})
+    report = handoff_audit(root, "collaborative_isolated", {"processor_precheck_pass": True}, {})
     assert report["strict_review_message_read_gui_refund_order"]
-    assert report["B_pre_handoff_review_views"] == 1
+    assert report["B_pre_handoff_review_views"] == 0
     assert report["B_opened_review_after_handoff"]
     assert report["B_read_messages_tool_calls"] == 1
     rows.pop(2)
-    report = handoff_audit(root, "collaborative_isolated", {}, {})
+    report = handoff_audit(root, "collaborative_isolated", {"processor_precheck_pass": True}, {})
     assert not report["strict_review_message_read_gui_refund_order"]
     assert not report["B_opened_review_after_handoff"]
 
@@ -108,7 +110,7 @@ def test_lite_gui_flow_uses_original_business_oracle(tmp_path, amount, expected_
             f"{base_url}/lite/reviews/save",
             data={"csrf": _csrf(page), "decision": "ELIGIBLE", "line_id": spec.TARGET_LINE_ID,
                   "evidence_id": spec.TARGET_EVIDENCE_ID, "shipping_amount": "0.00",
-                  "refund_amount": amount},
+                  "refund_amount": "88.00"},
             allow_redirects=False,
             timeout=10,
         )
@@ -117,13 +119,38 @@ def test_lite_gui_flow_uses_original_business_oracle(tmp_path, amount, expected_
 
         processor = _login(base_url, "B", credentials["B"])
         waiting = processor.get(f"{base_url}/lite", timeout=10)
-        assert "saved case review" in waiting.text.lower()
+        review_id = review_url.rsplit("/", 1)[1]
+        assert review_id not in waiting.text
+        assert "/lite/review-ready" not in waiting.text
+        assert processor.get(f"{base_url}/lite/review-ready", timeout=10).status_code == 404
+        blocked = processor.get(f"{base_url}{review_url}", timeout=10)
+        assert blocked.status_code == 403
+        store = CaseStore(root / "db" / spec.FIXTURE_DB)
+        assert not any(event["event_type"] == "case_review_gui_opened" for event in store.list_audit())
+        response = processor.post(
+            f"{base_url}/lite/prechecks/save",
+            data={"csrf": _csrf(waiting), "decision": "ELIGIBLE", "line_id": spec.TARGET_LINE_ID,
+                  "evidence_id": spec.TARGET_EVIDENCE_ID, "shipping_amount": "0.00",
+                  "refund_amount": "88.00"},
+            allow_redirects=False, timeout=10,
+        )
+        assert response.status_code == 303
+        ready = processor.get(f"{base_url}/lite", timeout=10)
+        assert "Saved independent pre-verification" in ready.text
+        assert review_id not in ready.text
+        response = processor.post(
+            f"{base_url}/lite/reviews/open",
+            data={"csrf": _csrf(ready), "review_id": review_id},
+            allow_redirects=False, timeout=10,
+        )
+        assert response.status_code == 303
+        assert response.headers["Location"] == review_url
         review_page = processor.get(f"{base_url}{review_url}", timeout=10)
         assert spec.TARGET_EVIDENCE_ID in review_page.text
-        assert amount in review_page.text
+        assert "88.00" in review_page.text
         response = processor.post(
             f"{base_url}/lite/refunds/issue",
-            data={"csrf": _csrf(review_page), "review_id": review_url.rsplit("/", 1)[1],
+            data={"csrf": _csrf(review_page), "review_id": review_id,
                   "line_id": spec.TARGET_LINE_ID, "shipping_amount": "0.00",
                   "refund_amount": amount, "idempotency_key": spec.IDEMPOTENCY_KEY},
             allow_redirects=False,
@@ -157,15 +184,44 @@ def test_lite_gui_flow_uses_original_business_oracle(tmp_path, amount, expected_
         thread.join(timeout=5)
 
 
+def test_oracle_scores_b_only_precheck_separately_from_a_review(tmp_path):
+    root = tmp_path / "precheck-oracle"
+    prepare_run(root, "ttr-lite-precheck-oracle")
+    store = CaseStore(root / "db" / spec.FIXTURE_DB)
+    order = store.get_order()
+    line = next(row for row in order["lines"] if row["id"] == spec.TARGET_LINE_ID)
+    principal = line["unit_price_cents"] * line["quantity"]
+    tax = (principal * line["tax_rate_bps"] + 5000) // 10000
+    check = store.save_processor_check("B", {
+        "ticket_id": spec.TICKET_ID, "order_id": spec.ORDER_ID,
+        "order_revision": order["revision"], "decision": "ELIGIBLE",
+        "line_id": spec.TARGET_LINE_ID, "evidence_id": spec.TARGET_EVIDENCE_ID,
+        "shipping_cents": 0, "refund_cents": 8000,
+    })
+    review = store.save_review("A", {
+        "ticket_id": spec.TICKET_ID, "order_id": spec.ORDER_ID, "order_revision": order["revision"],
+        "decision": "ELIGIBLE", "line_id": spec.TARGET_LINE_ID,
+        "evidence_id": spec.TARGET_EVIDENCE_ID, "policy_id": spec.POLICY_ID,
+        "principal_cents": principal, "tax_cents": tax, "shipping_cents": 0,
+        "refund_cents": principal + tax, "rationale": "Supported by the linked delivery evidence.",
+    })
+    store.record_case_review_gui_opened("B", review["id"])
+    result = evaluate(root / "db" / spec.FIXTURE_DB, hidden_manifest_path(root), "collaborative_isolated")
+    assert check["actor_id"] == "B"
+    assert result["checks"]["processor_precheck_integrity_pass"]
+    assert not result["checks"]["processor_precheck_exact_case_pass"]
+    assert not result["processor_precheck_pass"]
+    assert result["process_evidence"]["review_opened_review_id_by_B"] == review["id"]
+
+
 def test_single_agent_task_card_requires_full_workflow_completion():
     from oscombo.collab.ticket_to_resolution.lite_v1 import spec as lite_spec
     instruction = lite_spec.SINGLE_AGENT_INSTRUCTION
-    for required in ("open the saved review", "click “Issue Refund”",
-                     "Partial refund — damaged item", "Customer resolution note",
+    for required in ("open the saved review", "Issue Refund",
+                     "Partial refund - damaged item", "Customer resolution note",
                      "do not enter the refund amount", "ticket visibly shows RESOLVED"):
         assert required in instruction
     assert "Do not stop after saving the review or issuing the refund" in instruction
-
 
 def test_resolution_form_requires_an_empty_customer_note(tmp_path):
     root = tmp_path / "resolution-form"

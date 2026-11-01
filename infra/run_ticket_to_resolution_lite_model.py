@@ -173,53 +173,83 @@ def handoff_audit(root: Path, condition: str, oracle: dict, actor_results: dict[
         return {"applicable": False}
 
     audit = CaseStore(root / "db" / "case.sqlite3").list_audit()
-    review = next((row for row in audit if row["event_type"] == "case_review_saved"
-                   and row["actor_id"] == "A"), None)
-    gui_reviews = [row for row in audit if row["event_type"] == "page_view"
-                   and row["actor_id"] == "B"
-                   and row["target_id"].startswith("/reviews/")]
+    reviews = [row for row in audit if row["event_type"] == "case_review_saved"
+               and row["actor_id"] == "A"]
+    review = reviews[-1] if reviews else None
+    prechecks = [row for row in audit if row["event_type"] == "processor_precheck_saved"
+                 and row["actor_id"] == "B"]
+    precheck = prechecks[-1] if prechecks else None
+    gui_reviews = [row for row in audit if row["event_type"] == "case_review_gui_opened"
+                   and row["actor_id"] == "B"]
     refund = next((row for row in audit if row["event_type"] == "refund_issued"
                    and row["actor_id"] == "B"), None)
+    resolved = next((row for row in audit if row["event_type"] == "ticket_resolved"
+                     and row["actor_id"] == "B"), None)
     protocol_events = read_jsonl(root / "collaboration" / "events.jsonl")
     sent = [row for row in protocol_events if row.get("type") == "message"
             and row.get("actor") == "A" and row.get("recipient") in {"B", "all"}]
     reads = [row for row in read_jsonl(root / "collaboration_reads.jsonl")
              if row.get("reader") == "B"]
     read_ids = {message_id for row in reads for message_id in row.get("message_ids", [])}
-    message = next((row for row in sent if row.get("message_id") in read_ids), None)
+    review_id = review.get("target_id") if review else None
+    message = next((row for row in sent if row.get("message_id") in read_ids and review_id
+                    and review_id in str(row.get("body", ""))), None)
+    message_mentions_review = message is not None
     read_row = next((row for row in reads if message
                      and message.get("message_id") in row.get("message_ids", [])), None)
     read_time = event_epoch(read_row.get("time_unix")) if read_row else None
     post_handoff_gui_review = next((row for row in gui_reviews
-                                    if read_time is not None and
-                                    (event_epoch(row.get("timestamp")) or 0) >= read_time), None)
+                                    if read_time is not None and review_id
+                                    and row.get("target_id") == review_id
+                                    and (event_epoch(row.get("timestamp")) or 0) >= read_time), None)
     pre_handoff_gui_review_count = sum(
         read_time is not None and (event_epoch(row.get("timestamp")) or 0) < read_time
         for row in gui_reviews)
-    times = (
-        event_epoch(review.get("timestamp")) if review else None,
-        event_epoch(message.get("timestamp")) if message else None,
-        read_time,
-        event_epoch(post_handoff_gui_review.get("timestamp"))
-        if post_handoff_gui_review else None,
-        event_epoch(refund.get("timestamp")) if refund else None,
-    )
-    strict_order = all(value is not None for value in times) and all(
-        earlier <= later for earlier, later in zip(times, times[1:]))
+    refund_details = {}
+    if refund:
+        try:
+            refund_details = json.loads(refund.get("details_json", "{}"))
+        except (TypeError, json.JSONDecodeError):
+            pass
+    times = {
+        "review_saved": event_epoch(review.get("timestamp")) if review else None,
+        "precheck_saved": event_epoch(precheck.get("timestamp")) if precheck else None,
+        "message_sent": event_epoch(message.get("timestamp")) if message else None,
+        "message_read": read_time,
+        "review_opened_gui": event_epoch(post_handoff_gui_review.get("timestamp")) if post_handoff_gui_review else None,
+        "refund_issued": event_epoch(refund.get("timestamp")) if refund else None,
+        "ticket_resolved": event_epoch(resolved.get("timestamp")) if resolved else None,
+    }
+    ordered = ("review_saved", "message_sent", "message_read", "review_opened_gui",
+               "refund_issued", "ticket_resolved")
+    strict_order = all(times[name] is not None for name in ordered) and all(
+        times[first] <= times[second] for first, second in zip(ordered, ordered[1:]))
+    strict_order = bool(strict_order and times["precheck_saved"] is not None
+                        and oracle.get("processor_precheck_pass")
+                        and times["precheck_saved"] <= times["message_read"]
+                        and times["precheck_saved"] <= times["review_opened_gui"]
+                        and pre_handoff_gui_review_count == 0
+                        and refund_details.get("review_id") == review_id
+                        and post_handoff_gui_review.get("target_id") == review_id)
     return {
         "applicable": True,
         "review_saved_by_A": review is not None,
+        "processor_precheck_saved_by_B": precheck is not None,
+        "processor_precheck_matches_current_case": bool(oracle.get("processor_precheck_pass")),
+        "processor_precheck_count": len(prechecks),
         "A_message_count": len(sent),
         "B_read_event_count": len(reads),
         "A_message_id_read_by_B": message.get("message_id") if message else None,
         "B_opened_review_in_gui": bool(gui_reviews),
         "B_opened_review_after_handoff": post_handoff_gui_review is not None,
         "B_pre_handoff_review_views": pre_handoff_gui_review_count,
+        "B_opened_review_id_matches_A_handoff": bool(post_handoff_gui_review and review_id
+            and post_handoff_gui_review.get("target_id") == review_id),
+        "A_handoff_included_review_id": message_mentions_review,
+        "B_refund_uses_handed_off_review_id": bool(review_id and refund_details.get("review_id") == review_id),
         "refund_issued_by_B": refund is not None,
         "strict_review_message_read_gui_refund_order": strict_order,
-        "timestamps_unix": {"review_saved": times[0], "message_sent": times[1],
-                            "message_read": times[2], "review_opened_gui": times[3],
-                            "refund_issued": times[4]},
+        "timestamps_unix": times,
         # Desktop trace contains desktop calls only. The collaboration proxy
         # records each actual read_messages invocation in this event log.
         "B_read_messages_tool_calls": len(reads),

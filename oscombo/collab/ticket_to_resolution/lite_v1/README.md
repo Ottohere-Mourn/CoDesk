@@ -1,40 +1,28 @@
-# Ticket-to-Resolution Lite v1
+# Ticket-to-Resolution Lite v1.2.0
 
-Lite v1 is a separate short-task variant of `CDD-TTR-001`; the original task, fixtures, full UI, and Oracle remain unchanged. The compact Case Desk page keeps the ticket, order lines, delivery evidence, policy, review form, and processor form together. The independent Oracle still checks business state and audit evidence.
+Lite v1.2.0 is a short-task Case 2 workflow based on `CDD-TTR-001`. It retains the v1.1.3 T-1042 fixture, orders, policies, money rules, backend state machine and review requirement. Versioned B-only pre-verification is a scored double-check record; it does not alter the expected $88 dock-only refund.
 
-## Collaborative dependency
+## Collaborative workflow
 
-Role A can save the structured review; only role B can issue the refund and resolve the ticket. The service rejects a refund that does not match A's valid review, source evidence, order line, and amount. B must read A's collaboration message and open the saved review in the GUI. The coordinator records message sends/reads, review creation, GUI review access, refund, and resolution separately. The positive scripted control uses six A and seven B GUI actions (13 total, excluding login, setup, screenshots, and the collaboration read); the negative control submits an incorrect amount and verifies that no refund succeeds.
+A checks the source records, saves the current Case Review, and sends B its actual generated Review ID without the proposed amount. B first saves an independent eligibility/line/evidence/shipping/total check, then reads A's message and enters its Review ID in the GUI lookup. B compares both records before issuing the refund and resolving the ticket. The Lite home page has no Review polling or latest-ID disclosure. B cannot open the Review GUI route until a pre-verification exists. Review opens, collaboration reads, order, refund and resolution events are audited separately.
+
+The same task and checks apply in Isolated, Shared and Shared+Lock. Do not treat a Shared failure as a success criterion. The existing 15 desktop-call budget per actor and 1800-second actor wall limit remain provisional until the symmetric Isolated model pilot establishes sufficient margin.
 
 ## Validation
 
-Run the focused offline tests with the local proxy bypassed for loopback services:
-
 ```bash
-NO_PROXY='127.0.0.1,localhost,::1,10.0.2.100' no_proxy='127.0.0.1,localhost,::1,10.0.2.100' \
-  .venv/bin/pytest -q tests/test_ticket_to_resolution.py tests/test_ticket_to_resolution_lite.py
+/opt/miniconda3/bin/python -m pytest -q \
+  tests/test_ticket_to_resolution_lite.py \
+  tests/test_ticket_to_resolution_lite_model_runner.py \
+  tests/test_ticket_to_resolution_lite_native_diagnostics.py
 ```
 
-Real Guest scripted controls:
+The HealthCare orchestration entrypoint is `infra/run_ticket_to_resolution_lite_healthcare.py`. Run scripted controls on Isolated and Shared before the model pilot. Control defaults cover positive, wrong-refund, wrong-precheck and missing-Review-ID paths:
 
 ```bash
-PYTHONPATH="$PWD" /opt/data/private/mjh/deps/osworld/venv-native-qemu/bin/python \
-  infra/run_ticket_to_resolution_lite_native.py --mode controls \
-  --condition collaborative_shared --run-id ttr-lite-shared-controls-UNIQUE
+PY=/home/mjh/Projects/_deps/OSWorld-V2-osworld-v2.1/.venv/bin/python
+$PY infra/run_ticket_to_resolution_lite_healthcare.py --mode controls \
+  --condition collaborative_isolated --run-id ttr-lite-v120-control-isolated-UNIQUE
 ```
 
-Use `collaborative_isolated` for the two-desktop control. The Guest runner waits for a rendered desktop and checks that the Guest can fetch the sign-in page before running controls. If the Guest capture source matches the audited original SHA, it applies the lossless fast-PNG encoding repair only inside the run-owned overlay, verifies the service restart, and preserves the source/diff/hash evidence. The read-only OSWorld base image is never changed.
-
-Real screenshot-driven model episodes use the private configuration at `/opt/data/private/mjh/secrets/codesk-gui-pilot.json`; never copy its credentials into the repository or command line:
-
-```bash
-PYTHONPATH="$PWD" /opt/data/private/mjh/deps/osworld/venv-native-qemu/bin/python \
-  infra/run_ticket_to_resolution_lite_model.py --condition single_agent \
-  --run-id ttr-lite-single-UNIQUE
-```
-
-Use the same runner with `collaborative_shared` or `collaborative_isolated` for paired conditions. `--pilot` applies an explicitly smaller action/time budget; `--mitigation input-lock` is a separate Shared-only ablation. A normal early B exit before A's review/message is visible pauses B without model or desktop calls and resumes the same private Codex session when the public handoff is ready; the role wall-clock and shared desktop-call budgets continue unchanged.
-
-## Evidence
-
-Each unique run ID gets a private directory under `/opt/data/private/mjh/runs/codesk/ticket-to-resolution-lite/`. Keep failed runs. Controls store screenshots, scripted GUI actions, collaboration events, Oracle results, image/cleanup checks, and progress checkpoints. Model runs additionally store role traces, screenshots, model request usage/latency, focus and input-overlap samples, lifecycle events, resource samples, Oracle and handoff audits, and a pre-reset SQLite snapshot.
+Model arms must run serially with a new run ID and identical budget, Guest image, task, fixture, instructions and wall cap. Preserve all logs and reset/cleanup outcomes in each run root. Private model credentials live only on HealthCare and must never be copied into the repository or logs.

@@ -218,12 +218,6 @@ def make_server(db_path: str | Path, actor_passwords: dict[str, str],
                         sessions.pop(token, None)
                 self._redirect("/login", "ttr_session=; Path=/; Max-Age=0; HttpOnly; SameSite=Strict")
                 return
-            if variant == "lite-v1" and path == "/lite/review-ready":
-                reviews = store.list_reviews()
-                payload = {"ready": bool(reviews),
-                           "url": f"/lite/review/{quote(reviews[-1]['id'], safe='')}" if reviews else None}
-                self._send(json.dumps(payload).encode("utf-8"), 200, "application/json")
-                return
             query = parse_qs(parsed.query)
             context_id = next((query[k][0] for k in ("ticket", "order", "review", "refund")
                                if query.get(k)), "")
@@ -283,6 +277,11 @@ def make_server(db_path: str | Path, actor_passwords: dict[str, str],
                     self._send(_layout("Not found", "<p>This page does not exist.</p>", actor, variant=variant), 404)
             except FileNotFoundError:
                 self._send(_layout("Not found", "<p>The requested case record does not exist.</p>", actor, variant=variant), 404)
+            except BusinessRuleError as exc:
+                store.record_rejection(actor, "case_review_open_rejected", "review", context_id,
+                                       {"error_code": exc.code, "message": exc.message})
+                self._send(_layout("Review not opened", "<p>Complete the required pre-verification before opening a Case Review.</p>",
+                                   actor, error=exc.message, variant=variant), 403)
 
         def do_POST(self) -> None:
             path = urlparse(self.path).path
@@ -310,7 +309,30 @@ def make_server(db_path: str | Path, actor_passwords: dict[str, str],
                 return
             service_called = False
             try:
-                if variant == "lite-v1" and path == "/lite/reviews/save":
+                if variant == "lite-v1" and path == "/lite/prechecks/save":
+                    order = store.get_order()
+                    line = next((row for row in order["lines"] if row["id"] == form.get("line_id")), None)
+                    if line is None:
+                        raise BusinessRuleError("INVALID_PROCESSOR_CHECK", "Choose an order line shown in the case.")
+                    service_called = True
+                    store.save_processor_check(actor, {
+                        "ticket_id": spec.TICKET_ID, "order_id": spec.ORDER_ID,
+                        "order_revision": order["revision"], "decision": form.get("decision", ""),
+                        "line_id": line["id"], "evidence_id": form.get("evidence_id", ""),
+                        "shipping_cents": parse_money(form.get("shipping_amount", "")),
+                        "refund_cents": parse_money(form.get("refund_amount", "")),
+                    })
+                    self._redirect("/lite")
+                elif variant == "lite-v1" and path == "/lite/reviews/open":
+                    if actor != "B" or not store.latest_processor_check():
+                        raise BusinessRuleError("PRECHECK_REQUIRED", "Save your independent pre-verification before looking up a Case Review.")
+                    review_id = form.get("review_id", "").strip()
+                    try:
+                        store.get_review(review_id)
+                    except FileNotFoundError as exc:
+                        raise BusinessRuleError("REVIEW_NOT_FOUND", "Enter the Review ID from A's message.") from exc
+                    self._redirect("/lite/review/" + quote(review_id, safe=""))
+                elif variant == "lite-v1" and path == "/lite/reviews/save":
                     order = store.get_order()
                     line = next((row for row in order["lines"] if row["id"] == form.get("line_id")), None)
                     if line is None:
@@ -660,6 +682,49 @@ def make_server(db_path: str | Path, actor_passwords: dict[str, str],
               <button type="submit">Save Case Review</button></form></section>'''
             return body
 
+        def _lite_processor_check_form(self, order: dict) -> str:
+            lines = [(line["id"], f"{line['description']} — {money(line['unit_price_cents'])}")
+                     for line in order["lines"]]
+            conn = connect(store.db_path)
+            try:
+                evidence = [dict(row) for row in conn.execute(
+                    "SELECT id,description FROM evidence WHERE order_id=? ORDER BY id", (spec.ORDER_ID,))]
+            finally:
+                conn.close()
+            csrf = escape(self._session()[1]["csrf"])
+            return f'''<section class="card"><h3>Independent processor pre-verification</h3>
+              <p>Record your own interpretation of the source records before opening A's Case Review.</p>
+              <form method="post" action="/lite/prechecks/save"><input type="hidden" name="csrf" value="{csrf}">
+              <fieldset class="choices"><legend>Eligibility</legend>
+                <label><input type="radio" name="decision" value="ELIGIBLE" required autofocus> Eligible</label>
+                <label><input type="radio" name="decision" value="NOT_ELIGIBLE"> Not eligible</label></fieldset>
+              <fieldset class="choices"><legend>Affected order line</legend>
+                {''.join(f'<label><input type="radio" name="line_id" value="{escape(str(value))}" required> {escape(str(label))}</label>' for value, label in lines)}</fieldset>
+              <fieldset class="choices"><legend>Supporting delivery evidence</legend>
+                {''.join(f'<label><input type="radio" name="evidence_id" value="{escape(str(row["id"]))}" required> {escape(str(row["id"]))} — {escape(str(row["description"]))}</label>' for row in evidence)}</fieldset>
+              <fieldset class="choices"><legend>Shipping treatment</legend>
+                <label><input type="radio" name="shipping_amount" value="0.00" required> Exclude shipping</label>
+                <label><input type="radio" name="shipping_amount" value="15.00"> Include shipping</label></fieldset>
+              <label for="precheck_refund_amount">Your independently proposed total (USD)</label>
+              <input id="precheck_refund_amount" name="refund_amount" inputmode="decimal" required>
+              <button type="submit">Save Independent Check</button></form></section>'''
+
+        @staticmethod
+        def _lite_processor_check_html(check: dict) -> str:
+            return f'''<section class="card"><h3>Saved independent pre-verification</h3>
+              <p class="status">Saved version {check['version']} · {escape(check['id'])}</p>
+              <p>{escape(check['decision'])} · {escape(check['line_id'])} · {escape(check['evidence_id'])} ·
+                 shipping {money(check['shipping_cents'])} · proposed {money(check['refund_cents'])}</p></section>'''
+
+        def _lite_review_lookup_form(self) -> str:
+            csrf = escape(self._session()[1]["csrf"])
+            return f'''<section class="card"><h3>Open the verifier's Case Review</h3>
+              <p>Use the Review ID from A's collaboration handoff.</p>
+              <form method="post" action="/lite/reviews/open"><input type="hidden" name="csrf" value="{csrf}">
+              <label for="review_id">Case Review ID</label>
+              <input id="review_id" name="review_id" autocomplete="off" required autofocus>
+              <button type="submit">Open Case Review</button></form></section>'''
+
         def _lite_refund_form(self, actor: str, review: dict) -> str:
             if actor not in {"B", "S"}:
                 return "<p>The saved review is ready for the Support Processor.</p>"
@@ -702,22 +767,11 @@ def make_server(db_path: str | Path, actor_passwords: dict[str, str],
             source, order, _policy = self._lite_source_html()
             reviews = store.list_reviews()
             if actor == "B":
-                if reviews:
-                    review_url = "/lite/review/" + quote(reviews[-1]["id"], safe="")
-                    body = f'''{source}<p>A saved Case Review is available.
-                      <a class="button" href="{review_url}">Open the verifier's review</a></p>
-                      <script>setTimeout(() => location.replace({json.dumps(review_url)}), 800);</script>'''
-                else:
-                    body = f'''{source}<p role="status">Waiting for the verifier's saved review. You may inspect the source records while A works.</p>
-                      <script>
-                      const reviewPoll = setInterval(async () => {{
-                        try {{
-                          const response = await fetch('/lite/review-ready', {{cache: 'no-store'}});
-                          const state = await response.json();
-                          if (state.ready) {{ clearInterval(reviewPoll); location.assign(state.url); }}
-                        }} catch (_) {{}}
-                      }}, 3000);
-                      </script>'''
+                check = store.latest_processor_check()
+                precheck = self._lite_processor_check_html(check) if check else self._lite_processor_check_form(order)
+                lookup = self._lite_review_lookup_form() if check else ""
+                body = (f"{source}<p>Complete an independent source-record check before reviewing the verifier's decision.</p>"
+                        f"{precheck}{lookup}")
                 self._send(_layout("T-1042 Support Case", body, actor, variant="lite-v1"))
                 return
             if actor == "S" and reviews:
@@ -746,6 +800,8 @@ def make_server(db_path: str | Path, actor_passwords: dict[str, str],
                 self._send(_layout("Role error", "", actor, error="Unknown case role.", variant="lite-v1"), 403)
                 return
             review = store.get_review(review_id)
+            if actor == "B":
+                store.record_case_review_gui_opened(actor, review_id)
             source, _order, _policy = self._lite_source_html()
             body = source + self._lite_review_html(review)
             refunds = self._lite_refunds()
@@ -755,7 +811,7 @@ def make_server(db_path: str | Path, actor_passwords: dict[str, str],
             if actor in {"B", "S"}:
                 body += self._lite_refund_form(actor, review)
             else:
-                body += self._lite_refund_form(actor, review)
+                body += "<p>Send B the displayed Review ID for independent processing.</p>"
             self._send(_layout("Review and Process T-1042", body, actor, variant="lite-v1"))
 
         def _page_lite_refund(self, actor: str, refund_id: str) -> None:

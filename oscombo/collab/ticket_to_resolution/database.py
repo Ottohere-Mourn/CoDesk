@@ -65,6 +65,12 @@ CREATE TABLE reviews(
  principal_cents INTEGER NOT NULL, tax_cents INTEGER NOT NULL, shipping_cents INTEGER NOT NULL,
  refund_cents INTEGER NOT NULL, rationale TEXT NOT NULL, actor_id TEXT NOT NULL,
  created_at TEXT NOT NULL, content_sha256 TEXT NOT NULL);
+CREATE TABLE processor_checks(
+ id TEXT PRIMARY KEY, version INTEGER NOT NULL,
+ ticket_id TEXT NOT NULL REFERENCES tickets(id), order_id TEXT NOT NULL REFERENCES orders(id),
+ order_revision INTEGER NOT NULL, decision TEXT NOT NULL, line_id TEXT NOT NULL,
+ evidence_id TEXT NOT NULL, shipping_cents INTEGER NOT NULL, refund_cents INTEGER NOT NULL,
+ actor_id TEXT NOT NULL, created_at TEXT NOT NULL, content_sha256 TEXT NOT NULL);
 CREATE TABLE refunds(
  id TEXT PRIMARY KEY, idempotency_key TEXT NOT NULL UNIQUE, review_id TEXT NOT NULL REFERENCES reviews(id),
  ticket_id TEXT NOT NULL REFERENCES tickets(id), order_id TEXT NOT NULL REFERENCES orders(id),
@@ -208,6 +214,20 @@ def review_digest(fields: dict[str, Any]) -> str:
     return _digest(_review_payload(fields))
 
 
+def _processor_check_payload(fields: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "ticket_id": str(fields["ticket_id"]), "order_id": str(fields["order_id"]),
+        "order_revision": int(fields["order_revision"]), "decision": str(fields["decision"]).upper(),
+        "line_id": str(fields["line_id"]), "evidence_id": str(fields["evidence_id"]),
+        "shipping_cents": int(fields["shipping_cents"]), "refund_cents": int(fields["refund_cents"]),
+        "actor_id": str(fields["actor_id"]),
+    }
+
+
+def processor_check_digest(fields: dict[str, Any]) -> str:
+    return _digest(_processor_check_payload(fields))
+
+
 class CaseStore:
     def __init__(self, db_path: str | Path):
         self.db_path = Path(db_path)
@@ -228,6 +248,105 @@ class CaseStore:
         try:
             conn.execute("BEGIN IMMEDIATE")
             self._audit(conn, actor, "page_view", "route", route, str(uuid.uuid4()), {"context_id": context_id})
+            conn.commit()
+        finally:
+            conn.close()
+
+    def save_processor_check(self, actor: str, fields: dict[str, Any]) -> dict[str, Any]:
+        request_id = str(uuid.uuid4())
+        if actor != "B":
+            error = BusinessRuleError("ROLE_FORBIDDEN", "Only the Support Processor can save the independent pre-verification.")
+            self.record_rejection(actor, "processor_check_rejected", "processor_check_request", request_id,
+                                  {"error_code": error.code, "message": error.message})
+            raise error
+        try:
+            payload = _processor_check_payload({**fields, "actor_id": actor})
+        except (KeyError, TypeError, ValueError) as exc:
+            error = BusinessRuleError("INVALID_PROCESSOR_CHECK", f"Pre-verification fields are incomplete: {exc}")
+            self.record_rejection(actor, "processor_check_rejected", "processor_check_request", request_id,
+                                  {"error_code": error.code, "message": error.message})
+            raise error from exc
+        if (payload["ticket_id"] != spec.TICKET_ID or payload["order_id"] != spec.ORDER_ID
+                or payload["decision"] not in {"ELIGIBLE", "NOT_ELIGIBLE"}
+                or not payload["line_id"] or not payload["evidence_id"]
+                or payload["shipping_cents"] < 0 or payload["refund_cents"] < 0):
+            error = BusinessRuleError("INVALID_PROCESSOR_CHECK", "Complete the pre-verification using the visible case choices.")
+            self.record_rejection(actor, "processor_check_rejected", "processor_check_request", request_id,
+                                  {"error_code": error.code, "message": error.message})
+            raise error
+        conn = connect(self.db_path)
+        try:
+            conn.execute("BEGIN IMMEDIATE")
+            ticket = conn.execute("SELECT * FROM tickets WHERE id=?", (payload["ticket_id"],)).fetchone()
+            order = conn.execute("SELECT * FROM orders WHERE id=?", (payload["order_id"],)).fetchone()
+            if not ticket or not order or ticket["order_id"] != order["id"]:
+                raise BusinessRuleError("CASE_MISMATCH", "Ticket and order do not belong to this case.")
+            opened = conn.execute(
+                "SELECT 1 FROM audit_events WHERE actor_id='B' AND event_type='case_review_gui_opened' LIMIT 1"
+            ).fetchone()
+            if opened:
+                raise BusinessRuleError("PRECHECK_LOCKED", "The independent pre-verification is locked after opening a Case Review.")
+            version = int(conn.execute(
+                "SELECT COALESCE(MAX(version),0)+1 AS v FROM processor_checks WHERE ticket_id=?",
+                (ticket["id"],)).fetchone()["v"])
+            payload["order_revision"] = int(order["revision"])
+            check_id = f"PC-{uuid.uuid4().hex[:12].upper()}"
+            content_hash = processor_check_digest(payload)
+            created = _now()
+            conn.execute(
+                "INSERT INTO processor_checks VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                (check_id, version, payload["ticket_id"], payload["order_id"], payload["order_revision"],
+                 payload["decision"], payload["line_id"], payload["evidence_id"], payload["shipping_cents"],
+                 payload["refund_cents"], actor, created, content_hash))
+            self._audit(conn, actor, "processor_precheck_saved", "processor_check", check_id, request_id,
+                        {**payload, "version": version, "content_sha256": content_hash})
+            conn.commit()
+            return self.get_processor_check(check_id)
+        except BusinessRuleError as exc:
+            if conn.in_transaction:
+                conn.rollback()
+            self.record_rejection(actor, "processor_check_rejected", "processor_check_request", request_id,
+                                  {"error_code": exc.code, "message": exc.message})
+            raise
+        except Exception:
+            if conn.in_transaction:
+                conn.rollback()
+            raise
+        finally:
+            conn.close()
+
+    def get_processor_check(self, check_id: str) -> dict[str, Any]:
+        conn = connect(self.db_path)
+        try:
+            row = conn.execute("SELECT * FROM processor_checks WHERE id=?", (check_id,)).fetchone()
+            if not row:
+                raise FileNotFoundError(check_id)
+            return dict(row)
+        finally:
+            conn.close()
+
+    def latest_processor_check(self, ticket_id: str = spec.TICKET_ID) -> dict[str, Any] | None:
+        conn = connect(self.db_path)
+        try:
+            row = conn.execute("SELECT id FROM processor_checks WHERE ticket_id=? ORDER BY version DESC LIMIT 1",
+                               (ticket_id,)).fetchone()
+            return self.get_processor_check(row["id"]) if row else None
+        finally:
+            conn.close()
+
+    def record_case_review_gui_opened(self, actor: str, review_id: str) -> None:
+        if actor != "B":
+            return
+        check = self.latest_processor_check()
+        if not check:
+            raise BusinessRuleError("PRECHECK_REQUIRED", "Save your independent pre-verification before opening A's Case Review.")
+        review = self.get_review(review_id)
+        conn = connect(self.db_path)
+        try:
+            conn.execute("BEGIN IMMEDIATE")
+            self._audit(conn, actor, "case_review_gui_opened", "review", review_id, str(uuid.uuid4()),
+                        {"processor_check_id": check["id"], "processor_check_version": check["version"],
+                         "processor_check_sha256": check["content_sha256"], "review_version": review["version"]})
             conn.commit()
         finally:
             conn.close()

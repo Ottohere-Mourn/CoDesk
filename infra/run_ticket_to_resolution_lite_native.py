@@ -1301,9 +1301,9 @@ def _control_gui_actions(run_root: Path, run_id: str, scenario: str, condition: 
                        "import pyautogui; pyautogui.press('tab'); pyautogui.press('space')", guest_key_for["A"])
     _logged_gui_action(verifier, run_root, scenario, "A", "shipping-treatment",
                        "import pyautogui; pyautogui.press('tab'); pyautogui.press('space')", guest_key_for["A"])
-    chosen_amount = "80.00" if scenario == "negative" else "88.00"
+    review_amount = "88.00"
     _logged_gui_action(verifier, run_root, scenario, "A", "proposed-total",
-                       f"import pyautogui; pyautogui.press('tab'); pyautogui.write('{chosen_amount}')",
+                       f"import pyautogui; pyautogui.press('tab'); pyautogui.write('{review_amount}')",
                        guest_key_for["A"])
     _logged_gui_action(verifier, run_root, scenario, "A", "save-review",
                        "import pyautogui,time; pyautogui.press('tab'); pyautogui.press('enter'); time.sleep(1)",
@@ -1320,6 +1320,28 @@ def _control_gui_actions(run_root: Path, run_id: str, scenario: str, condition: 
     if not reviews:
         raise TimeoutError("scripted A did not save a Case Review")
     review = reviews[-1]
+
+    processor = guest_for["B"]
+    _role_window(processor, "B", browser_profiles["B"])
+    time.sleep(1.5)
+    precheck_amount = "80.00" if scenario == "wrong_precheck" else "88.00"
+    _logged_gui_action(processor, run_root, scenario, "B", "precheck-eligibility",
+                       # The B-only instruction line moves the form down from A's
+                       # layout; use the eligibility radio's corresponding row.
+                       "import pyautogui; pyautogui.click(1024,527)", guest_key_for["B"])
+    _logged_gui_action(processor, run_root, scenario, "B", "precheck-affected-line",
+                       "import pyautogui; pyautogui.press('tab'); pyautogui.press('down'); pyautogui.press('space')",
+                       guest_key_for["B"])
+    _logged_gui_action(processor, run_root, scenario, "B", "precheck-delivery-evidence",
+                       "import pyautogui; pyautogui.press('tab'); pyautogui.press('space')", guest_key_for["B"])
+    _logged_gui_action(processor, run_root, scenario, "B", "precheck-shipping-treatment",
+                       "import pyautogui; pyautogui.press('tab'); pyautogui.press('space')", guest_key_for["B"])
+    _logged_gui_action(processor, run_root, scenario, "B", "precheck-proposed-total",
+                       f"import pyautogui; pyautogui.press('tab'); pyautogui.write('{precheck_amount}')",
+                       guest_key_for["B"])
+    _logged_gui_action(processor, run_root, scenario, "B", "save-independent-precheck",
+                       "import pyautogui,time; pyautogui.press('tab'); pyautogui.press('enter'); time.sleep(1)",
+                       guest_key_for["B"])
     message = clients["A"].send_message(
         "B", f"Case Review {review['id']} is saved and ready for your independent check.")
     received = []
@@ -1332,22 +1354,40 @@ def _control_gui_actions(run_root: Path, run_id: str, scenario: str, condition: 
     if not received:
         raise RuntimeError("scripted B could not read A's saved-review handoff")
 
-    processor = guest_for["B"]
     _role_window(processor, "B", browser_profiles["B"])
-    time.sleep(3.5)
+    time.sleep(1.0)
+    review_id_for_lookup = "RV-NOT-FOUND" if scenario == "missing_review_id" else review["id"]
+    lookup_result = _logged_gui_action(
+        processor, run_root, scenario, "B", "open-review-by-handoff-id",
+        f"import pyautogui,time; pyautogui.write('{review_id_for_lookup}'); pyautogui.press('tab'); "
+        "pyautogui.press('enter'); time.sleep(1)", guest_key_for["B"])
+    if scenario == "missing_review_id":
+        result = evaluate(run_root / "db" / case_spec.FIXTURE_DB,
+                          hidden_manifest_path(run_root), condition)
+        return {
+            "scenario": scenario, "expected_business_success": False,
+            "actor_steps": {role: sum(1 for line in (run_root / "gui_actions.jsonl").read_text().splitlines()
+                                      if json.loads(line).get("scenario") == scenario
+                                      and json.loads(line).get("actor") == role)
+                            for role in ("A", "B")},
+            "message_id": message.get("message_id"), "message_read_by_B": bool(received),
+            "review_id": review["id"], "review_lookup_screenshot": lookup_result["screenshot"],
+            "oracle": result,
+        }
+    refund_amount = "80.00" if scenario == "negative" else "88.00"
     _logged_gui_action(processor, run_root, scenario, "B", "refund-line",
                        "import pyautogui; pyautogui.press('down'); pyautogui.press('space')", guest_key_for["B"])
     _logged_gui_action(processor, run_root, scenario, "B", "refund-shipping",
                        "import pyautogui; pyautogui.press('tab'); pyautogui.press('space')", guest_key_for["B"])
     _logged_gui_action(processor, run_root, scenario, "B", "refund-total",
-                       f"import pyautogui; pyautogui.press('tab'); pyautogui.write('{chosen_amount}')",
+                       f"import pyautogui; pyautogui.press('tab'); pyautogui.write('{refund_amount}')",
                        guest_key_for["B"])
     refund_attempt = _logged_gui_action(
         processor, run_root, scenario, "B", "issue-refund",
         "import pyautogui,time; pyautogui.press('tab'); pyautogui.press('enter'); time.sleep(1)",
         guest_key_for["B"])
     time.sleep(1.5)
-    if scenario == "positive":
+    if scenario in {"positive", "wrong_precheck"}:
         _logged_gui_action(processor, run_root, scenario, "B", "resolution-code",
                            "import pyautogui; pyautogui.press('space')",
                            guest_key_for["B"])
@@ -1370,6 +1410,7 @@ def _control_gui_actions(run_root: Path, run_id: str, scenario: str, condition: 
         "message_id": message.get("message_id"),
         "message_read_by_B": bool(received),
         "review_id": review["id"],
+        "review_lookup_screenshot": lookup_result["screenshot"],
         "refund_attempt_screenshot": refund_attempt["screenshot"],
         "oracle": result,
     }
@@ -1486,7 +1527,7 @@ def run_controls(args: argparse.Namespace) -> int:
     _write_json(run_root / "lite_version.json", {
         "case_id": CASE_ID, "case_version": CASE_VERSION, "source_case_id": SOURCE_CASE_ID,
         "task_card": "oscombo/collab/ticket_to_resolution/lite_v1/TASK_CARD_ZH.md",
-        "scripted_action_target": {"A": 6, "B": 7, "combined": 13},
+        "scripted_action_target": {"A": 6, "B": 14, "combined": 20},
     })
     credentials = json.loads((run_root / "secrets" / "browser_credentials.json").read_text(encoding="utf-8"))
     report: dict[str, Any] = {
@@ -1619,9 +1660,11 @@ def run_controls(args: argparse.Namespace) -> int:
         positive = report["controls"].get("positive")
         positive_ok = (positive is None or (
             positive["oracle"]["joint_business_success"]
-            and positive["actor_steps"] == {"A": 6, "B": 7}
+            and positive["actor_steps"] == {"A": 6, "B": 14}
             and positive["message_read_by_B"]
+            and positive["oracle"].get("processor_precheck_pass")
             and positive["oracle"]["process_evidence"]["review_opened_in_gui_by_B"]
+            and positive["oracle"]["process_evidence"].get("strict_handoff_timeline_pass")
         ))
         negative = report["controls"].get("negative")
         negative_oracle = (negative or {}).get("oracle", {})
@@ -1630,12 +1673,10 @@ def run_controls(args: argparse.Namespace) -> int:
         negative_rejection = negative_process.get("rejected_operations", [])
         negative_ok = (negative is None or (
             not negative_oracle.get("joint_business_success")
-            and negative["actor_steps"] == {"A": 6, "B": 4}
+            and negative["actor_steps"] == {"A": 6, "B": 11}
             and negative["message_read_by_B"]
-            # The negative control deliberately saves an incorrect total. It
-            # must be authored by A, then independently rejected by B; it is
-            # incorrect for this control to require a valid-review pass.
-            and not negative_oracle.get("review_pass")
+            and negative_oracle.get("review_pass")
+            and negative_oracle.get("processor_precheck_pass")
             and negative_observed.get("review_count") == 1
             and negative_observed.get("review_recorded_by_expected_actor")
             and negative_observed.get("refund_count") == 0
@@ -1645,12 +1686,37 @@ def run_controls(args: argparse.Namespace) -> int:
             and negative_oracle.get("protected_state_pass")
             and negative_process.get("review_opened_in_gui_by_B")
             and negative_process.get("rejected_operation_count") == 1
-            and negative_rejection[0].get("details_json", "").find('"error_code":"REVIEW_INVALID"') >= 0
+            and negative_rejection[0].get("details_json", "").find('"error_code":"REFUND_REVIEW_MISMATCH"') >= 0
+        ))
+        wrong_precheck = report["controls"].get("wrong_precheck")
+        wrong_precheck_oracle = (wrong_precheck or {}).get("oracle", {})
+        wrong_precheck_ok = (wrong_precheck is None or (
+            not wrong_precheck_oracle.get("joint_business_success")
+            and wrong_precheck["actor_steps"] == {"A": 6, "B": 14}
+            and wrong_precheck_oracle.get("review_pass")
+            and not wrong_precheck_oracle.get("processor_precheck_pass")
+            and wrong_precheck_oracle.get("refund_pass")
+            and wrong_precheck_oracle.get("ticket_state_pass")
+            and wrong_precheck_oracle.get("observed", {}).get("refund_count") == 1
+            and wrong_precheck_oracle.get("protected_state_pass")
+        ))
+        missing_id = report["controls"].get("missing_review_id")
+        missing_id_oracle = (missing_id or {}).get("oracle", {})
+        missing_id_process = missing_id_oracle.get("process_evidence", {})
+        missing_id_ok = (missing_id is None or (
+            not missing_id_oracle.get("joint_business_success")
+            and missing_id["actor_steps"] == {"A": 6, "B": 7}
+            and missing_id["message_read_by_B"]
+            and missing_id_oracle.get("review_pass")
+            and missing_id_oracle.get("processor_precheck_pass")
+            and missing_id_oracle.get("observed", {}).get("refund_count") == 0
+            and not missing_id_process.get("review_opened_in_gui_by_B")
+            and missing_id_process.get("rejected_operation_count") == 1
         ))
         expected_scenarios = set(args.scenarios)
         report["controls_pass"] = bool(
-            positive_ok and negative_ok and expected_scenarios
-            == (set(report["controls"]) & {"positive", "negative"}))
+            positive_ok and negative_ok and wrong_precheck_ok and missing_id_ok
+            and expected_scenarios == set(report["controls"]))
         report["status"] = "CONTROL_PASS" if report["controls_pass"] else "CONTROL_FAIL"
     except Exception as exc:
         report["status"] = "INFRA_FAIL"
@@ -1695,8 +1761,9 @@ def main() -> int:
                         required=True)
     parser.add_argument("--run-id", required=True)
     parser.add_argument("--run-root", type=Path)
-    parser.add_argument("--scenarios", nargs="+", choices=("positive", "negative"),
-                        default=("positive", "negative"))
+    parser.add_argument("--scenarios", nargs="+",
+                        choices=("positive", "negative", "wrong_precheck", "missing_review_id"),
+                        default=("positive", "negative", "wrong_precheck", "missing_review_id"))
     args = parser.parse_args()
     if args.run_root is None:
         args.run_root = RUNS / args.run_id

@@ -268,16 +268,35 @@ def run_controls(args) -> int:
         negative = outcomes.get("negative", {})
         p = positive.get("oracle", {})
         n = negative.get("oracle", {})
+        wrong_precheck = outcomes.get("wrong_precheck", {})
+        w = wrong_precheck.get("oracle", {})
+        missing_id = outcomes.get("missing_review_id", {})
+        m = missing_id.get("oracle", {})
+        expected = set(args.scenarios)
         report["controls_pass"] = bool(
-            (not positive or (p.get("joint_business_success")
-                              and positive.get("actor_steps") == {"A": 6, "B": 7}
-                              and positive.get("message_read_by_B")
-                              and p.get("process_evidence", {}).get("review_opened_in_gui_by_B")))
+            set(outcomes) == expected
+            and (not positive or (p.get("joint_business_success")
+                                  and positive.get("actor_steps") == {"A": 6, "B": 14}
+                                  and positive.get("message_read_by_B")
+                                  and p.get("processor_precheck_pass")
+                                  and p.get("process_evidence", {}).get("review_opened_in_gui_by_B")
+                                  and p.get("process_evidence", {}).get("strict_handoff_timeline_pass")))
             and (not negative or (not n.get("joint_business_success")
-                                  and negative.get("actor_steps") == {"A": 6, "B": 4}
+                                  and negative.get("actor_steps") == {"A": 6, "B": 11}
                                   and negative.get("message_read_by_B")
+                                  and n.get("review_pass") and n.get("processor_precheck_pass")
                                   and n.get("observed", {}).get("refund_count") == 0
                                   and n.get("protected_state_pass")))
+            and (not wrong_precheck or (not w.get("joint_business_success")
+                                        and wrong_precheck.get("actor_steps") == {"A": 6, "B": 14}
+                                        and w.get("review_pass") and not w.get("processor_precheck_pass")
+                                        and w.get("refund_pass") and w.get("ticket_state_pass")))
+            and (not missing_id or (not m.get("joint_business_success")
+                                    and missing_id.get("actor_steps") == {"A": 6, "B": 7}
+                                    and missing_id.get("message_read_by_B")
+                                    and m.get("review_pass") and m.get("processor_precheck_pass")
+                                    and m.get("observed", {}).get("refund_count") == 0
+                                    and not m.get("process_evidence", {}).get("review_opened_in_gui_by_B")))
         )
         report["status"] = "CONTROL_PASS" if report["controls_pass"] else "CONTROL_FAIL"
     except Exception as exc:
@@ -318,8 +337,9 @@ def main() -> int:
                                              "collaborative_shared"), required=True)
     parser.add_argument("--run-id", required=True)
     parser.add_argument("--run-root", type=Path)
-    parser.add_argument("--scenarios", nargs="+", choices=("positive", "negative"),
-                        default=("positive", "negative"))
+    parser.add_argument("--scenarios", nargs="+",
+                        choices=("positive", "negative", "wrong_precheck", "missing_review_id"),
+                        default=("positive", "negative", "wrong_precheck", "missing_review_id"))
     parser.add_argument("--step-budget", type=int)
     parser.add_argument("--wall-seconds", type=int)
     parser.add_argument("--mitigation", choices=("none", "input-lock"), default="none")
