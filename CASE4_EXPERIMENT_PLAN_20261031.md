@@ -21,3 +21,13 @@ Copy the same native fixture image byte-for-byte to the host SSD, verify equal S
 3. `case4-v100-ssd-shared-lock-20261101a`
 
 The task, fixture bytes, Oracle, role instructions, model settings, call limits, and actor release protocol remain frozen. The HDD Isolated episode is reported separately and never pooled with this cohort. Keep all SSD outcomes, including further setup faults; do not select successful runs to create the comparison.
+
+## Prospective SSD replication (2026-11-01)
+
+The first SSD cohort completed Isolated PASS, Shared FAIL, Shared+Lock PASS. The locked run still contained cross-call window misroutes, but the agents recovered. To assess whether the apparent lock benefit and Isolated/Shared gap repeat, run exactly one more SSD episode per arm with unchanged code, model, fixture, image, limits, and topology, in this order:
+
+1. `case4-v100-ssd-isolated-20261101b`
+2. `case4-v100-ssd-shared-20261101b`
+3. `case4-v100-ssd-shared-lock-20261101b`
+
+Report all outcomes, regardless of direction. Stop further Case 4 model repeats after this cohort and move to Case 2.
