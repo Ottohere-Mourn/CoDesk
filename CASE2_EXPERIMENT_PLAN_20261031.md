@@ -9,3 +9,7 @@ After Case 4's planned comparison finishes, run one fresh episode each in this o
 3. `ttr-v113-hardening-shared-lock-20261031a`
 
 Use an explicit 1800-second wall limit for both actors in all three arms. The older 900-second runs remain a separate cohort; do not pool them as equivalent. Start A and B together, retain the existing symmetric B handoff suspension rule, and apply only the input lock in the third arm. Keep all outcomes, including unexpected successes and infrastructure faults. Report business Oracle, strict handoff audit, screenshot-supported focus errors, lock wait, active model time, suspension time, and total wall time separately.
+
+## Guest storage amendment (2026-11-01)
+
+Case 4 setup on the mechanical-disk OSWorld image failed before model release twice under sustained I/O pressure; a byte-identical SSD copy passed setup quickly. Before Case 2 model calls, copy its existing OSWorld base image to the SSD, verify equal SHA-256 hashes, and put fresh overlays on the SSD. This changes storage placement only, not the Guest image bytes, application, task, or scoring. Run scripted positive and negative controls on the SSD image in both Isolated and Shared topology first. Use the SSD image and overlays identically for the three predeclared Case 2 model arms above. Preserve old HDD runs as a separate cohort and report setup/API failures independently.
