@@ -360,8 +360,8 @@ def run_episode(args: argparse.Namespace) -> int:
 
     root = args.run_root.absolute()
     run_id = args.run_id
-    if not run_id.startswith("ttr-lite-") or "/" in run_id or "\\" in run_id:
-        raise ValueError("run IDs must start with ttr-lite- and contain no path separators")
+    if not run_id.startswith(("ttr-lite-", "ttr-v113-hardening-")) or "/" in run_id or "\\" in run_id:
+        raise ValueError("run IDs must start with ttr-lite- or ttr-v113-hardening- and contain no path separators")
     if root.is_symlink() or (root.exists() and any(root.iterdir())):
         raise FileExistsError("run root exists and is non-empty; preserve it and choose a fresh path")
     root.mkdir(parents=True, exist_ok=True, mode=0o700)
