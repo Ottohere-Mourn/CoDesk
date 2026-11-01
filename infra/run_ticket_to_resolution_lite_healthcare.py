@@ -25,7 +25,7 @@ import run_ticket_to_resolution_lite_native as native
 import run_ticket_to_resolution_lite_model as model
 
 OSWORLD = Path("/home/mjh/Projects/_deps/OSWorld-V2-osworld-v2.1")
-IMAGE = Path("/mnt/raid1/mjh/Projects/_deps/osworld-v2.1/docker_vm_data/osworld-v2-ubuntu-x86.qcow2")
+IMAGE = Path("/home/mjh/Projects/_deps/codesk-case2-ubuntu-ssd-20261101.qcow2")
 RUNTIME = "swcub/osworld-v2.1-qemu-runtime:local"
 KEY_FILE = Path("/home/mjh/.config/codesk/haogpt_case3.key")
 MCP_PYTHON = Path("/home/mjh/Projects/CoDesk-yuke-osworld-review/runs/data_to_deck_agent_pilot/cdd-agent-pilot-20261020T155434Z/.venv/bin/python")
