@@ -12,7 +12,7 @@ from ..environment import ActorContext
 from .prototypes_v1 import evaluate_browser_context, generate_browser_context_instance
 
 
-TASK_VERSION = "1.0.0-rc5-calibration"
+TASK_VERSION = "1.0.0-rc6-llm-pilot"
 MANIFEST = generate_browser_context_instance(0)
 STATE_PATH = "/tmp/codesk_browser_context/state.json"
 EVENTS_PATH = "/tmp/codesk_browser_context/events.jsonl"
@@ -32,12 +32,13 @@ class BrowserContextTask:
 
     def evaluate(self, *, condition: str, states: dict[str, dict[str, Any]],
                  window_events: list[dict[str, Any]], action_context: dict[str, Any]) -> dict[str, Any]:
-        if condition not in {"solo_a", "solo_b", "ma_id", "ma_sd"}:
+        if condition not in {"solo_a", "solo_b", "ma_id", "ma_sd", "ma_sd_lock"}:
             raise ValueError(f"unknown condition {condition}")
-        active = ("actor_a", "actor_b") if condition in {"ma_id", "ma_sd"} else (
+        is_shared = condition in {"ma_sd", "ma_sd_lock"}
+        active = ("actor_a", "actor_b") if condition in {"ma_id", "ma_sd", "ma_sd_lock"} else (
             "actor_a",) if condition == "solo_a" else ("actor_b",)
-        binding = {"actor_a": "shared" if condition == "ma_sd" else "actor_a",
-                   "actor_b": "shared" if condition == "ma_sd" else "actor_b"}
+        binding = {"actor_a": "shared" if is_shared else "actor_a",
+                   "actor_b": "shared" if is_shared else "actor_b"}
         goal_success: dict[str, bool] = {}
         non_target_integrity: dict[str, bool] = {}
         actual_goals: dict[str, dict[str, str]] = {}
@@ -50,18 +51,18 @@ class BrowserContextTask:
             other_tab = "tab-b" if actor == "actor_a" else "tab-a"
             actual_goals[actor] = actual
             goal_success[actor] = actual[own_tab] == self.values[actor]
-            non_target_integrity[actor] = (condition == "ma_sd" or
+            non_target_integrity[actor] = (is_shared or
                 (actual[other_tab] == "" and
                  int(tabs.get(other_tab, {}).get("revision", -1)) == 0))
         expected = self.manifest["expected_state"]
         context_evidence = (evaluate_browser_context(states["shared"], window_events, expected)
-                            if condition == "ma_sd" else None)
+                            if is_shared else None)
         contamination = False
-        if condition == "ma_sd":
+        if is_shared:
             b = states["shared"].get("tabs", {}).get("tab-b", {})
             contamination = int(b.get("revision", 0)) > 1
             non_target_integrity["actor_b"] = not contamination
-        wrong_page_action = bool(condition == "ma_sd" and contamination and
+        wrong_page_action = bool(is_shared and contamination and
                                  action_context.get("actor_a_resume_tab") == "tab-b" and
                                  action_context.get("actor_a_first_window_id") is not None and
                                  action_context.get("actor_a_resume_window_id") ==
@@ -75,7 +76,7 @@ class BrowserContextTask:
                 "application_context_evidence": context_evidence,
                 "wrong_page_action_supported": wrong_page_action,
                 "cross_tab_contamination": contamination,
-                "recovery_supported": bool(condition == "ma_sd" and
+                "recovery_supported": bool(is_shared and
                     action_context.get("recovery") and success and
                     action_context.get("tab_changed_between_actors") and
                     action_context.get("actor_a_resume_after_tab") == "tab-a" and

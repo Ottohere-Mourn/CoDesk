@@ -24,13 +24,18 @@ class OSWorldAgentActor:
                  max_steps: int = 20,
                  event_callback: Callable[[dict[str, Any]], None] | None = None,
                  artifact_directory: Path | None = None,
-                 action_boundary_callback: Callable[["OSWorldAgentActor", Any], None] | None = None):
+                 action_boundary_callback: Callable[["OSWorldAgentActor", Any], None] | None = None,
+                 decision_boundary_callback: Callable[["OSWorldAgentActor", list[Any]], None] | None = None,
+                 action_sequence_boundary_callback: Callable[
+                     ["OSWorldAgentActor", Any, list[Any]], None] | None = None):
         self.agent = agent
         self.instruction = instruction
         self.actor_id = actor_id
         self.max_steps = max_steps
         self.event_callback = event_callback
         self.action_boundary_callback = action_boundary_callback
+        self.decision_boundary_callback = decision_boundary_callback
+        self.action_sequence_boundary_callback = action_sequence_boundary_callback
         self._pending_actions: list[Any] = []
         self.artifact_directory = (Path(artifact_directory).resolve()
                                    if artifact_directory is not None else None)
@@ -139,6 +144,13 @@ class OSWorldAgentActor:
             self.event_callback(record)
 
         self.yield_requested = False
+        if self.decision_boundary_callback is not None:
+            self.decision_boundary_callback(self, actions)
+            if self.paused:
+                # Keep the model's already-planned actions. When resumed, they
+                # execute without a fresh observation or inference.
+                self._pending_actions = list(actions)
+                return False
         return self._execute_actions(context, actions)
 
     def _execute_actions(self, context: ActorContext, actions: list[Any]) -> bool:
@@ -154,6 +166,8 @@ class OSWorldAgentActor:
                 raise OSWorldAgentActorError("gui_action", exc) from exc
             if self.action_boundary_callback is not None:
                 self.action_boundary_callback(self, action)
+            if self.action_sequence_boundary_callback is not None:
+                self.action_sequence_boundary_callback(self, action, list(actions[index + 1:]))
             if self.paused:
                 self._pending_actions = list(actions[index + 1:])
                 return False

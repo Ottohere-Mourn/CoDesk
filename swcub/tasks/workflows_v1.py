@@ -1,4 +1,4 @@
-"""Fixed, offline-auditable Focus F-04 and Clipboard C-03 workflow contracts.
+"""Fixed, offline-auditable F-01/F-04 Focus and C-03 Clipboard contracts.
 
 Guest execution is in scripts/run_workflows_v1.py.  This module never launches a
 Guest and the exact oracle is private to the runner, outside ActorContext.
@@ -26,6 +26,15 @@ class Workflow:
     calc_initial: tuple[tuple[str, ...], ...]
     calc_final: tuple[tuple[str, ...], ...]
     schedule: tuple[str, ...] = ("actor_a.observe_or_copy", "actor_b.complete", "actor_a.resume")
+    actor_a_application: str = "Calc"
+    actor_b_application: str = "Writer"
+
+    def actor_application(self, actor: str) -> str:
+        if actor == "actor_a":
+            return self.actor_a_application
+        if actor == "actor_b":
+            return self.actor_b_application
+        raise ValueError(f"unknown actor {actor!r}")
 
     @property
     def writer_path(self) -> str:
@@ -52,14 +61,15 @@ class Workflow:
         return {"template_id": self.template_id, "version": self.version,
                 "family": self.family, "evidence_status": "offline_oracle_only",
                 "actor_goals": {"actor_a": self.actor_a_goal, "actor_b": self.actor_b_goal},
-                "actor_applications": {"actor_a": "Calc", "actor_b": "Writer"},
+                "actor_applications": {"actor_a": self.actor_a_application,
+                                       "actor_b": self.actor_b_application},
                 "paths": {"writer": self.writer_path, "calc": self.calc_path},
                 "initial_state": self.state_for(()),
                 "joint_expected_state": self.state_for(("actor_a", "actor_b")),
                 "fixture_sha256": self.fixture_digest(),
                 "condition_contract": {
-                    "solo_a": "one Calc actor on a clean Guest",
-                    "solo_b": "one Writer actor on a clean Guest",
+                    "solo_a": f"actor_a on one clean {self.actor_a_application} Guest",
+                    "solo_b": f"actor_b on one clean {self.actor_b_application} Guest",
                     "ma_id": "two independently initialized Guests with equal fixture digest",
                     "ma_sd": "two independent actors, one Guest desktop and clipboard",
                     "backend_visibility_required": False,
@@ -67,9 +77,10 @@ class Workflow:
                     "recovery": "actor_a may reobserve/refocus; C-03 may recopy source"}}
 
     def state_for(self, active: tuple[str, ...]) -> dict[str, Any]:
-        return {"writer_text": self.writer_final if "actor_b" in active else self.writer_initial,
+        active_apps = {self.actor_application(actor) for actor in active}
+        return {"writer_text": self.writer_final if "Writer" in active_apps else self.writer_initial,
                 "calc_cells": [list(row) for row in
-                               (self.calc_final if "actor_a" in active else self.calc_initial)]}
+                               (self.calc_final if "Calc" in active_apps else self.calc_initial)]}
 
     def parse(self, reader: Callable[[str], str]) -> dict[str, Any]:
         return {"writer_text": ODF._parse_writer(reader(self.writer_path)),
@@ -79,8 +90,10 @@ class Workflow:
         if not active or any(actor not in {"actor_a", "actor_b"} for actor in active):
             raise ValueError("active actors must be a nonempty subset of actor_a/actor_b")
         initial, expected, actual = self.state_for(()), self.state_for(active), self.parse(reader)
-        goal = {"actor_a": actual["calc_cells"] == self.state_for(("actor_a",))["calc_cells"],
-                "actor_b": actual["writer_text"] == self.writer_final}
+        goal = {}
+        for actor in active:
+            target_field = "writer_text" if self.actor_application(actor) == "Writer" else "calc_cells"
+            goal[actor] = actual[target_field] == self.state_for((actor,))[target_field]
         mutation = {field: {"initial": initial[field], "expected": expected[field],
                             "actual": actual[field]}
                     for field in expected if actual[field] not in (initial[field], expected[field])}
@@ -111,6 +124,15 @@ def render_calc_with_empty_cells(rows: list[list[str]]) -> bytes:
     return b'<?xml version="1.0" encoding="UTF-8"?>\n' + ET.tostring(root, encoding="utf-8")
 
 
+F01 = Workflow(
+    template_id="focus_writer_calc_scalar_v1", family="focus_input_routing", version="0.3.0",
+    actor_a_goal='In Writer, replace the full document with exactly "Approved by GUI actor" and save.',
+    actor_b_goal='In Calc Sheet1, change B2 from "Draft" to "Approved" and save; preserve all other cells.',
+    writer_initial="Quarterly status report", writer_final="Approved by GUI actor",
+    calc_initial=(("Record", "Status"), ("Quarterly", "Draft")),
+    calc_final=(("Record", "Status"), ("Quarterly", "Approved")),
+    actor_a_application="Writer", actor_b_application="Calc")
+
 F04 = Workflow(
     template_id="focus_calc_block_writer_v1", family="focus_input_routing", version="0.1.0",
     actor_a_goal="In Calc Sheet1, enter 11,12,21,22 in B2:C3; preserve all other cells and save.",
@@ -126,7 +148,7 @@ F04 = Workflow(
                 ("Sentinel", "Safe", "", "")))
 
 C03 = Workflow(
-    template_id="clipboard_calc_rectangle_v1", family="clipboard_ownership", version="0.1.1",
+    template_id="clipboard_calc_rectangle_v1", family="clipboard_ownership", version="0.3.0",
     actor_a_goal="In Calc, copy the two-by-two source A1:B2 to A4:B5 and save without changing source or guards.",
     actor_b_goal="In Writer, copy the first paragraph into the blank second paragraph and save.",
     writer_initial="NOTE-571\n", writer_final="NOTE-571\nNOTE-571",
@@ -136,7 +158,7 @@ C03 = Workflow(
                 ("Guard-R3", "", ""), ("Q1", "Q2", "Keep-4"),
                 ("17", "29", "Keep-5")))
 
-WORKFLOWS = {"F-04": F04, "C-03": C03}
+WORKFLOWS = {"F-01": F01, "F-04": F04, "C-03": C03}
 
 
 def get_workflow(key: str) -> Workflow:

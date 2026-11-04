@@ -117,3 +117,32 @@ def test_revision_only_partner_mutation_and_missing_xid_are_not_supported():
         condition="ma_sd", states={"shared": state("", vb, 0, 2)},
         window_events=[], action_context=unknown_window)
     assert not shared["wrong_page_action_supported"]
+
+
+
+def test_shared_lock_oracle_requires_exact_actor_goals_and_misroute_evidence():
+    va, vb = TASK.values["actor_a"], TASK.values["actor_b"]
+    result = TASK.evaluate(condition="ma_sd_lock",
+        states={"shared": state("", vb, 0, 2)},
+        window_events=context_events(),
+        action_context=action_context())
+    assert result["actor_goal_success"] == {"actor_a": False, "actor_b": True}
+    assert result["cross_tab_contamination"]
+    assert result["wrong_page_action_supported"]
+    assert not result["condition_success"]
+
+    no_effect = TASK.evaluate(condition="ma_sd_lock",
+        states={"shared": state("", vb, 0, 1)},
+        window_events=context_events(),
+        action_context=action_context())
+    assert not no_effect["wrong_page_action_supported"]
+    assert not no_effect["condition_success"]
+
+
+
+def test_fixture_supports_normal_enter_submission_in_focused_form():
+    from swcub.tasks.prototypes_v1 import browser_context_server_source
+    source = browser_context_server_source(TASK.values["actor_a"], TASK.values["actor_b"]).decode()
+    assert "addEventListener('keydown'" in source
+    assert "e.key==='Enter'" in source
+    assert "submitGoal();" in source

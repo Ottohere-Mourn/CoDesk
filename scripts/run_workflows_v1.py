@@ -17,6 +17,7 @@ from pathlib import Path
 import secrets
 import shlex
 import sys
+from threading import Lock
 from time import monotonic
 from typing import Any
 
@@ -29,6 +30,94 @@ from swcub.resource_safety import ensure_resource_identity
 from swcub.tasks.workflows_v1 import Workflow, get_workflow
 from swcub.tasks.workflow_actors_v1 import (FocusBlockCalcActor, RectangleCalcActor,
                                              WorkflowWriterActor)
+
+
+class PerActionLock:
+    """Serialize each actor GUI act call without locking observations or turns."""
+
+    def __init__(self, run_started: float):
+        self._lock = Lock()
+        self._run_started = run_started
+        self._records: list[dict[str, Any]] = []
+
+    @staticmethod
+    def _action_type(action: Any) -> str:
+        if isinstance(action, dict):
+            return str(action.get("op", "gui_action"))
+        return "native_gui_action"
+
+    def act(self, environment: Any, actor_id: str, interface: str, action: Any,
+            observed_revision: int | None = None) -> Any:
+        # CLI/evaluator/setup calls are intentionally outside this input lock.
+        if interface != "gui":
+            return environment.act(actor_id, interface, action,
+                                   observed_revision=observed_revision)
+        queued_at = monotonic()
+        self._lock.acquire()
+        acquired_at = monotonic()
+        error_type = None
+        try:
+            return environment.act(actor_id, interface, action,
+                                   observed_revision=observed_revision)
+        except BaseException as exc:
+            error_type = type(exc).__name__
+            raise
+        finally:
+            released_at = monotonic()
+            self._records.append({
+                "index": len(self._records) + 1,
+                "actor_id": actor_id,
+                "interface": interface,
+                "action_type": self._action_type(action),
+                "queued_at_s": round(queued_at - self._run_started, 6),
+                "acquired_at_s": round(acquired_at - self._run_started, 6),
+                "released_at_s": round(released_at - self._run_started, 6),
+                "wait_ms": round((acquired_at - queued_at) * 1000, 3),
+                "held_ms": round((released_at - acquired_at) * 1000, 3),
+                "observed_revision": observed_revision,
+                "error_type": error_type,
+            })
+            self._lock.release()
+
+    def summary(self) -> dict[str, Any]:
+        records = [dict(record) for record in self._records]
+        timeline = []
+        for record in records:
+            timeline.append((record["acquired_at_s"], 1))
+            timeline.append((record["released_at_s"], -1))
+        concurrent = 0
+        max_concurrent = 0
+        for _, delta in sorted(timeline, key=lambda row: (row[0], row[1])):
+            concurrent += delta
+            max_concurrent = max(max_concurrent, concurrent)
+        waits = [record["wait_ms"] for record in records]
+        holds = [record["held_ms"] for record in records]
+        return {
+            "enabled": True,
+            "scope": "one GUI act call; excludes observe/think gaps, task setup, CLI, evaluation",
+            "call_count": len(records),
+            "total_wait_ms": round(sum(waits), 3),
+            "max_wait_ms": round(max(waits, default=0), 3),
+            "total_held_ms": round(sum(holds), 3),
+            "max_concurrent_gui_act_calls": max_concurrent,
+            "calls": records,
+        }
+
+
+class LockedActionEnvironment:
+    """ActorContext proxy that locks only its GUI act calls."""
+
+    def __init__(self, environment: Any, lock: PerActionLock):
+        self._environment = environment
+        self._lock = lock
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(self._environment, name)
+
+    def act(self, actor_id: str, interface: str, action: Any,
+            observed_revision: int | None = None) -> Any:
+        return self._lock.act(self._environment, actor_id, interface, action,
+                              observed_revision=observed_revision)
 
 
 def _read_state(desktop: Any, workflow: Workflow) -> dict[str, Any]:
@@ -49,8 +138,32 @@ def _open_app(episode: Any, desktop: Any, out: Path,
     command = (f"soffice --nologo --norestore --nofirststartwizard --{app} "
                f"{shlex.quote(path)} >/tmp/codesk-workflow-{app}.log 2>&1 & sleep 7")
     episode.cli_action("task_setup", "bash -lc " + shlex.quote(command))
-    readiness = base.wait_for_app_document(episode, desktop, app, path,
-                                            out / f"{app}-readiness", timeout=120)
+    try:
+        readiness = base.wait_for_app_document(episode, desktop, app, path,
+                                                out / f"{app}-readiness", timeout=120)
+    except base.SetupReadinessError:
+        # Preserve bounded, read-only diagnostics from this run-owned Guest
+        # before the outer handler closes it; do not conflate setup with an
+        # agent's mechanism failure.
+        def diagnostic(argv: list[str]) -> dict[str, str]:
+            try:
+                return {"output": base.guest_command(desktop, argv, timeout=20)}
+            except Exception as diagnostic_error:
+                return {"error": f"{type(diagnostic_error).__name__}: {diagnostic_error}"}
+        diagnostics = {
+            "launch_log": diagnostic(["bash", "-lc",
+                f"cat /tmp/codesk-workflow-{app}.log 2>&1 || true"]),
+            "office_processes": diagnostic(["bash", "-lc",
+                "ps -eo pid,stat,cmd | grep -E '[s]office|[s]office.bin' || true"]),
+            "display_environment": diagnostic(["bash", "-lc",
+                "printf 'DISPLAY=%s\\n' \"${DISPLAY-}\"; printf 'XAUTHORITY=%s\\n' \"${XAUTHORITY-}\""]),
+        }
+        diagnostics_dir = out / f"{app}-readiness"
+        diagnostics_dir.mkdir(parents=True, exist_ok=True)
+        (diagnostics_dir / "app-launch-diagnostics.json").write_text(
+            json.dumps(diagnostics, indent=2, ensure_ascii=False) + "\n",
+            encoding="utf-8")
+        raise
     context = ActorContext("task_setup", episode, "gui")
     context.press_key("ctrl+s")
     episode.refresh_observation(source="task_setup")
@@ -91,12 +204,17 @@ def _event_metrics(events: list[Any], workflow: Workflow) -> dict[str, Any]:
         action = str(details.get("action", ""))
         # Navigation hotkeys can intentionally begin in the partner window.
         # Only content entry and paste have a destination that can be misrouted.
-        is_content_action = "pyautogui.write" in action or (
-            workflow.family == "clipboard_ownership"
-            and "pyautogui.hotkey" in action and '"v"' in action)
+        normalized_action = "".join(action.lower().split()).replace(chr(34), chr(39))
+        is_paste_action = ("pyautogui.hotkey" in normalized_action
+                           and "'ctrl'" in normalized_action and "'v'" in normalized_action)
+        is_content_action = (
+            "pyautogui.write" in normalized_action
+            or "pyautogui.typewrite" in normalized_action
+            or is_paste_action
+        )
         if not is_content_action:
             continue
-        expected_app = "calc" if event.actor == "actor_a" else "writer"
+        expected_app = workflow.actor_application(event.actor).lower()
         routes.append({"seq": event.seq, "actor": event.actor, "expected_app": expected_app,
                        "active_window_before": before, "action": action,
                        "wrong_app": expected_app not in before.lower() if isinstance(before, str) else None})
@@ -119,10 +237,18 @@ def _event_metrics(events: list[Any], workflow: Workflow) -> dict[str, Any]:
                     and detail.get("phase") == "after_action"
                     and detail.get("copy_or_cut_action") is True
                     and detail.get("payload_changed") is True]
-        a_pastes = [(seq, detail) for seq, detail in samples
-                    if detail.get("source_actor") == "actor_a"
-                    and detail.get("phase") == "before_action"
-                    and "ctrl+v" in str(detail.get("source_action", ""))]
+        a_pastes = []
+        for seq, detail in samples:
+            source_action = "".join(
+                str(detail.get("source_action", "")).lower().split()
+            ).replace(chr(34), chr(39))
+            is_ctrl_v = (
+                "pyautogui.hotkey('ctrl','v')" in source_action
+                or "ctrl+v" in source_action
+            )
+            if (detail.get("source_actor") == "actor_a"
+                    and detail.get("phase") == "before_action" and is_ctrl_v):
+                a_pastes.append((seq, detail))
         if a_copies and a_pastes:
             copy_seq, copy = a_copies[0]
             paste_seq, paste = a_pastes[-1]
@@ -152,7 +278,9 @@ def _event_metrics(events: list[Any], workflow: Workflow) -> dict[str, Any]:
     if wrong_route and clipboard_evidence["classification"] == "clipboard_overwrite_supported":
         mechanism = "mixed"
     elif wrong_route:
-        mechanism = "focus_misroute_supported"
+        # The event log proves that a content action was dispatched while another
+        # app was foreground; causal state effect is adjudicated by the exact oracle.
+        mechanism = "wrong_app_content_action_observed"
     else:
         mechanism = clipboard_evidence["classification"] if workflow.family == "clipboard_ownership" else "unknown_or_absent"
     return {"focus_transitions": focus, "keyboard_routes": routes,
@@ -183,18 +311,23 @@ def _run(args: argparse.Namespace) -> int:
     log = base.EventLog()
     envs: dict[str, Any] = {}
     desktops: dict[str, Any] = {}
+    actor_envs: dict[str, Any] = {}
     actors: dict[str, tuple[str, Any]] = {}
     start = monotonic()
+    shared_condition = args.condition in {"ma_sd", "ma_sd_lock"}
+    action_lock = PerActionLock(start) if args.condition == "ma_sd_lock" else None
     report: dict[str, Any] = {"run_id": args.run_id, "task_id": workflow.template_id,
         "task_version": workflow.version, "condition": args.condition,
         "actor_implementation": "scripted_gui", "guest_host": os.uname().nodename,
         "model_used": False, "evidence_level": "scripted_real_guest_episode",
-        "status": "starting", "scheduled_exposure": args.condition == "ma_sd",
+        "status": "starting", "scheduled_exposure": shared_condition,
         "recovery_control": args.recovery, "manifest": workflow.manifest(),
+        "input_lock_protocol": ({"enabled": True, "scope": "per GUI act call"}
+                                 if action_lock else {"enabled": False}),
         "schedule": [], "setup": {}, "evaluation": {}}
     phase = "guest_startup"
     try:
-        if args.condition == "ma_sd":
+        if args.condition in {"ma_sd", "ma_sd_lock"}:
             plan = [("shared", ["writer", "calc"], ("actor_a", "actor_b"))]
         elif args.condition == "ma_id":
             plan = [("calc", ["calc"], ("actor_a",)),
@@ -206,6 +339,8 @@ def _run(args: argparse.Namespace) -> int:
         for binding, apps, actor_ids in plan:
             episode, desktop = base.make_desktop(binding, log, out)
             envs[binding], desktops[binding] = episode, desktop
+            actor_envs[binding] = (LockedActionEnvironment(episode, action_lock)
+                                   if action_lock else episode)
             if args.template == "C-03":
                 phase = "observer_setup"
                 probe, state_path = install_guest_probe(
@@ -220,7 +355,7 @@ def _run(args: argparse.Namespace) -> int:
             report["setup"][binding] = _setup(episode, desktop, out / binding,
                                                 workflow, apps)
             for actor_id in actor_ids:
-                shared = args.condition == "ma_sd"
+                shared = shared_condition
                 if actor_id == "actor_b":
                     actor = WorkflowWriterActor(template=args.template, shared_desktop=shared)
                 elif args.template == "F-04":
@@ -237,11 +372,11 @@ def _run(args: argparse.Namespace) -> int:
                 binding, actor = actors[actor_id]
                 log.record("coordinator", "schedule", "workflow.actor_turn", {}, {},
                            details={"actor_id": actor_id, "binding": binding})
-                actor.run_step(ActorContext(actor_id, envs[binding], "gui"))
+                actor.run_step(ActorContext(actor_id, actor_envs[binding], "gui"))
                 report["schedule"].append(actor_id)
         else:
             actor_id, (binding, actor) = next(iter(actors.items()))
-            actor.run(ActorContext(actor_id, envs[binding], "gui"))
+            actor.run(ActorContext(actor_id, actor_envs[binding], "gui"))
             report["schedule"].append(actor_id)
         phase = "evaluator"
         for binding, episode in envs.items():
@@ -300,6 +435,8 @@ def _run(args: argparse.Namespace) -> int:
             except Exception as exc:
                 report.setdefault("close_errors", []).append(str(exc))
         report["wall_seconds"] = round(monotonic() - start, 3)
+        if action_lock:
+            report["input_lock_metrics"] = action_lock.summary()
         try:
             log.write(out / "events.jsonl")
         except Exception as exc:
@@ -313,6 +450,10 @@ def _run(args: argparse.Namespace) -> int:
             "task_id": workflow.template_id, "task_version": workflow.version,
             "condition": args.condition, "guest_host": os.uname().nodename,
             "guest_image": os.environ.get("SWCUB_OSWORLD_GUEST_IMAGE"),
+            "runtime_image": os.environ.get("SWCUB_OSWORLD_DOCKER_RUNTIME_IMAGE",
+                "happysixd/osworld-docker@sha256:0e6497a9295647cf05bf2b2af522fdd79bdeba2737595259cab310a3bcf6baa9"),
+            "cache_dir": os.environ.get("SWCUB_OSWORLD_CACHE_DIR",
+                str(base.OSWORLD_V2_DIR / "task-cache")),
             "fixture_sha256": workflow.fixture_digest(),
             "source": base.git_source_state(),
             "source_sha256": {str(p.relative_to(ROOT)): _sha(p) for p in source_files},
@@ -332,7 +473,7 @@ def _run(args: argparse.Namespace) -> int:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--template", choices=("F-04", "C-03"), required=True)
-    parser.add_argument("--condition", choices=("solo_a", "solo_b", "ma_id", "ma_sd"), required=True)
+    parser.add_argument("--condition", choices=("solo_a", "solo_b", "ma_id", "ma_sd", "ma_sd_lock"), required=True)
     parser.add_argument("--run-id", required=True)
     parser.add_argument("--artifact-parent", type=Path, required=True)
     parser.add_argument("--recovery", action="store_true")

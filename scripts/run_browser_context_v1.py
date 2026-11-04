@@ -43,12 +43,21 @@ def _read_server_events(desktop: Any) -> list[dict[str, Any]]:
 
 
 def _window(desktop: Any) -> dict[str, Any]:
-    raw = _command(desktop, 'printf "ID="; xdotool getactivewindow 2>/dev/null; '
-                           'printf "TITLE="; xdotool getactivewindow getwindowname 2>/dev/null')
+    # During Chromium startup there may temporarily be no active X11 window.
+    # Treat that as not-ready so the bounded readiness poll can continue.
+    try:
+        raw = _command(desktop, 'printf "ID="; xdotool getactivewindow 2>/dev/null; '
+                               'printf "TITLE="; xdotool getactivewindow getwindowname 2>/dev/null')
+    except Exception as exc:
+        raw = ""
+        error = f"{type(exc).__name__}: {exc}"
+    else:
+        error = None
     rows = dict(line.split("=", 1) for line in raw.splitlines() if "=" in line)
     title = rows.get("TITLE", "")
     tab = "tab-a" if "CoDesk tab-a" in title else "tab-b" if "CoDesk tab-b" in title else None
     return {"window_id": rows.get("ID"), "title": title, "tab": tab,
+            "probe_error": error,
             "timestamp_utc": __import__("datetime").datetime.now(
                 __import__("datetime").timezone.utc).isoformat()}
 
@@ -66,35 +75,57 @@ def _setup(episode: Any, desktop: Any, out: Path) -> dict[str, Any]:
     if initial != MANIFEST["initial_state"]:
         raise base.SetupReadinessError("A-01 initial state mismatch", {"actual": initial})
     episode.cli_action("task_setup", "bash -lc " + shlex.quote(
-        f"python3 {shlex.quote(SERVER_PATH)} >/tmp/codesk-a01-server.log 2>&1 & sleep 2"))
-    health = _command(desktop, f"curl -fsS --max-time 3 http://127.0.0.1:{PORT}/health")
+        f"nohup python3 {shlex.quote(SERVER_PATH)} >/tmp/codesk-a01-server.log 2>&1 "
+        f"</dev/null & echo $! >/tmp/codesk-a01-server.pid; sleep 2"))
+    health = _command(desktop, f"curl --noproxy '*' -fsS --max-time 3 http://127.0.0.1:{PORT}/health")
     if json.loads(health).get("ok") is not True:
         raise base.SetupReadinessError("A-01 local server health failed", {"health": health})
+    route_checks = {}
+    for route, actor in (("actor-a", "actor_a"), ("actor-b", "actor_b")):
+        body = _command(desktop,
+            f"curl --noproxy '*' -fsS --max-time 5 http://127.0.0.1:{PORT}/{route}")
+        expected = TASK.values[actor]
+        route_checks[route] = {"http_body_bytes": len(body.encode()),
+                               "expected_value_visible_in_response": expected in body,
+                               "title_visible_in_response": f"<title>CoDesk tab-{route[-1]}</title>" in body}
+        if expected not in body or not route_checks[route]["title_visible_in_response"]:
+            raise base.SetupReadinessError(
+                "A-01 local route body failed content readiness",
+                {"route": route, "probe": route_checks[route], "body_prefix": body[:1000]})
     binary = _command(desktop, "command -v chromium || command -v chromium-browser || "
                                "command -v google-chrome || echo NONE").strip().splitlines()[-1]
     if binary == "NONE":
         raise base.SetupReadinessError("Chromium/Chrome unavailable", {})
-    launch = (f"{shlex.quote(binary)} --no-first-run --no-default-browser-check "
-              f"--disable-dev-shm-usage --remote-debugging-port=9222 "
+    launch = (f"nohup {shlex.quote(binary)} --no-sandbox --no-first-run "
+              f"--no-default-browser-check --disable-dev-shm-usage "
+              f"--remote-debugging-port=9222 --no-proxy-server "
               f"--user-data-dir=/tmp/codesk_browser_context/profile --new-window "
               f"http://127.0.0.1:{PORT}/actor-a http://127.0.0.1:{PORT}/actor-b "
-              f">/tmp/codesk-a01-browser.log 2>&1 & sleep 7")
+              f">/tmp/codesk-a01-browser.log 2>&1 </dev/null & "
+              f"echo $! >/tmp/codesk-a01-browser.pid; sleep 7")
     episode.cli_action("task_setup", "bash -lc " + shlex.quote(launch))
     episode.cli_action("task_setup", "bash -lc " + shlex.quote(
         'wmctrl -a "CoDesk tab-b"; wmctrl -r :ACTIVE: -b add,maximized_vert,maximized_horz; sleep 2'))
     last: dict[str, Any] = {}
-    for attempt in range(1, 11):
-        episode.refresh_observation(source="task_setup")
-        shot = episode.observe("task_setup").get("screenshot")
+    for attempt in range(1, 16):
+        observation = episode.refresh_observation(source="task_setup")
+        shot = observation.get("screenshot") if isinstance(observation, dict) else None
         win = _window(desktop)
-        if win["tab"] is not None:
-            _command(desktop, 'wid=$(xdotool getactivewindow); hexid=$(printf "0x%x" "$wid"); '
-                              'wmctrl -i -r "$hexid" -b add,maximized_vert,maximized_horz; sleep 1')
+        if win["tab"] is None:
+            _command(desktop, "wmctrl -a 'CoDesk tab-b' 2>/dev/null || true")
+            win = _window(desktop)
+        if win.get("window_id"):
+            wid = shlex.quote(str(win["window_id"]))
+            _command(desktop, f'xdotool windowactivate --sync {wid} 2>/dev/null || true; '
+                f'wmctrl -i -r {wid} -b add,maximized_vert,maximized_horz 2>/dev/null || true; sleep 0.3')
         geometry_raw = _command(desktop, 'xdotool getwindowgeometry --shell '
                                          '$(xdotool getactivewindow) 2>/dev/null || true')
         geometry = dict(row.split("=", 1) for row in geometry_raw.splitlines() if "=" in row)
-        raw_targets = _command(desktop, "curl -fsS --max-time 3 http://127.0.0.1:9222/json/list")
-        targets = json.loads(raw_targets)
+        try:
+            raw_targets = _command(desktop, "curl -fsS --max-time 3 http://127.0.0.1:9222/json/list")
+            targets = json.loads(raw_targets)
+        except Exception:
+            targets = []
         pages = {t.get("url", "") for t in targets if t.get("type") == "page"}
         ready = (isinstance(shot, bytes) and bool(shot) and win["tab"] is not None and
                  int(geometry.get("WIDTH", 0)) >= 1500 and
@@ -102,6 +133,7 @@ def _setup(episode: Any, desktop: Any, out: Path) -> dict[str, Any]:
                  f"http://127.0.0.1:{PORT}/actor-a" in pages and
                  f"http://127.0.0.1:{PORT}/actor-b" in pages)
         last = {"attempt": attempt, "window": win, "page_urls": sorted(pages),
+                "route_checks": route_checks,
                 "screenshot": isinstance(shot, bytes) and bool(shot),
                 "geometry": geometry, "ready": ready}
         if ready:
@@ -109,6 +141,14 @@ def _setup(episode: Any, desktop: Any, out: Path) -> dict[str, Any]:
         time.sleep(2)
     (out / "readiness.json").write_text(json.dumps(last, indent=2) + "\n")
     if not last["ready"]:
+        diagnostic = _command(desktop,
+            "echo DISPLAY=$DISPLAY; wmctrl -l 2>&1 || true; "
+            "pgrep -af 'chrome|chromium' || true; "
+            "tail -80 /tmp/codesk-a01-browser.log 2>&1 || true; "
+            "tail -40 /tmp/codesk-a01-server.log 2>&1 || true; "
+            "curl -sS -m 3 http://127.0.0.1:9222/json/list || true")
+        last["diagnostics"] = diagnostic
+        (out / "readiness.json").write_text(json.dumps(last, indent=2) + "\n")
         raise base.SetupReadinessError("A-01 browser readiness failed", last)
     if _read_state(desktop) != initial:
         raise base.SetupReadinessError("A-01 setup changed hidden goals", {})

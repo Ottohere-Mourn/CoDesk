@@ -241,6 +241,7 @@ class Handler(BaseHTTPRequestHandler):
    <h1>{tab} review workspace</h1><p>Submit this exact value: <b id="target">{target}</b></p>
    <input id="value" autocomplete="off"><button id="submit" onclick="submitGoal()">Submit</button><output id="result"></output>
    <script>const actor={actor!r},tab={tab!r};
+   document.querySelector('#value').addEventListener('keydown',e=>{{if(e.key==='Enter'){{e.preventDefault();submitGoal();}}}});
    document.addEventListener('visibilitychange',()=>fetch('/visibility',{{method:'POST',headers:{{'Content-Type':'application/json'}},body:JSON.stringify({{tab,visible:document.visibilityState==='visible'}})}}));
    async function submitGoal(){{let r=await fetch('/goal',{{method:'POST',headers:{{'Content-Type':'application/json'}},body:JSON.stringify({{actor,tab,value:document.querySelector('#value').value}})}});document.querySelector('#result').textContent=r.ok?'Saved':'Rejected';}}
    </script>'''.encode()

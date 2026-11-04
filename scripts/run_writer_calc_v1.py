@@ -291,16 +291,51 @@ def guest_command(desktop: DesktopEnv, argv: list[str], timeout: int = 45) -> st
     return str(payload.get("output", ""))
 
 
+def install_resilient_docker_readiness() -> None:
+    """Allow the measured slow first visible screenshot to finish downloading.
+
+    The OSWorld Docker provider otherwise uses a 10s read timeout. A no-model
+    readiness diagnostic on this host received a 1.5MB visible 1920x1080 PNG in
+    9.9s after an earlier black frame. Keep the provider's 300s overall deadline,
+    but avoid classifying a slow framebuffer response as a dead Guest.
+    """
+    from desktop_env.providers.docker.provider import DockerProvider
+
+    if getattr(DockerProvider, "_swcub_long_screenshot_read_timeout", False):
+        return
+
+    def wait_for_vm_ready(self, timeout: int = 300):
+        started = time.time()
+        while time.time() - started < timeout:
+            try:
+                response = requests.get(
+                    f"http://localhost:{self.server_port}/screenshot",
+                    timeout=(10, 30))
+                ready = response.status_code == 200
+                response.close()
+                if ready:
+                    return True
+            except requests.RequestException:
+                pass
+            time.sleep(1)
+        raise TimeoutError("VM failed to become ready within timeout period")
+
+    DockerProvider._wait_for_vm_ready = wait_for_vm_ready
+    DockerProvider._swcub_long_screenshot_read_timeout = True
+
+
 def make_desktop(binding: str, log: EventLog, out: Path,
                  workspace_backend_host_dir: Path | None = None,
                  workspace_backend_id: str | None = None,
                  workspace_transport: str = "9p",
                  nfs_server_ip: str | None = None,
                  nfs_server_port: int = 12049,
-                 nfs_export: str = "/task") -> tuple[OSWorldSharedEpisode, DesktopEnv]:
+                 nfs_export: str = "/task",
+                 require_a11y_tree: bool = True) -> tuple[OSWorldSharedEpisode, DesktopEnv]:
     # Keep pure/offline helpers importable when the pinned external OSWorld
     # checkout is not installed; real Guest construction still requires it.
     from desktop_env.desktop_env import DesktopEnv
+    install_resilient_docker_readiness()
 
     guest_image = resolve_guest_image_path()
     workspace_env_key = "SWCUB_OSWORLD_SHARED_WORKSPACE_HOST_DIR"
@@ -319,7 +354,8 @@ def make_desktop(binding: str, log: EventLog, out: Path,
                              cache_dir=os.environ.get(
                                  "SWCUB_OSWORLD_CACHE_DIR",
                                  str(OSWORLD_V2_DIR / "task-cache")),
-                             os_type="Ubuntu", action_space="pyautogui")
+                             os_type="Ubuntu", action_space="pyautogui",
+                             require_a11y_tree=require_a11y_tree)
     finally:
         if prior_workspace_env is None:
             os.environ.pop(workspace_env_key, None)

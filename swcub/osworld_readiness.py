@@ -32,7 +32,7 @@ def wait_for_guest_desktop(episode: Any, desktop: Any, timeout: float = 300,
         try:
             response = requests.get(
                 f"http://{desktop.vm_ip}:{desktop.server_port}/screenshot",
-                timeout=(5, 10))
+                timeout=(5, 30))
             response.raise_for_status()
             image_bytes = response.content
             with Image.open(io.BytesIO(image_bytes)) as image:
@@ -45,7 +45,7 @@ def wait_for_guest_desktop(episode: Any, desktop: Any, timeout: float = 300,
             elif require_tree:
                 tree_response = requests.get(
                     f"http://{desktop.vm_ip}:{desktop.server_port}/accessibility",
-                    timeout=(5, 10))
+                    timeout=(5, 30))
                 if tree_response.status_code == 200:
                     payload = tree_response.json()
                     candidate = payload.get("AT") if isinstance(payload, dict) else None

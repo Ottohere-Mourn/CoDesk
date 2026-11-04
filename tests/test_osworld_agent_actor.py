@@ -211,3 +211,25 @@ def test_action_boundary_pause_preserves_unexecuted_native_actions():
     assert context.actions == ["copy", "paste", "save"]
     assert len(model.calls) == 1  # Resume continues the same native response/history.
     assert boundaries == ["copy", "paste", "save"]
+
+
+
+def test_action_sequence_boundary_can_yield_after_prefix_and_retain_remainder():
+    model = FakeAgent([["type target", "press enter", "DONE"]])
+    context = FakeContext("browser")
+    actor = OSWorldAgentActor(model, "task", actor_id="actor_a")
+    seen = []
+
+    def yield_before_submit(current, action, remaining):
+        seen.append((action, list(remaining)))
+        if action == "type target" and remaining and remaining[0] == "press enter":
+            current.pause()
+
+    actor.action_sequence_boundary_callback = yield_before_submit
+    assert actor.run_step(ActorContext("actor_a", context, "gui")) is False
+    assert actor.paused and context.actions == ["type target"]
+    assert seen[0] == ("type target", ["press enter", "DONE"])
+    actor.resume()
+    assert actor.run_step(ActorContext("actor_a", context, "gui")) is True
+    assert context.actions == ["type target", "press enter"]
+    assert len(model.calls) == 1
