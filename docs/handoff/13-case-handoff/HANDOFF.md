@@ -1,18 +1,19 @@
 # CoDesk 13-case handoff
 
-更新日：2026-11-04
+更新日：2026-11-05
 
 ## 一页结论
 
 本分支汇总的是 13 个候选/案例：Case 2/3/4 + 早期五错误机制对应的五 case + 本轮新增的五候选。目标组合定义为：**Isolated 独立 PASS、Shared 共享 FAIL、Shared+Lock 共享加逐动作锁仍 FAIL**；失败必须是有效模型/协议运行，且能归因到共享状态，不把 API、Guest、评估器或 reset 无效运行算作任务 FAIL。
 
-按每个 case 最新的相关证据，目前 **6/13 有一个有效 triplet 达到目标，7/13 尚未达到或仅有设计**：
+按每个 case 最新的相关证据，目前 **9/13 有一个有效 triplet 达到目标，4/13 尚未达到**：
 
-- 达到：Case 3；C-03 Clipboard；A-01 Application Context；S-01 Selection；U-01 Undo/Redo；CWD-1 Terminal CWD。
-- 未达到/待改：Case 2、Case 4、F-01 Focus/Input Routing、EDIT-1、VIEW-1、FIND-1、AUTH-1。
-- 每个达到者目前都是单组三臂筛查，**没有第二次有效重复**，不代表稳定失效率或总体发生率。
-- 早期五机制过去有 GUI-only/Qwen 的历史证据；此处 6/13 统计以已完成的 GPT-6-Sol Hybrid v2 重跑（若有）为准，不把历史 Qwen 结果冒充 Hybrid 结果。
+- 达到：Case 3；C-03 Clipboard；A-01 Application Context；S-01 Selection；U-01 Undo/Redo；CWD-1 Terminal CWD；VIEW-1 viewport；FIND-1 Find/Replace；AUTH-1 browser principal。
+- 未达到：Case 2、Case 4、F-01 Focus/Input Routing、EDIT-1。
+- 每个达到者目前都只有一组三臂筛查，**没有第二次有效重复**，不代表稳定失效率或总体发生率。
+- 早期五机制过去有 GUI-only/Qwen 的历史证据；此处 9/13 统计以已完成的 GPT-6-Sol Hybrid v2 重跑（若有）为准，不把历史 Qwen 结果冒充 Hybrid 结果。
 - 备选 MODAL-1 不在同意的五候选和 13-case 总数中。
+- 最新 EDIT-1 v0.5.0 三臂均 PASS；不再尝试通过改任务来制造 FAIL。
 
 ## 13-case 状态表
 
@@ -26,11 +27,11 @@
 | 6 | A-01 Application Context：同一 Chromium 窗口内两个 Tab；陈旧 Enter 落在 B 的 Tab | GPT-6-Sol Hybrid v2：PASS / FAIL / FAIL；共享态产生 B Tab 的重复/非目标提交 | **达到一次** | 同上；scripts/run_a01_hybrid_v2_retest.py |
 | 7 | S-01 Selection/Active Object：B 改变 Calc 活动单元格后 A 继续陈旧输入 | GPT-6-Sol Hybrid v2 v0.2.2：PASS / FAIL / FAIL；共享两臂 exposure=true | **达到一次** | 同上；scripts/run_calc_hybrid_v2_retest.py |
 | 8 | U-01 Undo/Redo：A 的 Ctrl+Z 面对共享 Calc undo 栈顶的 B 操作 | GPT-6-Sol Hybrid v2 v0.2.2：PASS / FAIL / FAIL；共享两臂 exposure=true | **达到一次** | 同上；scripts/run_calc_hybrid_v2_retest.py |
-| 9 | CWD-1：B 改变同一持久 shell 的 PWD 后，A 的相对路径交付写入 B worktree | GPT-6-Sol v0.2.4：精确 PASS / 精确 FAIL / 精确 FAIL；同 Guest/shell 与 wrong-worktree duplicate delivery 轨迹支持归因 | **达到一次**：目前新候选中唯一达标 | 同上；scripts/run_sol_cwd_bundle_v2.py |
-| 10 | EDIT-1：Writer Insert/Overwrite 模式状态泄漏 | GPT-6-Sol v0.4.0：精确 PASS / Shared 归因不足的 FAIL / Shared+Lock PASS；早期瞬时 READY OR-REVIEW 后 Agent 恢复 | 未达到：不要把瞬时签名包装成锁臂最终 FAIL | 同上；scripts/run_edit_overwrite_hybrid_v2_retest.py |
-| 11 | VIEW-1：滚动改变 viewport offset，旧屏幕坐标命中其他段落 | GPT-6-Sol v0.2.0：有效 Isolated PASS、Shared 归因较弱、Shared+Lock PASS；纯滚动几何暴露成立 | 未达到：锁臂 PASS，Shared 因果归因不足 | 同上；scripts/run_viewport_scroll_hybrid_v2.py |
-| 12 | FIND-1：Find/Replace Match Case 选项持久化 | GPT-6-Sol v0.2.0：Isolated PASS；Shared 终态 FAIL 源于 A/B 指令目标冲突（A 把 B 的 REVIEW 改回 DRAFT），不是 Match Case；未跑锁臂 | 未达到：需要改提示并重新从 Isolated gate 开始；不接受当前 Shared 结果 | 同上；scripts/run_find_replace_hybrid_v2.py |
-| 13 | AUTH-1：共享浏览器 principal/cookie/session 变化导致提交身份错 | 仅设计审查，尚无 scripted control 或 LLM run；与 A-01 Application Context 有潜在重叠 | 未达到：先做本地无外网 mock 控制并证明机制独立，否则 reclassify/停止 | 同上；目前没有获准的模型 runner |
+| 9 | CWD-1：B 改变同一持久 shell 的 PWD 后，A 的相对路径交付写入 B worktree | GPT-6-Sol v0.2.4：精确 PASS / 精确 FAIL / 精确 FAIL；同 Guest/shell 与 wrong-worktree duplicate delivery 轨迹支持归因 | **达到一次**；尚无第二次有效重复 | 同上；scripts/run_sol_cwd_bundle_v2.py |
+| 10 | EDIT-1：Writer Insert/Overwrite 模式状态泄漏 | 最新 v0.5.0 Hybrid 三臂均 PASS；A 在 Shared 与 Lock 下察觉 OVR 并恢复；脚本 controls 能复现模式签名但不是模型 FAIL | 未达到；明确停止救活该候选，不隐藏线索或削减预算造失败 | 最新 runner 尚在 HealthCare repair worktree；历史 v0.4.0 报告见 next-five/NEXT_CASE_HYBRID_V2_UPDATE_20261104.md |
+| 11 | VIEW-1：滚动改变 viewport offset，旧屏幕坐标命中其他段落 | 最新 v0.1.1 repair triplet：PASS / FAIL / FAIL；共享两臂 exposure 和 wrong-record oracle 支持归因 | **达到一次**；旧 v0.2.0 另存且不合并 | 最新摘要见 next-five/NEWEST_SHORTLIST_RESULTS_20261105.json |
+| 12 | FIND-1：Find/Replace Match Case 选项持久化 | v0.3.1 MA-ID PASS；匹配版本 v0.3.2 Shared 与 Shared+Lock 均按完整 evaluator FAIL；Shared 原报告顶层 aggregator 误报 PASS，见补充 adjudication 与 source report SHA | **达到一次（Shared 依赖补充判读）**；原 report.json 未修改 | 最新摘要见 next-five/NEWEST_SHORTLIST_RESULTS_20261105.json |
+| 13 | AUTH-1：共享浏览器 principal/session 变化导致提交身份错 | v0.1.0 Hybrid 三臂 PASS / FAIL / FAIL；共享两臂错误 principal，local oracle 确认归属错误 | **达到一次**；本地 mock、无外网/真实凭证 | 最新摘要见 next-five/NEWEST_SHORTLIST_RESULTS_20261105.json |
 
 ## Case 2/3/4 详况
 
@@ -76,8 +77,8 @@ Runner 入口：
 - case234/case3：Case 3 follow-up 报告。
 - case234/case4：Case 4 SSD hardening report、实验计划及原 Lite 报告。
 - mechanisms：Focus/Clipboard 早期协议、A-01 报告、机制 4/5 报告。
-- next-five/design 与 next-five：候选审计/卡片、CWD v0.2.0–0.2.4、控制结果、v0.2.4 Sol 模型结果及 Hybrid v2 最新状态。
-- evidence-manifests：五机制 Hybrid triplet 摘要和新候选可用的精选每臂 report.json。
+- next-five/design 与 next-five：候选审计/卡片、CWD v0.2.0–0.2.4、控制结果、v0.2.4 Sol 模型结果、Hybrid v2 历史状态及 2026-11-05 修复进展。
+- evidence-manifests：五机制 Hybrid triplet 摘要、旧版候选摘要、FIND Shared 补充判读。
 - CASE_STATUS_MATRIX 已并入本 HANDOFF，以免产生两套计数；本表即汇总权威版本。
 
 原始数据没有复制到 Git：
