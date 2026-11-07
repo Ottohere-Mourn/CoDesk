@@ -82,3 +82,12 @@ MA-ID 准确完成 A 的插入和 B 的定宽 Reviewer-code 更新。Shared 两�
 2. EDIT-1 列作条件通过/修复中，不纳入“干净失败”数字。
 3. FIND-1 本批关闭；不为凑数量拼跨版本证据。
 4. 若继续新增 case，优先从更完整、贴近日常工作流程的候选开始，机制必须与上述三者及原五机制区分；先做低成本 fixture/oracle 语义门，再决定是否花一整组三臂模型运行。
+
+
+## 2026-11-07 PRINT-ROUTE1 Guest capability gate
+
+The new workflow idea PRINT-ROUTE1 was tested only at its cheapest falsification gate; it is now **NO-GO on the current pinned Guest image**. The read-only report is 'design/PRINT_ROUTE1_GUEST_GATE_20261107.md'; the RAID1 artifact is '/mnt/raid1/mjh/codesk-next-candidates-20261103/runs/print-route-readonly-probe-20261107-161413-8da8c7/report.json'. CUPS 2.4.1 and 'lpstat' are present and the scheduler runs, but there are zero print destinations, no default destination, and no 'cups-pdf'. No printer/queue was added and no print job was sent. Do not alter the image to rescue this idea.
+
+Successful run: one Guest, ~153 seconds; no model/API/GPU; QEMU used host CPU/KVM. The 14,891,810,816-byte pinned Guest base image is a regular file on root and was mounted read-only; the generated overlay was 81,395,712 bytes on RAID1, as were cache/report. The runtime container was torn down. Post-run free capacity: root 30,127,325,184 bytes; RAID1 1,324,771,725,312 bytes. An initial attempt using the Actor MCP Python venv stopped before Guest creation due to missing 'gymnasium'; its separate report records that setup failure.
+
+No candidate has been promoted and the qualified roster remains 11/16. ATTACH-EVIDENCE1 remains a workflow-level selection/context variant, not a new mechanism, unless a native chooser control proves otherwise. No GPT-6-Sol design critique was possible in this turn; no Qwen was substituted.

@@ -1,6 +1,6 @@
 # Next practical case ideas ? design audit (2026-11-07)
 
-Status: concept-screening only. No fixture, Guest, model request, or formal experiment was started for these ideas. This note is intentionally outside the 16-case qualified roster.
+Status: concept-screening only. No task fixture, model request, or formal experiment has been run for these ideas; one read-only Guest capability gate is recorded below. This note is intentionally outside the 16-case qualified roster.
 
 ## What the earlier results teach us
 
@@ -16,18 +16,18 @@ Scores (1?5) are design judgments, not empirical results.
 
 | Candidate | Everyday workflow | Mechanism distance from current roster | Exact oracle | Hybrid feasibility | Decision |
 |---|---:|---:|---:|---:|---|
-| PRINT-ROUTE1 ? facilities dispatch packet routing | 4 | 5 | 5 | 2 | Best distinct candidate, but hard Guest capability gate first |
+| PRINT-ROUTE1 - facilities dispatch packet routing | 4 | 5 | 5 | 0 | NO-GO in pinned Guest: no local queues/default; do not synthesize printers |
 | ATTACH-EVIDENCE1 ? repair evidence filing | 5 | 2 | 5 | 4 | Useful workflow variant; overlap with S-01/A-01 must be accepted |
 | TZ-SCHEDULE1 ? regional appointment handoff | 4 | 4 | 3 | 1 | Park: normal desktop timezone mutation may be unnatural and platform-dependent |
 
 No candidate is currently ready to run. Promote none until its falsification gate passes.
 
-## Host and Guest capability checkpoint (2026-11-07; read-only)
+## Host and Guest capability checkpoint (2026-11-07 16:03 +0800; pre-probe read-only snapshot)
 
 - HealthCare root volume: 29 GiB free of 1.8 TiB (99% used). RAID1 has about 1.3 TiB free. Available RAM was 166 GiB, but 2 GiB swap was exhausted. No active Docker container or QEMU Guest was observed.
 - A bounded search of the checked-out OSWorld desktop/provisioning sources found no documented CUPS / CUPS-PDF / printer-queue provisioning. That does not prove printers are absent from the actual qcow2 image.
-- The Guest images are large qcow2 files on RAID1 (14 GiB base and 26 GiB Case-4 image). This host lacks qemu-img, virt-ls and guestfish, so the image contents were not inspected. No image was booted and no overlay or package was created.
-- Decision: PRINT-ROUTE1 remains unresolved, not passed and not conclusively no-go. Do not start a Guest until the runner's overlay/log destinations are verified to remain on RAID1 and a fresh resource preflight is acceptable. Prefer a read-only image-inspection tool only after disk risk is addressed; do not apt-install large utilities on the 99%-full root volume.
+- The OSWorld docker_vm_data directory resolves to RAID1, but the exact pinned Case2 base image used by the smoke runner (/home/mjh/Projects/_deps/codesk-case2-ubuntu-ssd-20261101.qcow2) is a 14,891,810,816-byte regular file on the root filesystem, not a symlink. The 26 GiB Case-4 image was not checked in this candidate gate.
+- Decision at this pre-probe snapshot: PRINT-ROUTE1 remained unresolved, not passed and not conclusively no-go. Do not start a Guest until the runner's overlay/log destinations are verified to remain on RAID1 and a fresh resource preflight is acceptable. Prefer a read-only image-inspection tool only after disk risk is addressed; do not apt-install large utilities on the 99%-full root volume.
 
 
 
@@ -134,7 +134,20 @@ Decision: park unless this concrete platform gate succeeds. A safer redesign wou
 
 ## Recommended next sequence
 
-1. For PRINT-ROUTE1, perform a read-only environment capability audit before creating Guest work. If queues/defaults are absent or not truly shared, no-go quickly.
-2. If PRINT-ROUTE1 fails, try ATTACH-EVIDENCE1 only as an explicitly repeated selection-family workflow, and compare its task distance honestly. Keep TZ-SCHEDULE1 parked unless a standard UI provides natural, observable semantics.
+1. PRINT-ROUTE1's hard gate was run in the pinned Guest and failed: CUPS is up but there are no destinations/default and cups-pdf is absent. Do not add queues or packages to rescue it.
+2. ATTACH-EVIDENCE1 remains only a lower-priority workflow variant: its current selection/context hypothesis overlaps S-01/A-01. Revisit only if a native chooser control proves a distinct shared chooser state without focus or active-window confounding.
 3. For any promoted card: source-bound task card -> immutable fixture/hash -> exact oracle -> positive/target-negative/sham production-executor controls -> same-version GPT-6-Sol MA-ID exact PASS -> matched Shared / Shared+Lock. Same tools, permissions, model, prompt contract, budget, and reset semantics. No forced error, suppressed recovery, or post-hoc task change.
-4. This document has not received a GPT-6-Sol design critique and has no model evidence. Only use the previously agreed GPT-6-Sol endpoint when credentials are safely available; do not substitute Qwen.\n
+4. This document has not received a GPT-6-Sol design critique and has no model evidence. Only use the previously agreed GPT-6-Sol endpoint when credentials are safely available; do not substitute Qwen.
+
+
+
+
+---
+
+## 2026-11-07 Guest capability follow-up
+
+A read-only single-Guest capability probe was completed before any task or model arm. See 'PRINT_ROUTE1_GUEST_GATE_20261107.md' and RAID1 artifact '/mnt/raid1/mjh/codesk-next-candidates-20261103/runs/print-route-readonly-probe-20261107-161413-8da8c7/report.json'. The pinned Guest has CUPS 2.4.1 and 'lpstat', with the scheduler running, but 'lpstat -t' reports no destinations and no system default; 'cups-pdf' is not installed. No print job was submitted and no printer, queue, or package was added. This falsifies PRINT-ROUTE1's prerequisite for the current Guest image; it is a **current-image NO-GO**, not evidence that all possible OSWorld images lack printers.
+
+The probe used the pinned OSWorld Python venv after a first host-side import attempt with the Actor MCP venv stopped before Guest creation because that venv lacks 'gymnasium'. The successful probe booted one Guest, ran only read-only package/queue inspection, then closed it. It called no model/API and used no GPU. QEMU used host CPU/KVM; task overlay, cache and report were directed to RAID1. The reported post-run capacity was 30,127,325,184 bytes free on '/' and 1,324,771,725,312 bytes free on RAID1; the runtime container was gone after teardown.
+
+No candidate has been promoted. The next useful design work is to find another ordinary daily workflow whose primary state is both Guest-native and measurably shared, rather than repairing PRINT-ROUTE1 by adding bespoke infrastructure. Sol critique remains pending; no Qwen was used.
