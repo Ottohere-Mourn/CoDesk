@@ -22,6 +22,15 @@ Scores (1?5) are design judgments, not empirical results.
 
 No candidate is currently ready to run. Promote none until its falsification gate passes.
 
+## Host and Guest capability checkpoint (2026-11-07; read-only)
+
+- HealthCare root volume: 29 GiB free of 1.8 TiB (99% used). RAID1 has about 1.3 TiB free. Available RAM was 166 GiB, but 2 GiB swap was exhausted. No active Docker container or QEMU Guest was observed.
+- A bounded search of the checked-out OSWorld desktop/provisioning sources found no documented CUPS / CUPS-PDF / printer-queue provisioning. That does not prove printers are absent from the actual qcow2 image.
+- The Guest images are large qcow2 files on RAID1 (14 GiB base and 26 GiB Case-4 image). This host lacks qemu-img, virt-ls and guestfish, so the image contents were not inspected. No image was booted and no overlay or package was created.
+- Decision: PRINT-ROUTE1 remains unresolved, not passed and not conclusively no-go. Do not start a Guest until the runner's overlay/log destinations are verified to remain on RAID1 and a fresh resource preflight is acceptable. Prefer a read-only image-inspection tool only after disk risk is addressed; do not apt-install large utilities on the 99%-full root volume.
+
+
+
 ---
 
 ## Candidate A: PRINT-ROUTE1 ? field-service dispatch and print-queue routing
@@ -128,4 +137,4 @@ Decision: park unless this concrete platform gate succeeds. A safer redesign wou
 1. For PRINT-ROUTE1, perform a read-only environment capability audit before creating Guest work. If queues/defaults are absent or not truly shared, no-go quickly.
 2. If PRINT-ROUTE1 fails, try ATTACH-EVIDENCE1 only as an explicitly repeated selection-family workflow, and compare its task distance honestly. Keep TZ-SCHEDULE1 parked unless a standard UI provides natural, observable semantics.
 3. For any promoted card: source-bound task card -> immutable fixture/hash -> exact oracle -> positive/target-negative/sham production-executor controls -> same-version GPT-6-Sol MA-ID exact PASS -> matched Shared / Shared+Lock. Same tools, permissions, model, prompt contract, budget, and reset semantics. No forced error, suppressed recovery, or post-hoc task change.
-4. This document has not received a GPT-6-Sol design critique and has no model evidence. Only use the previously agreed GPT-6-Sol endpoint when credentials are safely available; do not substitute Qwen.
+4. This document has not received a GPT-6-Sol design critique and has no model evidence. Only use the previously agreed GPT-6-Sol endpoint when credentials are safely available; do not substitute Qwen.\n
