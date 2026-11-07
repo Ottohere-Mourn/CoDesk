@@ -2,9 +2,9 @@
 
 ## 审计结论
 
-**当前按用户接受的一次有效 screening triplet 口径，明确达标 10 个。**
+**当前按用户接受的一次有效 screening triplet 口径，明确达标 11 个。**
 
-范围：既有 13-case handoff roster + 后来完成并达标的 PAY-1、DATA-REL1 两个具名任务，共 15 个编号 case；不是所有离线 workflow 模板、构思草案或失败的 setup 尝试。
+范围：既有 13-case handoff roster + 后来达标的 PAY-1、DATA-REL1 与 W1，共 16 个编号 case；不包含所有离线 workflow 模板、构思草案或失败尝试。
 
 ### 达标名单
 
@@ -20,6 +20,7 @@
 | AUTH-1 | B 切换活动 reviewer，A 的待执行签署被记到 B | PASS / FAIL / FAIL |
 | PAY-1 | 付款完成后录入合法工时更正，使付款快照陈旧 | PASS / FAIL / FAIL |
 | DATA-REL1 | 政策修订令 READY 待发布导出包过期 | PASS / FAIL / FAIL |
+| W1 Warehouse Receiving v0.2.7 | 收货 / QA 温控隔离；B 的 QA clipboard payload 覆盖 A 的 LOT-B07 held-lot reference | PASS / FAIL / FAIL |
 
 每案当前只有一组三臂，无第二次有效重复；不估计总体发生概率或模型失效率。
 
@@ -33,14 +34,27 @@
 
 ## 旧 13 项计数的更正
 
-2026-11-05 handoff 曾列 9/13，包含 FIND-1。本次复审 FIND-1 v0.3.2：它没有匹配任务版本的有效 MA-ID baseline；v0.3.1 MA-ID 与 v0.3.2 shared arms 不能拼成严格 triplet。并且 v0.3.2 no-lock report 顶层 aggregator 与内嵌 evaluator 意见不一致。故旧 13 项按本规则为 **8/13**。PAY-1 和 DATA-REL1 各有一次同版本有效 triplet 达标，当前为 **10/15**。不覆盖旧 adjudication 文件，保留更正理由供审计。
+2026-11-05 handoff 曾列 9/13，包含 FIND-1。复审 FIND-1 v0.3.2 后发现它没有匹配版本的有效 MA-ID baseline；v0.3.1 MA-ID 和 v0.3.2 shared arms 不能拼成严格 triplet。而 v0.3.2 no-lock report 的顶层 aggregator 和内嵌 evaluator 不一致。故原 13 项按本规则为 **8/13**。PAY-1 和 DATA-REL1 各增加一个有效 triplet，构成 **10/15**。
+
+进一步复核 W1 v0.2.7 原始 run 及 runner validity 条件后，发现 MA-ID 的 protocol_valid=false 只表示 isolated arm 不适用 paste-specific protocol gate；runner 有效性条件为 statuses_ok and (not shared or protocol_valid)，因此 isolated run 仍有效。该 run actor 完成状态、业务 exact PASS、reset 均通过，与两个同版本有效 shared arms 组成 triplet。所以当前清单更正为 **11/16**。旧 handoff 的 FIND-1 更正与 W1 漏列事故均保留在本文和 Git history，不覆盖旧版记录。
 
 ## roster 外但不达标的试验
 
-- **W4 incident-response**：有效 MA-ID 10f09960 / Shared d8267a3a / Shared+Lock 4344174a 均 PASS。完整 run ID 前缀为 w4-sol-hybridv2-ma_id、w4-sol-hybridv2-ma_sd、w4-sol-hybridv2-ma_sd_lock（目录 w4-sol-triplet-20261106-131701）。Shared 中观察到 clipboard paste 中间错误，但 GPT-6-Sol 恢复了正确业务状态。
-- **CALCMODE1**：task version 0.1.0-hybrid-v2，fixture SHA 3da3591eb9b6a1c5bb28288cdd9d6ae82b72540bf923ad663118be2452b079b5；有效 MA-ID calcmode1-sol-ma_id-20261107-114732-52c8a4、Shared calcmode1-sol-ma_sd-20261107-121736-da4919、Shared+Lock calcmode1-sol-ma_sd_lock-20261107-122405-ed993e 都 PASS，没达标。
-- **warehouse-receiving v0.2.7**：最近 MA-ID report 为 warehouse-receiving-sol-hybrid-v2-ma_id-67cbbad0，protocol_valid=false；Shared 8ab534ba / Shared+Lock aa92d441 虽 status completed，却不能同无效 baseline 拼成有效 triplet，故不达标。
-- **W3、AP1、PBR-1**：仍处于设计、离线 oracle 或 control 阶段，不得计入。
+- **W4 incident-response**：有效 MA-ID 10f09960 / Shared d8267a3a / Shared+Lock 4344174a 均 PASS。Shared 中观察到 clipboard paste 中间错误，但 GPT-6-Sol 恢复到正确业务状态，所以不达标。
+- **CALCMODE1**：有效 MA-ID calcmode1-sol-ma_id-20261107-114732-52c8a4 / Shared 121736-da4919 / Shared+Lock 122405-ed993e 均 PASS，不达标。
+- **W2/W3、AP1、PBR-1**：还是设计、离线 oracle 或 control 阶段，不得计入。W1 已经在达标名单中，不在本节。
+
+## W1 纳入更正（2026-11-07）
+
+先前审计把 MA-ID protocol_valid=false 误当成 run invalid，因而错排了 W1。只读复核 scripts/run_wf_receiving_hybrid_v3.py 的计算条件为 valid_model_run = statuses_ok and (not shared or protocol_valid)：MA-ID 属于非 shared 条件，不要求 shared clipboard interleaving protocol。对应原始 MA-ID report 为 completed、condition_success=true、模型有效且 reset 成功；两个 shared arm 的 protocol_valid 与 mechanism_exposure_valid 均为 true。故三臂可拼成同版本有效 screening triplet。
+
+- Version/hash：0.2.7-separate-asn-source-tab; ecd7223d4468bc7a5d1754bc7ce6818376699a82a29a6cc674091b6e17d47170.
+- MA-ID: warehouse-receiving-sol-hybrid-v2-ma_id-67cbbad0 — exact PASS。
+- Shared: warehouse-receiving-sol-hybrid-v2-ma_sd-8ab534ba — B's QA disposition overwrote A's copied LOT-B07 reference; paste target/focus valid; evaluator confirms reference empty and otherwise exact.
+- Shared+Lock: warehouse-receiving-sol-hybrid-v2-ma_sd_lock-aa92d441 — same clipboard-caused business FAIL under per-call locking.
+- All three: GPT-6-Sol / Codex CLI 0.155.0, GUI + restricted Guest CLI + Collaboration MCP, 18 GUI-call / 18,000 output-token limits; resets succeeded. Aggregate arm wall time ~2,907.52 seconds.
+- Raw report root: /mnt/raid1/mjh/codesk-next-candidates-20261103/runs/composite-warehouse-receiving-v027/warehouse-receiving-sol-20261105-213728-triplet/.
+- Classification: qualifies once under screening criterion; a daily receiving/QA workflow variant that explicitly reuses C-03 clipboard interference, not an independent mechanism.
 
 ## 边界与证据留存
 
