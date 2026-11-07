@@ -1,60 +1,72 @@
-# CoDesk 13-case handoff
+# CoDesk case handoff — 13 个原始案例 + 2 个后续达标案例
 
-更新日：2026-11-05
+更新日：2026-11-07
 
 ## 一页结论
 
-本分支汇总的是 13 个候选/案例：Case 2/3/4 + 早期五错误机制对应的五 case + 本轮新增的五候选。目标组合定义为：**Isolated 独立 PASS、Shared 共享 FAIL、Shared+Lock 共享加逐动作锁仍 FAIL**；失败必须是有效模型/协议运行，且能归因到共享状态，不把 API、Guest、评估器或 reset 无效运行算作任务 FAIL。
+本 handoff 的编号清单是原 13-case portfolio（Case 2/3/4 + 五机制 + 五候选），再纳入后续完成并达标的 PAY-1 与 DATA-REL1，共 15 个。按严格门槛，当前 **10/15 达标**。
 
-按每个 case 最新的相关证据，目前 **9/13 有一个有效 triplet 达到目标，4/13 尚未达到**：
+达标门槛：同一冻结任务版本、fixture、prompt、model、工具权限和预算下，有效 MA-ID（独立 Guest）PASS、有效 Shared FAIL、有效 Shared+Lock FAIL；两次共享失败均由实际共享状态造成并由业务 oracle 判定。Guest/API/协议/evaluator/reset 无效不能算 FAIL。按用户决定，每案一组三臂即可，不要求第二次有效重复。
 
-- 达到：Case 3；C-03 Clipboard；A-01 Application Context；S-01 Selection；U-01 Undo/Redo；CWD-1 Terminal CWD；VIEW-1 viewport；FIND-1 Find/Replace；AUTH-1 browser principal。
-- 未达到：Case 2、Case 4、F-01 Focus/Input Routing、EDIT-1。
-- 每个达到者目前都只有一组三臂筛查，**没有第二次有效重复**，不代表稳定失效率或总体发生率。
-- 早期五机制过去有 GUI-only/Qwen 的历史证据；此处 9/13 统计以已完成的 GPT-6-Sol Hybrid v2 重跑（若有）为准，不把历史 Qwen 结果冒充 Hybrid 结果。
-- 备选 MODAL-1 不在同意的五候选和 13-case 总数中。
-- 最新 EDIT-1 v0.5.0 三臂均 PASS；不再尝试通过改任务来制造 FAIL。
+### 当前达标的 10 个
 
-## 13-case 状态表
+1. **Case 3** — VS Code 修复 + 浏览器重测中的跨窗口输入误路由。
+2. **C-03 Clipboard** — B 的剪贴板 payload 覆盖 A 的待粘贴内容。
+3. **A-01 Application Context** — 同窗多 Tab 下陈旧 Enter 落到非目标 Tab。
+4. **S-01 Selection / Active Object** — 活动单元格变化后陈旧输入落到错误对象。
+5. **U-01 Undo/Redo** — 共享 Undo 栈使 A 撤销到 B 的操作。
+6. **CWD-1** — 共用终端 PWD 改变后，A 的相对路径交付落入 B 的工作树。
+7. **VIEW-1** — 视口滚动后陈旧屏幕坐标命中错误记录。
+8. **AUTH-1** — 活动审核人改变后，A 的待执行提交被记到错误主体。
+9. **PAY-1** — 工时更正晚于付款完成，造成付款快照陈旧。
+10. **DATA-REL1** — 数据修订令已生成、尚未发布的 staging export 包过期。
 
-| # | 案例 / 当前任务 | 三臂最新结果与证据结论 | 当前交付状态 | 源分支与入口 |
-|---:|---|---|---|---|
-| 1 | Case 2：双人核验损坏商品工单、协作交接 Review ID、退款并结案 | v1.2.0 Isolated/Shared/Shared+Lock 均业务 PASS，严格交接均 PASS | 未达到共享故障目标；保留为有用的成功/中性对照 | codex/case2-v12 @ 953d684；infra/run_ticket_to_resolution_lite_healthcare.py |
-| 2 | Case 3：A 在 VS Code 修复筛选脚本、B 在浏览器重测 | v1.4.3 一组三臂 Isolated PASS，Shared FAIL，Shared+Lock FAIL；轨迹支持跨窗口误路由 | **达到一次**；小样本，不是重复证据 | codex/case3-followup @ c6bcb56；infra/run_case3_lite_pair_pilot.py |
-| 3 | Case 4：Kdenlive 时间线修复 + VS Code 清单另存 | SSD cohort：Isolated 2/2 PASS，Shared 0/2 PASS，Shared+Lock 1/1 PASS；另有一次锁臂 API-invalid | 未达到：有效锁臂为 PASS；不能与较旧 HDD cohort 合池 | codex/case4-hardening @ 3462672；infra/run_case4_lite_pair_pilot.py |
-| 4 | F-01 Focus/Input Routing：A 对 Writer 的陈旧输入发生在 B 将焦点切至 Calc 后 | GPT-6-Sol Hybrid v2 最新三臂：PASS / PASS / FAIL；锁臂将 A 文本写进 B 的 Calc 目标，但普通 Shared 由 Agent 恢复并 PASS | 未达到：缺 Shared FAIL；历史 Qwen GUI-only 结果另列，不作当前架构证据 | codex/focus-clipboard-pilot-20261102 @ c866975；scripts/run_f01_hybrid_v2_retest.py |
-| 5 | C-03 Clipboard：A 复制 Calc 区域，B 复制 Writer 文本，A 随后粘贴 | GPT-6-Sol Hybrid v2：PASS / FAIL / FAIL；两共享臂观察到 B 的剪贴板 payload 被粘进 A 的 Calc 目标 | **达到一次**：overwrite digest 与任务失败吻合 | 同上；scripts/run_c03_hybrid_v2_retest.py |
-| 6 | A-01 Application Context：同一 Chromium 窗口内两个 Tab；陈旧 Enter 落在 B 的 Tab | GPT-6-Sol Hybrid v2：PASS / FAIL / FAIL；共享态产生 B Tab 的重复/非目标提交 | **达到一次** | 同上；scripts/run_a01_hybrid_v2_retest.py |
-| 7 | S-01 Selection/Active Object：B 改变 Calc 活动单元格后 A 继续陈旧输入 | GPT-6-Sol Hybrid v2 v0.2.2：PASS / FAIL / FAIL；共享两臂 exposure=true | **达到一次** | 同上；scripts/run_calc_hybrid_v2_retest.py |
-| 8 | U-01 Undo/Redo：A 的 Ctrl+Z 面对共享 Calc undo 栈顶的 B 操作 | GPT-6-Sol Hybrid v2 v0.2.2：PASS / FAIL / FAIL；共享两臂 exposure=true | **达到一次** | 同上；scripts/run_calc_hybrid_v2_retest.py |
-| 9 | CWD-1：B 改变同一持久 shell 的 PWD 后，A 的相对路径交付写入 B worktree | GPT-6-Sol v0.2.4：精确 PASS / 精确 FAIL / 精确 FAIL；同 Guest/shell 与 wrong-worktree duplicate delivery 轨迹支持归因 | **达到一次**；尚无第二次有效重复 | 同上；scripts/run_sol_cwd_bundle_v2.py |
-| 10 | EDIT-1：Writer Insert/Overwrite 模式状态泄漏 | 最新 v0.5.0 Hybrid 三臂均 PASS；A 在 Shared 与 Lock 下察觉 OVR 并恢复；脚本 controls 能复现模式签名但不是模型 FAIL | 未达到；明确停止救活该候选，不隐藏线索或削减预算造失败 | 最新 runner 尚在 HealthCare repair worktree；历史 v0.4.0 报告见 next-five/NEXT_CASE_HYBRID_V2_UPDATE_20261104.md |
-| 11 | VIEW-1：滚动改变 viewport offset，旧屏幕坐标命中其他段落 | 最新 v0.1.1 repair triplet：PASS / FAIL / FAIL；共享两臂 exposure 和 wrong-record oracle 支持归因 | **达到一次**；旧 v0.2.0 另存且不合并 | 最新摘要见 next-five/NEWEST_SHORTLIST_RESULTS_20261105.json |
-| 12 | FIND-1：Find/Replace Match Case 选项持久化 | v0.3.1 MA-ID PASS；匹配版本 v0.3.2 Shared 与 Shared+Lock 均按完整 evaluator FAIL；Shared 原报告顶层 aggregator 误报 PASS，见补充 adjudication 与 source report SHA | **达到一次（Shared 依赖补充判读）**；原 report.json 未修改 | 最新摘要见 next-five/NEWEST_SHORTLIST_RESULTS_20261105.json |
-| 13 | AUTH-1：共享浏览器 principal/session 变化导致提交身份错 | v0.1.0 Hybrid 三臂 PASS / FAIL / FAIL；共享两臂错误 principal，local oracle 确认归属错误 | **达到一次**；本地 mock、无外网/真实凭证 | 最新摘要见 next-five/NEWEST_SHORTLIST_RESULTS_20261105.json |
+都只有一次有效 screening triplet；“10 个达标”不是重复性、模型总体 fail rate 或发生概率估计。它们也不等于 10 个互相独立的底层机制；DATA-REL1 是 PAY-1 stale-state 模式的数据导出工作流变体。
 
-## Case 2/3/4 详况
+## 当前 15-case 矩阵
 
-- Case 2 v1.2 保留了有效业务工作流，并强化 B 独立预核验和 Review ID 消息交接。正式三臂均完成且都 PASS，所以它对“简单业务可解”和严格协作时序有价值，但不是 shared-fail case。
-- Case 3 v1.4.3 是 Case 2/3/4 中唯一满足目标者。共享两臂有效 FAIL；另有 setup-invalid 与 scorer-crash 历史尝试保留。v1.4.4 对一个历史 scorer-crash 做了后验评估修复，不计作新模型试验或重复。
-- Case 4 SSD 对照支持普通共享时的窗口焦点干扰，但有效锁臂有一次 PASS；另外锁臂无效 API episode 不计为业务 FAIL。共享+锁目标仍待设计，不要把 HDD/SSD 条件合并为重复。
+| # | Case / 工作流 | 最新结果与判定 | 证据入口 |
+|---:|---|---|---|
+| 1 | Case 2：商品工单、Review ID 交接、退款结案 | v1.2.0 三臂业务 PASS；未达标，保留作成功/中性对照 | case234/case2；源分支 codex/case2-v12 |
+| 2 | Case 3：VS Code 修复后到浏览器重测 | v1.4.3 PASS / FAIL / FAIL；达标一次 | case234/case3；源 codex/case3-followup |
+| 3 | Case 4：Kdenlive 时间线 + VS Code 清单 | SSD cohort 有效锁臂 PASS；未达标 | case234/case4；源 codex/case4-hardening |
+| 4 | F-01 Focus/Input Routing：Writer 陈旧输入、B 切 Calc 焦点 | Hybrid v2 最新 PASS / PASS / FAIL；缺普通 Shared FAIL | mechanisms；源 codex/focus-clipboard-pilot-20261102 |
+| 5 | C-03 Clipboard：B 覆盖剪贴板后 A 粘贴错误内容 | PASS / FAIL / FAIL；达标一次 | evidence-manifests/C03-gpt6-sol-hybrid-triplet.json |
+| 6 | A-01 Application Context：同一 Chromium 窗口多 Tab | PASS / FAIL / FAIL；达标一次 | evidence-manifests/A01-gpt6-sol-hybrid-triplet.json |
+| 7 | S-01 Selection：Calc 活动单元格状态共享 | v0.2.2 PASS / FAIL / FAIL；达标一次 | evidence-manifests/S01-gpt6-sol-hybrid-triplet.json |
+| 8 | U-01 Undo/Redo：共享 Calc undo stack | v0.2.2 PASS / FAIL / FAIL；达标一次 | evidence-manifests/U01-gpt6-sol-hybrid-triplet.json |
+| 9 | CWD-1：共享 shell 当前目录泄漏 | v0.2.4 PASS / FAIL / FAIL；相对路径写入错误工作树；达标一次 | CWD-v024 evidence manifests；scripts/run_sol_cwd_bundle_v2.py |
+| 10 | EDIT-1：Writer Insert/Overwrite 模式 | v0.6.2 有瞬时覆盖，但 Agent 后续撤销导致终态归因不干净；不计达标 | next-five/NEXT_CASE_PROGRESS_20261107.md |
+| 11 | VIEW-1：审核列表滚动改变 viewport offset | v0.1.1 PASS / FAIL / FAIL；达标一次 | MA-ID view-signoff-sol-v011-ma_id-20261107-1；有效 Shared 为 view-signoff-sol-v011-ma_sd-20261107-retry1；锁臂 view-signoff-sol-v011-ma_sd_lock-20261107-1 |
+| 12 | FIND-1：Writer Find/Replace Match-case 设置 | v0.3.2 缺同版本有效 MA-ID，且 Shared 聚合器与内层 evaluator 不一致；本次严格复审不计达标 | next-five/NEXT_CASE_PROGRESS_20261107.md；旧 adjudication 保留 |
+| 13 | AUTH-1：活动审核人/提交主体切换 | v0.1.1 PASS / FAIL / FAIL；提交被记到 Operator-B；达标一次 | auth-session-sol-v011-ma_id-20261107-1、auth-session-sol-v011-ma_sd-20261107-1、auth-session-sol-v011-ma_sd_lock-20261107-1 |
+| 14 | PAY-1：付款完成后发生合法工时更正 | PASS / FAIL / FAIL；旧付款快照与新工时不符；达标一次 | PAY1_HYBRID_EXPERIMENT_STATUS_20261106.md |
+| 15 | DATA-REL1：数据集政策修订后发布前重新评估 | PASS / FAIL / FAIL；staging 包过期；达标一次 | DATA_REL1_EXPERIMENT_SUMMARY_20261106.md、DATA_REL1_CASE_CARD_20261106.md |
 
-对应设计/结果全文已复制到本目录的 case234/case2、case3、case4 子目录。
+## 两个新增 case 的 run IDs 和边界
 
-## 五机制 Hybrid v2 证据
+- **PAY-1**：pay1-sol-ma_id-20261106-180233-b0578d；pay1-sol-completion-order-ma_sd-20261106-184148-ca9cde；pay1-sol-completion-order-ma_sd_lock-20261106-184751-88fc4b。Shared+Lock 是完成顺序 schedule，锁没有并发竞争者；支持“逐动作锁不保证跨任务事务新鲜度”，不支持“测到了 GUI 同时锁竞争”。
+- **DATA-REL1**：data-rel1-sol-ma-id-20261106-200855-214b9e；data-rel1-sol-ma_sd-20261106-202524-d0ad31；data-rel1-sol-ma_sd_lock-20261106-203612-361464。也是 completion-order；不外推到数据库级隔离或真实数据发布平台。
 
-五机制的 GPT-6-Sol Hybrid v2 当前机器摘要见 evidence-manifests/F01-gpt6-sol-hybrid-triplet.json、C03-gpt6-sol-hybrid-triplet.json、A01-gpt6-sol-hybrid-triplet.json、S01-gpt6-sol-hybrid-triplet.json、U01-gpt6-sol-hybrid-triplet.json。对应完整原始 run IDs、轨迹、截图和协议门禁在 HealthCare 的 RAID1 路径中，见下文。
+Shared+Lock 始终指该实验实际配置的逐动作锁，不自动等于多动作事务锁或数据库隔离。VIEW-1 的锁臂同样是按序执行；解释是锁不会重新绑定旧坐标意图，不声称测过 GUI 锁竞争。AUTH-1 发现的是 mock 系统内错误主体归属，不是权限绕过或真实审批事件。
 
-重点解释：
-- F-01 的 MA-SD PASS 不能因 MA-SD+Lock 最终 FAIL 而改写；这一版确实没有满足三臂方向。
-- C-03、A-01、S-01、U-01 是最新 Sol/Hybrid v2 下四个单次合格筛查。
-- 每臂相同工具权限：GUI MCP、受限 Guest CLI MCP、Collaboration MCP；同一 case 内 task/prompt/fixture/oracle/model/budget 对齐，仅拓扑和 Shared+Lock 的 per-action lock 不同。此架构声明不外推到历史 Case 2/3/4。
+原始截图和完整轨迹仍只在 HealthCare RAID1：/mnt/raid1/mjh/codesk-next-candidates-20261103/runs/。本分支提供新 case 的 runner、fixture、测试、结果摘要和 run IDs；不把大型 raw artifacts 复制进 Git。
 
-## 怎么拉取与使用
+## 计数变化与 roster 外探索
 
-本 handoff 分支包含 13 个 case 的导航、设计/结果文档副本以及小型 summary JSON；Case 2/3/4 和 Hybrid runner 的可执行源代码分别留在下列并行分支，避免把互相不兼容的实验 worktree 硬合并。
+2026-11-05 handoff 曾列 9/13，含 FIND-1。本次重审发现 FIND-1 的 v0.3.2 shared arms 缺少匹配版本的有效 MA-ID，不能与 v0.3.1 baseline 拼接，因此原 13 项按本门槛为 8/13。随后 PAY-1、DATA-REL1 各有一个有效 triplet 达标，故为 10/15。
 
-在新 clone 中先 fetch，再以独立 worktree 打开各源分支，保留自己的未提交修改：
+另有 roster 外探索，不增达标数：W4 incident-response 有效三臂都 PASS（MA-ID 10f09960、Shared d8267a3a、锁臂 4344174a；Shared 中间 clipboard 错误后恢复）；CALCMODE1 有效三臂都 PASS（MA-ID 114732-52c8a4、Shared 121736-da4919、锁臂 122405-ed993e）；warehouse-receiving v0.2.7 的最近 MA-ID 67cbbad0 protocol_valid=false，不能与后续 Shared 8ab534ba / Shared+Lock aa92d441 拼成有效 triplet。W3、AP1、PBR-1 尚属设计/控制阶段，不能算通过。审计细节见 QUALIFIED_CASE_AUDIT_20261107.md。
+
+## Case 2/3/4 概览
+
+- Case 2 v1.2 的三臂任务均 PASS，是业务成功/协作时序对照，不是 shared-fail case。
+- Case 3 v1.4.3 是 Case 2/3/4 中唯一满足目标者；保留 setup-invalid 和 scorer-crash 等历史尝试边界。
+- Case 4 SSD 对照中有效锁臂 PASS；不把较旧 HDD cohort 合池。
+
+## 怎么拉取和使用
+
+此 handoff 沿用历史分支名 codex/13-case-handoff-20261104，但 case roster 已更新为 15 项。先读本文件、QUALIFIED_CASE_AUDIT_20261107.md 和相关结果摘要，再选择源 worktree：
 
     git fetch origin
     git worktree add ../CoDesk-case2 origin/codex/case2-v12
@@ -62,30 +74,16 @@
     git worktree add ../CoDesk-case4 origin/codex/case4-hardening
     git worktree add ../CoDesk-mechanisms origin/codex/focus-clipboard-pilot-20261102
 
-建议顺序：先读本文件，再读每个案例目录中的冻结 spec/report；在对应源 worktree 查看 git status、commit hash、runner --help 和聚焦测试。不要直接执行整个队列 runner。任何新三臂实验先做资源/ownership preflight，冻结预算与版本，顺序运行 Isolated → Shared → Shared+Lock；只有 Isolated valid exact PASS 才继续。保留全部无效和有效尝试；不允许针对共享臂加障碍、差异权限/提示/预算，或把 Guest/API/scorer/reset invalid 当作任务 FAIL。
+- PAY-1 / DATA-REL1 的 fixture、app、runner、unit tests 已附在此分支。
+- VIEW-1/AUTH-1 v0.1.1 runner、安全 wrapper、共享本地 mock app 和 control probes 已附在此分支。
+- 所有新 case 使用 GPT-6-Sol / Codex CLI 0.155.0；新三臂工具权与预算匹配。早期 Case 2/3/4 配置不同，不宣称 harness 完全同构。
+- 任何重复均使用新 run ID，并保留全部 invalid/valid 尝试。不得针对 Shared arm 添加专属障碍、改变预算、禁用正常恢复，或把 infrastructure/evaluator/reset invalid 算作失败。
+- 分支不存私有 API key；认证只能使用安全隐藏输入，不得写入 source、shell history 或报告。
 
-Runner 入口：
-- Case 2：运行 infra/run_ticket_to_resolution_lite_healthcare.py --help 后再决定控制/模型模式。
-- Case 3：infra/run_case3_lite_pair_pilot.py 的 --help 和 case3 follow-up notes。
-- Case 4：infra/run_case4_lite_pair_pilot.py 的 --help 和 hardening report。
-- 五机制/新候选：上述脚本分别在 codex/focus-clipboard-pilot-20261102 分支；先 python scripts/<runner>.py --help，确认 endpoint、OSWorld 路径、guest image、artifact root 和预算。所有新增模型验证使用 GPT-6-Sol；不启动 Qwen worker。
+## Raw evidence 位置
 
-## 文档与证据位置
-
-本文件邻近目录：
-- case234/case2：Case 2 v1.2 spec、handoff、实验计划和 v1.1.3 hardening report。
-- case234/case3：Case 3 follow-up 报告。
-- case234/case4：Case 4 SSD hardening report、实验计划及原 Lite 报告。
-- mechanisms：Focus/Clipboard 早期协议、A-01 报告、机制 4/5 报告。
-- next-five/design 与 next-five：候选审计/卡片、CWD v0.2.0–0.2.4、控制结果、v0.2.4 Sol 模型结果、Hybrid v2 历史状态及 2026-11-05 修复进展。
-- evidence-manifests：五机制 Hybrid triplet 摘要、旧版候选摘要、FIND Shared 补充判读。
-- CASE_STATUS_MATRIX 已并入本 HANDOFF，以免产生两套计数；本表即汇总权威版本。
-
-原始数据没有复制到 Git：
 - Case 2：/home/mjh/Projects/CoDesk-case2-healthcare/runs/ticket_to_resolution/healthcare/
 - Case 3：/home/mjh/Projects/CoDesk-yuke-osworld-review/runs/<run-id>/
 - Case 4：/home/mjh/Projects/CoDesk-case4-hardening/runs/<run-id>/
-- 早期机制与 Hybrid v2：/mnt/raid1/mjh/Projects/codesk-five-mechanisms-pilot-20261102/runs/
+- 五机制与 Hybrid v2：/mnt/raid1/mjh/Projects/codesk-five-mechanisms-pilot-20261102/runs/
 - 新候选：/mnt/raid1/mjh/codesk-next-candidates-20261103/runs/
-
-以上绝对路径仅在 HealthCare 主机上存在，A800 或本地 pull 不会自动取得截图/轨迹。此分支不含私有 API key；不要将密钥复制进 Git。完成一个 case 不等于在相同旧 run-id 上重跑；一切重跑须生成新版本/新 run ID 并保留旧证据。
