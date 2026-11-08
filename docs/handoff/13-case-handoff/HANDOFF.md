@@ -1,14 +1,14 @@
-# CoDesk case handoff — 13 个原始案例 + 3 个后续达标案例
+# CoDesk case handoff — 19 个 case 的当前组合
 
-更新日：2026-11-07
+更新日：2026-11-08
 
 ## 一页结论
 
-本 handoff 的编号清单是原 13-case portfolio（Case 2/3/4 + 五机制 + 五候选），再纳入后续完成并达标的 PAY-1、DATA-REL1 与 W1 warehouse receiving，共 16 个。按严格门槛，当前 **11/16 达标**。
+本 handoff 的编号清单包含原 13-case portfolio（Case 2/3/4 + 五机制 + 五候选），以及后续 PAY-1、DATA-REL1、W1、AP-1、SITEACT-STATE1、CRM-LU1，共 19 个 case/workflow。按严格门槛，当前 **14/19 达标**。其中新增的 AP-1、SITEACT-STATE1、CRM-LU1 均已各自完成一次有效三臂筛查；这不代表机制独立或重复验证。
 
 达标门槛：同一冻结任务版本、fixture、prompt、model、工具权限和预算下，有效 MA-ID（独立 Guest）PASS、有效 Shared FAIL、有效 Shared+Lock FAIL；两次共享失败均由实际共享状态造成并由业务 oracle 判定。Guest/API/协议/evaluator/reset 无效不能算 FAIL。按用户决定，每案一组三臂即可，不要求第二次有效重复。
 
-### 当前达标的 11 个
+### 当前达标的 14 个
 
 1. **Case 3** — VS Code 修复 + 浏览器重测中的跨窗口输入误路由。
 2. **C-03 Clipboard** — B 的剪贴板 payload 覆盖 A 的待粘贴内容。
@@ -21,10 +21,13 @@
 9. **PAY-1** — 工时更正晚于付款完成，造成付款快照陈旧。
 10. **DATA-REL1** — 数据修订令已生成、尚未发布的 staging export 包过期。
 11. **W1 Warehouse Receiving v0.2.7** — QA 处置文本覆盖收货员剪贴板，导致 held-lot reference 为空。宏观工作流不同于 C-03，但明确复用剪贴板机制。
+12. **AP-1 Remittance v0.2.1** — B 记入贷项后，A 的付款草稿相对最终账本陈旧；与 PAY-1/DATA-REL1 属同一 stale-artifact 家族。
+13. **SITEACT-STATE1** — B 将站点 gate 更新为 HOLD 后，共享状态仍保留 A 的 READY/rev1 快照；A 没有 post-B 回合。
+14. **CRM-LU1** — synthetic legacy full-record 表单中，A 的旧快照保存覆盖 B 先前更新的账单邮箱；不能外推到现代 CRM 默认行为。
 
-都只有一次有效 screening triplet；“11 个达标”不是重复性、模型总体 fail rate 或发生概率估计。它们也不等于 11 个互相独立的底层机制；DATA-REL1 是 PAY-1 stale-state 模式的数据导出工作流变体。
+都只有一次有效 screening triplet；“14 个达标”不是重复性、模型总体 fail rate 或发生概率估计。它们也不等于 14 个互相独立的底层机制；DATA-REL1、AP-1、SITEACT-STATE1、CRM-LU1 属于相邻的 stale-state/lost-update 家族。
 
-## 当前 16-case 矩阵
+## 当前 19-case 矩阵
 
 | # | Case / 工作流 | 最新结果与判定 | 证据入口 |
 |---:|---|---|---|
@@ -44,6 +47,9 @@
 | 14 | PAY-1：付款完成后发生合法工时更正 | PASS / FAIL / FAIL；旧付款快照与新工时不符；达标一次 | PAY1_HYBRID_EXPERIMENT_STATUS_20261106.md |
 | 15 | DATA-REL1：数据集政策修订后发布前重新评估 | PASS / FAIL / FAIL；staging 包过期；达标一次 | DATA_REL1_EXPERIMENT_SUMMARY_20261106.md、DATA_REL1_CASE_CARD_20261106.md |
 | 16 | W1：仓库收货与 QA 温控隔离（0.2.7） | PASS / FAIL / FAIL；Shared 两臂的 QA 剪贴板文本覆盖 LOT-B07 held-lot reference；达标一次 | next-five/NEXT_CASE_REPAIR_PROGRESS_20261105.md；run IDs 见下 |
+| 17 | AP-1：应付汇款核对与贷项 handoff（0.2.1） | PASS / FAIL / FAIL；B 记入贷项后 A 的 READY draft 对最终账本陈旧；达标一次，PAY-1/DATA-REL1 家族变体 | next-cases/AP1_REMITTANCE_WORKFLOW_CARD_V021_20261107.md；scripts/run_ap1_remittance_hybrid_v2_triplet.py |
+| 18 | SITEACT-STATE1：研究站点 readiness 快照与 deviation/HOLD 交接 | PASS / FAIL / FAIL；B 记录 deviation 后 A 的 READY/rev1 快照相对 HOLD/rev2 陈旧；达标一次，属 temporal-staleness 家族 | next-cases/SITEACT_STATE1_WORKFLOW_CARD_V01_20261107.md；scripts/run_siteact_state_hybrid_v2.py |
+| 19 | CRM-LU1：客户续约/账单资料变更 | PASS / FAIL / FAIL；A 的旧版全记录表单覆盖 B 先前写入的 billing email；达标一次，仅限显式定义的 synthetic legacy form | next-cases/CRM_LU1_CASE_CARD_V01_20261108.md；scripts/run_crm_lu1_hybrid_v2.py |
 
 ## 后续新增 case 的 run IDs 和边界
 
@@ -57,9 +63,13 @@ Shared+Lock 始终指该实验实际配置的逐动作锁，不自动等于多�
 
 ## 计数变化与 roster 外探索
 
-2026-11-05 handoff 曾列 9/13，含 FIND-1。本次重审发现 FIND-1 的 v0.3.2 shared arms 缺少匹配版本的有效 MA-ID，不能与 v0.3.1 baseline 拼接，因此原 13 项按本门槛为 8/13。随后 PAY-1、DATA-REL1 各有一个有效 triplet 达标，故为 10/15。进一步复核发现 W1 v0.2.7 有匹配有效 triplet；此前误把 isolated protocol_valid=false 当成无效，而该 paste-specific gate 只要求 shared arms。因此现行清单更正为 **11/16**。2026-11-05 发布版 10/15 的历史判定保留，不覆盖；此处是基于 runner 有效性条件和原始三个 reports 的更正。
+2026-11-05 handoff 曾列 9/13，含 FIND-1。本次重审发现 FIND-1 的 v0.3.2 shared arms 缺少匹配版本的有效 MA-ID，不能与 v0.3.1 baseline 拼接，因此原 13 项按本门槛为 8/13。随后 PAY-1、DATA-REL1 各有一个有效 triplet 达标，故为 10/15。进一步复核发现 W1 v0.2.7 有匹配有效 triplet；此前误把 isolated protocol_valid=false 当成无效，而该 paste-specific gate 只要求 shared arms。因此截至 2026-11-07 清单更正为 **11/16**。2026-11-05 发布版 10/15 的历史判定保留，不覆盖；此处是基于 runner 有效性条件和原始三个 reports 的更正。
 
-另有 roster 外探索，不增达标数：W4 incident-response 有效三臂都 PASS（MA-ID 10f09960、Shared d8267a3a、锁臂 4344174a；Shared 中间 clipboard 错误后恢复）；CALCMODE1 有效三臂都 PASS（MA-ID 114732-52c8a4、Shared 121736-da4919、锁臂 122405-ed993e）；W2/W3、AP1、PBR-1 尚属设计、离线或控制阶段，不能算通过。W1 warehouse receiving v0.2.7 已从“排除项”更正为第 16 项达标 case。审计细节见 QUALIFIED_CASE_AUDIT_20261107.md。
+另有 roster 外探索，不增达标数：W4 incident-response 有效三臂都 PASS（MA-ID 10f09960、Shared d8267a3a、锁臂 4344174a；Shared 中间 clipboard 错误后恢复）；CALCMODE1 有效三臂都 PASS（MA-ID 114732-52c8a4、Shared 121736-da4919、锁臂 122405-ed993e）；W2/W3、PBR-1 尚属设计、离线或控制阶段，不能算通过；AP-1 已有有效 triplet，详见 2026-11-08 最新增补。W1 warehouse receiving v0.2.7 已从“排除项”更正为第 16 项达标 case。AP-1、SITEACT-STATE1、CRM-LU1 之后各增加一个达标工作流。历史细节见 QUALIFIED_CASE_AUDIT_20261107.md；最新口径见 QUALIFIED_CASE_AUDIT_20261108.md。
+
+## 2026-11-08 最新筛查增补
+
+最新数量与 14 案名单以 QUALIFIED_CASE_AUDIT_20261108.md 为准：19 个 case/workflow 中 14 个有一次有效 PASS/FAIL/FAIL triplet。相对 2026-11-07 的 11/16 审计，本次新增 AP-1、SITEACT-STATE1、CRM-LU1；三案都与 stale-artifact/lost-update 机制家族相邻，不代表新增三个独立机制。详细 run IDs、限制条件、未达标五案和可复现边界见新审计与 next-cases/ 三张卡。
 
 ## Case 2/3/4 概览
 
@@ -68,14 +78,14 @@ Shared+Lock 始终指该实验实际配置的逐动作锁，不自动等于多�
 - Case 4 SSD 对照中有效锁臂 PASS；不把较旧 HDD cohort 合池。
 
 
-### 后续设计候选（未计入 16 项）
+### 后续设计候选（未计入 19 项）
 
 - 读 next-five/design/NEXT_CASE_IDEAS_20261107.md：PRINT-ROUTE1（最优先的差异化候选，先做 Guest 打印队列能力的读取门检）、ATTACH-EVIDENCE1（日常工作流但与 S-01/A-01 邻近）、TZ-SCHEDULE1（因平台语义与自然性风险高而暂缓）。
 - 只是概念审计，无 fixture、Guest、GPT-6-Sol 或正式三臂实验；不是新达标 case。
 
 ## 怎么拉取和使用
 
-此 handoff 沿用历史分支名 codex/13-case-handoff-20261104，但 case roster 已更新为 16 项。先读本文件、QUALIFIED_CASE_AUDIT_20261107.md 和相关结果摘要，再选择源 worktree：
+此 handoff 沿用历史分支名 codex/13-case-handoff-20261104，但 case roster 已更新为 19 项。先读本文件、QUALIFIED_CASE_AUDIT_20261108.md 和相关结果摘要，再选择源 worktree：
 
     git fetch origin
     git worktree add ../CoDesk-case2 origin/codex/case2-v12

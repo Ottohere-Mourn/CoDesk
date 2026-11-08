@@ -1,10 +1,12 @@
 # CoDesk case handoff package
 
-Start with HANDOFF.md for the current 16-case roster and qualification count. The authoritative audit currently reports 11 cases with one valid Isolated PASS / Shared FAIL / Shared+Lock FAIL triplet. It also records excluded, invalid, recovered, and not-yet-tested candidates.
+Start with HANDOFF.md for the current 19-case roster and qualification count. The latest audit is QUALIFIED_CASE_AUDIT_20261108.md: 14 cases have one valid Isolated PASS / Shared FAIL / Shared+Lock FAIL screening triplet; five do not currently meet that target. This is one screening triplet per qualified case, not a repeatability or incidence estimate.
 
-- next-five/design/NEXT_CASE_IDEAS_20261107.md: concept-only PRINT-ROUTE1, ATTACH-EVIDENCE1, and TZ-SCHEDULE1 cards and their falsification gates; none is qualified.
-- QUALIFIED_CASE_AUDIT_20261107.md: exact inclusion rule, current pass list, corrected FIND-1 status, and extra exploratory attempts.
-- next-five/NEXT_CASE_PROGRESS_20261107.md: latest five-candidate result review.
-- Adjacent folders contain case234 copies, specs/reports, and compact evidence manifests.
+- next-cases/: AP-1, SITEACT-STATE1, and CRM-LU1 case cards; CRM-LU1 progress note.
+- QUALIFIED_CASE_AUDIT_20261108.md: superseding current count, inclusion rule, latest 14-case list, causal scope, and exclusions.
+- QUALIFIED_CASE_AUDIT_20261107.md: preserved historical audit snapshot (11/16 before AP-1, SITEACT-STATE1, and CRM-LU1 were added).
+- next-five/NEXT_CASE_PROGRESS_20261107.md: earlier candidate-batch review.
+- next-five/design/NEXT_CASE_IDEAS_20261107.md: concept-only candidates; none are qualified.
+- Adjacent folders contain case234 copies, earlier case specs/reports, and compact evidence manifests.
 
-Full screenshots, event traces, and raw model artifacts remain on HealthCare under RAID1; this branch includes run IDs but not the raw artifacts.
+The new case scripts are the exact HealthCare screening versions and retain environment-specific absolute paths. They are reviewable from this branch but are not portable rerun commands without the HealthCare CoDesk Hybrid/OSWorld Guest dependencies and path configuration. Raw screenshots, event traces, and model reports remain on HealthCare RAID1; this branch includes run IDs and summaries, not large raw artifacts. Never add API credentials to Git.
