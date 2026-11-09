@@ -10,6 +10,7 @@ time (`python -m oscombo run --mode solo|sequential|parallel`).
 |---|---|---|
 | c1 c2 c4 c5 c6 | round 1 (revised) | a workbook, the Downloads folder, one Thunderbird, a slide deck, a git repo |
 | o1–o4 | F1 office documents | one open LibreOffice document |
+| o5 | F1 office documents | Writer profile PDF export annotation preference across separate ODTs |
 | m1–m4 | F2 mail / calendar | one Thunderbird (folders, filters, calendar, contacts) |
 | w1–w4 | F3 browser + intranet app | one Chrome window and one logged-in web-app session |
 | d1–d4 | F4 developer | one VS Code window, a git working copy, a running dev server |

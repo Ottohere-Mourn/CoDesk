@@ -3,15 +3,15 @@
 Both harnesses get exactly the same tool surface and behaviour: screenshot, click, drag, move, type_text, key,
 scroll, wait, declare_infeasible. Screenshots are downscaled to 1280x720 for the model and coordinates are mapped
 back; actions run as pyautogui code inside the Guest. Every call (screenshots included) counts against the budget
-and returns a fresh screenshot. Nothing here coordinates with other agents on the same desktop.
+and returns a fresh screenshot. By default calls are not coordinated; if OSCOMBO_ACTION_LOCK_FILE is set, a run-wide
+flock serializes one complete MCP call (including its returned screenshot), but never the model inference interval.
 
   python -m oscombo.desktop_tools --mcp                 # MCP stdio server (codex); needs the ``mcp`` package (<2)
   python -m oscombo.desktop_tools <tool> '<json args>'  # one call, prints {"text": ..., "image": base64|null} (pi)
 
-Env: OSCOMBO_GUEST_URL (http://localhost:5000), OSCOMBO_ACTION_LOG (jsonl, one line per call with the focused
-window title before the action; the call counter lives next to it), OSCOMBO_MAX_STEPS (budget, default 45: some
-computer-use endpoints accept at most 50 images per request). ``declare_infeasible`` writes ``INFEASIBLE`` next
-to the action log.
+Env: OSCOMBO_GUEST_URL, OSCOMBO_ACTION_LOG (per-actor jsonl), OSCOMBO_RUN_ID, OSCOMBO_ACTOR_ID, optional
+OSCOMBO_ACTION_LOCK_FILE and OSCOMBO_ACTION_LOCK_EVENTS_FILE (shared lock-call result/timing jsonl), and
+OSCOMBO_MAX_STEPS (budget, default 45). ``declare_infeasible`` writes ``INFEASIBLE`` next to the action log.
 """
 from __future__ import annotations
 
@@ -22,13 +22,18 @@ import json
 import os
 import sys
 import time
+import uuid
+from datetime import datetime, timezone
 from contextlib import contextmanager
 
 import requests
 from PIL import Image as PILImage
 
+from .eventlog import append_jsonl
+
 URL = os.environ.get("OSCOMBO_GUEST_URL", "http://localhost:5000").rstrip("/")
 LOG = os.environ.get("OSCOMBO_ACTION_LOG")
+UNIFIED_EVENT_LOG = os.environ.get("OSCOMBO_UNIFIED_EVENT_LOG")
 BUDGET = int(os.environ.get("OSCOMBO_MAX_STEPS") or "45")
 SETTLE = float(os.environ.get("OSCOMBO_MCP_SETTLE", "1.0"))
 MODEL_W, MODEL_H = 1280, 720
@@ -140,15 +145,71 @@ def _code(name: str, args: dict, scale: list[float]) -> str | None:
 
 
 def _log(rec: dict) -> None:
+    now_wall, now_mono = time.time(), time.monotonic()
+    rec.setdefault("event_id", uuid.uuid4().hex)
+    rec.setdefault("timestamp_utc", datetime.fromtimestamp(now_wall, timezone.utc).isoformat())
+    rec.setdefault("wall_time", now_wall)
+    rec.setdefault("monotonic_time", now_mono)
+    run_start = os.environ.get("OSCOMBO_RUN_START_MONO")
+    if run_start:
+        rec.setdefault("run_elapsed_s", round(now_mono-float(run_start), 6))
+    rec.setdefault("event_type", "agent_gui_action")
+    rec.setdefault("run_id", os.environ.get("OSCOMBO_RUN_ID"))
+    rec.setdefault("actor_id", os.environ.get("OSCOMBO_ACTOR_ID"))
+    rec.setdefault("episode_id", os.environ.get("OSCOMBO_EPISODE_ID") or rec.get("actor_id"))
     if LOG:
-        with open(LOG, "a") as f:
-            f.write(json.dumps(rec) + "\n")
+        append_jsonl(LOG, rec)
+    if UNIFIED_EVENT_LOG and os.path.abspath(UNIFIED_EVENT_LOG) != os.path.abspath(LOG or ""):
+        append_jsonl(UNIFIED_EVENT_LOG, rec)
 
 
-def run_tool(name: str, args: dict) -> tuple[str, bytes | None]:
-    """Execute one tool call; returns (text, png bytes or None)."""
-    with _state() as st:  # reserve a call number (and read the latest scale) atomically
+@contextmanager
+def action_lock(tool: str | None = None, args: dict | None = None):
+    """Optional run-wide mutex for one complete GUI MCP call, including its returned screenshot.
+
+    This is deliberately not an episode/transaction lock: Codex inference happens outside this context.
+    """
+    path = os.environ.get("OSCOMBO_ACTION_LOCK_FILE")
+    if not path:
+        yield None
+        return
+    parent = os.path.dirname(path)
+    if parent:
+        os.makedirs(parent, exist_ok=True)
+    requested_wall, requested_mono = time.time(), time.monotonic()
+    with open(path, "a", encoding="utf-8") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        acquired_wall, acquired_mono = time.time(), time.monotonic()
+        event = {"event_type": "action_lock", "run_id": os.environ.get("OSCOMBO_RUN_ID"),
+                 "actor_id": os.environ.get("OSCOMBO_ACTOR_ID"), "tool": tool, "args": args or {},
+                 "lock_file": path, "requested_at": requested_wall, "acquired_at": acquired_wall,
+                 "lock_wait_s": round(acquired_mono - requested_mono, 6)}
+        try:
+            yield event
+        finally:
+            event["released_at"] = time.time()
+            event["lock_held_s"] = round(time.monotonic() - acquired_mono, 6)
+            event_path = os.environ.get("OSCOMBO_ACTION_LOCK_EVENTS_FILE") or (path + ".events.jsonl")
+            event_parent = os.path.dirname(event_path)
+            if event_parent:
+                os.makedirs(event_parent, exist_ok=True)
+            append_jsonl(event_path, event)
+            if UNIFIED_EVENT_LOG:
+                append_jsonl(UNIFIED_EVENT_LOG, event)
+            fcntl.flock(lock, fcntl.LOCK_UN)
+
+
+def _run_tool_unlocked(name: str, args: dict, lock_info: dict | None = None) -> tuple[str, bytes | None]:
+    """Execute one desktop call; caller owns the optional run-wide lock."""
+    started_wall, started_mono = time.time(), time.monotonic()
+    with _state() as st:
         if name != "declare_infeasible" and st["calls"] >= BUDGET:
+            ended_wall, ended_mono = time.time(), time.monotonic()
+            _log({"t": started_wall, "n": st["calls"], "tool": name, "args": args, "code": None,
+                  "status": "out_of_budget", "start_wall": started_wall, "start_monotonic": started_mono,
+                  "end_wall": ended_wall, "end_monotonic": ended_mono,
+                  "duration_s": round(ended_mono-started_mono, 6),
+                  "lock_wait_s": (lock_info or {}).get("lock_wait_s", 0)})
             return OUT_OF_BUDGET, None
         st["calls"] += 1
         n, scale = st["calls"], st["scale"]
@@ -156,25 +217,66 @@ def run_tool(name: str, args: dict) -> tuple[str, bytes | None]:
         if LOG:
             with open(os.path.join(os.path.dirname(LOG), "INFEASIBLE"), "w") as f:
                 f.write(str(args.get("reason", "")))
-        _log({"t": time.time(), "n": n, "tool": name, "args": args, "window_before": None, "code": None})
-        return "Recorded the task as infeasible. Stop now.", None
+        ended_wall, ended_mono = time.time(), time.monotonic()
+        _log({"t": started_wall, "n": n, "tool": name, "args": args, "window_before": _active_window(),
+              "window_after": _active_window(), "code": None, "status": "ok",
+              "start_wall": started_wall, "start_monotonic": started_mono,
+              "end_wall": ended_wall, "end_monotonic": ended_mono,
+              "duration_s": round(ended_mono-started_mono, 6),
+              "lock_wait_s": (lock_info or {}).get("lock_wait_s", 0)})
+        return "Recorded the task as infeasible. Stop now and reply with one short line.", None
     code = _code(name, args, scale)
     if name == "wait":
         time.sleep(min(float(args.get("seconds", 2.0)), 30))
-    before = _active_window() if code else None
+    before = _active_window()
     if code:
         _py(code)
-    _log({"t": time.time(), "n": n, "tool": name, "args": args, "window_before": before, "code": code})
     png, scale = _shot()
+    after = _active_window()
+    ended_wall, ended_mono = time.time(), time.monotonic()
     with _state() as st:
         st["scale"] = scale
-    if LOG:  # what the model saw, for trajectory viewers
+    screenshot_path = None
+    if LOG:
         shots = os.path.join(os.path.dirname(LOG), "shots")
         os.makedirs(shots, exist_ok=True)
-        with open(os.path.join(shots, f"{n:03d}.png"), "wb") as f:
+        screenshot_path = os.path.join(shots, f"{n:03d}.png")
+        with open(screenshot_path, "wb") as f:
             f.write(png)
+    expected_app = os.environ.get("OSCOMBO_EXPECTED_APP")
+    key_chords = [chord.strip().lower() for chord in str(args.get("keys", "")).split()]
+    deliberate_switch = name == "key" and any(chord in {
+        "alt+tab", "alt+shift+tab", "ctrl+tab", "ctrl+page_down", "ctrl+pageup"
+    } for chord in key_chords)
+    target_activated = bool(expected_app and expected_app.lower() not in (before or "").lower()
+                            and expected_app.lower() in (after or "").lower())
+    focus_switch = deliberate_switch or target_activated
+    input_action = bool(code and name not in {"screenshot", "wait", "declare_infeasible"} and not focus_switch)
+    misrouted = bool(expected_app and input_action and expected_app.lower() not in (before or "").lower())
+    _log({"t": started_wall, "n": n, "tool": name, "args": args, "window_before": before,
+          "window_after": after, "expected_app": expected_app or None, "focus_switch_action": focus_switch,
+          "target_activated": target_activated, "misrouted_focus_before": misrouted, "code": code, "status": "ok",
+          "start_wall": started_wall, "start_monotonic": started_mono,
+          "end_wall": ended_wall, "end_monotonic": ended_mono,
+          "duration_s": round(ended_mono-started_mono, 6),
+          "lock_wait_s": (lock_info or {}).get("lock_wait_s", 0),
+          "screenshot_path": screenshot_path, "screenshot_bytes": len(png)})
     left = BUDGET - n
     return (f"OK. {left} tool calls left." if left <= 5 else "OK."), png
+
+
+def run_tool(name: str, args: dict) -> tuple[str, bytes | None]:
+    """Execute one full MCP tool call under the optional cross-Actor desktop mutex."""
+    with action_lock(name, args) as event:
+        try:
+            result = _run_tool_unlocked(name, args, event)
+            if event is not None:
+                event.update({"status": "ok", "result_text": result[0], "image_returned": result[1] is not None})
+            return result
+        except Exception as exc:
+            if event is not None:
+                event.update({"status": "error", "error_type": type(exc).__name__, "error": str(exc)[:500]})
+            raise
 
 
 def mcp_main() -> None:

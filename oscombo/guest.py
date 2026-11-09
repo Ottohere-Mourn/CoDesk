@@ -30,7 +30,8 @@ class Guest:
     def execute(self, argv: list[str], timeout: float = 60) -> dict:
         r = requests.post(f"{self.url}/execute", json={"command": argv, "shell": False, "timeout": 30},
                           timeout=(5, timeout))
-        r.raise_for_status()
+        if not r.ok:
+            raise InfraError(f"Guest execute HTTP {r.status_code}: {r.text[:1000]}")
         return r.json()
 
     def active_window(self) -> str | None:

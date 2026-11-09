@@ -15,6 +15,7 @@ Outcome: ``fail`` if ``<agent_dir>/INFEASIBLE`` exists (tool ``declare_infeasibl
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import re
@@ -34,6 +35,11 @@ tools: screenshot, click (clicks=2 for double click, button=right for context me
 ctrl+s, Return, Tab, alt+F4), scroll, drag, move, wait. Every action returns a fresh screenshot. You have no shell or
 file tools; the computer is slow, so use `wait` when the UI is still loading. The user's password is
 `{password}`. If the task is impossible as specified, call `declare_infeasible` instead.
+
+These controls are provided by the MCP server named `desktop`. Make its `screenshot` tool call your first action;
+do not infer that tools are unavailable without attempting a call and receiving an explicit error. If the first screenshot
+is entirely black or blank, wait 30 seconds and check once more before deciding the Guest is unusable; the desktop may
+still be starting.
 
 Task: {instruction}
 
@@ -146,24 +152,53 @@ class CommandHarness(Harness):
 class CodexHarness(CommandHarness):
     """Options: ``codex_bin`` (default "codex"), ``node_bin`` (dir prepended to PATH), ``base_url`` (default
     ``OPENAI_BASE_URL``), ``api_key_env`` (default "OPENAI_API_KEY"; unset variable = no auth header),
-    ``wire_api`` ("responses"), ``prompt_suffix``, ``extra_config`` (raw TOML appended), ``timeout``.
+    ``wire_api`` ("responses"), ``prompt_suffix``, ``extra_config`` (raw TOML appended), ``timeout``, and optional
+    ``mcp_pythonpath`` (prepended only to the desktop MCP child environment).
     Reasoning effort comes from the spec's ``effort``."""
 
     def prepare(self, ctx: AgentContext) -> None:
         super().prepare(ctx)
-        home = self.dir / "codex_home"
-        home.mkdir(exist_ok=True)
+        # Keep an auditable config snapshot with run artifacts. Some experiment outputs live on RAID/NFS mounts
+        # that reject Codex's chmod/alias operations, so an opt-in local CODEX_HOME avoids runtime DB/sandbox state
+        # being created on that mount while preserving the GUI-only default for existing runs.
+        snapshot_home = self.dir / "codex_home"
+        snapshot_home.mkdir(exist_ok=True)
+        rendered = self.config(ctx)
+        (snapshot_home / "config.toml").write_text(rendered, encoding="utf-8")
         (self.dir / "work").mkdir(exist_ok=True)
-        (home / "config.toml").write_text(self.config(ctx), encoding="utf-8")
+        home_base = self.opts.get("codex_home_base")
+        if home_base:
+            run_key = hashlib.sha256(str(ctx.out.resolve()).encode("utf-8")).hexdigest()[:20]
+            home = Path(home_base).expanduser() / run_key / ctx.name
+            home.mkdir(parents=True, exist_ok=True)
+            (home / "config.toml").write_text(rendered, encoding="utf-8")
+        else:
+            home = snapshot_home
         self.values["codex_home"] = str(home)
         self.binary = self.opts.get("codex_bin", "codex")
         self.harness_version = self.version(self.binary)
 
     def config(self, ctx: AgentContext) -> str:
         o = self.opts
-        base_url = o.get("base_url") or os.environ.get("OPENAI_BASE_URL", "https://api.openai.com/v1")
+        base_url = o.get("base_url") or ctx.spec.get("base_url") or os.environ.get("OPENAI_BASE_URL", "https://api.openai.com/v1")
+        mcp_pythonpath = _pythonpath()
+        if o.get("mcp_pythonpath"):
+            mcp_pythonpath = os.pathsep.join((str(o["mcp_pythonpath"]), mcp_pythonpath))
         mcp_env = {"OSCOMBO_GUEST_URL": ctx.guest.url, "OSCOMBO_ACTION_LOG": str(self.action_log),
-                   "OSCOMBO_MAX_STEPS": str(ctx.max_steps), "PYTHONPATH": _pythonpath()}
+                   "OSCOMBO_MAX_STEPS": str(ctx.max_steps),
+                   "OSCOMBO_RUN_ID": str(o.get("run_id") or os.environ.get("OSCOMBO_RUN_ID") or ctx.out.name),
+                   "OSCOMBO_RUN_START_MONO": os.environ.get("OSCOMBO_RUN_START_MONO", ""),
+                   "OSCOMBO_ACTOR_ID": ctx.name, "OSCOMBO_EPISODE_ID": ctx.name,
+                   "OSCOMBO_EXPECTED_APP": str(o.get("expected_app", "")),
+                   "OSCOMBO_UNIFIED_EVENT_LOG": str(ctx.out / "events.jsonl"), "PYTHONPATH": mcp_pythonpath}
+        if ctx.action_lock_file:
+            lock_path = Path(ctx.action_lock_file)
+            lock_path.parent.mkdir(parents=True, exist_ok=True)
+            mcp_env["OSCOMBO_ACTION_LOCK_FILE"] = str(lock_path)
+            lock_events = os.environ.get("OSCOMBO_ACTION_LOCK_EVENTS_FILE")
+            if not lock_events:
+                lock_events = str(ctx.out / "locks" / "agent-action-lock-events.jsonl")
+            mcp_env["OSCOMBO_ACTION_LOCK_EVENTS_FILE"] = lock_events
         env_toml = ", ".join(f"{k} = {json.dumps(v)}" for k, v in mcp_env.items())
         key_env = o.get("api_key_env", "OPENAI_API_KEY")
         auth = f"env_key = {json.dumps(key_env)}" if os.environ.get(key_env) else "requires_openai_auth = false"

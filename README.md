@@ -170,6 +170,8 @@ ownership comes from the windows each task's setup opened (`setup_windows` in re
 appends "this computer may be shared ..." to every instruction. Both are recorded as `variant` and reported as
 separate conditions by `analyze` (e.g. `parallel[broker2]-1`).
 
+`--action-lock` is a separate Codex-only Shared+Lock treatment: it serializes one complete GUI MCP call (input action plus the returned screenshot) across actors, and records wait/hold intervals in a run-scoped event log. Model inference and multi-call task transactions remain unlocked. It cannot be combined with `--mediation`.
+
 ## paraGUI task pairs
 
 `tasks/paragui/` holds pairs of long-horizon tasks built so that the two tasks naturally share one *live*

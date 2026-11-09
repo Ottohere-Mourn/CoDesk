@@ -51,6 +51,7 @@ class RunConfig:
     quiet_notifications: bool = True
     isolated_boot_stagger: float = 30.0
     mediation: str = "none"             # none | broker1 | broker2 | selfguard (parallel mode, step harness)
+    action_lock: bool = False            # serialize whole desktop MCP calls across external Codex actors
     defense: str | None = None          # per-harness defense (oscombo/defense), every shared-Guest mode
     extra: dict[str, Any] = field(default_factory=dict)  # free-form labels copied into result.json
 
@@ -63,10 +64,21 @@ class RunConfig:
             raise ValueError("tasks of one run must be distinct (scores are keyed by task id)")
         if len(self.agents) not in (1, len(self.tasks)):
             raise ValueError("give one agent spec per task, or one shared spec")
+        if self.isolated_boot_stagger < 0:
+            raise ValueError("isolated_boot_stagger must be nonnegative")
         if self.mediation not in mediation.MODES:
             raise ValueError(f"mediation must be one of {mediation.MODES}")
         if self.defense and (self.mediation != "none" or self.mode == "isolated"):
             raise ValueError("a defense runs alone (no --mediation) and in shared-Guest modes only")
+        if self.action_lock:
+            if len(self.tasks) < 2:
+                raise ValueError("action_lock requires at least two actors")
+            if self.mediation != "none":
+                raise ValueError("action_lock is separate from step-loop mediation; do not combine them")
+            if self.mode != "parallel":
+                raise ValueError("action_lock is only meaningful in parallel shared-Guest mode")
+            if any(self.agent_spec(i).get("harness", "step") != "codex" for i in range(len(self.tasks))):
+                raise ValueError("action_lock requires the Codex MCP harness for every actor")
 
     def agent_spec(self, i: int) -> dict:
         return self.agents[i if len(self.agents) > 1 else 0]
@@ -96,13 +108,14 @@ def endpoint(spec: dict) -> str | None:
 class AgentSlot:
     """One agent: its harness, context and result; exceptions become status ``error``."""
 
-    def __init__(self, i: int, task: Any, spec: dict, guest: Guest, out: Path, max_steps: int):
+    def __init__(self, i: int, task: Any, spec: dict, guest: Guest, out: Path, max_steps: int,
+                 action_lock_file: str | None = None):
         self.name = f"agent{chr(ord('A') + i)}"
         self.task = task
         self.spec = spec
         self.ctx = AgentContext(name=self.name, task_id=str(task_get(task, "id")),
                                 instruction=instruction_for(task, spec), guest=guest, out=out,
-                                max_steps=max_steps, spec=spec)
+                                max_steps=max_steps, spec=spec, action_lock_file=action_lock_file)
         self.result = AgentResult()
         self.harness = None
 
@@ -182,8 +195,12 @@ def run(cfg: RunConfig) -> dict:
     image = cfg.image or os.environ.get("OSCOMBO_GUEST_IMAGE")
     cache = Path(cfg.cache_dir or cfg.out / "cache")
     result: dict[str, Any] = {"mode": cfg.mode, "tasks": cfg.tasks, "max_steps": cfg.max_steps,
-                              "variant": cfg.variant(), "mediation": cfg.mediation, "agent_specs": cfg.agents,
+                              "variant": cfg.variant(), "mediation": cfg.mediation,
+                              "action_lock": cfg.action_lock, "isolated_boot_stagger_s": cfg.isolated_boot_stagger,
+                              "agent_specs": cfg.agents,
                               "code": code_version(), **cfg.extra}
+    if cfg.action_lock:
+        result["action_lock_events_file"] = str(cfg.out / "locks" / "guest-actions.events.jsonl")
     slots: list[AgentSlot] = []
     t0 = time.time()
     try:
@@ -233,7 +250,9 @@ def _run_shared(cfg: RunConfig, image: str, cache: Path, tasks: list, result: di
         result["setup_s"] = round(time.time() - t0 - result["boot_s"], 1)
 
         active = tasks[:1] if cfg.mode == "shadow" else tasks  # shadow: only agent A acts and is evaluated
-        slots += [AgentSlot(i, t, cfg.agent_spec(i), guest, cfg.out, cfg.max_steps) for i, t in enumerate(active)]
+        lock_path = str(cfg.out / "locks" / "guest-actions.lock") if cfg.action_lock else None
+        slots += [AgentSlot(i, t, cfg.agent_spec(i), guest, cfg.out, cfg.max_steps, lock_path)
+                  for i, t in enumerate(active)]
         if mediate:
             _attach_mediation(cfg, guest, slots, result)
         if cfg.defense:
@@ -324,6 +343,9 @@ def _run_isolated(cfg: RunConfig, image: str, cache: Path, tasks: list, result: 
             if cfg.quiet_notifications:
                 Guest(envs[i]).quiet_notifications()
             envs[i].reset(task_config=tasks[i])
+            # Isolated Guests need the same black-screen readiness gate as a shared Guest. Taking only a
+            # best-effort start screenshot lets a black Guest reach Codex and look like an agent/tool failure.
+            Guest(envs[i]).wait_desktop()
         except Exception as exc:
             errors[i] = f"{type(exc).__name__}: {exc}"
 

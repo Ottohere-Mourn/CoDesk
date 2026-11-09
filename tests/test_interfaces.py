@@ -167,7 +167,9 @@ def test_desktop_tools_budget_is_shared_across_processes(tmp_path, monkeypatch):
     assert dt.run_tool("screenshot", {})[1] is not None
     assert dt.run_tool("click", {"x": 1, "y": 1}) == (dt.OUT_OF_BUDGET, None)
     log = [json.loads(x) for x in (tmp_path / "actions.jsonl").read_text().splitlines()]
-    assert [x["n"] for x in log] == [1, 2] and log[0]["code"].startswith("pyautogui.click(15, 15")
+    assert [x["n"] for x in log] == [1, 2, 2]
+    assert [x["status"] for x in log] == ["ok", "ok", "out_of_budget"]
+    assert log[0]["code"].startswith("pyautogui.click(15, 15")
 
 
 def _write_run(root, name, mode, tasks, scores, agents, trace=()):

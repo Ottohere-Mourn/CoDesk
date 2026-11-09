@@ -4,6 +4,7 @@ import pytest
 
 from oscombo import combo, runner
 from oscombo.guest import Guest
+from oscombo.harness.base import AgentResult
 
 from fakes import FakeEnv, task
 
@@ -59,6 +60,23 @@ def test_isolated_uses_one_guest_per_task(fake_osworld, tmp_path):
     assert [e.controller.executed for e in fake_osworld] == [[CLICK], [CLICK]]
 
 
+def test_isolated_black_guest_is_infra_and_agents_do_not_start(fake_osworld, tmp_path, monkeypatch):
+    monkeypatch.setenv("OSCOMBO_DESKTOP_PATIENCE", "0")
+    orig_boot = combo.boot
+
+    def black_boot(image, cache_dir):
+        env = orig_boot(image, cache_dir)
+        env.controller.get_screenshot = lambda: b"tiny"
+        return env
+
+    monkeypatch.setattr(combo, "boot", black_boot)
+    r = runner.run(config(tmp_path, "isolated", ["chrome/a", "calc/b"]))
+    assert "INFRA" in r["error"] and "black" in r["error"]
+    assert not r.get("scores")
+    assert all(env.closed for env in fake_osworld)
+    assert not (tmp_path / "run" / "agentA" / "instruction.txt").exists()
+
+
 def test_shadow_only_first_agent_acts_and_is_scored(fake_osworld, tmp_path):
     r = runner.run(config(tmp_path, "shadow", ["chrome/a", "calc/b"]))
     assert r["scores"] == {"a": 1.0}
@@ -107,6 +125,35 @@ def test_config_checks():
         runner.RunConfig("parallel", ["a", "b", "c"], None, [{}, {}]).check()
 
 
+def test_action_lock_wires_one_run_scoped_path_to_codex_actors(fake_osworld, tmp_path, monkeypatch):
+    seen = []
+
+    class LockAwareHarness:
+        def prepare(self, ctx):
+            seen.append(ctx.action_lock_file)
+
+        def run(self, ctx):
+            return AgentResult(status="done")
+
+    monkeypatch.setattr(runner, "make_harness", lambda spec: LockAwareHarness())
+    cfg = config(tmp_path, "parallel", ["chrome/a", "calc/b"], action_lock=True)
+    cfg.agents = [{"harness": "codex", "model": "gpt-6-sol"}]
+    r = runner.run(cfg)
+    assert r.get("error") is None, r.get("traceback")
+    assert r["action_lock"] is True
+    assert seen == [str(cfg.out / "locks" / "guest-actions.lock")] * 2
+
+
+def test_action_lock_rejects_wrong_harness_or_mode(tmp_path):
+    cfg = config(tmp_path, "parallel", ["chrome/a", "calc/b"], action_lock=True)
+    with pytest.raises(ValueError, match="Codex MCP"):
+        cfg.check()
+    cfg.agents = [{"harness": "codex"}]
+    cfg.mode = "sequential"
+    with pytest.raises(ValueError, match="parallel"):
+        cfg.check()
+
+
 @pytest.mark.parametrize("med", ["broker2", "selfguard"])
 def test_parallel_with_mediation_and_hint(fake_osworld, tmp_path, monkeypatch, med):
     monkeypatch.setattr("oscombo.mediation.time.sleep", lambda s: None)
@@ -146,3 +193,17 @@ def test_black_screen_after_setup_is_infra(fake_osworld, tmp_path, monkeypatch):
     monkeypatch.setattr(combo, "boot", black_boot)
     r = runner.run(config(tmp_path, "solo", ["chrome/a"]))
     assert "INFRA" in r["error"] and "black" in r["error"]
+
+
+def test_isolated_boot_stagger_is_recorded_and_must_be_nonnegative(fake_osworld, tmp_path, monkeypatch):
+    monkeypatch.setattr(runner.time, "sleep", lambda _seconds: None)
+    cfg = runner.RunConfig(mode="isolated", tasks=["chrome/a", "calc/b"], out=tmp_path / "stagger",
+                           agents=[{"harness": "step", "policy": "scripted",
+                                    "options": {"actions": [CLICK], "action_pause": 0, "step_pause": 0}}],
+                           max_steps=5, image="guest.qcow2", setup_settle=0, isolated_boot_stagger=42)
+    r = runner.run(cfg)
+    assert r["isolated_boot_stagger_s"] == 42
+    bad = runner.RunConfig(mode="isolated", tasks=["chrome/a", "calc/b"], out=tmp_path / "bad-stagger",
+                           agents=[{}], isolated_boot_stagger=-1)
+    with pytest.raises(ValueError, match="nonnegative"):
+        bad.check()
