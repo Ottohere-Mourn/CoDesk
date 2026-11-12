@@ -52,8 +52,8 @@
 - 分支从 origin/yuke-osworld 的 976024720adba9a6087ec4c8526f26be0c8555db 开始；尚未 push，没有改动其他 CoDesk worktree。
 - OSWorld checkout：/home/mjh/Projects/_deps/OSWorld-V2-osworld-v2.1。保留其已有 dirty modification：desktop_env/providers/docker/provider.py。
 - 本机已有 runtime：swcub/osworld-v2.1-qemu-runtime:local；Guest base 是 /mnt/raid1/mjh/Projects/_deps/osworld-v2.1/docker_vm_data/osworld-v2-ubuntu-x86.qcow2。
-- Guest overlay、OSWorld cache、run output 放在 /mnt/raid1/mjh/Projects/codesk-next3-20261112/；当前 RAID1 约 1.1 TiB 可用，根盘约 26 GiB 可用/99% 使用。runs 串行执行；不清理其他用户的 Docker image/container 或历史数据。
-- Docker provider 的本地 swcub package 来自 /home/mjh/Projects/CoDesk-candidate-repair-20261104；环境通过 SWCUB_OSWORLD_DOCKER_RUNTIME_IMAGE 指定已有本机 runtime，并将 SWCUB_OSWORLD_OVERLAY_HOST_DIR 指向 RAID1，避免再触发 Docker Hub 下载。
+- Run output/cache 与 overlay archive 位于 RAID1 的 /mnt/raid1/mjh/Projects/codesk-next3-20261112；最新 runner 先把只读 Guest base 与活动 overlay 放在 /dev/shm，run 结束将 overlay 归档回 RAID1。当前 RAID1 约 1.1 TiB 可用，根盘约 26 GiB 可用/99%。runs 串行执行；不清理其他用户的 Docker image/container 或历史数据。
+- Docker provider 使用本机 swcub package 和已有 runtime image，避免 Docker Hub 下载。早先 K1 setup smoke 使用 RAID overlay；最新 runner 将 SWCUB_OSWORLD_OVERLAY_HOST_DIR 指向每个 run 的 /dev/shm overlay，降低 NTFS/FUSE I/O stall，退出后归档到 RAID。
 - smoke 的前两次尝试是 infra-invalid：第一次因 PYTHONPATH 缺少 swcub；第二次 provider 使用默认 Docker image 名称、尝试从 Hub 获取时遇网络超时，未实际拉到镜像。后续改用本地 runtime 与 RAID overlay 后，Guest GUI setup 正常；零动作脚本结果 score 0.0。
 - 系统 PATH 中没有 codex；使用既有显式 binary /home/mjh/.local/share/codesk-case3-tools/codex，版本 codex-cli 0.165.0。所有 arms 将固定同一 binary/version；这与旧记录的 0.155.0 不同，不和旧 triplet 混合。
 
@@ -63,7 +63,7 @@
 - pair roster：lists/paragui_v1_combos.txt。
 - 本地控制：tests/test_shelter1_reference_controls.py、tests/test_k1_reference_controls.py、tests/test_k2_reference_controls.py。
 - Action lock：tests/test_action_lock.py；runner：scripts/run_new_case_arm.sh。
-- 六个 task class 可通过 OSWorld task loader 导入；离线正/负 controls 和 lock test 共 9 passed；bash -n 与 git diff --check 通过。
+- 六个 task class 可通过 OSWorld task loader 导入；离线正/负 controls 和 lock test 共 10 passed；bash -n 与 git diff --check 通过。
 - Assets：/mnt/raid1/mjh/Projects/codesk-next3-20261112/assets/{s1,k1,k2}
 - Run root：/mnt/raid1/mjh/Projects/codesk-next3-20261112/runs/triplets/
 - Guest overlay：/mnt/raid1/mjh/Projects/codesk-next3-20261112/overlays/
@@ -83,3 +83,19 @@ K1/K2 仅把第一个参数改为 k1 或 k2。运行前确认无活跃 Guest；�
 - Action log/trace 保留工具名、参数、焦点窗口、GUI code、截图及 lock_enabled / lock_wait_s / lock_held_s。run-level 标记有 action-lock。
 - Lock 的范围是一次 GUI MCP mutation call + 该 call 返回截图。它不会自动锁住多轮规划、标签选择、表单填充或数据库状态；这正是 Shared+Lock 臂的实际能力边界。
 - 只有 API/Guest/reset/evaluator 有效、MA-ID oracle 全 PASS 且两 shared oracle 失败，才算符合目标。某个 task score partial 也算该业务 task 未 PASS，但 invalid 不得计为 FAIL。
+
+
+## 2026-11-12 实验补记（不是有效 triplet）
+- MA-ID 首试 `cdesk3-s1-ma-id-20261112T052333Z-837755`：两台 Guest 在 300 秒就绪期限内启动超时，infra-invalid；没有模型调用。
+- `cdesk3-s1-ma-id-20261112T053449Z-842799`：使用 RAID/NTFS-FUSE 上的 Codex HOME 时 CLI 在首个动作前报 `Operation not permitted`；两 Guest/app 已启动，零步，invalid。
+- `cdesk3-s1-ma-id-20261112T054319Z-847864`：改用 ext4 Codex runtime HOME/work 后，CLI 成功发出 Responses 请求；Docode 对两 Agent 返回 403 用户额度不足，Agent 0 步。运行分数不作任务成败证据。
+- Docode 账户错误余额约为 -$0.072590，停止继续请求 API。备用 Haogpt credential 的 /v1/models 请求返回 401 Invalid token，不使用。
+- 0 步 evaluator 曾给 S1 intake 0.5（容量约束空集合真导致 vacuous partial）。已在 `a08cb9c` 改成无 assignment 为 0 分并加回归测试；上述旧 run 分数仍保留，不能追溯成模型 FAIL。
+
+
+## 环境/验证补正（覆盖上文较早的资源描述）
+- 最新 runner 使用 /dev/shm/codesk-next3/osworld-v2-ubuntu-x86.qcow2 作为只读 Guest base；每次运行的活动 overlay 写到 /dev/shm/codesk-next3/overlays/RUN_ID，结束后复制归档到 RAID 的 overlays/RUN_ID。因此，上文“Guest overlay 全程写在 RAID”的旧描述已过时；run output/cache 仍写 RAID。
+- 新 runner 将 SWCUB_OSWORLD_VM_READY_TIMEOUT=600；这是为了容忍双 Guest 启动，不影响 Agent 任务时间/预算。
+- Codex HOME/work 在本机 ext4 /home/mjh/.cache/codesk-next3-runtime/RUN_ID，解决 NTFS/FUSE 上创建 helper alias 的 EPERM；可审计的非 secret config 副本在每 Agent 的 run output。
+- 2026-11-12 最新验证：离线 controls + action-lock 共 10 passed；OSWorld task loader 六项全部可导入；py_compile / bash -n / git diff --check 均通过。K1 real Guest setup smoke 已成功。模型三臂尚无有效结果。
+- Host lock primitive 另在 RAID/FUSE 与 ext4 各做了 flock preflight，均成功；action-lock unit test 通过。
