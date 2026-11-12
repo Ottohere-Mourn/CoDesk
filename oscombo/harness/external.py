@@ -118,10 +118,14 @@ class CommandHarness(Harness):
         for i, line in enumerate(self.action_log.read_text().splitlines(), 1):
             c = json.loads(line)
             t = round(c.get("t", time.time()) - ctx.t0, 1)
-            recs.append({"step": c.get("n", i), "t": t, "tool": c.get("tool"), "args": c.get("args"),
-                         "actions": ([{"t": t, "window_before": c.get("window_before"), "code": c["code"]}]
-                                     if c.get("code") else []),
-                         "done": False, "fail": c.get("tool") == "declare_infeasible"})
+            rec = {"step": c.get("n", i), "t": t, "tool": c.get("tool"), "args": c.get("args"),
+                   "actions": ([{"t": t, "window_before": c.get("window_before"), "code": c["code"]}]
+                               if c.get("code") else []),
+                   "done": False, "fail": c.get("tool") == "declare_infeasible"}
+            for key in ("lock_enabled", "lock_wait_s", "lock_held_s"):
+                if key in c:
+                    rec[key] = c[key]
+            recs.append(rec)
         return recs
 
     def version(self, binary: str) -> str | None:
@@ -164,6 +168,9 @@ class CodexHarness(CommandHarness):
         base_url = o.get("base_url") or os.environ.get("OPENAI_BASE_URL", "https://api.openai.com/v1")
         mcp_env = {"OSCOMBO_GUEST_URL": ctx.guest.url, "OSCOMBO_ACTION_LOG": str(self.action_log),
                    "OSCOMBO_MAX_STEPS": str(ctx.max_steps), "PYTHONPATH": _pythonpath()}
+        action_lock_path = o.get("action_lock_path")
+        if action_lock_path:
+            mcp_env["OSCOMBO_ACTION_LOCK_PATH"] = str(action_lock_path)
         env_toml = ", ".join(f"{k} = {json.dumps(v)}" for k, v in mcp_env.items())
         key_env = o.get("api_key_env", "OPENAI_API_KEY")
         auth = f"env_key = {json.dumps(key_env)}" if os.environ.get(key_env) else "requires_openai_auth = false"

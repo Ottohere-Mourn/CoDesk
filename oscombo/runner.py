@@ -51,6 +51,7 @@ class RunConfig:
     quiet_notifications: bool = True
     isolated_boot_stagger: float = 30.0
     mediation: str = "none"             # none | broker1 | broker2 | selfguard (parallel mode, step harness)
+    action_lock: bool = False            # serialize one GUI MCP mutation call + its screenshot on a shared Guest
     defense: str | None = None          # per-harness defense (oscombo/defense), every shared-Guest mode
     extra: dict[str, Any] = field(default_factory=dict)  # free-form labels copied into result.json
 
@@ -67,6 +68,10 @@ class RunConfig:
             raise ValueError(f"mediation must be one of {mediation.MODES}")
         if self.defense and (self.mediation != "none" or self.mode == "isolated"):
             raise ValueError("a defense runs alone (no --mediation) and in shared-Guest modes only")
+        if self.action_lock and self.mode != "parallel":
+            raise ValueError("the per-action lock is only defined for parallel/shared-Guest runs")
+        if self.action_lock and any(a.get("harness") not in {"codex", "pi"} for a in self.agents):
+            raise ValueError("the per-action lock is wired only for Codex/Pi desktop MCP harnesses")
 
     def agent_spec(self, i: int) -> dict:
         return self.agents[i if len(self.agents) > 1 else 0]
@@ -76,6 +81,8 @@ class RunConfig:
         parts = [] if self.mediation == "none" else [self.mediation]
         if self.defense:
             parts.append(f"defense:{self.defense}")
+        if self.action_lock:
+            parts.append("action-lock")
         if any(a.get("coagent_hint") for a in self.agents):
             parts.append("hint")
         if any(a.get("instruction_suffix") for a in self.agents):
@@ -182,7 +189,8 @@ def run(cfg: RunConfig) -> dict:
     image = cfg.image or os.environ.get("OSCOMBO_GUEST_IMAGE")
     cache = Path(cfg.cache_dir or cfg.out / "cache")
     result: dict[str, Any] = {"mode": cfg.mode, "tasks": cfg.tasks, "max_steps": cfg.max_steps,
-                              "variant": cfg.variant(), "mediation": cfg.mediation, "agent_specs": cfg.agents,
+                              "variant": cfg.variant(), "mediation": cfg.mediation, "action_lock": cfg.action_lock,
+                              "agent_specs": cfg.agents,
                               "code": code_version(), **cfg.extra}
     slots: list[AgentSlot] = []
     t0 = time.time()
@@ -233,7 +241,13 @@ def _run_shared(cfg: RunConfig, image: str, cache: Path, tasks: list, result: di
         result["setup_s"] = round(time.time() - t0 - result["boot_s"], 1)
 
         active = tasks[:1] if cfg.mode == "shadow" else tasks  # shadow: only agent A acts and is evaluated
-        slots += [AgentSlot(i, t, cfg.agent_spec(i), guest, cfg.out, cfg.max_steps) for i, t in enumerate(active)]
+        specs = []
+        for i in range(len(active)):
+            spec = dict(cfg.agent_spec(i))
+            if cfg.action_lock:
+                spec["options"] = {**spec.get("options", {}), "action_lock_path": str(cfg.out / "action.lock")}
+            specs.append(spec)
+        slots += [AgentSlot(i, t, specs[i], guest, cfg.out, cfg.max_steps) for i, t in enumerate(active)]
         if mediate:
             _attach_mediation(cfg, guest, slots, result)
         if cfg.defense:

@@ -22,6 +22,8 @@ import json
 import os
 import sys
 import time
+import threading
+from contextlib import contextmanager
 from contextlib import contextmanager
 
 import requests
@@ -30,6 +32,8 @@ from PIL import Image as PILImage
 URL = os.environ.get("OSCOMBO_GUEST_URL", "http://localhost:5000").rstrip("/")
 LOG = os.environ.get("OSCOMBO_ACTION_LOG")
 BUDGET = int(os.environ.get("OSCOMBO_MAX_STEPS") or "45")
+ACTION_LOCK_PATH = os.environ.get("OSCOMBO_ACTION_LOCK_PATH")
+_LOCK_TIMING = threading.local()
 SETTLE = float(os.environ.get("OSCOMBO_MCP_SETTLE", "1.0"))
 MODEL_W, MODEL_H = 1280, 720
 PREFIX = "import pyautogui; import time; pyautogui.FAILSAFE = False; {cmd}"
@@ -140,12 +144,44 @@ def _code(name: str, args: dict, scale: list[float]) -> str | None:
 
 
 def _log(rec: dict) -> None:
+    timing = getattr(_LOCK_TIMING, "metrics", None)
+    if timing is not None:
+        rec.update(lock_enabled=True, lock_wait_s=round(timing["wait_s"], 4),
+                   lock_held_s=round(time.perf_counter() - timing["acquired_at"], 4))
     if LOG:
         with open(LOG, "a") as f:
             f.write(json.dumps(rec) + "\n")
 
 
+@contextmanager
+def _shared_action_lock():
+    """Optional host-side flock shared by all MCP servers connected to one Guest."""
+    if not ACTION_LOCK_PATH:
+        yield
+        return
+    os.makedirs(os.path.dirname(ACTION_LOCK_PATH), exist_ok=True)
+    started = time.perf_counter()
+    with open(ACTION_LOCK_PATH, "a") as handle:
+        fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
+        acquired = time.perf_counter()
+        _LOCK_TIMING.metrics = {"wait_s": acquired - started, "acquired_at": acquired}
+        try:
+            yield
+        finally:
+            _LOCK_TIMING.metrics = None
+            fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+
+
 def run_tool(name: str, args: dict) -> tuple[str, bytes | None]:
+    """Execute one MCP call; with an action lock, mutations plus their returned screenshot are atomic."""
+    mutating = name in {"click", "drag", "move", "type_text", "key", "scroll"}
+    if mutating and ACTION_LOCK_PATH:
+        with _shared_action_lock():
+            return _run_tool_unlocked(name, args)
+    return _run_tool_unlocked(name, args)
+
+
+def _run_tool_unlocked(name: str, args: dict) -> tuple[str, bytes | None]:
     """Execute one tool call; returns (text, png bytes or None)."""
     with _state() as st:  # reserve a call number (and read the latest scale) atomically
         if name != "declare_infeasible" and st["calls"] >= BUDGET:
@@ -164,7 +200,6 @@ def run_tool(name: str, args: dict) -> tuple[str, bytes | None]:
     before = _active_window() if code else None
     if code:
         _py(code)
-    _log({"t": time.time(), "n": n, "tool": name, "args": args, "window_before": before, "code": code})
     png, scale = _shot()
     with _state() as st:
         st["scale"] = scale
@@ -173,6 +208,7 @@ def run_tool(name: str, args: dict) -> tuple[str, bytes | None]:
         os.makedirs(shots, exist_ok=True)
         with open(os.path.join(shots, f"{n:03d}.png"), "wb") as f:
             f.write(png)
+    _log({"t": time.time(), "n": n, "tool": name, "args": args, "window_before": before, "code": code})
     left = BUDGET - n
     return (f"OK. {left} tool calls left." if left <= 5 else "OK."), png
 

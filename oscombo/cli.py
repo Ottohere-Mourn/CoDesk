@@ -78,6 +78,8 @@ def add_run_args(ap: argparse.ArgumentParser) -> None:
     ap.add_argument("--image", help="Guest qcow2 (default $OSCOMBO_GUEST_IMAGE)")
     ap.add_argument("--setup-settle", type=float, default=20.0)
     ap.add_argument("--label", action="append", default=[], metavar="KEY=VALUE", help="extra field in result.json")
+    ap.add_argument("--action-lock", action="store_true",
+                    help="parallel external GUI harnesses: serialize each mutating desktop MCP call + returned screenshot")
     ap.add_argument("--mediation", default="none", choices=("none", "broker1", "broker2", "selfguard"),
                     help="parallel mode, step harness: input broker / + window ownership / per-agent self-guard")
     ap.add_argument("--defense", help="per-harness defense: noop | v1 | pkg.module (see oscombo/defense)")
@@ -95,7 +97,7 @@ def cmd_run(a: argparse.Namespace) -> int:
     cfg = runner.RunConfig(mode=a.mode, tasks=tasks, out=Path(a.out).resolve(),
                            agents=with_hint(agent_specs(a), a.coagent_hint), max_steps=a.max_steps,
                            image=str(Path(a.image).resolve()) if a.image else None, setup_settle=a.setup_settle,
-                           mediation=a.mediation, defense=a.defense, extra=extra)
+                           mediation=a.mediation, action_lock=a.action_lock, defense=a.defense, extra=extra)
     osworld.activate()
     result = runner.run(cfg)
     print(json.dumps({k: result.get(k) for k in ("mode", "tasks", "scores", "agents", "error")}, indent=1))
