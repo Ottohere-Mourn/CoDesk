@@ -67,5 +67,5 @@ set +e
 RUN_STATUS=$?
 set -e
 mkdir -p "$OVERLAY_ARCHIVE"
-rsync -r --sparse --whole-file "$OVERLAYS"/ "$OVERLAY_ARCHIVE"/ || echo "warning: could not archive tmpfs overlay" >&2
+cp -r --sparse=always --no-preserve=all "$OVERLAYS"/. "$OVERLAY_ARCHIVE"/ || echo "warning: could not archive tmpfs overlay" >&2
 exit "$RUN_STATUS"
