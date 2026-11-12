@@ -25,12 +25,18 @@ REPO="/home/mjh/Projects/CoDesk-three-new-dualagent-cases-20261112"
 OSW="/home/mjh/Projects/_deps/OSWorld-V2-osworld-v2.1"
 SWC="/home/mjh/Projects/CoDesk-candidate-repair-20261104"
 ASSETS="/mnt/raid1/mjh/Projects/codesk-next3-20261112/assets"
-BASE="/mnt/raid1/mjh/Projects/_deps/osworld-v2.1/docker_vm_data/osworld-v2-ubuntu-x86.qcow2"
-OVERLAYS="/mnt/raid1/mjh/Projects/codesk-next3-20261112/overlays"
+BASE="/dev/shm/codesk-next3/osworld-v2-ubuntu-x86.qcow2"
+OVERLAY_TMP_ROOT="/dev/shm/codesk-next3/overlays"
+OVERLAY_ARCHIVE_ROOT="/mnt/raid1/mjh/Projects/codesk-next3-20261112/overlays"
+SWCUB_OSWORLD_VM_READY_TIMEOUT=600
+export SWCUB_OSWORLD_VM_READY_TIMEOUT
 OUT_ROOT="/mnt/raid1/mjh/Projects/codesk-next3-20261112/runs/triplets"
 RUN_ID="cdesk3-"$CASE_ID"-"$ARM"-$(date -u +%Y%m%dT%H%M%SZ)-"$$
 OUT="$OUT_ROOT/$RUN_ID"
+OVERLAYS="$OVERLAY_TMP_ROOT/$RUN_ID"
+OVERLAY_ARCHIVE="$OVERLAY_ARCHIVE_ROOT/$RUN_ID"
 mkdir -p "$OUT/resources" "$OVERLAYS"
+test -r "$BASE" || { echo "staged tmpfs Guest image missing: $BASE" >&2; exit 2; }
 (
   cd "$ASSETS/$CASE_ID"
   sha256sum app_*.py seed.db expected.json > "$OUT/fixture.sha256"
@@ -46,11 +52,18 @@ export SWCUB_OSWORLD_OVERLAY_HOST_DIR="$OVERLAYS"
 export SWCUB_RUN_ID="$RUN_ID" SWCUB_OWNER_TOKEN="$(od -An -N32 -tx1 /dev/urandom | tr -d ' \n')"
 export SWCUB_RESOURCE_LEDGER="$OUT/resources/resource_ledger.jsonl"
 cd "$REPO"
-exec "$OSW/.venv/bin/python" -m oscombo run \
+CMD=("$OSW/.venv/bin/python" -m oscombo run \
   --mode "$MODE" --tasks "$TASK_A" "$TASK_B" --out "$OUT" \
   --harness codex --model gpt-6-sol --effort high --max-steps 45 --setup-settle 25 \
   --opt codex_bin=/home/mjh/.local/share/codesk-case3-tools/codex \
   --opt base_url=https://docode.cc/v1 --opt timeout=2400 \
   --label run="$RUN_ID" --label case="$CASE_ID" --label arm="$ARM" \
-  --label gui_tool_call_budget=45 --label model=gpt-6-sol --label endpoint=https://docode.cc/v1 \
-  "$LOCK_ARGS[@]"
+  --label gui_tool_call_budget=45 --label model=gpt-6-sol --label endpoint=https://docode.cc/v1)
+if [[ "$ARM" == "shared-lock" ]]; then CMD+=(--action-lock); fi
+set +e
+"${CMD[@]}"
+RUN_STATUS=$?
+set -e
+mkdir -p "$OVERLAY_ARCHIVE"
+cp -a "$OVERLAYS"/. "$OVERLAY_ARCHIVE"/ || echo "warning: could not archive tmpfs overlay" >&2
+exit "$RUN_STATUS"
