@@ -1,6 +1,6 @@
 # CoDesk：3个新双 Agent Case 设计卡
 
-审计后仅 K2 保留为一次符合目标的候选（1/3）；S1 因任务目标互斥且实际加载了过期 Oracle 而不合格，K1 三臂均 PASS、不符合目标。
+质量审计后当前为 0/3：S1 与 K2 都是目标互斥的 zero-sum pair，K1 三臂均 PASS、不符合目标。S1 另有过期 Oracle 漂移。
 
 ## 统一协议
 - MA-ID：两个 Agent 在并发运行的独立 Guest 中执行；各自从相同 pair fixture/reset 开始。
@@ -37,7 +37,7 @@
 - 边界/重合：与 PAY-1/DATA-REL1 的 stale-artifact 机制近邻；宏观流程为现场派车与客服改期，不宣称全新底层机制。本地调度板不能外推生产调度系统。
 
 ## 设计审计与通过门槛
-该数值门还必须通过任务可共同达成（非 zero-sum）和 evaluator 版本一致性审计。初始模型结果表面为 2/3；严格质量审计后，只有 K2 保留为 1/3。
+严格质量审计后，S1 与 K2 均排除，目前为 0/3。
 
 
 ## 2026-11-12 GPT-6-Sol 真实模型首轮结果（权威更新）
@@ -60,11 +60,11 @@
 
 - **S1 SHELTER-INTAKE1：no-go，不能当作合格 FAIL。** MA-ID 两任务通过；共享臂中 Agent A 明确发现 Agent B 已关闭唯一能容纳四人 H-103 的 CR-201，并正确报告当前目标不可行。A 被禁止改变房间状态；B 被要求必须封房。因其余房间容量均不超过 3，两个任务在共享状态下没有共同可行解。它违反本套件“协调后双方可成功、非 zero-sum”的设计门；观察到的共享失败是目标互斥，不是合格的共享桌面干扰效应。run 输出的 0.5 还来自过期的已安装 Oracle，不能作为有效评分。
 - **K1 COURT-SERVICE1：no-go。** 三臂双方全 PASS。Shared 臂有较高 GUI 调用数和耗时，但成本增加不是任务失败；不能声称达标。其 active-docket 设计也与 Case 3/A-01 上下文机制近邻，不建议简单调参继续救。
-- **K2 ROUTE-RECON1：首轮符合。** MA-ID 完整通过。Shared 中共享 GUI 焦点在路线草稿与 WO-503 客户改期页间反复变化，两边均部分失败。Shared+Lock 中客服任务全通过，但路线仍包含已 Deferred 的 WO-503，故路线 oracle 0.8571；锁没有跨工作流版本事务。
+- **K2 ROUTE-RECON1：no-go，不计 Shared FAIL。** Agent A 被要求在最终路线中精确包含冻结 manifest 的 WO-501/502/503/504 且不得编辑 work orders；Agent B 被要求把 WO-503 改为 Deferred 且不得编辑 route。Route oracle 同时要求每个已列 stop 的 work order 当前仍为 Scheduled。B 成功后，WO-503 必为 Deferred，因此任何满足 B oracle 的最终状态都必然使 A 的 route oracle 失败。Shared+Lock 的 A=0.8571 不是锁不足导致的可恢复冲突，而是这些硬目标本身互斥。
 - 九个有效 arm 均 `error=null`，没有将 infrastructure-invalid 计作 FAIL。累计约 12,955,536 input tokens（11,356,725 cached）、44,495 output tokens，elapsed 总和约 5,492 秒（91.5 分钟）。run IDs 与逐次完整日志位于相应 RAID run directories，见 handoff。
 - 初始准备阶段的 Guest timeout、NTFS Codex HOME、旧 key 额度错误仍作为 infra-invalid 历史保留，不能与上述有效结果混算。
 
-结论（审计修正）：本批只有 **1/3 首轮保留**（K2）；S1 和 K1 均 no-go。S1 是目标互斥的 zero-sum 任务并存在 Oracle 版本漂移；K1 是全臂 PASS。需要补出两个新候选并先通过共同可行性与 evaluator 语义门；不改写或删除历史 run。
+结论（审计修正）：本批 **0/3 合格**。S1、K2 均因双方目标无共同解而 no-go，K1 是全臂 PASS。原始实验数据保留；下一步必须重新设计两个候选，先证明目标共同可行，再跑真实 triplet。
 
 
 ## 2026-11-12 质量审计修正（覆盖本文件较早的 S1 判定）
@@ -81,4 +81,18 @@ Run IDs:
 - Shared: cdesk3-s1-shared-20261112T065201Z-873251
 - Shared+Lock: cdesk3-s1-shared-lock-20261112T071251Z-882842
 
-这会覆盖文中早先将 S1 计入 2/3 的描述；表格分数仍作为原始 result.json 输出，不应再解释为冻结 Oracle 下的规范评分。
+这会覆盖文中早先将 S1、K2 计入 2/3 的描述；表格分数仍作为原始 result.json 输出，不应再解释为冻结 Oracle 下的规范评分。
+
+
+## 2026-11-12 K2 共同可行性审计（覆盖早先将其计入 2/3 或 1/3 的说法）
+
+K2 的 raw GPT-6-Sol 三臂均保留，基础设施有效；但它不能成为合格 case，因为 A/B oracle 在共享桌面的最终状态下无法同时满足。
+
+- Route Agent A 的 frozen prompt 明确要求 RTE-17 精确包含 WO-501、WO-502、WO-503、WO-504，并禁止修改 work orders。
+- Service Agent B 的 prompt 明确要求把 WO-503 设置为 Deferred，并禁止编辑 route。
+- Route oracle 的 released_manifest_order_exact 要求 stops 精确等于四项清单；every_stop_still_scheduled 又要求每个 stop 对应 work order 最终为 Scheduled。
+- 因此 B oracle 为真时，WO-503 必为 Deferred；A 的第二个检查必为假。无论顺序、观察、重试或 PerActionLock，都不存在双方同时 1.0 的共享终态。MA-ID 的双 PASS 只因两个 Guest 各自有独立数据库。
+
+K2 raw scores（MA-ID 1.0/1.0、Shared 0.1429/0.25、Shared+Lock 0.8571/1.0）真实反映当前 task+oracle，但不能归因成合格的可避免共享干扰；应改判为任务规格 zero-sum，而不是合格 FAIL。run IDs: cdesk3-k2-ma-id-20261112T080745Z-908714、cdesk3-k2-shared-20261112T081915Z-914157、cdesk3-k2-shared-lock-20261112T084500Z-922685。
+
+若要重做，Route task 应定义为“根据当前工单状态生成一致的 Friday route draft”，允许排除 Deferred 的 WO-503 并从未变更的 released stops 中生成路线；oracle 应检查终态与当前 job 状态一致及其他字段正确。先构造并证明共享最终状态双方可共同 PASS 的控制，再重新跑 MA-ID、Shared、Shared+Lock。不要沿用现有 K2 原始 triplet 作为 qualified 证据。

@@ -6,7 +6,7 @@
 
 已在 HealthCare 的独立 worktree 实现三个 paraGUI task pair、确定性 SQLite fixture、业务 Oracle、离线控制测试，以及用于 Shared+Lock 的 opt-in per-MCP-call lock。Guest setup smoke、离线 controls 与 9 个 GPT-6-Sol 真实模型臂均已完成。
 
-初始评分表面上显示 S1、K2 两组符合三臂数值组合；但 2026-11-12 质量审计发现 S1 的两任务目标互斥（zero-sum），且实际运行导入了过期 Oracle。**严格计数只有 K2 一组暂时保留为候选（1/3）；S1、K1 均 no-go。** 原始 run/score 不删除；本文末的质量审计修正覆盖此前将 S1 算入达标的解释。
+初始评分表面上显示 S1、K2 两组符合三臂数值组合；但质量审计确认两组任务目标均互斥（zero-sum），S1 还实际导入了过期 Oracle。**严格计数为 0/3；S1、K2、K1 均 no-go（K1 是全臂 PASS）。** 原始 run/score 不删除；本文末的质量审计修正覆盖此前的数值解释。
 
 ## 判定门槛和一致配置
 
@@ -129,7 +129,7 @@ Totals: 12,955,536 input tokens (11,356,725 cached), 44,495 output tokens, and 5
 
 - **S1 is no-go after audit.** Raw runs remain intact, but the shared failure is not a valid inter-agent interference case: closing the only four-person room makes Intake's required assignment impossible, and the Intake Agent correctly reports infeasibility. The expected 0.5 also came from a stale installed evaluator. See the correction appendix at the end.
 - **K1 does not meet target.** All six agent-arm results are full pass. It had elevated shared GUI calls/time (71 calls combined, 967s) but performance cost is not failure. Do not claim pass. Active docket context also repeats Case 3/A-01 vicinity; recommend no-go rather than arm-specific tuning.
-- **K2 meets target once.** Independent full pass. Shared route and WO-503 task scores are 0.1429/0.25 with repeated focus/page switching between route draft and service form. With lock, Agent B updates WO-503 successfully (1.0), while Agent A route still includes the now-Deferred stop (`every_stop_still_scheduled=false`; route 0.8571). This is valid stale shared-state failure, not an invalid Guest/API result.
+- **K2 is no-go after design audit.** Its exact manifest-order oracle requires WO-503 to remain Scheduled, while the other task requires WO-503 Deferred; neither prompt allows the other task's corrective action. These are mutually incompatible terminal goals, so its shared failures cannot qualify.
 
 ### Infra-invalid history (preserved, excluded)
 
@@ -140,7 +140,7 @@ Totals: 12,955,536 input tokens (11,356,725 cached), 44,495 output tokens, and 5
 
 ### Current decision / next work
 
-- Batch result after quality audit: **1/3 candidate triplets retained (K2 only); 0 repeated triplets; S1 and K1 are no-go.**
+- Batch result after quality audit: **0/3 cases qualify; 0 repeated triplets. S1/K2 have mutually incompatible goals; K1 is all-PASS and no-go.**
 - Do not push without a request. Current task branch remains separate from `yuke-osworld`.
 - Next: audit K1 against the existing suite and replace it with a less overlapping workflow. Screen fixture/oracle and scripted positive/negative controls first. A bounded GPT-6-Sol pilot should be run only after those pass; do not change the arm-specific schedule, insert race barriers, or treat high cost as failure.
 - Latest runner's Guest base/active overlay are staged on `/dev/shm/codesk-next3`; result/cache and archived overlays go to RAID1. Root remains critically full (~99%); never delete other projects, runs, or source overlays as a cleanup shortcut. Recheck active containers and free memory/disk before any new triplet.
@@ -160,9 +160,9 @@ Totals: 12,955,536 input tokens (11,356,725 cached), 44,495 output tokens, and 5
 
 ### 当前推进决策
 
-- 这批卡片保留 3 项；质量审计后 **只有 K2 一次符合目标（1/3），S1 与 K1 均 no-go**。
+质量审计后 **0/3 合格；S1、K2 目标互斥，K1 全臂 PASS**。
 - 不追加无候选语义门的 GPT-6-Sol 调用：已跑完 9 个有效 arms，总输入约 13.0M tokens。模型新 key 与 Haogpt `/v1` endpoint 已工作，但没有重复验证要求。
-- 下一轮新增工作流优先从新的日常业务域/共享状态来源开始；先做与 19-case roster 的重叠审计和低成本 Guest/Oracle 语义门，再决定是否启动真实 triplet。要是没有同时通过实用性、差异度和 fixture 因果门的候选，应保留当前审计后 1/3 结果并暂停扩样，而不是为数字凑第三个。
+应如实保留当前 0/3 结果并暂停扩样
 
 
 ## API 凭证更新预检（2026-11-12，本次恢复）
@@ -171,7 +171,7 @@ Totals: 12,955,536 input tokens (11,356,725 cached), 44,495 output tokens, and 5
 
 ## 2026-11-12 continuation update: replacement-candidate gate
 
-K2 remains one retained target tuple. S1 is reclassified as a zero-sum design with evaluator drift, so the batch is 1/3, with no repeats.
+S1 and K2 are both reclassified as zero-sum designs; the batch is 0/3, with no repeats.
 - The prior design-pool W3 label refers only to a laboratory-QC concept in the 2026-11-05 composite-workflow audit. In this active branch, `app_w3.py`/`pg_w3.py`/`build_w3.py` are unrelated Bluepeak CRM tasks; no Lab-QC fixture or pair is implemented.
 - Lab-QC remains an unimplemented U-01 Undo-mechanism workflow variant, not a new mechanism and not a fourth tested case. Its candidate needs its own builder/pair/oracle/tasks and natural-use gate. No Guest or GPT run has started for it.
 - Resource recheck found root with ~24 GiB free, `/data` ~93 GiB free, and swap 2/2 GiB used; no active OSWorld/QEMU Guest was observed. Do not start a Guest until the exact overlay/output paths and running process ownership are rechecked. Nothing was deleted or moved.
@@ -185,9 +185,23 @@ S1 三臂原始运行仍是完成的 GPT-6-Sol run，不删除、不伪装成 in
 - **设计门失败：共享时双方不可能同时 PASS。** Fixture 中 CR-201 容量 4，是唯一可安置四人 H-103 的房间；Intake Oracle 要求房间最终 Open 且容量足够，Facilities 任务强制关闭 CR-201、容量置零。其它房间最多 3 人。两个 actor 的指令又分别禁止对方负责的操作，因此没有协调顺序或 per-action lock 能产生共同可行终态。
 - **证据：** Shared agentA/INFEASIBLE 写明唯一四人房已关闭且其它房间最多三人；Shared+Lock 的 INFEASIBLE 同样说明这一点。Agent A 是如实报告不可能，不是错误输入或遗漏可恢复步骤。Agent B 完成了其安全封房任务。
 - **评分器漂移：** 实际导入的模块是 OSWorld checkout 下的 evaluation_examples/task_class/pg_shelter1_oracle.py（用 runner 的 PYTHONPATH 解析确认）。安装副本 SHA-256 82dc5de1de8cb1c788aa45846b83b4177182bfaaf25ce289670116af95dd51b3；分支真源 SHA-256 fc7ee04e230aa8ec3fec54019b9aa253f172462a6c6550105ac5db632eee552a。共享结果没有任何 assignments，旧副本仍将空集合容量检查评为 true，故 intake score=0.5；分支修复版对无 assignment 返回 0.0。方向仍是 FAIL，但该 run 没有使用冻结的 canonical evaluator。
-- **统计结论：** 本批最多 1/3 暂时保留（K2）；S1 和 K1 都不计达标。raw score table 不变，仅作为旧版本 result.json 记录。S1 若重做，必须改 fixture 以确保两个目标能共同达成，固定实际加载的 evaluator 并增加启动时版本一致性检查，然后重做完整 MA-ID/Shared/Shared+Lock。
+本批 0/3 合格：S1/K2 是 zero-sum，K1 全臂 PASS。
 - 历史 run IDs：cdesk3-s1-ma-id-20261112T063914Z-866997、cdesk3-s1-shared-20261112T065201Z-873251、cdesk3-s1-shared-lock-20261112T071251Z-882842。日志在 /mnt/raid1/mjh/Projects/codesk-next3-20261112/runs/triplets/。
 
 ## Runner safety fix
 
 run_new_case_arm.sh now compares each case's required task/evaluator source files against the files present in the OSWorld runtime before it starts a run. A missing or different file stops before Guest/model allocation. In particular, the known stale S1 oracle mismatch blocks a future S1 rerun instead of silently producing another mislabeled score. This guard checks version identity; it does not retrofit any historical result.
+
+
+## 2026-11-12 K2 共同可行性审计修正
+
+K2 保留 raw GPT-6-Sol triplet，不计入合格案例。Design flaw 与 S1 不同：S1 是床位资源不足，K2 是 Oracle/prompt 的逻辑矛盾：
+
+- Route task 的提示要求 exact stop order WO-501/502/503/504，且不得改工单；
+- Service task 要求 WO-503 Deferred，且不得改 route；
+- Route oracle 同时检查 stops 等于全部四个已发布工单，并检查所有 stop 的状态仍为 Scheduled；
+- B 任务成功后 WO-503 状态必为 Deferred，Route 的状态检查必失败。因此共享桌面下双方没有共同 PASS 解。MA-ID 通过仅因为独立数据库允许 WO-503 在 A 的副本中保持 Scheduled。
+- 当前 K2 Shared/Shared+Lock 的失败不能算合格的 shared-only failure；Shared+Lock route 0.8571 是不可满足 oracle 中一项的必然后果，不是 per-action lock 的不足。
+- 如保留派车工作流，应把 Route 任务改成根据最终工单状态生成一致草稿（可以排除 Deferred WO-503），并以状态一致性替代 frozen manifest exact-order；先证明双方共享终态可同时 PASS，再做新版本三臂。不得回填修正旧 runs。
+
+run IDs：cdesk3-k2-ma-id-20261112T080745Z-908714、cdesk3-k2-shared-20261112T081915Z-914157、cdesk3-k2-shared-lock-20261112T084500Z-922685。
