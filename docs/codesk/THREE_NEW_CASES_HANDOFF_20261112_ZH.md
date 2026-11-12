@@ -168,3 +168,11 @@ Totals: 12,955,536 input tokens (11,356,725 cached), 44,495 output tokens, and 5
 ## API 凭证更新预检（2026-11-12，本次恢复）
 
 本次用户更新凭证后，使用隐藏 TTY 输入并仅保存在运行时内存，重新预检同一 `https://api.haogpt.net/v1` endpoint：`GET /models` 返回 HTTP 200 且列出 GPT-6-Sol；GPT-6-Sol 最小 `POST /responses` 返回 HTTP 200、`status=completed`。这只是新凭证/协议 smoke，不是新的 case arm，不计入上面的 9 个 model runs；key 没有写入仓库、环境配置或 run artifact。没有再发起正式任务调用。
+
+## 2026-11-12 continuation update: replacement-candidate gate
+
+- K1 remains no-go (all valid arms PASS); no score or interpretation changed. S1 and K2 remain one valid target tuple each; the batch is still 2/3 with no repeats.
+- The prior design-pool W3 label refers only to a laboratory-QC concept in the 2026-11-05 composite-workflow audit. In this active branch, `app_w3.py`/`pg_w3.py`/`build_w3.py` are unrelated Bluepeak CRM tasks; no Lab-QC fixture or pair is implemented.
+- Lab-QC remains an unimplemented U-01 Undo-mechanism workflow variant, not a new mechanism and not a fourth tested case. Its candidate needs its own builder/pair/oracle/tasks and natural-use gate. No Guest or GPT run has started for it.
+- Resource recheck found root with ~24 GiB free, `/data` ~93 GiB free, and swap 2/2 GiB used; no active OSWorld/QEMU Guest was observed. Do not start a Guest until the exact overlay/output paths and running process ownership are rechecked. Nothing was deleted or moved.
+- Next gate if continuing: finalize exact QC/calibration workbook outputs + independent Oracle, add offline positive/negative tests, then revisit Guest only after resource preflight. Do not mandate Ctrl+Z in the Agent prompt or insert an arm-specific interleaving to obtain FAIL.

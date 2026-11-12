@@ -48,10 +48,30 @@ Scripted interleaving 只用于验证机制因果链，不代替自然模型并�
 4. **评分风险：**纠错及校准记录必须独立、无互相隐含约束；不能把“因为另一 Agent 的结果不存在”算成两边任务失败。
 5. **环境风险：**本地 host 检查显示根盘仅约 24 GiB 可用、99% 使用，swap 约 2 GiB 已满。进入 Guest smoke 前必须复查资源与活跃 Guest；不得为了此候选删除任何既有 run/overlay。
 
-**当前结论：条件性保留，先做静态语义与应用能力 gate；尚不批准正式模型 triplet。** 若真实 Calc 的同文档共享 Undo control 通过、自然 workflow rationale 成立、oracle positive/negative 精确且有恢复路径，再考虑做一个 GUI smoke；否则直接 no-go，不以调 prompt 为目标。
+**当前结论：HOLD。候选保留在设计池，但还未通过任务/fixture/应用 gate，不批准 Guest 或模型 triplet；详见文末 active-branch feasibility gate。** 若真实 Calc 的同文档共享 Undo control 通过、自然 workflow rationale 成立、oracle positive/negative 精确且有恢复路径，再考虑做一个 GUI smoke；否则直接 no-go，不以调 prompt 为目标。
 
 ## 来源与边界
 
 - 早期概念来源：`CoDesk-13case-publish-20261105/docs/handoff/13-case-handoff/next-five/design/COMPOSITE_DAILY_WORKFLOW_CANDIDATE_AUDIT_20261105.md` 的 W3 与 Hybrid v2 修正。
 - 既有机制边界：U-01 在已验证 roster 中已达标；这里不能计成新机制或继承其结果。
 - 当前尚无 task class、fixture、runner、Guest control、GPT-6-Sol 模型结果。所有评分目标仍是待检验假设。
+
+## 2026-11-12 active-branch feasibility gate (post-source audit)
+
+**判定更新：HOLD；本候选尚未进入实现或 Guest/model 阶段。** 本节是只读代码与资源审计，不改变之前任何 case 代码或 run。
+
+### 代码复用边界
+
+- 早期组合设计中的“W3”只是实验批次 QC 的概念标签，不是当前分支已有的 Lab-QC task。当前分支 `tasks/paragui/app_w3.py` / `pg_w3.py` / `build_w3.py` 实际是 Bluepeak CRM 的去重客户与销售活动任务，与实验室 QC 无关，不能当作可复用 fixture。
+- 已达标 U-01 的旧 Guest probe 位于独立 `CoDesk-five-mechanisms-pilot-20261102` 项目。它复用 Calc UNO observer 和 FODS helper，但任务/runner 固定于 B2/C3、固定 A→B→A 交错和 Ctrl+Z 动作。它能证明此前那一个固定 Undo 案例，不等于已存在可参数化的 Lab-QC pair，也不代表 GPT 在新的自然任务里会自行 Undo。
+- 当前分支的 pair loader 可以自动发现 `task_pg<letter><digit>...`；LibreOffice workbook pair 可参考 `pg_a3.py` 的共享工作簿 setup/evaluator 结构。若继续实现，需要新增独立 builder、pair/oracle、两 task class、离线 controls；不应修改已验证的 S1/K2/K1。
+
+### 根因与下一步门槛
+
+唯一候选因果链仍是：同一 Calc workbook 的 document-level Undo history 被 A 的合理“撤销 provisional QC entry”动作共享；B 合理提交校准记录后，A 的 Undo 可能撤掉 B 的记录。它是 **U-01 的实验室 QC workflow 变体**，不是机制新增。若 Agent 直接改写 QC 单元格、察觉并补回 calibration note，或任务序列没自然暴露该栈顶变化，结果必须保留 PASS/no-go；不得在主 prompt 规定 Ctrl+Z、插入调度 barrier 或把其它字段缺失冒充 Undo FAIL。
+
+在实现前必须明确每个 Actor 的 exact workbook output 和无混淆 oracle；实现后顺序为离线正/负 oracle → 真实 Calc 单 Actor GUI controls → 无模型同文档共享 Undo 暴露与 sham/recovery controls → 仅当这些均有效且动作合理，才考虑一组三臂 GPT-6-Sol screening。任何阶段都不继承 U-01 旧 arm 结果。
+
+### 资源预检（只读）
+
+检查时间约 2026-11-12：未发现活跃 OSWorld/QEMU Guest；Docker 只有历史退出容器。宿主 `/` 可用约 24 GiB（99% 使用），`/data` 可用约 93 GiB（95% 使用），2 GiB swap 已全用，RAM 报告 available 约 184 GiB；另观察到两个 `codex exec ... test` 进程仍在运行。**本轮未启动 Guest、未生成 overlay，也未清理/移动任何旧证据。** 进入 Guest 前须重做空间和进程归属检查，输出优先放 `/data`、overlay 暂存在已核实容量的独立位置；不能因为 CPU/RAM 数字看起来够，就忽略根盘与 swap 风险。
