@@ -163,3 +163,8 @@ Totals: 12,955,536 input tokens (11,356,725 cached), 44,495 output tokens, and 5
 - 这批卡片保留 3 项；其中 **S1、K2 各一次符合目标，K1 明确 no-go**。整体达标是 2/3，并非 3/3。
 - 不追加无候选语义门的 GPT-6-Sol 调用：已跑完 9 个有效 arms，总输入约 13.0M tokens。模型新 key 与 Haogpt `/v1` endpoint 已工作，但没有重复验证要求。
 - 下一轮新增工作流优先从新的日常业务域/共享状态来源开始；先做与 19-case roster 的重叠审计和低成本 Guest/Oracle 语义门，再决定是否启动真实 triplet。要是没有同时通过实用性、差异度和 fixture 因果门的候选，应保留 2/3 结果并暂停扩样，而不是为数字凑第三个。
+
+
+## API 凭证更新预检（2026-11-12，本次恢复）
+
+本次用户更新凭证后，使用隐藏 TTY 输入并仅保存在运行时内存，重新预检同一 `https://api.haogpt.net/v1` endpoint：`GET /models` 返回 HTTP 200 且列出 GPT-6-Sol；GPT-6-Sol 最小 `POST /responses` 返回 HTTP 200、`status=completed`。这只是新凭证/协议 smoke，不是新的 case arm，不计入上面的 9 个 model runs；key 没有写入仓库、环境配置或 run artifact。没有再发起正式任务调用。
