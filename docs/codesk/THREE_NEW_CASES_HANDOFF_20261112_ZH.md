@@ -144,3 +144,22 @@ Totals: 12,955,536 input tokens (11,356,725 cached), 44,495 output tokens, and 5
 - Do not push without a request. Current task branch remains separate from `yuke-osworld`.
 - Next: audit K1 against the existing suite and replace it with a less overlapping workflow. Screen fixture/oracle and scripted positive/negative controls first. A bounded GPT-6-Sol pilot should be run only after those pass; do not change the arm-specific schedule, insert race barriers, or treat high cost as failure.
 - Latest runner's Guest base/active overlay are staged on `/dev/shm/codesk-next3`; result/cache and archived overlays go to RAID1. Root remains critically full (~99%); never delete other projects, runs, or source overlays as a cleanup shortcut. Recheck active containers and free memory/disk before any new triplet.
+
+
+## 19-case portfolio 去重审计（2026-11-12）
+
+对照 `CoDesk-13case-publish-20261105/docs/handoff/13-case-handoff/QUALIFIED_CASE_AUDIT_20261108.md` 中的 19-case roster（当时 14 个一次筛查达标），新三案的“工作流新颖性”和“机制新颖性”分开表述：
+
+| 新案 | 与旧 roster 的最近邻 | 审计结论 |
+|---|---|---|
+| S1 SHELTER-INTAKE1 | capacity/resource feasibility；旧 roster 有 VIEW/Selection 和 stale-state 家族，但未见同型收容所安置 + 安全封房业务 | 当前三案里 workflow 差异最清楚。仍是合成应用；不把“共享可用容量”称为全新机制。 |
+| K1 COURT-SERVICE1 | Case 3 / A-01 的活动记录/窗口上下文；并近邻已通过 CRM-LU1 的陈旧表单更新流程 | 9 个有效模型结果全 PASS，且机制/工作流接近旧上下文场景；明确 no-go，不为达 tuple 针对 Shared 加障碍。 |
+| K2 ROUTE-RECON1 | PAY-1、DATA-REL1、AP-1、SITEACT-STATE1、CRM-LU1 等 stale-state / artifact freshness 家族 | 现场派车 + 客户改期是不同日常流程；但机制增量有限，应标注为 workflow-level variant，不能声称新增 stale-artifact 机制。 |
+
+已审阅的既有未成熟候选也不能直接补位：CRM-LU1 已是 roster 第 19 项；PRINT-ROUTE1 在 pinned Guest 没有目的队列/默认打印机而 no-go；ATTACH-EVIDENCE1 与 S-01/A-01 的选中文件/上下文邻近；SUPPORT-ONCE1 与 Case 2/W4 的客服流程有邻近；ENG-TRANS1、ASSET-HOLD1 与 PAY-1/DATA-REL1/SITEACT-STATE1 同属状态变更使既有工件陈旧。它们需重新审计，不能仅换业务名称就加入。
+
+### 当前推进决策
+
+- 这批卡片保留 3 项；其中 **S1、K2 各一次符合目标，K1 明确 no-go**。整体达标是 2/3，并非 3/3。
+- 不追加无候选语义门的 GPT-6-Sol 调用：已跑完 9 个有效 arms，总输入约 13.0M tokens。模型新 key 与 Haogpt `/v1` endpoint 已工作，但没有重复验证要求。
+- 下一轮新增工作流优先从新的日常业务域/共享状态来源开始；先做与 19-case roster 的重叠审计和低成本 Guest/Oracle 语义门，再决定是否启动真实 triplet。要是没有同时通过实用性、差异度和 fixture 因果门的候选，应保留 2/3 结果并暂停扩样，而不是为数字凑第三个。
