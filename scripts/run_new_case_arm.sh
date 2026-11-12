@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 if [[ $# -ne 2 ]]; then
-  echo "usage: run_new_case_arm.sh <s1|k1|k2> <ma-id|shared|shared-lock>" >&2
+  echo "usage: run_new_case_arm.sh <s1|k1|k2|q1> <ma-id|shared|shared-lock>" >&2
   exit 2
 fi
 CASE_ID="$1"; ARM="$2"
@@ -9,6 +9,7 @@ case "$CASE_ID" in
   s1) TASK_A="v2/pgs1intake"; TASK_B="v2/pgs1facilities" ;;
   k1) TASK_A="v2/pgk1filing"; TASK_B="v2/pgk1service" ;;
   k2) TASK_A="v2/pgk2route"; TASK_B="v2/pgk2defer" ;;
+  q1) TASK_A="v2/pgq1route"; TASK_B="v2/pgq1defer" ;;
   *) echo "unknown case: $CASE_ID" >&2; exit 2 ;;
 esac
 case "$ARM" in
@@ -24,6 +25,7 @@ case "$CASE_ID" in
   s1) TASK_MODULES="pg_common.py pg_shelter1_oracle.py pg_s1.py task_pgs1intake.py task_pgs1facilities.py" ;;
   k1) TASK_MODULES="pg_common.py pg_k1_oracle.py pg_k1.py task_pgk1filing.py task_pgk1service.py" ;;
   k2) TASK_MODULES="pg_common.py pg_k2_oracle.py pg_k2.py task_pgk2route.py task_pgk2defer.py" ;;
+  q1) TASK_MODULES="pg_common.py pg_q1_oracle.py pg_q1.py task_pgq1route.py task_pgq1defer.py" ;;
 esac
 for module in $TASK_MODULES; do
   source_module="$REPO/tasks/paragui/$module"

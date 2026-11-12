@@ -96,3 +96,12 @@ K2 的 raw GPT-6-Sol 三臂均保留，基础设施有效；但它不能成为�
 K2 raw scores（MA-ID 1.0/1.0、Shared 0.1429/0.25、Shared+Lock 0.8571/1.0）真实反映当前 task+oracle，但不能归因成合格的可避免共享干扰；应改判为任务规格 zero-sum，而不是合格 FAIL。run IDs: cdesk3-k2-ma-id-20261112T080745Z-908714、cdesk3-k2-shared-20261112T081915Z-914157、cdesk3-k2-shared-lock-20261112T084500Z-922685。
 
 若要重做，Route task 应定义为“根据当前工单状态生成一致的 Friday route draft”，允许排除 Deferred 的 WO-503 并从未变更的 released stops 中生成路线；oracle 应检查终态与当前 job 状态一致及其他字段正确。先构造并证明共享最终状态双方可共同 PASS 的控制，再重新跑 MA-ID、Shared、Shared+Lock。不要沿用现有 K2 原始 triplet 作为 qualified 证据。
+
+
+## 2026-11-12 替代候选 Q1 — ROUTE-LIVE1 初轮 triplet（保留限定）
+
+对原 K2 的硬目标矛盾进行了实质性改版：A 按保存时仍处于 Scheduled 的 work orders 生成路线，B 可正常将 WO-503 Deferred；Oracle 从最终工作单状态计算所需路线停靠点，不再硬编码四站。tests/test_q1_oracle.py 三个共同状态/陈旧状态 controls 均通过，并证明存在双方共同 PASS 的状态。
+
+真实 Codex/GPT-6-Sol triplet 一次达到数值组合：MA-ID A/B=1.0/1.0；Shared A/B=1.0/0.25；Shared+Lock A/B=0.1429/0.25。原始 runs 保留在 RAID，ID 见 tasks/paragui/ROUTE_LIVE1_MODEL_RESULTS_20261112.md。可是共享臂的任务失败不是预设的“工作单改期导致路线 stale”：Shared 中 B 没有成功更新任何字段；Shared+Lock 中双方均未完成目标。轨迹显示两个 Agent 在同一 Chrome 页面/表单间互相打断；锁臂的 55 个变更 GUI 调用均被逐调用串行（合计等待 6.509s、持锁 126.674s），但不能避免两个模型在动作间基于陈旧页面继续点击。
+
+审计判定：这是一个可解释的 shared browser/application-context workflow outcome，但和现有 Application Context 家族接近，也没有观测到设计假设的 route/job 状态联动。暂作替代候选/修订 K2 的探索性 outcome；若要计入目标三新 case，须先在相同 Guest 做不改 prompt/spec 的联合正控制，确认 B 更新工单与 A 刷新/重建三站路线可稳定完成；不要为制造结果加入 arm-specific 障碍。原始 K2 的 no-go 状态不变，且当前整体计数仍为 0/3 新 case 通过质量资格。

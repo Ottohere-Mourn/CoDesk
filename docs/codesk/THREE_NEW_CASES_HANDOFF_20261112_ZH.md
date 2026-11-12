@@ -205,3 +205,13 @@ K2 保留 raw GPT-6-Sol triplet，不计入合格案例。Design flaw 与 S1 不
 - 如保留派车工作流，应把 Route 任务改成根据最终工单状态生成一致草稿（可以排除 Deferred WO-503），并以状态一致性替代 frozen manifest exact-order；先证明双方共享终态可同时 PASS，再做新版本三臂。不得回填修正旧 runs。
 
 run IDs：cdesk3-k2-ma-id-20261112T080745Z-908714、cdesk3-k2-shared-20261112T081915Z-914157、cdesk3-k2-shared-lock-20261112T084500Z-922685。
+
+
+## 最新持续进展：ROUTE-LIVE1 replacement candidate (q1)
+
+- 原 K2 确认 zero-sum 后，新建 q1 版本：路由 Agent 需基于“保存时仍 Scheduled 的清单项”建路线；客服 Agent 延期 WO-503。Oracle 动态按最终工单状态计算路线，存在共同 PASS 的终态。三条静态 Oracle controls passed。
+- GPT-6-Sol/Codex 真实 triplet 的数值结果达到一次 MA-ID 1.0/1.0, Shared 1.0/0.25, Shared+Lock 0.1429/0.25。详情、run ID、成本、检查项和锁遥测：tasks/paragui/ROUTE_LIVE1_MODEL_RESULTS_20261112.md。
+- 重要限定：Shared 中 B 没有保存延期；Shared+Lock 双方均未完成。日志显示实质失败是 Chrome 当前页面/表单在两个 Actor 间切换，而非“延期工单使已保存路线陈旧”。因此不把它作为 route-state 机制证据，也不计入已质量合格的三新 case；可以暂记为一个 workflow-level shared-browser outcome。它在机制上靠近现有 application-context family。
+- Shared+Lock 共 55 个有锁变更调用；lock_wait_s 总和 6.509、lock_held_s 总和 126.674、最大单次等待 2.153 秒；每个调用串行，但锁不覆盖模型思考时间。
+- 后续门槛：先做不改冻结 prompt/fixture/oracle 的 Guest joint positive control（共享状态下确实完成 WO-503 update，A 随后刷新并保存三站路线），再决定是否重跑。未通过控制前不要扩增模型臂或声称目标因果。
+- 本批 S1/K1/K2 仍为 0/3 qualified；q1 是修订候选，不改变此前计数。
