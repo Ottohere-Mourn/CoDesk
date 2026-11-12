@@ -89,7 +89,7 @@ K1/K2 仅把第一个参数改为 k1 或 k2。运行前确认无活跃 Guest；�
 - MA-ID 首试 `cdesk3-s1-ma-id-20261112T052333Z-837755`：两台 Guest 在 300 秒就绪期限内启动超时，infra-invalid；没有模型调用。
 - `cdesk3-s1-ma-id-20261112T053449Z-842799`：使用 RAID/NTFS-FUSE 上的 Codex HOME 时 CLI 在首个动作前报 `Operation not permitted`；两 Guest/app 已启动，零步，invalid。
 - `cdesk3-s1-ma-id-20261112T054319Z-847864`：改用 ext4 Codex runtime HOME/work 后，CLI 成功发出 Responses 请求；Docode 对两 Agent 返回 403 用户额度不足，Agent 0 步。运行分数不作任务成败证据。
-- Docode 账户错误余额约为 -$0.072590，停止继续请求 API。备用 Haogpt credential 的 /v1/models 请求返回 401 Invalid token，不使用。
+- Haogpt GET /v1/models 返回 200 并列出 GPT-6-Sol；但 Haogpt 的 /v1/responses 最小调用与 Docode 同样返回 403 insufficient_user_quota，余额约为 -$0.072590。故目前是账户额度不足（非协议/key 错误），已停止所有模型 API 请求；需先恢复额度再继续。
 - 0 步 evaluator 曾给 S1 intake 0.5（容量约束空集合真导致 vacuous partial）。已在 `a08cb9c` 改成无 assignment 为 0 分并加回归测试；上述旧 run 分数仍保留，不能追溯成模型 FAIL。
 
 
