@@ -54,3 +54,9 @@ def test_closure_removes_the_only_safe_four_person_room(fixture):
     assert score<1.0 and checks['H-103']['open_and_fits'] is False
     assert exp['rooms']['CR-201']['capacity']==4
     assert max(r['capacity'] for rid,r in exp['rooms'].items() if rid!='CR-201')==3
+
+
+def test_untouched_board_scores_zero_not_vacuous_half_credit(fixture):
+    db,exp=fixture
+    checks,score=placement_checks(get_state(db),exp)
+    assert score==0.0 and checks["any_assignment_saved"] is False

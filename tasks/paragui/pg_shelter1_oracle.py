@@ -17,7 +17,11 @@ def placement_checks(st, exp):
         if row.get('room_id'): loads[row['room_id']]=loads.get(row['room_id'],0)+int(occ or 0)
     cap={r['id']:r['capacity'] for r in st['rooms']}; capacity_ok=all(n<=cap.get(rid,0) for rid,n in loads.items())
     checks['all_four_households_correct']=sum(per)==len(want); checks['no_room_over_capacity']=capacity_ok
-    return checks,(sum(per)/max(1,len(want))+float(capacity_ok))/2
+    checks['any_assignment_saved']=bool(st['assignments'])
+    # No-op/setup-error states must never receive half credit from the vacuously
+    # true capacity constraint.
+    score=0.0 if not st['assignments'] else (sum(per)/max(1,len(want))+float(capacity_ok))/2
+    return checks,score
 
 def facilities_checks(st, exp):
     if not st: return {'state':'unreadable'},0.0
