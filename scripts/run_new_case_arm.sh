@@ -17,14 +17,27 @@ case "$ARM" in
   shared-lock) MODE="parallel"; LOCK_ARGS=(--action-lock) ;;
   *) echo "unknown arm: $ARM" >&2; exit 2 ;;
 esac
+REPO="/home/mjh/Projects/CoDesk-three-new-dualagent-cases-20261112"
+OSW="/home/mjh/Projects/_deps/OSWorld-V2-osworld-v2.1"
+SWC="/home/mjh/Projects/CoDesk-candidate-repair-20261104"
+case "$CASE_ID" in
+  s1) TASK_MODULES="pg_common.py pg_shelter1_oracle.py pg_s1.py task_pgs1intake.py task_pgs1facilities.py" ;;
+  k1) TASK_MODULES="pg_common.py pg_k1_oracle.py pg_k1.py task_pgk1filing.py task_pgk1service.py" ;;
+  k2) TASK_MODULES="pg_common.py pg_k2_oracle.py pg_k2.py task_pgk2route.py task_pgk2defer.py" ;;
+esac
+for module in $TASK_MODULES; do
+  source_module="$REPO/tasks/paragui/$module"
+  runtime_module="$OSW/evaluation_examples/task_class/$module"
+  if [[ ! -f "$source_module" || ! -f "$runtime_module" ]] || ! cmp -s "$source_module" "$runtime_module"; then
+    echo "task module drift: $module (source/runtime missing or different); refusing to start Guest/model run" >&2
+    exit 3
+  fi
+done
 IFS= read -r OPENAI_API_KEY || { echo "missing API key on stdin" >&2; exit 2; }
 OPENAI_API_KEY="$(printf '%s' "$OPENAI_API_KEY" | tr -d '\r')"
 if [[ -z "$OPENAI_API_KEY" ]]; then echo "empty API key" >&2; exit 2; fi
 API_BASE_URL="${CO_DESK_API_BASE_URL:-https://api.haogpt.net/v1}"
 export OPENAI_API_KEY OPENAI_BASE_URL="$API_BASE_URL"
-REPO="/home/mjh/Projects/CoDesk-three-new-dualagent-cases-20261112"
-OSW="/home/mjh/Projects/_deps/OSWorld-V2-osworld-v2.1"
-SWC="/home/mjh/Projects/CoDesk-candidate-repair-20261104"
 ASSETS="/mnt/raid1/mjh/Projects/codesk-next3-20261112/assets"
 BASE="/dev/shm/codesk-next3/osworld-v2-ubuntu-x86.qcow2"
 OVERLAY_TMP_ROOT="/dev/shm/codesk-next3/overlays"

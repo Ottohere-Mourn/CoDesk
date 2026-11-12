@@ -1,6 +1,6 @@
 # CoDesk：3个新双 Agent Case 设计卡
 
-更新：2026-11-12。目标是在统一 Codex GUI Harness 下验证 **MA-ID PASS / Shared FAIL / Shared+Lock FAIL**。截至本次真实模型首轮，S1 与 K2 各有一组三臂结果符合目标；K1 三臂均 PASS，不符合目标。详见文末的真实实验补记。
+审计后仅 K2 保留为一次符合目标的候选（1/3）；S1 因任务目标互斥且实际加载了过期 Oracle 而不合格，K1 三臂均 PASS、不符合目标。
 
 ## 统一协议
 - MA-ID：两个 Agent 在并发运行的独立 Guest 中执行；各自从相同 pair fixture/reset 开始。
@@ -37,7 +37,7 @@
 - 边界/重合：与 PAY-1/DATA-REL1 的 stale-artifact 机制近邻；宏观流程为现场派车与客服改期，不宣称全新底层机制。本地调度板不能外推生产调度系统。
 
 ## 设计审计与通过门槛
-三案主题分别为收容安置、法庭书记业务、现场派车，区别于同一表单换 ID；但都是本地合成应用，真实模型三臂仍是关键验证。仅当一组三臂有效结果同时满足：MA-ID 两边 Oracle 均为 1.0；Shared 至少一侧低于 1.0；Shared+Lock 至少一侧低于 1.0；且两失败臂有可归因的共享状态/GUI证据，才报告首轮满足目标。初始设计阶段为 0/3；截至下方真实模型实验补记为 **2/3 首轮符合**（S1、K2；K1 不符合）。
+该数值门还必须通过任务可共同达成（非 zero-sum）和 evaluator 版本一致性审计。初始模型结果表面为 2/3；严格质量审计后，只有 K2 保留为 1/3。
 
 
 ## 2026-11-12 GPT-6-Sol 真实模型首轮结果（权威更新）
@@ -58,10 +58,27 @@
 | K2 | Shared | 0.1429 / 0.25 | 42 / 45 | 2,617,483 (2,328,166) | 9,729 | 749.7 |
 | K2 | Shared+Lock | 0.8571 / 1.0 | 23 / 29 | 1,699,210 (1,513,460) | 4,768 | 738.0 |
 
-- **S1 SHELTER-INTAKE1：首轮符合。** MA-ID 完整通过。两共享臂中 Facilities Agent 正确封闭唯一足以容纳 H-103 的 CR-201 并创建工单；Intake 未能满足 household assignment oracle（0.5 为部分硬约束分，不是 infra invalid）。共享焦点/页面切换轨迹及可行容量被耗尽，构成业务性失败证据。Shared+Lock 只串行单次 GUI mutation，不会创造额外床位。
+- **S1 SHELTER-INTAKE1：no-go，不能当作合格 FAIL。** MA-ID 两任务通过；共享臂中 Agent A 明确发现 Agent B 已关闭唯一能容纳四人 H-103 的 CR-201，并正确报告当前目标不可行。A 被禁止改变房间状态；B 被要求必须封房。因其余房间容量均不超过 3，两个任务在共享状态下没有共同可行解。它违反本套件“协调后双方可成功、非 zero-sum”的设计门；观察到的共享失败是目标互斥，不是合格的共享桌面干扰效应。run 输出的 0.5 还来自过期的已安装 Oracle，不能作为有效评分。
 - **K1 COURT-SERVICE1：no-go。** 三臂双方全 PASS。Shared 臂有较高 GUI 调用数和耗时，但成本增加不是任务失败；不能声称达标。其 active-docket 设计也与 Case 3/A-01 上下文机制近邻，不建议简单调参继续救。
 - **K2 ROUTE-RECON1：首轮符合。** MA-ID 完整通过。Shared 中共享 GUI 焦点在路线草稿与 WO-503 客户改期页间反复变化，两边均部分失败。Shared+Lock 中客服任务全通过，但路线仍包含已 Deferred 的 WO-503，故路线 oracle 0.8571；锁没有跨工作流版本事务。
 - 九个有效 arm 均 `error=null`，没有将 infrastructure-invalid 计作 FAIL。累计约 12,955,536 input tokens（11,356,725 cached）、44,495 output tokens，elapsed 总和约 5,492 秒（91.5 分钟）。run IDs 与逐次完整日志位于相应 RAID run directories，见 handoff。
 - 初始准备阶段的 Guest timeout、NTFS Codex HOME、旧 key 额度错误仍作为 infra-invalid 历史保留，不能与上述有效结果混算。
 
-结论：本批目标目前 **2/3 首轮通过**（S1、K2），无第二次重复；K1 应替换为机制更不同的工作流，而不是把 1.0/1.0 改判失败。
+结论（审计修正）：本批只有 **1/3 首轮保留**（K2）；S1 和 K1 均 no-go。S1 是目标互斥的 zero-sum 任务并存在 Oracle 版本漂移；K1 是全臂 PASS。需要补出两个新候选并先通过共同可行性与 evaluator 语义门；不改写或删除历史 run。
+
+
+## 2026-11-12 质量审计修正（覆盖本文件较早的 S1 判定）
+
+S1 原始 run 文件仍保留，原始运行状态不是 API/Guest infra-invalid；但不能把它计作成功的 benchmark triplet。
+
+1. **目标没有共同解。** Intake 要求四人 Chen 家庭 H-103 留在同一间房，且 Oracle 检查该房间当前开放、容量足够。CR-201 是唯一容量为 4 的房间；Facilities 任务则要求把 CR-201 关闭并将容量设为 0。其他房间容量为 2 或 3；Intake prompt 禁止改房间状态，Facilities prompt 禁止改 placement。因此两任务无法同时通过，不论操作顺序、锁或 Agent 能否协调。
+2. **真实轨迹印证结构性不可能。** Shared 与 Shared+Lock 中 Agent A 的 INFEASIBLE 文件都记录了唯一四人房已被关闭、其他房间最多三人；Shared A 的原话还明确说它没有权限解开这个冲突。这不是误路由或未恢复，而是合理的不可行性报告。
+3. **Oracle 实际加载了旧副本。** runner 的 PYTHONPATH 解析到 OSWorld checkout 下的 evaluation_examples/task_class/pg_shelter1_oracle.py。该文件 SHA-256 为 82dc5de1de8cb1c788aa45846b83b4177182bfaaf25ce289670116af95dd51b3；分支真源 tasks/paragui/pg_shelter1_oracle.py SHA-256 为 fc7ee04e230aa8ec3fec54019b9aa253f172462a6c6550105ac5db632eee552a。已安装旧版没有 no-op 防护：零 assignment 仍因空集合容量检查为真得到 intake score 0.5；当前分支 Oracle 修复版应给该状态 0.0。该错误不反转 FAIL/PASS，但证明实验加载的 evaluator 未与冻结源一致。
+4. **判定修正。** 保留九臂原始 run 与原始 0.5 记录，仅将其标记为历史原始输出；S1 不算目标合格案例，也不算有效的机制失败证据。不能通过只修分数或重跑同一互斥 fixture“救活”；若将来重做，必须提供替代的四人可行房间，让两任务存在共同 PASS 解，再冻结、同步并校验实际导入 evaluator，并从 MA-ID 起完整重做 triplet。
+
+Run IDs:
+- MA-ID: cdesk3-s1-ma-id-20261112T063914Z-866997
+- Shared: cdesk3-s1-shared-20261112T065201Z-873251
+- Shared+Lock: cdesk3-s1-shared-lock-20261112T071251Z-882842
+
+这会覆盖文中早先将 S1 计入 2/3 的描述；表格分数仍作为原始 result.json 输出，不应再解释为冻结 Oracle 下的规范评分。
