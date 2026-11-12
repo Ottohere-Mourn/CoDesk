@@ -99,3 +99,5 @@ K1/K2 仅把第一个参数改为 k1 或 k2。运行前确认无活跃 Guest；�
 - Codex HOME/work 在本机 ext4 /home/mjh/.cache/codesk-next3-runtime/RUN_ID，解决 NTFS/FUSE 上创建 helper alias 的 EPERM；可审计的非 secret config 副本在每 Agent 的 run output。
 - 2026-11-12 最新验证：离线 controls + action-lock 共 10 passed；OSWorld task loader 六项全部可导入；py_compile / bash -n / git diff --check 均通过。K1 real Guest setup smoke 已成功。模型三臂尚无有效结果。
 - Host lock primitive 另在 RAID/FUSE 与 ext4 各做了 flock preflight，均成功；action-lock unit test 通过。
+
+- OSWorld checkout 的 smoke loader 另外创建了 7 个未跟踪的 paraGUI loader/helper 文件，位于 evaluation_examples/task_class/pg_*.py；源文件真源仍是本分支的 tasks/paragui。该 checkout 还保留原有 dirty provider.py。不要把这些修改误提交到 OSWorld，也不要清理他人改动。
