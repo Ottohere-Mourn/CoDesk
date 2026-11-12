@@ -57,6 +57,7 @@ CMD=("$OSW/.venv/bin/python" -m oscombo run \
   --harness codex --model gpt-6-sol --effort high --max-steps 45 --setup-settle 25 \
   --opt codex_bin=/home/mjh/.local/share/codesk-case3-tools/codex \
   --opt base_url=https://docode.cc/v1 --opt timeout=2400 \
+  --opt codex_runtime_root=/home/mjh/.cache/codesk-next3-runtime/$RUN_ID \
   --label run="$RUN_ID" --label case="$CASE_ID" --label arm="$ARM" \
   --label gui_tool_call_budget=45 --label model=gpt-6-sol --label endpoint=https://docode.cc/v1)
 if [[ "$ARM" == "shared-lock" ]]; then CMD+=(--action-lock); fi

@@ -155,11 +155,23 @@ class CodexHarness(CommandHarness):
 
     def prepare(self, ctx: AgentContext) -> None:
         super().prepare(ctx)
-        home = self.dir / "codex_home"
-        home.mkdir(exist_ok=True)
-        (self.dir / "work").mkdir(exist_ok=True)
-        (home / "config.toml").write_text(self.config(ctx), encoding="utf-8")
+        runtime_root = self.opts.get("codex_runtime_root")
+        if runtime_root:
+            runtime_dir = Path(runtime_root) / ctx.name
+            home = runtime_dir / "codex_home"
+            work = runtime_dir / "work"
+        else:
+            home = self.dir / "codex_home"
+            work = self.dir / "work"
+        home.mkdir(parents=True, exist_ok=True)
+        work.mkdir(parents=True, exist_ok=True)
+        config = self.config(ctx)
+        (home / "config.toml").write_text(config, encoding="utf-8")
+        # Keep the non-secret effective Codex configuration with the run artifacts,
+        # even when the runtime home must live on a local POSIX filesystem.
+        (self.dir / "codex_config.toml").write_text(config, encoding="utf-8")
         self.values["codex_home"] = str(home)
+        self.work = work
         self.binary = self.opts.get("codex_bin", "codex")
         self.harness_version = self.version(self.binary)
 
@@ -207,7 +219,7 @@ env = {{ {env_toml} }}
 """
 
     def command(self, ctx: AgentContext) -> list[str]:
-        return [self.binary, "exec", "--json", "--skip-git-repo-check", "-C", str(self.dir / "work"),
+        return [self.binary, "exec", "--json", "--skip-git-repo-check", "-C", str(self.work),
                 self.prompt(ctx)]
 
     def env(self, ctx: AgentContext) -> dict[str, str]:
