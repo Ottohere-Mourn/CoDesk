@@ -2,11 +2,11 @@
 
 更新：2026-11-12
 
-## 当前结论
+## 当前结论（以本文末实验补记为准）
 
-已在 HealthCare 的独立 worktree 实现三个 paraGUI task pair、确定性 SQLite fixture、业务 Oracle、离线控制测试，以及用于 Shared+Lock 的 opt-in per-MCP-call lock。一次真实 OSWorld Guest setup smoke 已启动 Guest、上传本地 app/fixture、打开浏览器、取得截图并运行 evaluator。
+已在 HealthCare 的独立 worktree 实现三个 paraGUI task pair、确定性 SQLite fixture、业务 Oracle、离线控制测试，以及用于 Shared+Lock 的 opt-in per-MCP-call lock。Guest setup smoke、离线 controls 与 9 个 GPT-6-Sol 真实模型臂均已完成。
 
-**尚未完成 GPT-6-Sol 的 MA-ID / Shared / Shared+Lock 模型 triplet；当前没有新 Case 可声称达标。** setup smoke 使用零动作 scripted policy，score 0.0 仅说明空任务不通过，不是模型结果或有效任务 FAIL。
+**S1 和 K2 各有一组三臂结果符合 MA-ID PASS / Shared FAIL / Shared+Lock FAIL；K1 三臂均 PASS，不符合目标，建议 no-go/替换。** setup smoke 的零动作 scripted score 0.0 不是模型结果。本文末表格是当前权威结果；下面较早的“无有效 triplet”及旧额度描述只记录时间线，已被更新结果覆盖。
 
 ## 判定门槛和一致配置
 
@@ -15,7 +15,7 @@
 - MA-ID：OSCombo 的 isolated 模式；两位 Agent 在独立 Guest 并发执行，每个 Guest 从相同 pair seed DB 开始。
 - Shared：parallel 模式；两位 Agent 共用一个 Guest、Chrome GUI 会话和本地 app database。
 - Shared+Lock：同一 parallel 条件加 opt-in action lock。锁只包围一次会改变 GUI 的 MCP 调用及其返回截图，不保护 agent reasoning，也不提供跨多步操作的事务。
-- 三臂统一 GPT-6-Sol、Docode endpoint、high reasoning、45 个 GUI MCP-call 上限、同一 Codex binary/version、相同环境 reset。
+- 三臂统一 GPT-6-Sol、`https://api.haogpt.net/v1` endpoint、high reasoning、45 个 GUI MCP-call 上限、同一 Codex binary/version、相同环境 reset。
 - 目标是 Oracle 判 MA-ID PASS / Shared FAIL / Shared+Lock FAIL。Guest/API/reset/evaluator 错误或无分数都标 invalid，不能算 Shared FAIL。
 - 每案先一组 screening triplet；无效臂不并入判定。不删失败尝试、不以调度 barrier 刻意制造失败、不把能恢复的真实 PASS 改判 FAIL。
 - 受测 Agent 权限是 GUI MCP only；无 Guest CLI、宿主机 Shell、Collaboration MCP。API key 在运行时从 stdin/env 注入，不写仓库或结果文件。
@@ -101,3 +101,46 @@ K1/K2 仅把第一个参数改为 k1 或 k2。运行前确认无活跃 Guest；�
 - Host lock primitive 另在 RAID/FUSE 与 ext4 各做了 flock preflight，均成功；action-lock unit test 通过。
 
 - OSWorld checkout 的 smoke loader 另外创建了 7 个未跟踪的 paraGUI loader/helper 文件，位于 evaluation_examples/task_class/pg_*.py；源文件真源仍是本分支的 tasks/paragui。该 checkout 还保留原有 dirty provider.py。不要把这些修改误提交到 OSWorld，也不要清理他人改动。
+
+
+## 2026-11-12 实验结果更新：9 个有效 GPT-6-Sol arms
+
+### 运行设置与严格判定
+
+九个有效 arms 全部使用 GPT-6-Sol、Codex CLI 0.165.0、high effort、相同 Codex GUI-only MCP 工具、每 Agent 45 GUI MCP-call 上限及同一 frozen fixture/reset 协议。GPT provider endpoint 为 `https://api.haogpt.net/v1`。用户新 key 的 `/v1/models` 和最小 `/v1/responses` 预检均成功，九臂无 API 错误；key 从 stdin/env runtime 注入，**不得**复制到文档、仓库、shell history 或结果。无 Qwen。
+
+只有两个 isolated task score 都是 1.0 才算 MA-ID PASS；任一共享臂任一 task <1.0 为 task/joint failure，但仍须确认其为有效业务结果。infra-invalid 单列，不得计入 FAIL。
+
+| Case / arm | Run ID | Scores A/B | GUI calls A/B | input (cached) | output | elapsed s |
+|---|---|---:|---:|---:|---:|---:|
+| S1 MA-ID | `cdesk3-s1-ma-id-20261112T063914Z-866997` | 1.0 / 1.0 | 18 / 6 | 654,974 (553,333) | 2,542 | 486.7 |
+| S1 Shared | `cdesk3-s1-shared-20261112T065201Z-873251` | 0.5 / 1.0 | 22 / 23 | 1,299,037 (1,118,630) | 5,888 | 581.4 |
+| S1 Shared+Lock | `cdesk3-s1-shared-lock-20261112T071251Z-882842` | 0.5 / 1.0 | 11 / 10 | 524,783 (432,806) | 3,462 | 319.6 |
+| K1 MA-ID | `cdesk3-k1-ma-id-20261112T072115Z-887645` | 1.0 / 1.0 | 14 / 12 | 689,115 (570,683) | 2,178 | 406.3 |
+| K1 Shared | `cdesk3-k1-shared-20261112T073152Z-893194` | 1.0 / 1.0 | 40 / 31 | 2,835,504 (2,542,614) | 8,451 | 967.2 |
+| K1 Shared+Lock | `cdesk3-k1-shared-lock-20261112T075008Z-900779` | 1.0 / 1.0 | 23 / 29 | 1,770,415 (1,550,061) | 4,838 | 787.4 |
+| K2 MA-ID | `cdesk3-k2-ma-id-20261112T080745Z-908714` | 1.0 / 1.0 | 19 / 12 | 865,015 (746,972) | 2,639 | 455.7 |
+| K2 Shared | `cdesk3-k2-shared-20261112T081915Z-914157` | 0.1429 / 0.25 | 42 / 45 | 2,617,483 (2,328,166) | 9,729 | 749.7 |
+| K2 Shared+Lock | `cdesk3-k2-shared-lock-20261112T084500Z-922685` | 0.8571 / 1.0 | 23 / 29 | 1,699,210 (1,513,460) | 4,768 | 738.0 |
+
+Totals: 12,955,536 input tokens (11,356,725 cached), 44,495 output tokens, and 5,492 seconds summed run elapsed (~91.5 minutes). These are model usage totals, not a provider bill.
+
+### Case interpretations
+
+- **S1 meets target once.** Independent full pass. In both shared arms Facilities correctly closes CR-201 (only room able to hold H-103) and creates the work order; Intake's four household placements fail their placement oracle (score 0.5 reflects only a partial invariant, not an infra issue). Trace shows focus/page switching across household, room, placement, facilities, and work-order pages; closure leaves no feasible capacity. Per-action lock does not make the capacity constraint disappear.
+- **K1 does not meet target.** All six agent-arm results are full pass. It had elevated shared GUI calls/time (71 calls combined, 967s) but performance cost is not failure. Do not claim pass. Active docket context also repeats Case 3/A-01 vicinity; recommend no-go rather than arm-specific tuning.
+- **K2 meets target once.** Independent full pass. Shared route and WO-503 task scores are 0.1429/0.25 with repeated focus/page switching between route draft and service form. With lock, Agent B updates WO-503 successfully (1.0), while Agent A route still includes the now-Deferred stop (`every_stop_still_scheduled=false`; route 0.8571). This is valid stale shared-state failure, not an invalid Guest/API result.
+
+### Infra-invalid history (preserved, excluded)
+
+- `cdesk3-s1-ma-id-20261112T052333Z-837755`: Guest readiness timed out at prior 300s limit; no model call.
+- `cdesk3-s1-ma-id-20261112T053449Z-842799`: old Codex HOME on RAID/NTFS-FUSE failed with `Operation not permitted` before first action.
+- `cdesk3-s1-ma-id-20261112T054319Z-847864`: old API key returned quota 403; zero agent steps. This was resolved by the newly provided key / Haogpt endpoint; it does not characterize current API availability.
+- Historical directory may also include earlier protocol/setup attempts; retain and label, do not pool with nine valid arms.
+
+### Current decision / next work
+
+- Batch result: **2/3 cases meet target once (S1, K2); 0 repeated triplets; K1 is no-go.**
+- Do not push without a request. Current task branch remains separate from `yuke-osworld`.
+- Next: audit K1 against the existing suite and replace it with a less overlapping workflow. Screen fixture/oracle and scripted positive/negative controls first. A bounded GPT-6-Sol pilot should be run only after those pass; do not change the arm-specific schedule, insert race barriers, or treat high cost as failure.
+- Latest runner's Guest base/active overlay are staged on `/dev/shm/codesk-next3`; result/cache and archived overlays go to RAID1. Root remains critically full (~99%); never delete other projects, runs, or source overlays as a cleanup shortcut. Recheck active containers and free memory/disk before any new triplet.

@@ -1,6 +1,6 @@
 # CoDesk：3个新双 Agent Case 设计卡
 
-更新：2026-11-12。目标是在统一的 Codex GUI Harness 下，尝试验证 **MA-ID PASS / Shared FAIL / Shared+Lock FAIL**。目前这三个新 Case 均没有有效模型 triplet，不能称为达标。
+更新：2026-11-12。目标是在统一 Codex GUI Harness 下验证 **MA-ID PASS / Shared FAIL / Shared+Lock FAIL**。截至本次真实模型首轮，S1 与 K2 各有一组三臂结果符合目标；K1 三臂均 PASS，不符合目标。详见文末的真实实验补记。
 
 ## 统一协议
 - MA-ID：两个 Agent 在并发运行的独立 Guest 中执行；各自从相同 pair fixture/reset 开始。
@@ -37,4 +37,31 @@
 - 边界/重合：与 PAY-1/DATA-REL1 的 stale-artifact 机制近邻；宏观流程为现场派车与客服改期，不宣称全新底层机制。本地调度板不能外推生产调度系统。
 
 ## 设计审计与通过门槛
-三案主题分别为收容安置、法庭书记业务、现场派车，区别于同一表单换 ID；但都是本地合成应用，真实模型三臂仍是关键验证。仅当一组三臂有效结果同时满足：MA-ID 两边 Oracle 均为 1.0；Shared 至少一侧低于 1.0；Shared+Lock 至少一侧低于 1.0；且两失败臂有可归因的共享状态/GUI证据，才报告首轮满足目标。当前 **0/3**。
+三案主题分别为收容安置、法庭书记业务、现场派车，区别于同一表单换 ID；但都是本地合成应用，真实模型三臂仍是关键验证。仅当一组三臂有效结果同时满足：MA-ID 两边 Oracle 均为 1.0；Shared 至少一侧低于 1.0；Shared+Lock 至少一侧低于 1.0；且两失败臂有可归因的共享状态/GUI证据，才报告首轮满足目标。初始设计阶段为 0/3；截至下方真实模型实验补记为 **2/3 首轮符合**（S1、K2；K1 不符合）。
+
+
+## 2026-11-12 GPT-6-Sol 真实模型首轮结果（权威更新）
+
+新端点 `/v1` 通过 GPT-6-Sol 模型列表及最小 Responses 调用预检。九个有效模型臂均使用 GPT-6-Sol、Codex CLI 0.165.0、high effort、GUI-only、每 Agent 45 次 GUI MCP 调用上限；无 Qwen。API key 仅在运行时注入，未写入仓库。真实结果不受此前旧 key 额度错误影响。
+
+成功标准：MA-ID 两个 oracle 均 1.0；Shared 和 Shared+Lock 各至少一个 oracle <1.0；失败必须可由业务状态/GUI 轨迹解释。有效结果如下：
+
+| Case | Arm | Agent A/B score | GUI calls A/B | input tokens (cached) | output tokens | elapsed s |
+|---|---|---:|---:|---:|---:|---:|
+| S1 | MA-ID | 1.0 / 1.0 | 18 / 6 | 654,974 (553,333) | 2,542 | 486.7 |
+| S1 | Shared | 0.5 / 1.0 | 22 / 23 | 1,299,037 (1,118,630) | 5,888 | 581.4 |
+| S1 | Shared+Lock | 0.5 / 1.0 | 11 / 10 | 524,783 (432,806) | 3,462 | 319.6 |
+| K1 | MA-ID | 1.0 / 1.0 | 14 / 12 | 689,115 (570,683) | 2,178 | 406.3 |
+| K1 | Shared | 1.0 / 1.0 | 40 / 31 | 2,835,504 (2,542,614) | 8,451 | 967.2 |
+| K1 | Shared+Lock | 1.0 / 1.0 | 23 / 29 | 1,770,415 (1,550,061) | 4,838 | 787.4 |
+| K2 | MA-ID | 1.0 / 1.0 | 19 / 12 | 865,015 (746,972) | 2,639 | 455.7 |
+| K2 | Shared | 0.1429 / 0.25 | 42 / 45 | 2,617,483 (2,328,166) | 9,729 | 749.7 |
+| K2 | Shared+Lock | 0.8571 / 1.0 | 23 / 29 | 1,699,210 (1,513,460) | 4,768 | 738.0 |
+
+- **S1 SHELTER-INTAKE1：首轮符合。** MA-ID 完整通过。两共享臂中 Facilities Agent 正确封闭唯一足以容纳 H-103 的 CR-201 并创建工单；Intake 未能满足 household assignment oracle（0.5 为部分硬约束分，不是 infra invalid）。共享焦点/页面切换轨迹及可行容量被耗尽，构成业务性失败证据。Shared+Lock 只串行单次 GUI mutation，不会创造额外床位。
+- **K1 COURT-SERVICE1：no-go。** 三臂双方全 PASS。Shared 臂有较高 GUI 调用数和耗时，但成本增加不是任务失败；不能声称达标。其 active-docket 设计也与 Case 3/A-01 上下文机制近邻，不建议简单调参继续救。
+- **K2 ROUTE-RECON1：首轮符合。** MA-ID 完整通过。Shared 中共享 GUI 焦点在路线草稿与 WO-503 客户改期页间反复变化，两边均部分失败。Shared+Lock 中客服任务全通过，但路线仍包含已 Deferred 的 WO-503，故路线 oracle 0.8571；锁没有跨工作流版本事务。
+- 九个有效 arm 均 `error=null`，没有将 infrastructure-invalid 计作 FAIL。累计约 12,955,536 input tokens（11,356,725 cached）、44,495 output tokens，elapsed 总和约 5,492 秒（91.5 分钟）。run IDs 与逐次完整日志位于相应 RAID run directories，见 handoff。
+- 初始准备阶段的 Guest timeout、NTFS Codex HOME、旧 key 额度错误仍作为 infra-invalid 历史保留，不能与上述有效结果混算。
+
+结论：本批目标目前 **2/3 首轮通过**（S1、K2），无第二次重复；K1 应替换为机制更不同的工作流，而不是把 1.0/1.0 改判失败。
