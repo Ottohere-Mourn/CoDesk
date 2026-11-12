@@ -56,6 +56,31 @@ def _pythonpath() -> str:
     return REPO + (os.pathsep + os.environ["PYTHONPATH"] if os.environ.get("PYTHONPATH") else "")
 
 
+def codex_usage_from_stdout(path: str | Path) -> dict:
+    """Aggregate Codex JSON turn-completed usage without parsing screenshots/tool payloads."""
+    totals = {"input_tokens": 0, "cached_input_tokens": 0, "cache_write_input_tokens": 0,
+              "output_tokens": 0, "reasoning_output_tokens": 0}
+    events = 0
+    source = Path(path)
+    if source.is_file():
+        with source.open(encoding="utf-8", errors="replace") as stream:
+            for line in stream:
+                try:
+                    event = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                usage = event.get("usage") if event.get("type") == "turn.completed" else None
+                if not isinstance(usage, dict):
+                    continue
+                events += 1
+                for key in totals:
+                    value = usage.get(key)
+                    if isinstance(value, int) and value >= 0:
+                        totals[key] += value
+    totals["uncached_input_tokens"] = max(0, totals["input_tokens"] - totals["cached_input_tokens"])
+    return {"available": events > 0, "usage_event_count": events, **totals}
+
+
 class CommandHarness(Harness):
     def prepare(self, ctx: AgentContext) -> None:
         self.opts = self.spec.get("options", {})
@@ -153,7 +178,7 @@ class CodexHarness(CommandHarness):
     """Options: ``codex_bin`` (default "codex"), ``node_bin`` (dir prepended to PATH), ``base_url`` (default
     ``OPENAI_BASE_URL``), ``api_key_env`` (default "OPENAI_API_KEY"; unset variable = no auth header),
     ``wire_api`` ("responses"), ``prompt_suffix``, ``extra_config`` (raw TOML appended), ``timeout``, and optional
-    ``mcp_pythonpath`` (prepended only to the desktop MCP child environment).
+    ``mcp_pythonpath`` (prepended only to the desktop MCP child environment), ``mcp_required`` (fail Codex startup if the desktop MCP server is unavailable).
     Reasoning effort comes from the spec's ``effort``."""
 
     def prepare(self, ctx: AgentContext) -> None:
@@ -189,6 +214,7 @@ class CodexHarness(CommandHarness):
                    "OSCOMBO_RUN_ID": str(o.get("run_id") or os.environ.get("OSCOMBO_RUN_ID") or ctx.out.name),
                    "OSCOMBO_RUN_START_MONO": os.environ.get("OSCOMBO_RUN_START_MONO", ""),
                    "OSCOMBO_ACTOR_ID": ctx.name, "OSCOMBO_EPISODE_ID": ctx.name,
+                   "OSCOMBO_GUEST_ID": str(o.get("guest_id", "")),
                    "OSCOMBO_EXPECTED_APP": str(o.get("expected_app", "")),
                    "OSCOMBO_UNIFIED_EVENT_LOG": str(ctx.out / "events.jsonl"), "PYTHONPATH": mcp_pythonpath}
         if ctx.action_lock_file:
@@ -200,6 +226,9 @@ class CodexHarness(CommandHarness):
                 lock_events = str(ctx.out / "locks" / "agent-action-lock-events.jsonl")
             mcp_env["OSCOMBO_ACTION_LOCK_EVENTS_FILE"] = lock_events
         env_toml = ", ".join(f"{k} = {json.dumps(v)}" for k, v in mcp_env.items())
+        mcp_required = "required = true\n" if o.get("mcp_required") else ""
+        mcp_command = o.get("mcp_command") or sys.executable
+        mcp_args = o.get("mcp_args") or ["-m", "oscombo.desktop_tools", "--mcp"]
         key_env = o.get("api_key_env", "OPENAI_API_KEY")
         auth = f"env_key = {json.dumps(key_env)}" if os.environ.get(key_env) else "requires_openai_auth = false"
         return f"""model = {json.dumps(require_model(self.spec))}
@@ -225,12 +254,12 @@ multi_agent = false
 image_generation = false
 
 [mcp_servers.desktop]
-command = {json.dumps(sys.executable)}
-args = ["-m", "oscombo.desktop_tools", "--mcp"]
+command = {json.dumps(mcp_command)}
+args = {json.dumps(mcp_args)}
 startup_timeout_sec = 60
 tool_timeout_sec = 300
 default_tools_approval_mode = "approve"
-env = {{ {env_toml} }}
+{mcp_required}env = {{ {env_toml} }}
 {o.get("extra_config", "")}
 """
 
@@ -244,6 +273,8 @@ env = {{ {env_toml} }}
     def run(self, ctx: AgentContext) -> AgentResult:
         res = super().run(ctx)
         res.extra["harness_version"] = self.harness_version
+        res.extra["token_usage"] = codex_usage_from_stdout(self.dir / "stdout.log")
+        res.extra["gui_mcp_calls"] = len(res.trace)
         return res
 
 

@@ -28,7 +28,7 @@ def test_fixture_manifest_is_stable_public_and_evaluator_starts_unsubmitted(tmp_
     first = create_fixture(tmp_path / "first.sqlite", "human-run-1")
     second = create_fixture(tmp_path / "second.sqlite", "human-run-1")
     assert first["sha256"] == second["sha256"]
-    assert first["fixture_id"] == "handoff-form-t1043-v1"
+    assert first["fixture_id"] == "handoff-form-t1043-v2"
     public_json = json.dumps(first)
     assert "Asked carrier for Tuesday delivery window; follow up at 16:00." not in public_json
     assert "2026-11-10 16:00" not in public_json
@@ -51,12 +51,12 @@ def test_gui_form_is_accessible_does_not_expose_oracle_and_persists_success(tmp_
         assert 'name="ticket_id" value="T-1043"' in page
         assert '<textarea id="note" name="note"' in page
         assert "Internal update note" in page
-        assert 'type="datetime-local"' in page
+        assert 'type="text" inputmode="numeric" placeholder="YYYY-MM-DD HH:MM"' in page
         assert "Follow-up date and time (local)" in page
         assert page.count("<button") == 1
         assert "autofocus" in page
         assert "Asked carrier for Tuesday delivery window" not in page
-        assert "2026-11-10T16:00" not in page
+        assert "2026-11-10 16:00" not in page
         assert evaluate(db_path)["success"] is False
 
         fields = {
@@ -69,7 +69,7 @@ def test_gui_form_is_accessible_does_not_expose_oracle_and_persists_success(tmp_
             assert response.status == 200
         assert 'role="status">Update saved.' in after
         assert "Asked carrier for Tuesday delivery window; follow up at 16:00." in after
-        assert 'value="2026-11-10T16:00"' in after
+        assert 'value="2026-11-10 16:00"' in after
         verdict = evaluate(db_path)
         assert verdict["success"] is True
         assert all(verdict["checks"].values())

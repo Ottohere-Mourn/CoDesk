@@ -156,6 +156,7 @@ def _log(rec: dict) -> None:
     rec.setdefault("event_type", "agent_gui_action")
     rec.setdefault("run_id", os.environ.get("OSCOMBO_RUN_ID"))
     rec.setdefault("actor_id", os.environ.get("OSCOMBO_ACTOR_ID"))
+    rec.setdefault("guest_id", os.environ.get("OSCOMBO_GUEST_ID"))
     rec.setdefault("episode_id", os.environ.get("OSCOMBO_EPISODE_ID") or rec.get("actor_id"))
     if LOG:
         append_jsonl(LOG, rec)
@@ -181,7 +182,8 @@ def action_lock(tool: str | None = None, args: dict | None = None):
         fcntl.flock(lock, fcntl.LOCK_EX)
         acquired_wall, acquired_mono = time.time(), time.monotonic()
         event = {"event_type": "action_lock", "run_id": os.environ.get("OSCOMBO_RUN_ID"),
-                 "actor_id": os.environ.get("OSCOMBO_ACTOR_ID"), "tool": tool, "args": args or {},
+                 "actor_id": os.environ.get("OSCOMBO_ACTOR_ID"), "guest_id": os.environ.get("OSCOMBO_GUEST_ID"),
+                 "tool": tool, "args": args or {},
                  "lock_file": path, "requested_at": requested_wall, "acquired_at": acquired_wall,
                  "lock_wait_s": round(acquired_mono - requested_mono, 6)}
         try:
@@ -266,7 +268,8 @@ def _run_tool_unlocked(name: str, args: dict, lock_info: dict | None = None) -> 
 
 
 def run_tool(name: str, args: dict) -> tuple[str, bytes | None]:
-    """Execute one full MCP tool call under the optional cross-Actor desktop mutex."""
+    """Execute one full desktop call under the optional cross-Actor desktop mutex."""
+    started_wall, started_mono = time.time(), time.monotonic()
     with action_lock(name, args) as event:
         try:
             result = _run_tool_unlocked(name, args, event)
@@ -274,8 +277,22 @@ def run_tool(name: str, args: dict) -> tuple[str, bytes | None]:
                 event.update({"status": "ok", "result_text": result[0], "image_returned": result[1] is not None})
             return result
         except Exception as exc:
+            ended_wall, ended_mono = time.time(), time.monotonic()
             if event is not None:
                 event.update({"status": "error", "error_type": type(exc).__name__, "error": str(exc)[:500]})
+            # Persist transport/time-out failures too; otherwise they disappear from
+            # the Actor's structured action trace when _run_tool_unlocked raises.
+            try:
+                with _state() as st:
+                    n = int(st.get("calls", 0))
+                _log({"t": started_wall, "n": n, "tool": name, "args": args, "code": None,
+                      "status": "error", "error_type": type(exc).__name__, "error": str(exc)[:1000],
+                      "start_wall": started_wall, "start_monotonic": started_mono,
+                      "end_wall": ended_wall, "end_monotonic": ended_mono,
+                      "duration_s": round(ended_mono-started_mono, 6),
+                      "lock_wait_s": (event or {}).get("lock_wait_s", 0)})
+            except Exception:
+                pass
             raise
 
 

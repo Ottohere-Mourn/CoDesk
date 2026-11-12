@@ -201,3 +201,16 @@ note of the agent's own recent steps, so tasks can run past the 50-image limit o
 
 `python -m pytest -q` runs the pipeline (all modes, setup dedup, decoupled evaluation, infra handling,
 harnesses, transports, analysis) against an in-memory DesktopEnv.
+## Human-Agent shared desktop extension
+
+For the Linux PoC and current four-case Human-like User + real GUI Agent pilot status, see docs/HUMAN_AGENT_4_CASES_HANDOFF_20261111_ZH.md. The handoff distinguishes natural Shared task failures from the fixed-schedule Mail mechanism probe and points to each Task Card and RAID artifact directory. This extension is separate from the older five-mechanism case design and does not replace it.
+
+## Human-Agent Normal-User Novel Case Suite
+
+Three additional, lower-overlap pilots are implemented in oscombo/human_agent_novel_case_runner.py:
+- --case code-review: line-level PR review + separate QA update.
+- --case access-review: least-privilege identity review + own security-profile update.
+- --case transit-itinerary: accessible trip planning + favorite station update.
+
+Use infra/run_human_agent_novel.sh and modes user-only, agent-only, independent, shared, or shared-lock. All experiment output must be under /mnt/raid1; Codex state (CODEX_HOME) must remain on local root storage because the RAID mount does not support the filesystem operations Codex uses. See docs/HA_NOVEL_CASES_V1_20261111_ZH.md and the associated 3-case handoff for task definitions and results.
+

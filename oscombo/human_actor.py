@@ -47,6 +47,12 @@ class ScriptedGUIActor:
         self.lock_wait_s = 0.0
         self.errors: list[str] = []
 
+    def _window_info(self) -> dict[str, str | None]:
+        method = getattr(self.guest, "active_window_info", None)
+        if method:
+            return method()
+        return {"id": None, "title": self.guest.active_window()}
+
     def _do(self, action: GUIAction, step: int, *, recovery: bool = False) -> dict[str, Any]:
         if action.delay_before_s:
             time.sleep(action.delay_before_s)
@@ -58,13 +64,15 @@ class ScriptedGUIActor:
             fcntl.flock(fd, fcntl.LOCK_EX)
             lock_wait = time.monotonic() - requested_mono
         started_wall, started_mono = time.time(), time.monotonic()
-        before = self.guest.active_window()
+        before_info = self._window_info()
+        before = before_info.get("title")
         png, error, result = b"", None, None
-        after = before
+        after, after_info = before, before_info
         shot_path = self.out / "shots" / f"{self.actor_id}-{step:03d}-{action.name}.png"
         try:
             result = self.guest.run_pyautogui(action.code)
-            after = self.guest.active_window()
+            after_info = self._window_info()
+            after = after_info.get("title")
             png = self.guest.screenshot(patience=90)
             shot_path.parent.mkdir(parents=True, exist_ok=True)
             shot_path.write_bytes(png)
@@ -83,8 +91,10 @@ class ScriptedGUIActor:
             step=step, action_name=action.name, code=action.code, expected_app=action.expected_app,
             start_requested_wall=requested_wall, start_wall=started_wall, start_monotonic=started_mono,
             end_wall=ended_wall, end_monotonic=ended_mono, duration_s=round(ended_mono-started_mono, 6),
-            lock_wait_s=round(lock_wait, 6), lock_path=str(self.lock_path) if self.lock_path else None,
-            window_before=before, window_after=after, screenshot_path=str(shot_path) if png else None,
+            scheduled_delay_before_s=round(action.delay_before_s, 6), lock_wait_s=round(lock_wait, 6), lock_path=str(self.lock_path) if self.lock_path else None,
+            window_before=before, window_after=after,
+            window_id_before=before_info.get("id"), window_id_after=after_info.get("id"),
+            screenshot_path=str(shot_path) if png else None,
             screenshot_bytes=len(png), result=str(result)[:500] if result is not None else None,
             error=error, recovery=recovery, misrouted_focus_before=misrouted)
         self.lock_wait_s += lock_wait

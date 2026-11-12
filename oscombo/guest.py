@@ -28,19 +28,33 @@ class Guest:
         return f"http://{self.env.vm_ip}:{self.env.server_port}"
 
     def execute(self, argv: list[str], timeout: float = 60) -> dict:
-        r = requests.post(f"{self.url}/execute", json={"command": argv, "shell": False, "timeout": 30},
+        # Keep the Guest-side subprocess timeout aligned with the HTTP timeout.
+        # Browser cold-start can legitimately exceed 30 s; a fixed server timeout
+        # made the documented caller timeout ineffective and killed setup commands.
+        guest_timeout = max(1, min(120, int(timeout)))
+        r = requests.post(f"{self.url}/execute", json={"command": argv, "shell": False,
+                                                        "timeout": guest_timeout},
                           timeout=(5, timeout))
         if not r.ok:
             raise InfraError(f"Guest execute HTTP {r.status_code}: {r.text[:1000]}")
         return r.json()
 
-    def active_window(self) -> str | None:
-        """Title of the focused window, recorded before every action (cross-agent interference metric)."""
+    def active_window_info(self) -> dict[str, str | None]:
+        """Focused X11 window identity and title; titles can change on page navigation without focus changing."""
         try:
-            out = self.execute(["bash", "-lc", "xdotool getactivewindow getwindowname 2>/dev/null || true"], 30)
-            return (out.get("output") or "").strip() or None
+            command = 'wid=$(xdotool getactivewindow 2>/dev/null) || exit 0; title=$(xdotool getwindowname "$wid" 2>/dev/null || true); printf "%s\\t%s" "$wid" "$title"'
+            out = self.execute(["bash", "-lc", command], 30)
+            value = (out.get("output") or "").strip()
+            if "\t" not in value:
+                return {"id": None, "title": value or None}
+            window_id, title = value.split("\t", 1)
+            return {"id": window_id or None, "title": title or None}
         except Exception:
-            return None
+            return {"id": None, "title": None}
+
+    def active_window(self) -> str | None:
+        """Title of the focused window, recorded alongside its X11 identity."""
+        return self.active_window_info()["title"]
 
     def screenshot(self, patience: float | None = None) -> bytes:
         """PNG bytes; a slow (TCG) Guest under load may return nothing for a while, so retry up to ``patience`` s."""

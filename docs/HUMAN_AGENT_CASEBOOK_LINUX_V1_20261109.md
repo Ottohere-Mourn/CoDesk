@@ -126,3 +126,16 @@ The current fixture launcher explicitly sets `DISPLAY=:0` and opens only Writer 
 5. Only after a case passes controls, use the real Codex GUI Agent with the same task version, tools, and step/time budget across Shared and Shared+PerActionLock. Do not expand to five model triplets until scripted validation is stable.
 
 **Recommended first implementation order:** Case 3 (same-sheet selection), Case 2 (clipboard), Case 5 (modal export), Case 4 (shared undo history). Case 1 stays the tested reference anchor. The latter four remain candidates until run through the controls above.
+
+## Status update — Human-like User + real GUI Agent cases (2026-11-11)
+
+A separate Actor-composition extension now has four small-pilot task types with a valid Independent User+Agent pass and a valid Shared User-impact result. This does not replace the five mechanism cases above. Three impact episodes are natural Shared; Mail's impact episode is a deliberate fixed-start-offset mechanism probe and remains separate from its natural Shared pass.
+
+| Case | Independent control | Shared evidence | Status |
+|---|---|---|---|
+| HA-TRIAGE | Run 40: User+Agent PASS | Run 41 natural Shared: User FAIL, Agent PASS; three wrong-window actions | Qualified pilot |
+| HA-PO-ARCHIVE | Run 63: User+Agent PASS | Run 62 natural Shared: User FAIL, Agent PASS; Agent changed the GTK file picker from Downloads to Documents during User selection | Qualified pilot |
+| HA-CALENDAR | Run 85: User+Agent PASS; fresh successful rerun after correcting a runner summary bug | Run 91 natural Shared: User FAIL, Agent PASS; exact title truncated during overlapping calendar editing | Qualified pilot |
+| HA-MAIL | Run 83 fixed-offset Independent: User+Agent PASS; same 25s offset User-only also passes | Run 84 Shared fixed-offset probe: User FAIL, Agent PASS; three wrong-foreground actions. Natural Shared Run 78 passes both. | Qualified controlled probe, not a natural-failure case |
+
+The per-case Task Cards, run IDs, reproducibility, costs, and limitations are consolidated in docs/HUMAN_AGENT_4_CASES_HANDOFF_20261111_ZH.md. All detailed run artifacts and overlays are under RAID root /mnt/raid1/mjh/Projects/codesk-human-agent-normal-actor-pilot-20261109/. Single-trial evidence does not estimate probabilities. The User Actor remains fixed open-loop; no human recovery time has been measured. HA-INVENTORY is runnable but had no qualifying natural Shared user-harm episode, so is not counted among the four.

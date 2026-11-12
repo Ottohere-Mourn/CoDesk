@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import parse_qs
 
-FIXTURE_ID = "handoff-form-t1043-v1"
+FIXTURE_ID = "handoff-form-t1043-v2"
 TICKET_ID = "T-1043"
 # Evaluation answers are intentionally not rendered into the web page or exposed
 # by an HTTP route. Keep this tuple in the offline evaluator only.
@@ -131,8 +131,9 @@ def _render_page(state: dict[str, Any] | None, saved: bool = False) -> bytes:
     subject = html.escape(str(state["subject"]), quote=True)
     summary = html.escape(str(state["summary"]), quote=True)
     note = html.escape(str(state["note"]), quote=True)
-    # datetime-local requires a T separator; persisted values use a stable local wall-time form.
-    follow_up = html.escape(str(state["follow_up"]).replace(" ", "T"), quote=True)
+    # Keep a stable ISO-like text field: native datetime-local keyboard input is
+    # locale-segmented and the scripted User must not inherit host locale quirks.
+    follow_up = html.escape(str(state["follow_up"]), quote=True)
     saved_notice = '<p role="status">Update saved.</p>' if saved else ""
     page = f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
@@ -153,7 +154,8 @@ button{{margin-top:1rem;padding:.65rem 1.2rem;background:#145a8d;color:white;bor
 <textarea id="note" name="note" rows="4" maxlength="500" aria-describedby="note-help" autofocus>{note}</textarea>
 <p id="note-help">Record the latest carrier follow-up in a concise note.</p>
 <label for="follow_up">Follow-up date and time (local)</label>
-<input id="follow_up" name="follow_up" type="datetime-local" value="{follow_up}" required>
+<input id="follow_up" name="follow_up" type="text" inputmode="numeric" placeholder="YYYY-MM-DD HH:MM" aria-describedby="follow-up-help" value="{follow_up}" required>
+<p id="follow-up-help">Enter the local date and time in YYYY-MM-DD HH:MM format.</p>
 <button type="submit">Save ticket update</button>
 </form></main></body></html>"""
     return page.encode("utf-8")

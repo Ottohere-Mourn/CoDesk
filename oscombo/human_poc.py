@@ -55,11 +55,12 @@ class FocusMonitor:
         self.thread.join(timeout=15)
 
     def _run(self) -> None:
-        old = self.guest.active_window()
-        self.log.emit("monitor", "focus_baseline", guest_id=self.guest_id, window=old)
+        old = self.guest.active_window_info()
+        self.log.emit("monitor", "focus_baseline", guest_id=self.guest_id,
+                      window=old.get("title"), window_id=old.get("id"))
         while not self.stop_event.is_set():
-            now = self.guest.active_window()
-            if now != old:
+            now = self.guest.active_window_info()
+            if now.get("id") != old.get("id"):
                 self.transitions += 1
                 shot = self.out / f"{self.guest_id}-focus-{self.transitions:03d}.png"
                 data = b""
@@ -76,9 +77,15 @@ class FocusMonitor:
                 except Exception:
                     pass
                 self.log.emit("monitor", "focus_change", guest_id=self.guest_id,
-                              previous_window=old, window=now, screenshot_path=str(shot) if data else None,
+                              previous_window=old.get("title"), window=now.get("title"),
+                              previous_window_id=old.get("id"), window_id=now.get("id"),
+                              screenshot_path=str(shot) if data else None,
                               screenshot_bytes=len(data), window_inventory=windows)
-                old = now
+            elif now.get("title") != old.get("title"):
+                self.log.emit("monitor", "window_title_change", guest_id=self.guest_id,
+                              window_id=now.get("id"), previous_title=old.get("title"),
+                              title=now.get("title"))
+            old = now
             self.stop_event.wait(self.interval)
 
 
