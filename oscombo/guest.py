@@ -32,24 +32,36 @@ class Guest:
             command = argv[2] if len(argv) >= 3 and argv[:2] == ["bash", "-lc"] else argv
             result = self.env.controller.run_bash_script(command, timeout=timeout) if isinstance(command, str) else self.env.setup_controller.execute(command, timeout=timeout)
             return result
-        r = requests.post(f"{self.url}/execute", json={"command": argv, "shell": False, "timeout": 30},
+        guest_timeout = max(1, min(120, int(timeout)))
+        r = requests.post(f"{self.url}/execute", json={"command": argv, "shell": False,
+                                                        "timeout": guest_timeout},
                           timeout=(5, timeout))
-        r.raise_for_status()
+        if not r.ok:
+            raise InfraError(f"Guest execute HTTP {r.status_code}: {r.text[:1000]}")
         return r.json()
 
-    def active_window(self) -> str | None:
-        """Title of the focused window, recorded before every action (cross-agent interference metric)."""
+    def active_window_info(self) -> dict[str, str | None]:
+        """Focused X11 window identity and title; titles can change without focus changing."""
         try:
+            command = 'wid=$(xdotool getactivewindow 2>/dev/null) || exit 0; title=$(xdotool getwindowname "$wid" 2>/dev/null || true); printf "%s\t%s" "$wid" "$title"'
             if getattr(self.env, "provider_name", None) == "local":
                 if not self.env.display:
-                    return None
-                result = self.env.setup_controller.execute(
-                    ["xdotool", "getactivewindow", "getwindowname"], timeout=30)
-                return (result.stdout or "").strip() or None
-            out = self.execute(["bash", "-lc", "xdotool getactivewindow getwindowname 2>/dev/null || true"], 30)
-            return (out.get("output") or "").strip() or None
+                    return {"id": None, "title": None}
+                result = self.env.setup_controller.execute(["bash", "-lc", command], timeout=30)
+                value = (result.stdout or "").strip()
+            else:
+                out = self.execute(["bash", "-lc", command], 30)
+                value = (out.get("output") or "").strip()
+            if "\t" not in value:
+                return {"id": None, "title": value or None}
+            window_id, title = value.split("\t", 1)
+            return {"id": window_id or None, "title": title or None}
         except Exception:
-            return None
+            return {"id": None, "title": None}
+
+    def active_window(self) -> str | None:
+        """Title of the focused window, recorded before actions."""
+        return self.active_window_info()["title"]
 
     def screenshot(self, patience: float | None = None) -> bytes:
         """PNG bytes; a slow (TCG) Guest under load may return nothing for a while, so retry up to ``patience`` s."""

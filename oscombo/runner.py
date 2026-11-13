@@ -71,7 +71,9 @@ class RunConfig:
         if self.action_lock and self.mode != "parallel":
             raise ValueError("the per-action lock is only defined for parallel/shared-Guest runs")
         if self.action_lock and any(a.get("harness") not in {"codex", "pi"} for a in self.agents):
-            raise ValueError("the per-action lock is wired only for Codex/Pi desktop MCP harnesses")
+            raise ValueError("the per-action lock is wired only for Codex MCP / Pi desktop harnesses")
+        if self.isolated_boot_stagger < 0:
+            raise ValueError("isolated_boot_stagger must be nonnegative")
 
     def agent_spec(self, i: int) -> dict:
         return self.agents[i if len(self.agents) > 1 else 0]
@@ -103,13 +105,14 @@ def endpoint(spec: dict) -> str | None:
 class AgentSlot:
     """One agent: its harness, context and result; exceptions become status ``error``."""
 
-    def __init__(self, i: int, task: Any, spec: dict, guest: Guest, out: Path, max_steps: int):
+    def __init__(self, i: int, task: Any, spec: dict, guest: Guest, out: Path, max_steps: int,
+                 action_lock_file: str | None = None):
         self.name = f"agent{chr(ord('A') + i)}"
         self.task = task
         self.spec = spec
         self.ctx = AgentContext(name=self.name, task_id=str(task_get(task, "id")),
                                 instruction=instruction_for(task, spec), guest=guest, out=out,
-                                max_steps=max_steps, spec=spec)
+                                max_steps=max_steps, spec=spec, action_lock_file=action_lock_file)
         self.result = AgentResult()
         self.harness = None
 
@@ -190,6 +193,7 @@ def run(cfg: RunConfig) -> dict:
     cache = Path(cfg.cache_dir or cfg.out / "cache")
     result: dict[str, Any] = {"mode": cfg.mode, "tasks": cfg.tasks, "max_steps": cfg.max_steps,
                               "variant": cfg.variant(), "mediation": cfg.mediation, "action_lock": cfg.action_lock,
+                              "isolated_boot_stagger_s": cfg.isolated_boot_stagger,
                               "agent_specs": cfg.agents,
                               "code": code_version(), **cfg.extra}
     slots: list[AgentSlot] = []
@@ -243,12 +247,18 @@ def _run_shared(cfg: RunConfig, image: str, cache: Path, tasks: list, result: di
 
         active = tasks[:1] if cfg.mode == "shadow" else tasks  # shadow: only agent A acts and is evaluated
         specs = []
+        action_lock_file = None
+        if cfg.action_lock:
+            lock_dir = cfg.out / "locks"
+            lock_dir.mkdir(parents=True, exist_ok=True)
+            action_lock_file = str(lock_dir / "guest-actions.lock")
         for i in range(len(active)):
             spec = dict(cfg.agent_spec(i))
             if cfg.action_lock:
-                spec["options"] = {**spec.get("options", {}), "action_lock_path": str(cfg.out / "action.lock")}
+                spec["options"] = {**spec.get("options", {}), "action_lock_path": action_lock_file}
             specs.append(spec)
-        slots += [AgentSlot(i, t, specs[i], guest, cfg.out, cfg.max_steps) for i, t in enumerate(active)]
+        slots += [AgentSlot(i, t, specs[i], guest, cfg.out, cfg.max_steps, action_lock_file)
+                  for i, t in enumerate(active)]
         if mediate:
             _attach_mediation(cfg, guest, slots, result)
         if cfg.defense:
@@ -339,6 +349,7 @@ def _run_isolated(cfg: RunConfig, image: str, cache: Path, tasks: list, result: 
             if cfg.quiet_notifications:
                 Guest(envs[i]).quiet_notifications()
             envs[i].reset(task_config=tasks[i])
+            Guest(envs[i]).wait_desktop()
         except Exception as exc:
             errors[i] = f"{type(exc).__name__}: {exc}"
 

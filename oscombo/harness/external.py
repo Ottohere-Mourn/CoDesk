@@ -15,6 +15,7 @@ Outcome: ``fail`` if ``<agent_dir>/INFEASIBLE`` exists (tool ``declare_infeasibl
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import re
@@ -48,6 +49,31 @@ def fill(text: str, values: dict[str, str]) -> str:
 
 def _pythonpath() -> str:
     return REPO + (os.pathsep + os.environ["PYTHONPATH"] if os.environ.get("PYTHONPATH") else "")
+
+
+def codex_usage_from_stdout(path: str | Path) -> dict:
+    """Aggregate Codex JSON turn-completed usage without parsing tool payloads."""
+    totals = {"input_tokens": 0, "cached_input_tokens": 0, "cache_write_input_tokens": 0,
+              "output_tokens": 0, "reasoning_output_tokens": 0}
+    events = 0
+    source = Path(path)
+    if source.is_file():
+        with source.open(encoding="utf-8", errors="replace") as stream:
+            for line in stream:
+                try:
+                    event = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                usage = event.get("usage") if event.get("type") == "turn.completed" else None
+                if not isinstance(usage, dict):
+                    continue
+                events += 1
+                for key in totals:
+                    value = usage.get(key)
+                    if isinstance(value, int) and value >= 0:
+                        totals[key] += value
+    totals["uncached_input_tokens"] = max(0, totals["input_tokens"] - totals["cached_input_tokens"])
+    return {"available": events > 0, "usage_event_count": events, **totals}
 
 
 class CommandHarness(Harness):
@@ -172,13 +198,16 @@ class CodexHarness(CommandHarness):
             if not os.environ.get(self.collaboration["token_env"]):
                 raise ValueError(f"collaboration token environment variable is unset: {self.collaboration['token_env']}")
         runtime_root = self.opts.get("codex_runtime_root")
+        home_base = self.opts.get("codex_home_base")
         if runtime_root:
-            runtime_dir = Path(runtime_root) / ctx.name
-            home = runtime_dir / "codex_home"
-            work = runtime_dir / "work"
+            runtime_dir = Path(runtime_root).expanduser() / ctx.name
+        elif home_base:
+            run_key = hashlib.sha256(str(ctx.out.resolve()).encode("utf-8")).hexdigest()[:20]
+            runtime_dir = Path(home_base).expanduser() / run_key / ctx.name
         else:
-            home = self.dir / "codex_home"
-            work = self.dir / "work"
+            runtime_dir = self.dir
+        home = runtime_dir / "codex_home"
+        work = runtime_dir / "work"
         home.mkdir(parents=True, exist_ok=True)
         work.mkdir(parents=True, exist_ok=True)
         model = require_model(self.spec)
@@ -260,11 +289,25 @@ class CodexHarness(CommandHarness):
                 # commonly a symlink whose lexical path activates the venv.
                 mcp_python = os.path.abspath(candidate)
         base_url = o.get("base_url") or os.environ.get("OPENAI_BASE_URL", "https://api.openai.com/v1")
+        mcp_pythonpath = _pythonpath()
+        if o.get("mcp_pythonpath"):
+            mcp_pythonpath = os.pathsep.join((str(o["mcp_pythonpath"]), mcp_pythonpath))
         mcp_env = {"OSCOMBO_GUEST_URL": ctx.guest.url, "OSCOMBO_ACTION_LOG": str(self.action_log),
-                   "OSCOMBO_MAX_STEPS": str(ctx.max_steps), "PYTHONPATH": _pythonpath()}
-        action_lock_path = o.get("action_lock_path")
+                   "OSCOMBO_MAX_STEPS": str(ctx.max_steps), "PYTHONPATH": mcp_pythonpath,
+                   "OSCOMBO_RUN_ID": str(o.get("run_id") or os.environ.get("OSCOMBO_RUN_ID") or ctx.out.name),
+                   "OSCOMBO_RUN_START_MONO": os.environ.get("OSCOMBO_RUN_START_MONO", ""),
+                   "OSCOMBO_ACTOR_ID": ctx.name, "OSCOMBO_EPISODE_ID": ctx.name,
+                   "OSCOMBO_GUEST_ID": str(o.get("guest_id", "")),
+                   "OSCOMBO_EXPECTED_APP": str(o.get("expected_app", "")),
+                   "OSCOMBO_UNIFIED_EVENT_LOG": str(ctx.out / "events.jsonl")}
+        action_lock_path = o.get("action_lock_path") or getattr(ctx, "action_lock_file", None)
         if action_lock_path:
-            mcp_env["OSCOMBO_ACTION_LOCK_PATH"] = str(action_lock_path)
+            lock_path = Path(action_lock_path)
+            lock_path.parent.mkdir(parents=True, exist_ok=True)
+            mcp_env["OSCOMBO_ACTION_LOCK_PATH"] = str(lock_path)
+            mcp_env["OSCOMBO_ACTION_LOCK_FILE"] = str(lock_path)
+            mcp_env["OSCOMBO_ACTION_LOCK_EVENTS_FILE"] = str(
+                o.get("action_lock_events_file") or (ctx.out / "locks" / "agent-action-lock-events.jsonl"))
         if "min_non_black_pixel_fraction" in o:
             mcp_env["OSCOMBO_SCREENSHOT_MIN_NON_BLACK_FRACTION"] = str(
                 float(o["min_non_black_pixel_fraction"]))
@@ -280,6 +323,8 @@ class CodexHarness(CommandHarness):
                 raise ValueError("desktop_screenshot_settle_sec must be between 0 and 30")
             mcp_env["OSCOMBO_MCP_SETTLE"] = str(settle)
         env_toml = ", ".join(f"{k} = {json.dumps(v)}" for k, v in mcp_env.items())
+        mcp_python = o.get("mcp_command") or mcp_python
+        mcp_args = o.get("mcp_args") or ["-m", "oscombo.desktop_tools", "--mcp"]
         key_env = o.get("api_key_env", "OPENAI_API_KEY")
         auth_mode = o.get("auth_mode", "auto")
         if auth_mode == "none":
@@ -291,15 +336,16 @@ class CodexHarness(CommandHarness):
         else:
             raise ValueError("options.auth_mode must be auto, env, or none")
         collaboration_server = ""
-        if self.collaboration:
+        collaboration = getattr(self, "collaboration", None)
+        if collaboration:
             collab_env = {
                 "PYTHONPATH": _pythonpath(),
-                "CODESK_COLLAB_URL": self.collaboration["url"],
-                "CODESK_COLLAB_ACTOR": self.collaboration["actor"],
-                "CODESK_COLLAB_TOKEN": os.environ[self.collaboration["token_env"]],
+                "CODESK_COLLAB_URL": collaboration["url"],
+                "CODESK_COLLAB_ACTOR": collaboration["actor"],
+                "CODESK_COLLAB_TOKEN": os.environ[collaboration["token_env"]],
             }
-            if self.collaboration.get('guest_root'):
-                collab_env['CODESK_COLLAB_GUEST_ROOT'] = self.collaboration['guest_root']
+            if collaboration.get('guest_root'):
+                collab_env['CODESK_COLLAB_GUEST_ROOT'] = collaboration['guest_root']
                 collab_env['CODESK_COLLAB_GUEST_URL'] = ctx.guest.url
             collab_env_toml = ", ".join(
                 f"{key} = {json.dumps(value)}" for key, value in collab_env.items())
@@ -325,7 +371,7 @@ env = {{ {collab_env_toml} }}
         return f"""model = {json.dumps(require_model(self.spec))}
 model_provider = "oscombo"
 model_reasoning_effort = {json.dumps(self.spec.get("effort") or "medium")}
-model_catalog_json = {json.dumps(str(Path(self.values.get("codex_home", agent_dir / "codex_home")) / "models-catalog.json"))}
+model_catalog_json = {json.dumps(str(Path(getattr(self, "values", {}).get("codex_home", agent_dir / "codex_home")) / "models-catalog.json"))}
 model_context_window = 262144
 approval_policy = "never"
 sandbox_mode = "read-only"
@@ -349,9 +395,9 @@ image_generation = false
 
 [mcp_servers.desktop]
 command = {json.dumps(mcp_python)}
-args = ["-m", "oscombo.desktop_tools", "--mcp"]
+args = {json.dumps(mcp_args)}
 enabled = true
-required = true
+required = {str(bool(o.get("mcp_required", True))).lower()}
 enabled_tools = ["screenshot", "click", "drag", "move", "type_text", "key", "scroll", "wait", "declare_infeasible"]
 startup_timeout_sec = 60
 tool_timeout_sec = 300
@@ -393,6 +439,8 @@ env = {{ {env_toml} }}
     def run(self, ctx: AgentContext) -> AgentResult:
         res = super().run(ctx)
         res.extra["harness_version"] = self.harness_version
+        res.extra["token_usage"] = codex_usage_from_stdout(self.dir / "stdout.log")
+        res.extra["gui_mcp_calls"] = len(res.trace)
         return res
 
 

@@ -36,6 +36,7 @@ class AgentContext:
     guard: Any = None         # this agent's mediation.SelfGuard (step harness only)
     defense: Any = None       # this agent's oscombo.defense.DefenseBase (step harness only)
     setup_windows: list = field(default_factory=list)  # X window ids that appeared during this agent's task setup
+    action_lock_file: str | None = None  # optional shared-Guest per-MCP-call lock (Codex desktop tools)
 
 
 @dataclass

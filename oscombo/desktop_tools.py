@@ -25,16 +25,23 @@ import os
 import sys
 import threading
 import time
+import uuid
+from datetime import datetime, timezone
 from contextlib import contextmanager
 
 import requests
 from PIL import Image as PILImage
 from PIL import ImageStat
 
+from .eventlog import append_jsonl
+
 URL = os.environ.get("OSCOMBO_GUEST_URL", "http://localhost:5000").rstrip("/")
 LOG = os.environ.get("OSCOMBO_ACTION_LOG")
 BUDGET = int(os.environ.get("OSCOMBO_MAX_STEPS") or "45")
-ACTION_LOCK_PATH = os.environ.get("OSCOMBO_ACTION_LOCK_PATH")
+ACTION_LOCK_PATH = (os.environ.get("OSCOMBO_ACTION_LOCK_PATH")
+                    or os.environ.get("OSCOMBO_ACTION_LOCK_FILE"))
+ACTION_LOCK_EVENTS_FILE = os.environ.get("OSCOMBO_ACTION_LOCK_EVENTS_FILE")
+UNIFIED_EVENT_LOG = os.environ.get("OSCOMBO_UNIFIED_EVENT_LOG")
 _LOCK_TIMING = threading.local()
 SETTLE = float(os.environ.get("OSCOMBO_MCP_SETTLE", "1.0"))
 TOOL_RESULT_COOLDOWN = max(0.0, float(os.environ.get("OSCOMBO_MCP_TURN_COOLDOWN_SEC", "0")))
@@ -263,18 +270,35 @@ def _code(name: str, args: dict, scale: list[float]) -> str | None:
 
 
 def _log(rec: dict) -> None:
+    now_wall, now_mono = time.time(), time.monotonic()
+    rec.setdefault("event_id", uuid.uuid4().hex)
+    rec.setdefault("timestamp_utc", datetime.fromtimestamp(now_wall, timezone.utc).isoformat())
+    rec.setdefault("wall_time", now_wall)
+    rec.setdefault("monotonic_time", now_mono)
+    run_start = os.environ.get("OSCOMBO_RUN_START_MONO")
+    if run_start:
+        try:
+            rec.setdefault("run_elapsed_s", round(now_mono - float(run_start), 6))
+        except ValueError:
+            pass
+    rec.setdefault("event_type", "agent_gui_action")
+    rec.setdefault("run_id", os.environ.get("OSCOMBO_RUN_ID"))
+    rec.setdefault("actor_id", os.environ.get("OSCOMBO_ACTOR_ID"))
+    rec.setdefault("guest_id", os.environ.get("OSCOMBO_GUEST_ID"))
+    rec.setdefault("episode_id", os.environ.get("OSCOMBO_EPISODE_ID") or rec.get("actor_id"))
     metrics = getattr(_LOCK_TIMING, "metrics", None)
     if metrics is not None:
         rec["lock_enabled"] = True
-        rec["lock_wait_s"] = round(metrics["acquired_at"] - metrics["started"], 4)
-        rec["lock_held_s"] = round(time.perf_counter() - metrics["acquired_at"], 4)
+        rec["lock_wait_s"] = round(metrics["acquired_at"] - metrics["started"], 6)
+        rec["lock_held_s"] = round(time.perf_counter() - metrics["acquired_at"], 6)
     elif ACTION_LOCK_PATH:
         rec.setdefault("lock_enabled", True)
         rec.setdefault("lock_wait_s", 0.0)
         rec.setdefault("lock_held_s", 0.0)
     if LOG:
-        with open(LOG, "a") as f:
-            f.write(json.dumps(rec) + "\n")
+        append_jsonl(LOG, rec)
+    if UNIFIED_EVENT_LOG and os.path.abspath(UNIFIED_EVENT_LOG) != os.path.abspath(LOG or ""):
+        append_jsonl(UNIFIED_EVENT_LOG, rec)
 
 
 def _wait_before_tool_result() -> float:
@@ -341,18 +365,27 @@ def _run_tool(name: str, args: dict) -> tuple[str, bytes | None]:
     code = _code(name, args, scale)
     if name == "wait":
         time.sleep(min(float(args.get("seconds", 2.0)), 30))
-    before = _active_window() if code else None
+    before = _active_window() if (code or UNIFIED_EVENT_LOG) else None
+    expected_app = os.environ.get("OSCOMBO_EXPECTED_APP") or None
     if code:
         _request_metrics.action_code = code
         _request_metrics.action_attempted = True
         _py(code)
         _request_metrics.action_succeeded = True
     png, new_scale, guest_size = _shot()
+    after = _active_window() if UNIFIED_EVENT_LOG else None
     _store_observation(new_scale, guest_size)
     _save_screenshot(n, png)
     cooldown = _wait_before_tool_result()
     _log({"t": time.time(), "n": n, "tool": name, "args": args,
-          "window_before": before, "code": code, "executed": bool(code),
+          "window_before": before, "window_after": after, "expected_app": expected_app,
+          "focus_switch_action": bool(name == "key" and any(k in str(args.get("keys", "")).lower()
+                                                               for k in ("alt+tab", "ctrl+tab", "ctrl+page_down", "ctrl+pageup"))),
+          "misrouted_focus_before": bool(expected_app and code and expected_app.lower() not in (before or "").lower()),
+          "code": code, "executed": bool(code), "status": "ok",
+          "start_wall": _request_metrics.started_wall, "start_monotonic": _request_metrics.started,
+          "end_wall": time.time(), "end_monotonic": time.monotonic(),
+          "duration_s": round(time.monotonic() - _request_metrics.started, 6),
           "tool_elapsed_s": round(time.monotonic() - _request_metrics.started, 4),
           "http_requests": list(_request_metrics.records),
           "tool_result_cooldown_s": cooldown,
@@ -367,12 +400,18 @@ def _run_tool(name: str, args: dict) -> tuple[str, bytes | None]:
     return (f"OK. {left} tool calls left." if left <= 5 else "OK."), png
 
 
+def _run_tool_unlocked(name: str, args: dict, lock_info: dict | None = None) -> tuple[str, bytes | None]:
+    """Compatibility entry point retained for tests and older runners; locking is owned by run_tool."""
+    return _run_tool(name, args)
+
+
 def _run_tool_recorded(name: str, args: dict) -> tuple[str, bytes | None]:
     """Run one MCP action and record Guest HTTP/tool timings, including failures."""
     _request_metrics.records = []
     _request_metrics.started = time.monotonic()
+    _request_metrics.started_wall = time.time()
     try:
-        return _run_tool(name, args)
+        return _run_tool_unlocked(name, args, getattr(_LOCK_TIMING, "metrics", None))
     except Exception as exc:
         stop_file = os.environ.get("OSCOMBO_SCREENSHOT_STOP_FILE")
         if stop_file:
@@ -384,11 +423,15 @@ def _run_tool_recorded(name: str, args: dict) -> tuple[str, bytes | None]:
             except OSError:
                 pass
         _log({"t": time.time(), "n": getattr(_request_metrics, "call_no", None),
-              "tool": name, "args": args,
+              "tool": name, "args": args, "error_type": type(exc).__name__,
               "code": getattr(_request_metrics, "action_code", None),
               "action_attempted": getattr(_request_metrics, "action_attempted", False),
               "action_succeeded": getattr(_request_metrics, "action_succeeded", False),
-              "executed": getattr(_request_metrics, "action_succeeded", False),
+              "executed": getattr(_request_metrics, "action_succeeded", False), "status": "error",
+              "start_wall": getattr(_request_metrics, "started_wall", time.time()),
+              "start_monotonic": _request_metrics.started,
+              "end_wall": time.time(), "end_monotonic": time.monotonic(),
+              "duration_s": round(time.monotonic() - _request_metrics.started, 6),
               "tool_elapsed_s": round(time.monotonic() - _request_metrics.started, 4),
               "http_requests": list(_request_metrics.records),
               "error": f"{type(exc).__name__}: {exc}"})
@@ -396,22 +439,36 @@ def _run_tool_recorded(name: str, args: dict) -> tuple[str, bytes | None]:
 
 
 @contextmanager
-def _shared_action_lock():
+def _shared_action_lock(tool: str | None = None, args: dict | None = None):
     """Serialize a mutation and its returned observation across actors sharing one Guest."""
     if not ACTION_LOCK_PATH:
-        yield
+        yield None
         return
     parent = os.path.dirname(ACTION_LOCK_PATH)
     if parent:
         os.makedirs(parent, exist_ok=True)
-    started = time.perf_counter()
-    with open(ACTION_LOCK_PATH, "a") as handle:
+    requested_wall, started = time.time(), time.perf_counter()
+    event = {"event_id": uuid.uuid4().hex, "event_type": "action_lock",
+             "run_id": os.environ.get("OSCOMBO_RUN_ID"), "actor_id": os.environ.get("OSCOMBO_ACTOR_ID"),
+             "guest_id": os.environ.get("OSCOMBO_GUEST_ID"), "episode_id": os.environ.get("OSCOMBO_EPISODE_ID"),
+             "tool": tool, "args": args or {}, "lock_file": ACTION_LOCK_PATH,
+             "requested_at": requested_wall}
+    with open(ACTION_LOCK_PATH, "a", encoding="utf-8") as handle:
         fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
-        acquired = time.perf_counter()
+        acquired_wall, acquired = time.time(), time.perf_counter()
+        event["acquired_at"] = acquired_wall
+        event["lock_wait_s"] = round(acquired - started, 6)
         _LOCK_TIMING.metrics = {"started": started, "acquired_at": acquired}
         try:
-            yield
+            yield event
         finally:
+            event["released_at"] = time.time()
+            event["lock_held_s"] = round(time.perf_counter() - acquired, 6)
+            event["status"] = event.get("status", "ok")
+            event_path = ACTION_LOCK_EVENTS_FILE or (ACTION_LOCK_PATH + ".events.jsonl")
+            append_jsonl(event_path, event)
+            if UNIFIED_EVENT_LOG:
+                append_jsonl(UNIFIED_EVENT_LOG, event)
             _LOCK_TIMING.metrics = None
             fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
 
@@ -419,8 +476,16 @@ def _shared_action_lock():
 def run_tool(name: str, args: dict) -> tuple[str, bytes | None]:
     mutating = name in {"click", "drag", "move", "type_text", "key", "scroll"}
     if mutating and ACTION_LOCK_PATH:
-        with _shared_action_lock():
-            return _run_tool_recorded(name, args)
+        with _shared_action_lock(name, args) as event:
+            try:
+                result = _run_tool_recorded(name, args)
+                if event is not None:
+                    event.update({"status": "ok", "result_text": result[0], "image_returned": result[1] is not None})
+                return result
+            except Exception as exc:
+                if event is not None:
+                    event.update({"status": "error", "error_type": type(exc).__name__, "error": str(exc)[:500]})
+                raise
     return _run_tool_recorded(name, args)
 
 

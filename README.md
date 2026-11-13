@@ -207,3 +207,10 @@ Data-to-Deck, Ticket-to-Resolution, Build-and-Verify, Timeline-and-Assets, Model
 Spreadsheet Handoff, and Workspace Assembly. The registry lists each case's commands, dependencies,
 evidence level, and remaining Guest/agent validation. These cases reuse shared protocol libraries but are
 separate from the official OSWorld Combo task definitions and runner semantics.
+
+
+## Human-Agent normal-user extension
+
+The Human-Agent scripted-user + real Codex GUI case suite is kept alongside, not substituted for, the dual-agent benchmark. Start with [`docs/HUMAN_AGENT_4_CASES_HANDOFF_20261111_ZH.md`](docs/HUMAN_AGENT_4_CASES_HANDOFF_20261111_ZH.md), [`docs/HUMAN_AGENT_NEXT5_VALIDATION_20261112_ZH.md`](docs/HUMAN_AGENT_NEXT5_VALIDATION_20261112_ZH.md), and [`docs/HUMAN_AGENT_3_NEW_CASES_HANDOFF_20261111_ZH.md`](docs/HUMAN_AGENT_3_NEW_CASES_HANDOFF_20261111_ZH.md). Entry scripts are under `infra/run_human_agent_*.sh`; provide `OSWORLD_DIR`, `OSWORLD_PYTHON`, `SWCUB_SAFETY_ROOT`, image/runtime and RAID output paths for the host in use. These scripts preserve per-case evidence and do not run a large experiment by default.
+
+For the consolidated cross-branch inventory, counts, provenance and run entry points, see [`docs/ALL_CASES_HANDOFF_20261113_ZH.md`](docs/ALL_CASES_HANDOFF_20261113_ZH.md).
