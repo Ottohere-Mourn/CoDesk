@@ -215,3 +215,112 @@ run IDs：cdesk3-k2-ma-id-20261112T080745Z-908714、cdesk3-k2-shared-20261112T08
 - Shared+Lock 共 55 个有锁变更调用；lock_wait_s 总和 6.509、lock_held_s 总和 126.674、最大单次等待 2.153 秒；每个调用串行，但锁不覆盖模型思考时间。
 - 后续门槛：先做不改冻结 prompt/fixture/oracle 的 Guest joint positive control（共享状态下确实完成 WO-503 update，A 随后刷新并保存三站路线），再决定是否重跑。未通过控制前不要扩增模型臂或声称目标因果。
 - 本批 S1/K1/K2 仍为 0/3 qualified；q1 是修订候选，不改变此前计数。
+
+
+## 最新更新：EDIT-MODE1 三臂筛查（2026-11-12）
+
+首个替代候选 E1 已完成固定 Guest 控制和一次 GPT-6-Sol 三臂筛查。严格不计入达标数：MA-ID A/B=1.0/1.0，Shared=0.5/0.5，但 Shared+Lock=1.0/1.0。Shared 真实轨迹的输出是并发文本输入冲突，不是 scripted 控制中的特定 OVR 签名；锁臂的模型恢复成功。E1 因未满足 Shared+Lock FAIL 判定为 no-go，保留为机制/锁恢复对照。详细 Task、fixture、oracle、控件结果、run IDs、token/耗时及 overlay 归档限制见 tasks/paragui/EDIT_MODE1_MODEL_RESULTS_20261112.md。本批严格合格仍为 0/3；下一个替代候选需要不同任务设计，不能仅调参续跑 E1。
+
+## 2026-11-12 VIDEO-REVIEW1 GPT-6-Sol triplet（新增替代案例）
+
+VIDEO-REVIEW1 是 13 帧、时间码的 Northline Loading Bay 4 clip-review storyboard：Safety reviewer 记录 frame 2/4/6/8 四项危险，Maintenance coordinator 记录 frame 3/5/7/9/11 五项设备缺陷。两者共享一个媒体帧游标及当前 worklist/表单，保存时应用读取当时可见的帧作为 timestamp；任务目标本身互不排斥，离线共同正控、reset 与真实 Guest scripted joint positive 均通过。
+
+首轮 GPT-6-Sol triplet 一次达到目标组合（未经重复）：MA-ID 1.00/1.00，Shared 0.25/0.40，Shared+Lock 0.00/0.60。有效模型/API/Guest/evaluator；三臂的 task、fixture hash、source hash、Codex 0.165.0、GUI-only 与每 Agent 45-call budget 一致。Shared+Lock Safety Actor 明确报告共享页面在其多步任务中多次被另一 Actor 改帧、改 worklist、清空笔记；锁臂 60 个受锁动作逐个串行，lock wait 合计 9.068s、held 145.934s，但 PerActionLock 不覆盖跨工具调用的完整审核事务。Maintenance 受同一 45 次预算限制，仅完成 3/5。
+
+- MA-ID: `cdesk3-v1-ma-id-20261112T145415Z-1062817`
+- Shared: `cdesk3-v1-shared-20261112T150911Z-1070500`
+- Shared+Lock: `cdesk3-v1-shared-lock-20261112T152938Z-1078225`
+- 详情：`tasks/paragui/VIDEO_REVIEW1_MODEL_RESULTS_20261112.md`
+
+判定：**一次 triplet 满足三个臂的目标组合，列作这批新案的 1 个初筛达标候选；不声称稳定重复。** 设计边界为 storyboard，而非真实 MP4/商业审片软件；只能支持共享帧游标/表单状态的具体场景。暂不 push。\n\n## 2026-11-13 WAREHOUSE-LABEL1 model screen — no-go
+
+新候选 WAREHOUSE-LABEL1（共享热敏标签台：仓库 Bin 2x1 标签 + 发运 Parcel 4x6 标签）已完成真实 Guest 正控/固定机制对照和 GPT-6-Sol 三臂；Shared state 在提交时采样，固定 GUI 交错能复现错误标签尺寸，但真实模型三臂任务均完成：MA-ID 1.0/1.0、Shared 1.0/1.0、Shared+Lock 1.0/1.0。因此**不满足目标 tuple，明确 no-go，不计达标**；Shared/lock 的 GUI 调用和耗时明显增加只能当成本观察，不能改称 FAIL。任务提示要求每次打印前检查 profile，给了强恢复线索；不移除该线索或加 race 来制造失败。
+
+真实 Guest 控件：joint scripted GUI 正控双方 1.0；清楚标注的 fixed-interleaving mechanism control 使 bins 中 B-104 在切换 stock 后保存错 profile（bins 0.8, parcels 1.0），这是人为调度的机制验证，不是模型并发证据。另有一次 scripted authoring 错误（B 误点 bin 行）保留并排除于结论。完整结果、token、动作预算、fixture/source hash 一致性、lock wait/held、控制 run ids：`tasks/paragui/WAREHOUSE_LABEL1_MODEL_RESULTS_20261113.md`。
+
+模型 run IDs：
+- MA-ID `cdesk3-v2-ma-id-20261112T161600Z-1099988`
+- Shared `cdesk3-v2-shared-20261112T162411Z-1104670`
+- Shared+Lock `cdesk3-v2-shared-lock-20261112T164011Z-1111210`
+
+截至现在，三个新案替代筛查中 V1 VIDEO-REVIEW1 是 1 个一次性目标 tuple（无重复），V2 WAREHOUSE-LABEL1 no-go；故本批 3-case 目标仍只有 1/3 达到一次性目标组合。V1 storyboard 边界、V2 本地模拟打印台边界均见各自 spec/report。暂未 push。
+
+## 2026-11-13 COMMUNITY-PANTRY1 初筛：替代候选 V3（更新）
+
+COMMUNITY-PANTRY1 是社区食品储藏室周末服务台工作流：Agent A 为 6 名志愿者排班并确认，Agent B 同步处理 6 笔里程报销。两者操作单窗口 kiosk 的共享 active-volunteer/work-area 上下文；任务域不同且有明确联合 PASS 终态。业务是日常流程，但底层仍是 application-context/shared-active-record 变体，不宣称新增机制。
+
+**一次真实 GPT-6-Sol triplet 达到目标组合（无重复）：MA-ID A/B=1.0/1.0；Shared=0.0/0.8333；Shared+Lock=0.0/0.6667。**
+- MA-ID 两任务分别写入 6/6，48/49 GUI calls，60-call budget。
+- Shared 里 Mileage Actor 正常工作后，共享 desk 变成 1/6 processed；Shift Actor 将“不要处理 mileage”误读为共享状态必须保持 0/6，9 次工具调用后 declare_infeasible，班次 0/6。Mileage 5/6。
+- Shared+Lock Shift Actor 在多步排班过程中看到全局 work-area 被另一个合法 Actor 切成 Mileage，认为 UI 无法保持上下文并 declare_infeasible，24 次调用后班次 0/6。PerActionLock 串行了单个 GUI 工具调用，但没有锁住完整的志愿者/工作区/表单事务；Mileage 4/6。
+- 两个共享臂均 state_readable=true、run error=null；失败不是 Guest/API/evaluator 错误。共同正终态已由六条 Oracle 和同屏 scripted GUI 正控验证。没有注入人为障碍或固定强制交错。
+
+离线 6 个 V3 tests passed；真实 Guest scripted joint GUI positive run 两任务都 1.0：cdesk3-v3-scripted-joint-20261113T032751Z-1433698。有效模型 run IDs、逐条 exact Oracle、token、时长、lock telemetry、fixture/source manifest SHA、资源/overlay 归档校验见 tasks/paragui/COMMUNITY_PANTRY1_MODEL_RESULTS_20261113.md。
+
+- MA-ID：cdesk3-v3-ma-id-20261113T033134Z-1435452
+- Shared：cdesk3-v3-shared-20261113T034951Z-1443495
+- Shared+Lock：cdesk3-v3-shared-lock-20261113T040006Z-1448452
+
+保留的校准尝试 cdesk3-v3-ma-id-20261113T030907Z-1425007 用旧的 45-call budget，且 expected note 漏了任务提示末尾句点；不得与修正后的 triplet 混算。修正后统一三臂 60-call budget，expected note 与 prompt 完全一致。校准原始 run 不删除。
+
+**三新候选计数现为 2/3 一次性初筛达标：VIDEO-REVIEW1、COMMUNITY-PANTRY1；WAREHOUSE-LABEL1 是全臂 PASS no-go。** 均不声称有效重复；本分支仍未 push。
+
+
+## 2026-11-13 V4-V6 pilot continuation (new compact candidate revisions)
+
+The V4/V5/V6 case designs are LIBRARY-ROOM1 (programme booking + safety closure), AP-CLIPBOARD1 (invoice + reimbursement references), and EXAM-ACCESS1 (approved accommodations + seating). These are workflow/domain variants; do not call them three new mechanism families. Their task cards/specs, builders, assets and controls are under tasks/paragui/spec_v4.md, spec_v5.md, spec_v6.md and scripts/run_v456_guest_control.py.
+
+### Preserved V4 calibration (pre-revision; do not count as pass)
+- Run: cdesk3-v4-ma-id-20261113T052039Z-1485864.
+- Pre-revision fixture was 5 bookings + 3 closures. Result: A 2/5 (0.4), B 2/3 (0.6667), both status timeout, agent_s=2400.3, exit_code=-9; Oracle readable, Guest boot/reset succeeded. This is not infra-invalid, but an incomplete MA-ID, so no Shared/Shared+Lock from this fixture and no qualified triplet.
+- Per-Actor GUI call budget was 60; wall timeout 2400s. Agents used 38 and 19 GUI steps before timeout. Preserve output and overlays; do not fold the partial scores into any later revision.
+- The current revision reduces workloads to V4 2+2, V5 2+2, V6 3+3 records. Fixture/source hashes therefore differ. Repeat controls and start any new triplet at MA-ID.
+
+### Current resource placement / do not clean
+- Code worktree: /home/mjh/Projects/CoDesk-three-new-dualagent-cases-20261112.
+- Runs/assets/archived overlays: /mnt/raid1/mjh/Projects/codesk-next3-20261112/{runs/triplets,assets,overlays}.
+- Active Guest overlays and base: /dev/shm/codesk-next3/overlays, /dev/shm/codesk-next3/osworld-v2-ubuntu-x86.qcow2.
+- Last pre-run check: root had about 21 GiB free at 99%; RAID1 about 1 TiB free; /dev/shm about 80 GiB free. Root is still critically full. Do not write large files to root, pull Docker images, remove other people's resources, or clear earlier evidence. Recheck active containers and disk before each new arm. GPT was called through API from the Codex GUI-only harness; no Guest CLI permissions were added.
+- The user-supplied GPT-6-Sol key was consumed through a hidden TTY wrapper (/tmp/run_authenticated_case.sh) and is not stored in repository files. Reuse secure TTY injection only; do not print/log the key.
+
+### Run order status
+The prior prospective run list is complete. Current compact-fixture scripted controls, the V4-V6 MA-ID/Shared/Shared+Lock triplets, source/fixture parity checks and RAID overlay hash checks are all recorded in the later section titled V4-V6 compact model triplets complete. Do not restart from the prospective checklist or mix the pre-revision V4 timeout into the current triplet.
+
+
+### V4 LIBRARY-ROOM1 compact triplet (one-time target hit; caveat retained)
+- Result report: tasks/paragui/LIBRARY_ROOM1_MODEL_RESULTS_20261113.md.
+- Current compact-fixture triplet: MA-ID A/B 1.0/1.0; Shared A/B 1.0/0.0; Shared+Lock A/B 1.0/0.0. This screens as one Independent PASS / Shared FAIL / Shared+Lock FAIL case, no repeats.
+- The Shared and lock Facilities agent explicitly reported that the common UI repeatedly switched between panels between actions; lock telemetry confirms per-action serialization but no transaction-level lock.
+- Content-validity caveat: R-202 safety notice remains visible as an auxiliary worklist item although the task requests only R-101/R-201. It was not filtered post hoc; resolve before publication/repeat. Do not claim generality from one run.
+- Preserve the larger-fixture timeout calibration cdesk3-v4-ma-id-20261113T052039Z-1485864 separately; it is not part of this triplet.
+
+
+## 2026-11-13 V4-V6 compact model triplets complete
+
+This supersedes the earlier note that V5/V6 model runs were pending. Joint PASS means both task oracles score exactly 1.0; one failed actor makes the workflow joint outcome FAIL. Each case has one triplet and no repeat is claimed.
+
+| Case | Workflow | MA-ID (A/B) | Shared (A/B) | Shared+Lock (A/B) | Joint tuple |
+|---|---|---:|---:|---:|---|
+| V4 LIBRARY-ROOM1 | two programme bookings + two safety closures | 1.0 / 1.0 | 1.0 / 0.0 | 1.0 / 0.0 | PASS / FAIL / FAIL |
+| V5 AP-CLIPBOARD1 | two invoices + two staff claims | 1.0 / 1.0 | 0.0 / 0.0 | 1.0 / 0.0 | PASS / FAIL / FAIL |
+| V6 EXAM-ACCESS1 | three accommodations + three seating rows | 1.0 / 1.0 | 1.0 / 0.0 | 0.0 / 0.0 | PASS / FAIL / FAIL |
+
+**Batch: 3/3 meet the joint task-level tuple once. This is not repeatability evidence.** Shared and Shared+Lock results are valid model task failures with error=null, not API/Guest-invalid runs. All three have direct failed-actor reports of panel/work-area/window switching. No force-fail obstacle or arm-specific schedule was added.
+
+Reports:
+- V4: tasks/paragui/LIBRARY_ROOM1_MODEL_RESULTS_20261113.md
+- V5: tasks/paragui/AP_CLIPBOARD1_MODEL_RESULTS_20261113.md
+- V6: tasks/paragui/EXAM_ACCESS1_MODEL_RESULTS_20261113.md
+
+IDs:
+- V4: cdesk3-v4-ma-id-20261113T061735Z-1511887; cdesk3-v4-shared-20261113T063225Z-1518582; cdesk3-v4-shared-lock-20261113T065713Z-1527746.
+- V5: cdesk3-v5-ma-id-20261113T072336Z-1538703; cdesk3-v5-shared-20261113T073931Z-1545618; cdesk3-v5-shared-lock-20261113T074956Z-1550241.
+- V6: cdesk3-v6-ma-id-20261113T080324Z-1558552; cdesk3-v6-shared-20261113T081855Z-1565394; cdesk3-v6-shared-lock-20261113T084133Z-1574032.
+
+Qualification limits: V4 still has the out-of-scope R-202 notice caveat. V5 meets the broad shared finance workflow criterion, but the failure demonstrates shared panel/focus routing rather than clipboard overwrite; no clipboard-value telemetry was captured. V6 seating directly reports shared work-area switching. Its accommodations actor's Shared+Lock failure is weaker because the instruction says authorization notices while the app shows inline source summaries. Do not overclaim V5 as a clipboard mechanism or V6's A-side failure as causal evidence; align these items before publication/repeat.
+
+Controls/protocol: scripted current-fixture joint positives passed (V4 2/2 + 2/2; V5 2/2 + 2/2; V6 3/3 + 3/3). Offline Oracle suite rerun: 9 passed. All arms use GUI-only Codex CLI 0.165.0/GPT-6-Sol, matching per-case source and fixture manifests, 60 calls/actor, 2400-s timeout; MA-ID has two reset isolated Guests, the other arms one reset shared Guest, and the lock arm adds only per-action locking. No CLI or collaboration MCP was granted.
+
+Run JSON, actions, screenshots and Codex logs are on RAID: /mnt/raid1/mjh/Projects/codesk-next3-20261112/runs/triplets/. V5/V6 overlay archives were SHA-256 matched to tmpfs sources. Copy commands emitted permission-metadata warnings although data hashes match. No experiment data was deleted. Root remains critically full (about 19 GiB free at 99%); RAID has about 1 TiB free and /dev/shm about 70 GiB free. There are no active model/Guest containers. Do not clean old artifacts or overlays.
+
+No commit or push was made. Branch: codex/three-new-dualagent-cases-20261112. API key was injected via hidden TTY and not written to source or reports.

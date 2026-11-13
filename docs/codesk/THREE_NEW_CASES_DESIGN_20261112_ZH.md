@@ -1,6 +1,6 @@
 # CoDesk：3个新双 Agent Case 设计卡
 
-质量审计后当前为 0/3：S1 与 K2 都是目标互斥的 zero-sum pair，K1 三臂均 PASS、不符合目标。S1 另有过期 Oracle 漂移。
+截至 2026-11-12，替代候选中 VIDEO-REVIEW1 已完成一次有效 GPT-6-Sol 三臂并达到 MA-ID 双 PASS、Shared 双 FAIL、Shared+Lock 双 FAIL；尚无重复，所以新候选进度为 1/3。早期 S1/K2 因双方目标互斥 no-go，K1 全臂 PASS no-go，E1 的 Shared+Lock PASS no-go。
 
 ## 统一协议
 - MA-ID：两个 Agent 在并发运行的独立 Guest 中执行；各自从相同 pair fixture/reset 开始。
@@ -105,3 +105,39 @@ K2 raw scores（MA-ID 1.0/1.0、Shared 0.1429/0.25、Shared+Lock 0.8571/1.0）�
 真实 Codex/GPT-6-Sol triplet 一次达到数值组合：MA-ID A/B=1.0/1.0；Shared A/B=1.0/0.25；Shared+Lock A/B=0.1429/0.25。原始 runs 保留在 RAID，ID 见 tasks/paragui/ROUTE_LIVE1_MODEL_RESULTS_20261112.md。可是共享臂的任务失败不是预设的“工作单改期导致路线 stale”：Shared 中 B 没有成功更新任何字段；Shared+Lock 中双方均未完成目标。轨迹显示两个 Agent 在同一 Chrome 页面/表单间互相打断；锁臂的 55 个变更 GUI 调用均被逐调用串行（合计等待 6.509s、持锁 126.674s），但不能避免两个模型在动作间基于陈旧页面继续点击。
 
 审计判定：这是一个可解释的 shared browser/application-context workflow outcome，但和现有 Application Context 家族接近，也没有观测到设计假设的 route/job 状态联动。暂作替代候选/修订 K2 的探索性 outcome；若要计入目标三新 case，须先在相同 Guest 做不改 prompt/spec 的联合正控制，确认 B 更新工单与 A 刷新/重建三站路线可稳定完成；不要为制造结果加入 arm-specific 障碍。原始 K2 的 no-go 状态不变，且当前整体计数仍为 0/3 新 case 通过质量资格。
+
+
+## 替代候选 E1 — EDIT-MODE1（2026-11-12）
+
+首个替代候选 E1 已完成固定 Guest 控制和一次 GPT-6-Sol 三臂筛查。严格不计入达标数：MA-ID A/B=1.0/1.0，Shared=0.5/0.5，但 Shared+Lock=1.0/1.0。Shared 真实轨迹的输出是并发文本输入冲突，不是 scripted 控制中的特定 OVR 签名；锁臂的模型恢复成功。E1 因未满足 Shared+Lock FAIL 判定为 no-go，保留为机制/锁恢复对照。详细 Task、fixture、oracle、控件结果、run IDs、token/耗时及 overlay 归档限制见 tasks/paragui/EDIT_MODE1_MODEL_RESULTS_20261112.md。本批严格合格仍为 0/3；下一个替代候选需要不同任务设计，不能仅调参续跑 E1。
+
+## COMMUNITY-PANTRY1 — 社区食品储藏室排班 + 里程报销（2026-11-13）
+
+Agent A 完成 6 人次的排班确认，Agent B 完成相同 6 人的里程报销；共享一个 kiosk 的 global active-volunteer/work-area，上下文切换会刷新共享表单。独立 MA-ID 联合 PASS 终态、Oracle controls 和真实 Guest scripted positive 均通过。
+
+GPT-6-Sol/Codex 0.165.0 三臂一次性筛查：MA-ID 1.0/1.0（48/49 calls）；Shared 0/0.833（Shift Actor 看到另一 Actor 已处理 1 条 claim 后误判自己的限制不可满足）；Shared+Lock 0/0.667（锁住单次动作仍无法保持多步表单的全局面板上下文）。因此一次达到 MA-ID PASS + Shared FAIL + Shared+Lock FAIL；无重复主张。业务上是日常办公工作流，但机制上接近已有 application-context/shared active record，不视为新机制家族。详细结果与轨迹见 tasks/paragui/COMMUNITY_PANTRY1_MODEL_RESULTS_20261113.md。
+
+截至 2026-11-13，3 个新增 workflow 候选有 2 个满足一次性目标组合：VIDEO-REVIEW1、COMMUNITY-PANTRY1；WAREHOUSE-LABEL1 全臂 PASS，不计达标。暂不 push。
+
+
+## 2026-11-13 follow-on candidates V4-V6: compact screening revisions
+
+- V4 LIBRARY-ROOM1: two same-slot community programmes plus two facility safety closures; jointly feasible open-room allocation remains. Distinct from community pantry/video/warehouse workflows. A pre-revision 5+3 MA-ID timed out at 2/5 and 2/3 at 2400s; preserved, not counted. Current design reduces to 2+2 and requires a new MA-ID.
+- V5 AP-CLIPBOARD1: two invoices and two staff reimbursements with exact long references; Copy/Paste is an explicit realistic step. A wrong reference counts as clipboard mechanism evidence only when trace proves Copy/Paste buffer replacement, not merely transcription failure.
+- V6 EXAM-ACCESS1: three accommodation confirmations plus seating rows for the same three students. Joint-pass state exists; shared active work-area/record can be switched. Mechanistically near app-context cases, so treat as domain/workflow coverage, not a new mechanism family.
+- Post-downsize scripted controls and one-shot model triplets are complete for V4-V6. See the following outcome audit and per-case results; do not treat this original prospective checklist as current status.
+
+
+## 2026-11-13 V4-V6 compact screens: outcome and design audit
+
+The three compact workflows each reached a one-time joint task tuple: both tasks PASS under MA-ID, and at least one actor fails under Shared and Shared+Lock. This is workflow-level evidence, not three independent mechanism discoveries, and there were no repeats.
+
+| Case | Practical workflow | Shared-state pressure observed | Main caveat |
+|---|---|---|---|
+| V4 LIBRARY-ROOM1 | reserve same-slot community rooms while Facilities records safety closures | global room/panel context changes during multi-field entry; per-action locking is not a form transaction | extra R-202 notice remains visible |
+| V5 AP-CLIPBOARD1 | enter supplier invoices and reimbursements using copied references | shared work area/focus routes text into the other finance form | clipboard replacement itself was not instrumented |
+| V6 EXAM-ACCESS1 | confirm access accommodations and seating plans for the same students | shared student/panel context and desktop-window changes obstruct seating entry | accommodations prompt refers to notices while app shows inline source summaries |
+
+These cases add domain diversity (college scheduling/facilities, small-business finance, university exam access), but their proximate mechanism overlaps: shared GUI global selection/work-area state and per-tool-call rather than transaction-level locking. Keep claims at that level. V5 is not a validated clipboard-buffer case. V6 seating provides the cleanest direct lock-arm interference report; its accommodations actor's lock-arm failure should not be used as independent causal evidence until the prompt matches the inline source UI.
+
+Controls: each compact fixture passed its scripted same-Guest joint positive, the 9 Oracle tests passed, and model arms shared fixture/source manifests within each case. Model failures have error=null. Task prompts/fixtures were not changed after the runs. Full run IDs, scores, calls, tokens, lock metrics, artifact paths and limitations are in the per-case reports and handoff.

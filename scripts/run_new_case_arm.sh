@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 if [[ $# -ne 2 ]]; then
-  echo "usage: run_new_case_arm.sh <s1|k1|k2|q1> <ma-id|shared|shared-lock>" >&2
+  echo "usage: run_new_case_arm.sh <s1|k1|k2|q1|e1|v1|v2|v3|v4|v5|v6> <ma-id|shared|shared-lock>" >&2
   exit 2
 fi
 CASE_ID="$1"; ARM="$2"
@@ -10,6 +10,13 @@ case "$CASE_ID" in
   k1) TASK_A="v2/pgk1filing"; TASK_B="v2/pgk1service" ;;
   k2) TASK_A="v2/pgk2route"; TASK_B="v2/pgk2defer" ;;
   q1) TASK_A="v2/pgq1route"; TASK_B="v2/pgq1defer" ;;
+  e1) TASK_A="v2/pge1insert"; TASK_B="v2/pge1code" ;;
+  v1) TASK_A="v2/pgv1safety"; TASK_B="v2/pgv1maint" ;;
+  v2) TASK_A="v2/pgv2bins"; TASK_B="v2/pgv2cartons" ;;
+  v3) TASK_A="v2/pgv3shift"; TASK_B="v2/pgv3mileage" ;;
+  v4) TASK_A="v2/pgv4rooms"; TASK_B="v2/pgv4facilities" ;;
+  v5) TASK_A="v2/pgv5invoices"; TASK_B="v2/pgv5expenses" ;;
+  v6) TASK_A="v2/pgv6accommodations"; TASK_B="v2/pgv6seating" ;;
   *) echo "unknown case: $CASE_ID" >&2; exit 2 ;;
 esac
 case "$ARM" in
@@ -21,11 +28,22 @@ esac
 REPO="/home/mjh/Projects/CoDesk-three-new-dualagent-cases-20261112"
 OSW="/home/mjh/Projects/_deps/OSWorld-V2-osworld-v2.1"
 SWC="/home/mjh/Projects/CoDesk-candidate-repair-20261104"
+EXTRA_CASE_SOURCE=()
+if [[ "$CASE_ID" == v4 || "$CASE_ID" == v5 || "$CASE_ID" == v6 ]]; then
+  EXTRA_CASE_SOURCE=(tasks/paragui/build_v456.py tasks/paragui/app_v456_template.py tasks/paragui/v456_data.json scripts/run_v456_guest_control.py)
+fi
 case "$CASE_ID" in
   s1) TASK_MODULES="pg_common.py pg_shelter1_oracle.py pg_s1.py task_pgs1intake.py task_pgs1facilities.py" ;;
   k1) TASK_MODULES="pg_common.py pg_k1_oracle.py pg_k1.py task_pgk1filing.py task_pgk1service.py" ;;
   k2) TASK_MODULES="pg_common.py pg_k2_oracle.py pg_k2.py task_pgk2route.py task_pgk2defer.py" ;;
   q1) TASK_MODULES="pg_common.py pg_q1_oracle.py pg_q1.py task_pgq1route.py task_pgq1defer.py" ;;
+  e1) TASK_MODULES="pg_common.py pg_e1_oracle.py pg_e1.py task_pge1insert.py task_pge1code.py" ;;
+  v1) TASK_MODULES="pg_common.py pg_v1_oracle.py pg_v1.py task_pgv1safety.py task_pgv1maint.py" ;;
+  v2) TASK_MODULES="pg_common.py pg_v2_oracle.py pg_v2.py task_pgv2bins.py task_pgv2cartons.py" ;;
+  v3) TASK_MODULES="pg_common.py pg_v3_oracle.py pg_v3.py task_pgv3shift.py task_pgv3mileage.py" ;;
+  v4) TASK_MODULES="pg_common.py pg_v456_oracle.py pg_v4.py task_pgv4rooms.py task_pgv4facilities.py" ;;
+  v5) TASK_MODULES="pg_common.py pg_v456_oracle.py pg_v5.py task_pgv5invoices.py task_pgv5expenses.py" ;;
+  v6) TASK_MODULES="pg_common.py pg_v456_oracle.py pg_v6.py task_pgv6accommodations.py task_pgv6seating.py" ;;
 esac
 for module in $TASK_MODULES; do
   source_module="$REPO/tasks/paragui/$module"
@@ -55,11 +73,11 @@ mkdir -p "$OUT/resources" "$OVERLAYS"
 test -r "$BASE" || { echo "staged tmpfs Guest image missing: $BASE" >&2; exit 2; }
 (
   cd "$ASSETS/$CASE_ID"
-  sha256sum app_*.py seed.db expected.json > "$OUT/fixture.sha256"
+  find . -type f -print0 | sort -z | xargs -0 sha256sum > "$OUT/fixture.sha256"
 )
 (
   cd "$REPO"
-  sha256sum oscombo/cli.py oscombo/runner.py oscombo/desktop_tools.py oscombo/harness/external.py tasks/paragui/task_pg*.py tasks/paragui/pg_*.py > "$OUT/source.sha256"
+  sha256sum oscombo/cli.py oscombo/runner.py oscombo/desktop_tools.py oscombo/harness/external.py scripts/run_new_case_arm.sh tasks/paragui/task_pg*.py tasks/paragui/pg_*.py "${EXTRA_CASE_SOURCE[@]}" > "$OUT/source.sha256"
 )
 export OSWORLD_DIR="$OSW" PARAGUI_TASK_ASSETS="$ASSETS" OSCOMBO_GUEST_IMAGE="$BASE"
 export PYTHONPATH="$REPO:$SWC:$OSW"
@@ -70,12 +88,12 @@ export SWCUB_RESOURCE_LEDGER="$OUT/resources/resource_ledger.jsonl"
 cd "$REPO"
 CMD=("$OSW/.venv/bin/python" -m oscombo run \
   --mode "$MODE" --tasks "$TASK_A" "$TASK_B" --out "$OUT" \
-  --harness codex --model gpt-6-sol --effort high --max-steps 45 --setup-settle 25 \
+  --harness codex --model gpt-6-sol --effort high --max-steps 60 --setup-settle 25 \
   --opt codex_bin=/home/mjh/.local/share/codesk-case3-tools/codex \
   --opt base_url="$API_BASE_URL" --opt timeout=2400 \
   --opt codex_runtime_root=/home/mjh/.cache/codesk-next3-runtime/$RUN_ID \
   --label run="$RUN_ID" --label case="$CASE_ID" --label arm="$ARM" \
-  --label gui_tool_call_budget=45 --label model=gpt-6-sol --label endpoint="$API_BASE_URL")
+  --label gui_tool_call_budget=60 --label model=gpt-6-sol --label endpoint="$API_BASE_URL")
 if [[ "$ARM" == "shared-lock" ]]; then CMD+=(--action-lock); fi
 set +e
 "${CMD[@]}"
