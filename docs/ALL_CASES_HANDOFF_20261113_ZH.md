@@ -1,4 +1,4 @@
-# CoDesk case portfolio ? consolidated branch handoff
+# CoDesk case portfolio — consolidated branch handoff
 
 Date: 2026-11-13
 Branch: `codex/all-codesk-cases-20261113`
@@ -19,20 +19,20 @@ Therefore, at the **case-task pilot level**, the merged portfolio contains **26 
 
 The branch `codex/13-case-handoff-20261104` handoff contains a 19-workflow roster and reports 14 cases meeting the strict one-time tuple:
 
-1. Case 3 ? VS Code repair + browser retest, cross-window input misrouting.
-2. C-03 Clipboard ? shared clipboard payload overwrite.
-3. A-01 Application Context ? stale Enter in a non-target browser tab.
-4. S-01 Selection / Active Object ? stale input after shared active-cell/object change.
-5. U-01 Undo/Redo ? shared undo history.
-6. CWD-1 ? shared terminal working-directory drift.
-7. VIEW-1 ? shared viewport/scroll offset and stale screen coordinates.
-8. AUTH-1 ? shared active reviewer/submitter identity.
-9. PAY-1 ? a completed payment uses a stale timesheet snapshot.
-10. DATA-REL1 ? staging export goes stale after a dataset-policy revision.
-11. W1 Warehouse Receiving v0.2.7 ? QA clipboard text overwrites a held-lot reference.
-12. AP-1 Remittance v0.2.1 ? a credit memo makes a ready payment draft stale.
-13. SITEACT-STATE1 ? readiness snapshot remains stale after a HOLD/deviation update.
-14. CRM-LU1 ? a legacy full-record form overwrites a billing email update.
+1. Case 3 — VS Code repair + browser retest, cross-window input misrouting.
+2. C-03 Clipboard — shared clipboard payload overwrite.
+3. A-01 Application Context — stale Enter in a non-target browser tab.
+4. S-01 Selection / Active Object — stale input after shared active-cell/object change.
+5. U-01 Undo/Redo — shared undo history.
+6. CWD-1 — shared terminal working-directory drift.
+7. VIEW-1 — shared viewport/scroll offset and stale screen coordinates.
+8. AUTH-1 — shared active reviewer/submitter identity.
+9. PAY-1 — a completed payment uses a stale timesheet snapshot.
+10. DATA-REL1 — staging export goes stale after a dataset-policy revision.
+11. W1 Warehouse Receiving v0.2.7 — QA clipboard text overwrites a held-lot reference.
+12. AP-1 Remittance v0.2.1 — a credit memo makes a ready payment draft stale.
+13. SITEACT-STATE1 — readiness snapshot remains stale after a HOLD/deviation update.
+14. CRM-LU1 — a legacy full-record form overwrites a billing email update.
 
 The remaining five roster items are not counted: Case 2 is a neutral all-pass control; Case 4 did not meet the tuple (its effective lock arm passed); F-01 lacks a normal Shared business failure; EDIT-1 has dirty terminal attribution; FIND-1 lacks a matched valid baseline/evaluator. Full definitions, run IDs, and boundaries: [`13-case handoff`](handoff/13-case-handoff/HANDOFF.md), [`QUALIFIED_CASE_AUDIT_20261108.md`](handoff/13-case-handoff/QUALIFIED_CASE_AUDIT_20261108.md).
 
@@ -40,11 +40,11 @@ The remaining five roster items are not counted: Case 2 is a neutral all-pass co
 
 The `three-new-dualagent-cases` branch has an 11-item active/replacement roster. Five have one effective tuple-quality hit (not repeated):
 
-- VIDEO-REVIEW1 ? shared video/storyboard frame cursor and worklist.
-- COMMUNITY-PANTRY1 ? pantry allocation workflow.
-- LIBRARY-ROOM1 ? community-room booking plus safety closure.
-- AP-CLIPBOARD1 ? invoice/reimbursement reference handoff.
-- EXAM-ACCESS1 ? approved exam accommodations and seating.
+- VIDEO-REVIEW1 — shared video/storyboard frame cursor and worklist.
+- COMMUNITY-PANTRY1 — pantry allocation workflow.
+- LIBRARY-ROOM1 — community-room booking plus safety closure.
+- AP-CLIPBOARD1 — invoice/reimbursement reference handoff.
+- EXAM-ACCESS1 — approved exam accommodations and seating.
 
 Six are deliberately not counted: S1 SHELTER-INTAKE1 and K2 ROUTE-RECON1 have mutually incompatible terminal goals; K1 COURT-SERVICE1 is all-pass; Q1 ROUTE-LIVE1 has a tuple-shaped failure but the audited failure mechanism does not match the intended route-state claim; E1 EDIT-MODE1 is recovered by Shared+Lock; V2 WAREHOUSE-LABEL1 is all-pass. Preserve their raw outcomes as no-go/controls. V5 lacks direct clipboard-overwrite telemetry; V6 has accommodation-source wording caveats. See [`three-new-case handoff`](../docs/codesk/THREE_NEW_CASES_HANDOFF_20261112_ZH.md) and each `tasks/paragui/*MODEL_RESULTS*` report.
 
@@ -56,13 +56,13 @@ Track definition: Actor A is the real Codex GUI Agent; Actor B is a deterministi
 
 ### Seven natural Shared user-impact pilots
 
-1. **HA-TRIAGE** ? agent reviews ticket/order/policy evidence; user saves a follow-up on another ticket.
-2. **HA-PO-ARCHIVE** ? agent reviews purchase-order evidence; user downloads and archives a delivery CSV.
-3. **HA-CALENDAR** ? agent drafts a team meeting; user adds a focus block.
-4. **EDU-Grade** ? agent prepares rubric-based grading drafts; user records attendance.
-5. **Media Library** ? agent assembles a licensed-material collection; user edits and verifies asset metadata.
-6. **Facilities WO** ? agent drafts an HVAC maintenance work order; user reports/reserves a projector repair.
-7. **Community Garden** ? agent prepares a planting draft; user reads soil data and records watering.
+1. **HA-TRIAGE** — agent reviews ticket/order/policy evidence; user saves a follow-up on another ticket.
+2. **HA-PO-ARCHIVE** — agent reviews purchase-order evidence; user downloads and archives a delivery CSV.
+3. **HA-CALENDAR** — agent drafts a team meeting; user adds a focus block.
+4. **EDU-Grade** — agent prepares rubric-based grading drafts; user records attendance.
+5. **Media Library** — agent assembles a licensed-material collection; user edits and verifies asset metadata.
+6. **Facilities WO** — agent drafts an HVAC maintenance work order; user reports/reserves a projector repair.
+7. **Community Garden** — agent prepares a planting draft; user reads soil data and records watering.
 
 Each has at least one valid User-only/Agent-only/Independent positive control and a natural Shared User FAIL / Agent PASS pilot, except Volunteer Ops v0.2, whose User and Agent both fail under Shared and therefore is not included in these seven.
 
@@ -79,18 +79,26 @@ Primary evidence summaries: [`4-case handoff`](HUMAN_AGENT_4_CASES_HANDOFF_20261
 - **Case 4**: Kdenlive timeline + VS Code checklist; preserve its effective lock-PASS evidence and its invalid/evaluator/UI failures; do not promote it into the qualifying tuple.
 - Early mechanisms: Focus/Input Routing (F-01), Clipboard (C-03), Application Context (A-01), Selection (S-01), and Undo/Redo (U-01). Only four in that handoff-qualified roster have the strict tuple; F-01 does not.
 
-Current branch consolidation does not rewrite any original result or re-adjudicate a failed task into a pass. Case 2/3/4 definitions and historical reports remain grouped under `case234/` and `docs/handoff/`; mechanism design and evidence remain under the mechanism folders and evidence manifests.
+当前聚合分支不改写原始结果，也不把失败重判为通过。Case 2/3/4 的卡片保存在 `docs/handoff/13-case-handoff/case234/`；Case 2 业务实现位于 `oscombo/collab/ticket_to_resolution/`，Case 3 Lite 代码位于 `oscombo/collab/build_and_verify_lite_v1/`，Case 4 Lite 代码位于 `oscombo/collab/timeline_and_assets_lite_v1/`。Case 3/4 的旧审计报告、Guest 脚本和核心 Fixture 已从各自 hardening/follow-up refs 选择性导入；大体积原始 Guest run artifacts 仍保存在 HealthCare RAID 路径，不在 Git 中。
 
 ## 4. Branch provenance and included sources
 
 This branch combines the following remote lines of work (source branches remain unchanged):
 
-- `codex/13-case-handoff-20261104` ? the 19-case handoff and its ancestors (Case 2, prior hardening, candidate-repair/mechanism work referenced by that handoff).
-- `codex/human-agent-normal-user-v1-20261109` ? Human-Agent code, fixtures, 17-family inventory, pilots and reports.
-- `codex/three-new-dualagent-cases-20261112` ? latest 11-item dual-agent replacement roster and pilots.
-- The Case 3/Case 4 source branches are checked separately in the aggregate tree where present; their original artifacts remain linked in the Case 2/3/4 handoffs.
+- `codex/13-case-handoff-20261104` — the 19-case handoff and its ancestors (Case 2, prior hardening, candidate-repair/mechanism work referenced by that handoff).
+- `codex/human-agent-normal-user-v1-20261109` — Human-Agent code, fixtures, 17-family inventory, pilots and reports.
+- `codex/three-new-dualagent-cases-20261112` — latest 11-item dual-agent replacement roster and pilots.
+- `codex/case3-followup` 与 `codex/case4-hardening`：不是聚合分支的祖先；已将最新 handoff 所引用的 Case 3/4 Lite task package、Oracle、Fixture、runner、tests 与短审计报告按文件快照导入（不合并全部历史 screenshots/raw evidence）。
+- `codex/case2-v12`、`case2-hardening`、`case2-healthcare`、`overnight-cases-2-4`：均为 `13-case-handoff` 的祖先，因此随其历史和文件进入聚合分支。
+- `codex/case3-lite`、`case4-lite`：不是祖先；其有效代码快照已由后续 `case3-followup` / `case4-hardening` 版本覆盖并随上项导入，不作为额外工作流重复计数。
+- `codex/candidate-repair-20261104`、`codex/focus-clipboard-pilot-20261102`：未并入 Git 历史；其早期候选/机制材料在 13-case handoff 的最终 roster、task cards 与 audit 中有后续版本。本分支不把早期重复版本追加计数。
+- 远端还看到 `prep/codesk-v1-handoff`、`yuke-osworld`、`collab-cases`、`lyw-dev`、`v0` 等分支：分别是早期 600-instance 基准、队友/早期协作线或历史版本，不属于本轮“我们设计并验证的这批 case”清单，未合并到本聚合分支。
 
-Other branches inspected include `codex/candidate-repair-20261104`, `codex/focus-clipboard-pilot-20261102`, `codex/case3-followup`, `codex/case4-hardening`, and older Case2/3/4 work. Ancestor branches already represented in the 13-case tree are not re-merged as independent work. This list will be finalized after the remaining Case 3/4 source imports.
+### Aggregate inventory versus usable count
+
+- Dual-Agent: 19 workflow roster in the 13-case handoff (14 strict tuple hits) + 11 entries in the latest pilot screen (5 strict tuple hits) = 30 rostered case attempts, 19 one-time qualified.
+- Human-Agent: 17 task-family/app/workflow inventory entries, 7 one-time natural Shared user-impact hits and 1 separately controlled-offset-only probe.
+- Across the tracks this is 47 rostered entries, **26 case-workflow pilots with a qualifying one-time observation**, plus the separate HA-MAIL controlled probe. This is not 26 repeated/reliable cases and not one pooled metric. The 20 other rostered entries remain neutral, invalid, no-go, incomplete, or otherwise not qualified; see the linked audits rather than silently dropping them.
 
 ## 5. What is and is not in Git; usage
 
@@ -106,10 +114,12 @@ python -m pytest -q
 
 On HealthCare, the case wrappers in `infra/run_human_agent_*.sh` expect `OSWORLD_DIR`, its Python environment, a `swcub.resource_safety` provider through `SWCUB_SAFETY_ROOT`, the existing OSWorld Guest image/runtime, RAID output, and runtime-injected model credentials. Case scripts are not a single universal CLI; check the case's handoff before running it. Never store API keys in source, arguments, logs, or run artifacts. Do not start model/Guest runs as part of merely cloning/testing.
 
+Validation snapshot during consolidation: the focused harness/Human-Agent/runner suite passed 52 tests; after importing the Case 3/4 Lite packages, their focused tests passed 15/15. A complete suite run before the Lite import reported 409 passed, 1 skipped, and 3 failed in `tests/test_ticket_to_resolution.py`; its positive-path tests do not produce all the newer audit/provenance evidence required by the strict oracle. Therefore the full suite is not green. No model or Guest experiment was started during consolidation.
+
 ### Main source handoffs
 
-- `docs/handoff/13-case-handoff/HANDOFF.md` ? original 19-case dual-agent portfolio and criteria.
-- `docs/HUMAN_AGENT_4_CASES_HANDOFF_20261111_ZH.md`, `docs/HUMAN_AGENT_NEXT5_VALIDATION_20261112_ZH.md`, `docs/HUMAN_AGENT_3_NEW_CASES_HANDOFF_20261111_ZH.md` ? Human-Agent task families and pilot evidence.
-- `docs/codesk/THREE_NEW_CASES_HANDOFF_20261112_ZH.md` ? latest dual-agent roster, audited no-go outcomes, and candidate results.
+- `docs/handoff/13-case-handoff/HANDOFF.md` — original 19-case dual-agent portfolio and criteria.
+- `docs/HUMAN_AGENT_4_CASES_HANDOFF_20261111_ZH.md`, `docs/HUMAN_AGENT_NEXT5_VALIDATION_20261112_ZH.md`, `docs/HUMAN_AGENT_3_NEW_CASES_HANDOFF_20261111_ZH.md` — Human-Agent task families and pilot evidence.
+- `docs/codesk/THREE_NEW_CASES_HANDOFF_20261112_ZH.md` — latest dual-agent roster, audited no-go outcomes, and candidate results.
 
 Use one-time tuples as screening evidence only. There are no repeat runs sufficient for confidence intervals or failure-rate claims. Keep workflow novelty distinct from underlying mechanism novelty.

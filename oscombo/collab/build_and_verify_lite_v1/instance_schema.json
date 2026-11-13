@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://codesk.local/schema/cdd-bv-lite-001-instance-1.4.2.json",
+  "title": "CDD-BV-LITE-001 Build-and-Verify episode",
+  "type": "object",
+  "required": ["case_id", "case_version", "run_id", "condition", "workspace", "fixture_sha256", "backend", "actors", "ownership"],
+  "properties": {
+    "case_id": {"const": "CDD-BV-LITE-001"},
+    "case_version": {"const": "1.4.2"},
+    "run_id": {"type": "string", "minLength": 1},
+    "condition": {"enum": ["single_agent", "collaborative_isolated", "collaborative_shared"]},
+    "workspace": {"type": "string"},
+    "fixture_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "backend": {"type": "object", "required": ["same_service", "same_fixture", "same_workspace"], "properties": {"same_service": {"const": true}, "same_fixture": {"const": true}, "same_workspace": {"const": true}}},
+    "actors": {"type": "array", "items": {"enum": ["A", "B", "S"]}},
+    "ownership": {"type": "string"},
+    "budget": {"type": "object"}
+  },
+  "additionalProperties": true
+}
