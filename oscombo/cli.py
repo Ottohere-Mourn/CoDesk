@@ -98,6 +98,8 @@ def cmd_run(a: argparse.Namespace) -> int:
                            agents=with_hint(agent_specs(a), a.coagent_hint), max_steps=a.max_steps,
                            image=str(Path(a.image).resolve()) if a.image else None, setup_settle=a.setup_settle,
                            mediation=a.mediation, action_lock=a.action_lock, defense=a.defense, extra=extra)
+    if os.environ.get("OSCOMBO_BACKEND", "docker").lower() == "native-qemu-tcg":
+        os.environ.setdefault("OSCOMBO_NATIVE_STATE_DIR", str(cfg.out / "native-qemu"))
     osworld.activate()
     result = runner.run(cfg)
     print(json.dumps({k: result.get(k) for k in ("mode", "tasks", "scores", "agents", "error")}, indent=1))

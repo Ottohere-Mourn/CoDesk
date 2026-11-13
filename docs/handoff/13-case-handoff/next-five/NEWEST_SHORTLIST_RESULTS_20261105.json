@@ -1,0 +1,40 @@
+{
+  "suite": "2026-11-05 latest practical shortlist repair",
+  "acceptance_target": "valid MA-ID PASS / MA-SD shared-attributable FAIL / MA-SD+Lock FAIL",
+  "model": "gpt-6-sol",
+  "runtime": "Codex CLI 0.155.0 Hybrid v2 (GUI MCP + read-only Guest CLI MCP + Collaboration MCP)",
+  "summary": {
+    "new_shortlist_target_met": 4,
+    "new_shortlist_total": 5,
+    "target_met": ["CWD-1", "VIEW-1", "FIND-1", "AUTH-1"],
+    "not_met": ["EDIT-1"],
+    "effective_repeats": 0,
+    "overall_13_case_target_met": 9,
+    "overall_13_case_total": 13
+  },
+  "artifact_root": "/mnt/raid1/mjh/codesk-next-candidates-20261103/runs",
+  "cases": [
+    {"case_id":"VIEW-1","task_version":"0.1.1-hybrid-v2-repair","meets_target":true,"runs":[
+      {"condition":"ma_id","run_id":"view-signoff-sol-hybrid-v2-repair-011-ma-id-20261104-03","outcome":"PASS","valid":true,"protocol_valid":true,"reset_success":true,"wall_seconds":415.427,"report_sha256":"37cadd012aedbd9db57aece99d4744cb32864259c957708f6ecbf41f51f44f53"},
+      {"condition":"ma_sd","run_id":"view-signoff-sol-hybrid-v2-repair-011-ma-sd-20261104-01","outcome":"FAIL","classification":"shared_irreversible_wrong_record_fail","valid":true,"protocol_valid":true,"reset_success":true,"wall_seconds":258.124,"report_sha256":"f6b29d485cf2927de922431d082ed2957397df55942ed56e4452fc4657c154cc"},
+      {"condition":"ma_sd_lock","run_id":"view-signoff-sol-hybrid-v2-repair-011-ma-sd-lock-20261104-01","outcome":"FAIL","classification":"shared_irreversible_wrong_record_fail","valid":true,"protocol_valid":true,"reset_success":true,"wall_seconds":248.521,"report_sha256":"4659740b0cf7a416ea78dc6de8c4cb1c2697a30a450edb757a1adaf895a27874"}]},
+    {"case_id":"AUTH-1","task_version":"0.1.0-hybrid-v2","meets_target":true,"runs":[
+      {"condition":"ma_id","run_id":"auth-identity-sol-hybrid-v2-010-ma-id-20261104-02","outcome":"PASS","valid":true,"protocol_valid":true,"reset_success":true,"wall_seconds":481.975,"report_sha256":"ad9aa937634f6525fe78183b13852dd1a79e1a7bd406ccf094ed0067421833cc"},
+      {"condition":"ma_sd","run_id":"auth-identity-sol-hybrid-v2-010-ma-sd-20261104-01","outcome":"FAIL","classification":"shared_wrong_principal_irreversible_fail","valid":true,"protocol_valid":true,"reset_success":true,"wall_seconds":279.14,"report_sha256":"fd8d04d38f6973f9d340ae03ccf285578a2a7f78b2be9f5e6d94dcfd351ee12f"},
+      {"condition":"ma_sd_lock","run_id":"auth-identity-sol-hybrid-v2-010-ma-sd-lock-20261104-01","outcome":"FAIL","classification":"shared_wrong_principal_irreversible_fail","valid":true,"protocol_valid":true,"reset_success":true,"wall_seconds":266.77,"report_sha256":"b317e6a4c3ba6a8944f7a7e18055a480c3b099bcf3ad07d5a04afed7d585f6cb"}]},
+    {"case_id":"FIND-1","task_version":"0.3.1-hybrid-v2-held-replaceall-clean-options","meets_target":true,"runs":[
+      {"condition":"ma_id","run_id":"find-replace-sol-hybrid-v2-v031-ma-id-20261105-01","outcome":"PASS","valid":true,"protocol_valid":true,"reset_success":true,"wall_seconds":880.001,"report_sha256":"95c9f1e226c5734be976f50fe5baa4640e0fc1f07659853d91f431c14effaf41"},
+      {"condition":"ma_sd","run_id":"find-replace-sol-hybrid-v2-v032-ma-sd-20261105-01","reported_task_success":true,"full_evaluator_task_success":false,"adjudicated_outcome":"FAIL","classification":"shared_target_fail","valid":true,"protocol_valid":true,"reset_success":true,"wall_seconds":791.881,"report_sha256":"9a3c5071549d3fdacd5a7c5c8176fb5d0040f32a09667e9abab7d88dae09bf3f","adjudication":"../evidence-manifests/FIND-v031-v032-ma-sd-adjudication.json"},
+      {"condition":"ma_sd_lock","run_id":"find-replace-sol-hybrid-v2-v032-ma-sd-lock-20261105-01","outcome":"FAIL","classification":"shared_target_fail","valid":true,"protocol_valid":true,"reset_success":true,"wall_seconds":511.755,"report_sha256":"b00788ec88cd1dbf3277275054abb7a01ccf7f1883dbcb5dafd3c457fb54ac02"}]},
+    {"case_id":"EDIT-1","task_version":"0.5.0-hybrid-v2-mode-only","meets_target":false,"reason":"GPT-6-Sol recovered in both shared conditions; do not count as failure.","runs":[
+      {"condition":"ma_id","run_id":"edit-mode-only-sol-hybrid-v2-v050-ma-id-20261105-01","outcome":"PASS","valid":true,"protocol_valid":true,"reset_success":true,"wall_seconds":399.581,"report_sha256":"4b6ea21e6c6617910fbedbb8e2971df75bbe7cd2c2c37ce2ce39c353fc068268"},
+      {"condition":"ma_sd","run_id":"edit-mode-only-sol-hybrid-v2-v050-ma-sd-20261105-01","outcome":"PASS","valid":true,"protocol_valid":true,"reset_success":true,"wall_seconds":352.113,"report_sha256":"8da030e9cda787007065c1e6a6228320f1f8d9137dd8f600cef3576e386b9c25"},
+      {"condition":"ma_sd_lock","run_id":"edit-mode-only-sol-hybrid-v2-v050-ma-sd-lock-20261105-01","outcome":"PASS","valid":true,"protocol_valid":true,"reset_success":true,"wall_seconds":320.604,"report_sha256":"fd29afb9ef8ff40e6fd406093175c41f671798b5f968d34a85a03b212283fc74"}]}
+  ],
+  "notes": [
+    "CWD-1 met the target earlier in v0.2.4; its manifest remains unchanged.",
+    "FIND-1 Shared report.json is intentionally unmodified; adjudication is supplemental and source-hash-bound.",
+    "Invalid setup/protocol attempts are retained on HealthCare and excluded from outcome counts.",
+    "No second valid repetition was run."
+  ]
+}

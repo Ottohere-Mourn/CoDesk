@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "CDD-TLA-001 append-only GUI/app-state event",
+  "type": "object",
+  "required": ["schema_version", "case_id", "run_id", "seq", "actor_id", "event_type", "timestamp_monotonic_ns"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "case_id": {"const": "CDD-TLA-001"},
+    "run_id": {"type": "string", "minLength": 1},
+    "seq": {"type": "integer", "minimum": 1},
+    "actor_id": {"enum": ["A", "B", "S"]},
+    "event_type": {"enum": ["observation", "action_start", "action_end", "save", "message", "recovery"]},
+    "timestamp_monotonic_ns": {"type": "integer", "minimum": 0},
+    "action_id": {"type": ["string", "null"]},
+    "based_on_observation_seq": {"type": ["integer", "null"]},
+    "action": {"type": ["string", "null"]},
+    "intended_target": {
+      "type": ["object", "null"],
+      "properties": {"asset_id": {"type": ["string", "null"]}, "track": {"type": ["string", "null"]},
+                     "timeline_frame": {"type": ["integer", "null"]}, "source_frame": {"type": ["integer", "null"]},
+                     "operation": {"type": ["string", "null"]}}
+    },
+    "resulting_target": {
+      "type": ["object", "null"],
+      "properties": {"asset_id": {"type": ["string", "null"]}, "track": {"type": ["string", "null"]},
+                     "timeline_frame": {"type": ["integer", "null"]}, "source_frame": {"type": ["integer", "null"]},
+                     "operation": {"type": ["string", "null"]}, "evidence": {"enum": ["visible_ui", "project_parse", "unknown"]}}
+    },
+    "screenshot_sha256": {"type": ["string", "null"], "pattern": "^[0-9a-f]{64}$"},
+    "window": {
+      "type": ["object", "null"],
+      "properties": {"window_id": {"type": ["string", "null"]}, "title": {"type": ["string", "null"]}, "sample_atomic": {"type": "boolean"}},
+      "required": ["sample_atomic"]
+    },
+    "kdenlive_state": {
+      "type": ["object", "null"],
+      "properties": {
+        "active_monitor": {"enum": ["clip", "project", "unknown", null]},
+        "source_asset_id": {"type": ["string", "null"]},
+        "source_playhead_frame": {"type": ["integer", "null"]},
+        "timeline_playhead_frame": {"type": ["integer", "null"]},
+        "active_track": {"type": ["string", "null"]},
+        "selected_bin_asset_ids": {"type": ["array", "null"], "items": {"type": "string"}},
+        "selected_timeline_clip_ids": {"type": ["array", "null"], "items": {"type": "string"}},
+        "evidence": {"enum": ["visible_ui", "accessibility", "project_parse", "unknown"]}
+      }
+    },
+    "note": {"type": ["string", "null"]}
+  }
+}

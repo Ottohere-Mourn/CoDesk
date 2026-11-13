@@ -26,10 +26,21 @@ RESTART_STEP_TYPES = {"launch"}
 
 
 def boot(image: str, cache_dir: str) -> Any:
-    """Start a fresh Guest from ``image`` (qcow2) with the docker provider."""
+    """Start Docker/QEMU, native host QEMU/TCG, or a local X11 desktop."""
+    if os.environ.get("OSCOMBO_BACKEND", "docker").lower() in {"local", "x11", "xephyr"}:
+        from .local_desktop import LocalDesktopEnv
+        try:
+            return LocalDesktopEnv(cache_dir=cache_dir, screen_size=(
+                int(os.environ.get("OSCOMBO_LOCAL_WIDTH", "1920")),
+                int(os.environ.get("OSCOMBO_LOCAL_HEIGHT", "1080"))))
+        except InfraError:
+            raise
+        except Exception as exc:
+            raise InfraError(f"local desktop failed to boot: {type(exc).__name__}: {exc}") from exc
     from desktop_env.desktop_env import DesktopEnv
     try:
-        return DesktopEnv(provider_name="docker", path_to_vm=image, cache_dir=cache_dir, os_type="Ubuntu",
+        provider = "native-qemu-tcg" if os.environ.get("OSCOMBO_BACKEND", "docker").lower() == "native-qemu-tcg" else "docker"
+        return DesktopEnv(provider_name=provider, path_to_vm=image, cache_dir=cache_dir, os_type="Ubuntu",
                           action_space="pyautogui", require_a11y_tree=False, client_password=client_password())
     except Exception as exc:  # container start / VM readiness: retryable infrastructure failure
         raise InfraError(f"VM failed to boot: {type(exc).__name__}: {exc}") from exc

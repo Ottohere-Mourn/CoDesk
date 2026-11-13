@@ -19,15 +19,17 @@ import base64
 import fcntl
 import io
 import json
+import math
+import numbers
 import os
 import sys
-import time
 import threading
-from contextlib import contextmanager
+import time
 from contextlib import contextmanager
 
 import requests
 from PIL import Image as PILImage
+from PIL import ImageStat
 
 URL = os.environ.get("OSCOMBO_GUEST_URL", "http://localhost:5000").rstrip("/")
 LOG = os.environ.get("OSCOMBO_ACTION_LOG")
@@ -35,20 +37,41 @@ BUDGET = int(os.environ.get("OSCOMBO_MAX_STEPS") or "45")
 ACTION_LOCK_PATH = os.environ.get("OSCOMBO_ACTION_LOCK_PATH")
 _LOCK_TIMING = threading.local()
 SETTLE = float(os.environ.get("OSCOMBO_MCP_SETTLE", "1.0"))
+TOOL_RESULT_COOLDOWN = max(0.0, float(os.environ.get("OSCOMBO_MCP_TURN_COOLDOWN_SEC", "0")))
+_cooldown_lock = threading.Lock()
+_last_tool_result_at: float | None = None
+_request_metrics = threading.local()
 MODEL_W, MODEL_H = 1280, 720
 PREFIX = "import pyautogui; import time; pyautogui.FAILSAFE = False; {cmd}"
 KEYMAP = {"return": "enter", "escape": "esc", "control": "ctrl", "super": "win", "page_up": "pageup",
           "page_down": "pagedown", "prior": "pageup", "next": "pagedown", "kp_enter": "enter", "alt_l": "alt",
           "control_l": "ctrl", "shift_l": "shift"}
 OUT_OF_BUDGET = f"Action budget used up ({BUDGET} tool calls). Stop now and reply with one line saying what you did."
+
+
+def frame_content(image: PILImage.Image) -> dict:
+    """Use the existing Guest smoke criteria to reject blank desktop frames."""
+    thumbnail = image.convert("RGB").resize((96, 54))
+    pixels = list(thumbnail.getdata())
+    spread = max(ImageStat.Stat(thumbnail).stddev)
+    fraction = sum(max(pixel) > 20 for pixel in pixels) / len(pixels)
+    colors = len(set(pixels))
+    return {"nonblack_fraction": round(fraction, 4), "max_channel_stddev": round(spread, 3),
+            "thumbnail_colors": colors,
+            "content_ready": fraction > 0.05 and spread > 5 and colors >= 32}
+
+COORDINATE_CONTRACT = ("Coordinates use pixels in the most recently returned 1280x720 screenshot, "
+                       "origin at top-left; valid x is 0..1279 and y is 0..719. "
+                       "Out-of-range coordinates are rejected without execution or clamping, "
+                       "and the rejection is returned with a fresh screenshot.")
 TOOLS = {
-    "screenshot": "Take a screenshot of the whole desktop (1280x720).",
-    "click": "Move the mouse to (x, y) and click. button: left|right|middle. clicks: 1 or 2 (double click).",
-    "drag": "Press the left button at (x1, y1), drag to (x2, y2), release.",
-    "move": "Move the mouse to (x, y) without clicking (hover).",
+    "screenshot": "Take a screenshot of the whole desktop, resized to 1280x720 for the model.",
+    "click": f"{COORDINATE_CONTRACT} Move the mouse to (x, y) and click. button: left|right|middle. clicks: 1 or 2 (double click).",
+    "drag": f"{COORDINATE_CONTRACT} Press the left button at (x1, y1), drag to (x2, y2), release.",
+    "move": f"{COORDINATE_CONTRACT} Move the mouse to (x, y) without clicking (hover).",
     "type_text": "Type text at the current keyboard focus. Use key() for Enter/Tab/shortcuts.",
     "key": "Press a key or chord, e.g. 'Return', 'Tab', 'ctrl+s', 'alt+F4'. Several presses separated by spaces.",
-    "scroll": "Scroll at (x, y). direction: up|down|left|right. amount: number of wheel notches.",
+    "scroll": f"{COORDINATE_CONTRACT} Scroll at (x, y). direction: up|down|left|right. amount: number of wheel notches.",
     "wait": "Wait for the UI to update (seconds, max 30), then take a screenshot.",
     "declare_infeasible": "Call this (instead of acting) if you are confident the task cannot be done as specified.",
 }
@@ -60,11 +83,16 @@ def _state():
     several tool calls at once (pi does) and each runs in its own process."""
     path = os.path.join(os.path.dirname(LOG), "tool_state.json") if LOG else None
     if not path:
-        yield {"calls": 0, "scale": [1.5, 1.5]}
+        yield {"calls": 0, "scale": [1.5, 1.5], "guest_screenshot_size": None,
+               "model_screenshot_size": [MODEL_W, MODEL_H]}
         return
     with open(path + ".lock", "a") as lock:
         fcntl.flock(lock, fcntl.LOCK_EX)
-        st = json.load(open(path)) if os.path.exists(path) else {"calls": 0, "scale": [1.5, 1.5]}
+        st = json.load(open(path)) if os.path.exists(path) else {
+            "calls": 0, "scale": [1.5, 1.5], "guest_screenshot_size": None,
+            "model_screenshot_size": [MODEL_W, MODEL_H]}
+        st.setdefault("guest_screenshot_size", None)
+        st.setdefault("model_screenshot_size", [MODEL_W, MODEL_H])
         try:
             yield st
         finally:
@@ -72,9 +100,19 @@ def _state():
 
 
 def _guest(argv: list[str], timeout: float = 120) -> dict:
-    r = requests.post(URL + "/execute", json={"command": argv, "shell": False}, timeout=timeout)
-    r.raise_for_status()
-    return r.json()
+    started = time.monotonic()
+    record = {"method": "POST", "path": "/execute"}
+    try:
+        r = requests.post(URL + "/execute", json={"command": argv, "shell": False}, timeout=timeout)
+        record.update({"status_code": r.status_code, "response_bytes": len(r.content)})
+        r.raise_for_status()
+        return r.json()
+    except Exception as exc:
+        record.update({"error_type": type(exc).__name__})
+        raise
+    finally:
+        record["elapsed_s"] = round(time.monotonic() - started, 4)
+        getattr(_request_metrics, "records", []).append(record)
 
 
 def _active_window() -> str | None:
@@ -91,20 +129,101 @@ def _py(code: str) -> None:
         raise RuntimeError(f"Guest command failed: {out.get('error') or out.get('output')}")
 
 
-def _shot() -> tuple[bytes, list[float]]:
+def _shot() -> tuple[bytes, list[float], list[int]]:
     time.sleep(SETTLE)
     r = None
     for _ in range(5):
-        r = requests.get(URL + "/screenshot", timeout=120)
+        started = time.monotonic()
+        record = {"method": "GET", "path": "/screenshot"}
+        try:
+            r = requests.get(URL + "/screenshot", timeout=120)
+            record.update({"status_code": r.status_code, "response_bytes": len(r.content)})
+        except Exception as exc:
+            record["error_type"] = type(exc).__name__
+            raise
+        finally:
+            record["elapsed_s"] = round(time.monotonic() - started, 4)
+            getattr(_request_metrics, "records", []).append(record)
         if r.status_code == 200 and r.content:
             break
         time.sleep(2)
     r.raise_for_status()
     im = PILImage.open(io.BytesIO(r.content)).convert("RGB")
+    content = frame_content(im)
+    gray_histogram = im.convert("L").histogram()
+    non_black_fraction = sum(gray_histogram[9:]) / (im.width * im.height)
+    if _request_metrics.records:
+        _request_metrics.records[-1]["non_black_pixel_fraction"] = round(non_black_fraction, 6)
+        _request_metrics.records[-1]["frame_content"] = content
     scale = [im.width / MODEL_W, im.height / MODEL_H]
     buf = io.BytesIO()
     im.resize((MODEL_W, MODEL_H), PILImage.LANCZOS).save(buf, "PNG")
-    return buf.getvalue(), scale
+    png = buf.getvalue()
+    threshold = float(os.environ.get("OSCOMBO_SCREENSHOT_MIN_NON_BLACK_FRACTION", "0"))
+    require_content = os.environ.get("OSCOMBO_SCREENSHOT_REQUIRE_NONFLAT") == "1"
+    if (threshold > 0 and non_black_fraction < threshold) or (require_content and not content["content_ready"]):
+        call_no = getattr(_request_metrics, "call_no", 0)
+        if call_no:
+            _save_screenshot(call_no, png)
+        raise RuntimeError(
+            f"Guest HTTP screenshot is black or flat: non_black_fraction={non_black_fraction:.6f}, "
+            f"required={threshold:.6f}, content={content}; stopping model actions")
+    return png, scale, [im.width, im.height]
+
+
+def _coordinate_audit(name: str, args: dict, scale: list[float],
+                      guest_size: list[int] | None) -> dict | None:
+    """Validate screenshot-space coordinates without changing model output."""
+    keys = {"click": ("x", "y"), "move": ("x", "y"), "scroll": ("x", "y"),
+            "drag": ("x1", "y1", "x2", "y2")}.get(name)
+    if keys is None:
+        return None
+    raw = {key: args.get(key) for key in keys}
+    audit = {"status": "rejected", "raw_model_coordinates": raw,
+             "model_screenshot_size": [MODEL_W, MODEL_H],
+             "guest_screenshot_size": guest_size, "scale": scale,
+             "mapped_guest_coordinates": None, "reason": None}
+    if guest_size is None:
+        audit["reason"] = "no_observation_yet"
+        return audit
+    try:
+        values = {key: float(args[key]) for key in keys}
+    except (KeyError, TypeError, ValueError, OverflowError):
+        audit["reason"] = "coordinate_missing_or_non_numeric"
+        return audit
+    if any(not math.isfinite(value) for value in values.values()):
+        audit["reason"] = "coordinate_not_finite"
+        return audit
+    if any(isinstance(args[key], bool) or not isinstance(args[key], numbers.Real) for key in keys):
+        audit["reason"] = "coordinate_must_be_numeric"
+        return audit
+    for key, value in values.items():
+        axis = "x" if key.startswith("x") else "y"
+        upper = MODEL_W if axis == "x" else MODEL_H
+        if value < 0 or value >= upper:
+            audit["reason"] = f"{key}_outside_model_screenshot_[0,{upper})"
+            audit["mapped_guest_coordinates"] = {
+                k: [int(round(values[pair[0]] * scale[0])),
+                    int(round(values[pair[1]] * scale[1]))]
+                for k, pair in (("start", ("x1", "y1")), ("end", ("x2", "y2")))
+                if pair[0] in values
+            } if name == "drag" else [int(round(values["x"] * scale[0])),
+                                      int(round(values["y"] * scale[1]))]
+            return audit
+    if name == "drag":
+        mapped = {"start": [int(round(values["x1"] * scale[0])), int(round(values["y1"] * scale[1]))],
+                  "end": [int(round(values["x2"] * scale[0])), int(round(values["y2"] * scale[1]))]}
+        mapped_points = mapped.values()
+    else:
+        mapped = [int(round(values["x"] * scale[0])), int(round(values["y"] * scale[1]))]
+        mapped_points = (mapped,)
+    audit["mapped_guest_coordinates"] = mapped
+    if any(x < 0 or x >= guest_size[0] or y < 0 or y >= guest_size[1]
+           for x, y in mapped_points):
+        audit["reason"] = "mapped_coordinate_outside_guest_screenshot"
+        return audit
+    audit["status"] = "accepted"
+    return audit
 
 
 def _k(name: str) -> str:
@@ -144,27 +263,152 @@ def _code(name: str, args: dict, scale: list[float]) -> str | None:
 
 
 def _log(rec: dict) -> None:
-    timing = getattr(_LOCK_TIMING, "metrics", None)
-    if timing is not None:
-        rec.update(lock_enabled=True, lock_wait_s=round(timing["wait_s"], 4),
-                   lock_held_s=round(time.perf_counter() - timing["acquired_at"], 4))
+    metrics = getattr(_LOCK_TIMING, "metrics", None)
+    if metrics is not None:
+        rec["lock_enabled"] = True
+        rec["lock_wait_s"] = round(metrics["acquired_at"] - metrics["started"], 4)
+        rec["lock_held_s"] = round(time.perf_counter() - metrics["acquired_at"], 4)
+    elif ACTION_LOCK_PATH:
+        rec.setdefault("lock_enabled", True)
+        rec.setdefault("lock_wait_s", 0.0)
+        rec.setdefault("lock_held_s", 0.0)
     if LOG:
         with open(LOG, "a") as f:
             f.write(json.dumps(rec) + "\n")
 
 
+def _wait_before_tool_result() -> float:
+    """Throttle successive model turns by delaying tool results, without changing actions."""
+    global _last_tool_result_at
+    if TOOL_RESULT_COOLDOWN <= 0:
+        return 0.0
+    with _cooldown_lock:
+        now = time.monotonic()
+        delay = TOOL_RESULT_COOLDOWN if _last_tool_result_at is None else max(
+            0.0, TOOL_RESULT_COOLDOWN - (now - _last_tool_result_at))
+        if delay:
+            time.sleep(delay)
+        _last_tool_result_at = time.monotonic()
+        return round(delay, 3)
+
+
+def _run_tool(name: str, args: dict) -> tuple[str, bytes | None]:
+    """Execute one tool call; returns (text, png bytes or None)."""
+    with _state() as st:  # reserve a call number (and read the latest scale) atomically
+        if name != "declare_infeasible" and st["calls"] >= BUDGET:
+            return OUT_OF_BUDGET, None
+        st["calls"] += 1
+        n, scale = st["calls"], st["scale"]
+        input_guest_size = st.get("guest_screenshot_size")
+    _request_metrics.call_no = n
+    _request_metrics.action_code = None
+    _request_metrics.action_attempted = False
+    _request_metrics.action_succeeded = False
+    if name == "declare_infeasible":
+        if LOG:
+            with open(os.path.join(os.path.dirname(LOG), "INFEASIBLE"), "w") as f:
+                f.write(str(args.get("reason", "")))
+        _log({"t": time.time(), "n": n, "tool": name, "args": args, "window_before": None,
+              "code": None, "tool_elapsed_s": round(time.monotonic() - _request_metrics.started, 4),
+              "http_requests": list(_request_metrics.records)})
+        return "Recorded the task as infeasible. Stop now.", None
+    audit = _coordinate_audit(name, args, scale, input_guest_size)
+    if audit is not None and audit["status"] == "rejected":
+        reason = audit["reason"]
+        mapped = audit.get("mapped_guest_coordinates")
+        message = (f"REJECTED: no desktop action was executed. {reason}; raw model coordinates="
+                   f"{audit['raw_model_coordinates']}, mapped Guest coordinates={mapped}, "
+                   f"model screenshot={audit['model_screenshot_size']}, "
+                   f"source Guest screenshot={input_guest_size}, scale={scale}. "
+                   f"Coordinates are screenshot pixels (x 0..{MODEL_W-1}, y 0..{MODEL_H-1}); "
+                   "re-observe and choose a valid coordinate. No coordinate was clamped or corrected.")
+        before = _active_window()
+        png, new_scale, guest_size = _shot()
+        _store_observation(new_scale, guest_size)
+        _save_screenshot(n, png)
+        cooldown = _wait_before_tool_result()
+        _log({"t": time.time(), "n": n, "tool": name, "args": args,
+              "window_before": before, "code": None, "executed": False,
+              "coordinate_audit": audit,
+              "tool_elapsed_s": round(time.monotonic() - _request_metrics.started, 4),
+              "http_requests": list(_request_metrics.records),
+              "tool_result_cooldown_s": cooldown,
+              "returned_observation": {"model_screenshot_size": [MODEL_W, MODEL_H],
+                                       "guest_screenshot_size": guest_size,
+                                       "scale": new_scale},
+              "result": message})
+        return message, png
+    code = _code(name, args, scale)
+    if name == "wait":
+        time.sleep(min(float(args.get("seconds", 2.0)), 30))
+    before = _active_window() if code else None
+    if code:
+        _request_metrics.action_code = code
+        _request_metrics.action_attempted = True
+        _py(code)
+        _request_metrics.action_succeeded = True
+    png, new_scale, guest_size = _shot()
+    _store_observation(new_scale, guest_size)
+    _save_screenshot(n, png)
+    cooldown = _wait_before_tool_result()
+    _log({"t": time.time(), "n": n, "tool": name, "args": args,
+          "window_before": before, "code": code, "executed": bool(code),
+          "tool_elapsed_s": round(time.monotonic() - _request_metrics.started, 4),
+          "http_requests": list(_request_metrics.records),
+          "tool_result_cooldown_s": cooldown,
+          "coordinate_audit": audit,
+          "input_observation": {"model_screenshot_size": [MODEL_W, MODEL_H],
+                                "guest_screenshot_size": input_guest_size,
+                                "scale": scale},
+          "returned_observation": {"model_screenshot_size": [MODEL_W, MODEL_H],
+                                   "guest_screenshot_size": guest_size,
+                                   "scale": new_scale}})
+    left = BUDGET - n
+    return (f"OK. {left} tool calls left." if left <= 5 else "OK."), png
+
+
+def _run_tool_recorded(name: str, args: dict) -> tuple[str, bytes | None]:
+    """Run one MCP action and record Guest HTTP/tool timings, including failures."""
+    _request_metrics.records = []
+    _request_metrics.started = time.monotonic()
+    try:
+        return _run_tool(name, args)
+    except Exception as exc:
+        stop_file = os.environ.get("OSCOMBO_SCREENSHOT_STOP_FILE")
+        if stop_file:
+            try:
+                with open(stop_file, "w", encoding="utf-8") as stream:
+                    json.dump({"time": time.time(), "tool": name,
+                               "error_type": type(exc).__name__, "reason": str(exc)}, stream)
+                    stream.write("\n")
+            except OSError:
+                pass
+        _log({"t": time.time(), "n": getattr(_request_metrics, "call_no", None),
+              "tool": name, "args": args,
+              "code": getattr(_request_metrics, "action_code", None),
+              "action_attempted": getattr(_request_metrics, "action_attempted", False),
+              "action_succeeded": getattr(_request_metrics, "action_succeeded", False),
+              "executed": getattr(_request_metrics, "action_succeeded", False),
+              "tool_elapsed_s": round(time.monotonic() - _request_metrics.started, 4),
+              "http_requests": list(_request_metrics.records),
+              "error": f"{type(exc).__name__}: {exc}"})
+        raise
+
+
 @contextmanager
 def _shared_action_lock():
-    """Optional host-side flock shared by all MCP servers connected to one Guest."""
+    """Serialize a mutation and its returned observation across actors sharing one Guest."""
     if not ACTION_LOCK_PATH:
         yield
         return
-    os.makedirs(os.path.dirname(ACTION_LOCK_PATH), exist_ok=True)
+    parent = os.path.dirname(ACTION_LOCK_PATH)
+    if parent:
+        os.makedirs(parent, exist_ok=True)
     started = time.perf_counter()
     with open(ACTION_LOCK_PATH, "a") as handle:
         fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
         acquired = time.perf_counter()
-        _LOCK_TIMING.metrics = {"wait_s": acquired - started, "acquired_at": acquired}
+        _LOCK_TIMING.metrics = {"started": started, "acquired_at": acquired}
         try:
             yield
         finally:
@@ -173,44 +417,26 @@ def _shared_action_lock():
 
 
 def run_tool(name: str, args: dict) -> tuple[str, bytes | None]:
-    """Execute one MCP call; with an action lock, mutations plus their returned screenshot are atomic."""
     mutating = name in {"click", "drag", "move", "type_text", "key", "scroll"}
     if mutating and ACTION_LOCK_PATH:
         with _shared_action_lock():
-            return _run_tool_unlocked(name, args)
-    return _run_tool_unlocked(name, args)
+            return _run_tool_recorded(name, args)
+    return _run_tool_recorded(name, args)
 
 
-def _run_tool_unlocked(name: str, args: dict) -> tuple[str, bytes | None]:
-    """Execute one tool call; returns (text, png bytes or None)."""
-    with _state() as st:  # reserve a call number (and read the latest scale) atomically
-        if name != "declare_infeasible" and st["calls"] >= BUDGET:
-            return OUT_OF_BUDGET, None
-        st["calls"] += 1
-        n, scale = st["calls"], st["scale"]
-    if name == "declare_infeasible":
-        if LOG:
-            with open(os.path.join(os.path.dirname(LOG), "INFEASIBLE"), "w") as f:
-                f.write(str(args.get("reason", "")))
-        _log({"t": time.time(), "n": n, "tool": name, "args": args, "window_before": None, "code": None})
-        return "Recorded the task as infeasible. Stop now.", None
-    code = _code(name, args, scale)
-    if name == "wait":
-        time.sleep(min(float(args.get("seconds", 2.0)), 30))
-    before = _active_window() if code else None
-    if code:
-        _py(code)
-    png, scale = _shot()
+def _store_observation(scale: list[float], guest_size: list[int]) -> None:
     with _state() as st:
         st["scale"] = scale
-    if LOG:  # what the model saw, for trajectory viewers
+        st["guest_screenshot_size"] = guest_size
+        st["model_screenshot_size"] = [MODEL_W, MODEL_H]
+
+
+def _save_screenshot(n: int, png: bytes) -> None:
+    if LOG:
         shots = os.path.join(os.path.dirname(LOG), "shots")
         os.makedirs(shots, exist_ok=True)
         with open(os.path.join(shots, f"{n:03d}.png"), "wb") as f:
             f.write(png)
-    _log({"t": time.time(), "n": n, "tool": name, "args": args, "window_before": before, "code": code})
-    left = BUDGET - n
-    return (f"OK. {left} tool calls left." if left <= 5 else "OK."), png
 
 
 def mcp_main() -> None:

@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "CDD-TLA-001 asset shot manifest",
+  "type": "object",
+  "required": ["case_id", "case_version", "revision", "selected_shots", "unused_assets"],
+  "properties": {
+    "case_id": {"const": "CDD-TLA-001"},
+    "case_version": {"const": "0.1.0"},
+    "revision": {"type": "integer", "minimum": 1},
+    "selected_shots": {
+      "type": "array", "minItems": 3, "maxItems": 3,
+      "items": {
+        "type": "object",
+        "required": ["asset_id", "source_in_frame", "source_out_frame", "story_role", "selection_reason"],
+        "properties": {
+          "asset_id": {"type": "string", "enum": ["ASSET-01", "ASSET-02", "ASSET-03", "ASSET-04"]},
+          "source_in_frame": {"type": "integer", "minimum": 0},
+          "source_out_frame": {"type": "integer", "minimum": 0},
+          "story_role": {"type": "string", "enum": ["intake", "wash", "reuse"]},
+          "selection_reason": {"type": "string", "minLength": 8}
+        }
+      }
+    },
+    "unused_assets": {
+      "type": "array", "minItems": 1,
+      "items": {"type": "object", "required": ["asset_id", "timeline_use", "reason"],
+                "properties": {"asset_id": {"const": "ASSET-04"}, "timeline_use": {"const": false}, "reason": {"type": "string", "minLength": 8}}}
+    }
+  }
+}

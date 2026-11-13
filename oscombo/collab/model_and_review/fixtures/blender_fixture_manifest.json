@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "case_id": "CDD-MAR-001",
+  "blender": {
+    "version": "5.2.2 LTS",
+    "build_hash": "d13f752e3b9c",
+    "python": "3.13.13",
+    "official_archive_url": "https://download.blender.org/release/Blender5.2/blender-5.2.2-linux-x64.tar.xz",
+    "official_checksum_url": "https://download.blender.org/release/Blender5.2/blender-5.2.2.sha256",
+    "archive_sha256": "84098912789dc450e95697c4184fb8a90acbe5111c2ba4aede3fecb57806a168",
+    "local_binary": "/home/mjh/Projects/_deps/blender/blender-5.2.2/blender-5.2.2-linux-x64/blender",
+    "local_archive": "/home/mjh/Projects/_deps/blender/blender-5.2.2-linux-x64.tar.xz",
+    "threads": 2,
+    "background_only": true,
+    "gpu_rendering": false
+  },
+  "fixtures": {
+    "initial": {
+      "path": "fixtures/initial.blend",
+      "bytes": 115947,
+      "sha256": "b0053ca0c2199779af99c7e47eda09fd6f1da6b98b5a86dded97635bd2f7760c",
+      "container": "Zstandard-compressed .blend"
+    },
+    "gold_private": {
+      "path": "fixtures/private/gold.blend",
+      "bytes": 115941,
+      "sha256": "0cf276d5bd5b186384c846fdb57536f7fb2b8fc18a820641918e206ee0b55051",
+      "container": "Zstandard-compressed .blend"
+    },
+    "gold_permissions": "private directory 0700; gold file 0600; never mount into actor workspace"
+  },
+  "generation_commands": [
+    "OMP_NUM_THREADS=2 \"$CODESK_BLENDER_BIN\" --background --factory-startup -t 2 --python oscombo/collab/model_and_review/blender/build_fixture.py -- --output oscombo/collab/model_and_review/fixtures/initial.blend --variant initial",
+    "OMP_NUM_THREADS=2 \"$CODESK_BLENDER_BIN\" --background --factory-startup -t 2 --python oscombo/collab/model_and_review/blender/build_fixture.py -- --output oscombo/collab/model_and_review/fixtures/private/gold.blend --variant gold"
+  ],
+  "validation": {
+    "run_dir": "audits/model_and_review_blender_smoke/20261022T121313Z",
+    "negative_control_results": "audits/model_and_review_blender_smoke/20261022T121313Z/negative_oracle_results.json",
+    "save_reopen_reset_results": "audits/model_and_review_blender_smoke/20261022T121313Z/save_reopen_reset_results.json",
+    "guest_gui": "PENDING"
+  }
+}

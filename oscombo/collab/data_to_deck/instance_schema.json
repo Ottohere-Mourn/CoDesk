@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:codesk:data-to-deck-instance:v0.2.1",
+  "title": "CoDesk Data-to-Deck Collaborative Reconciliation instance",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["case_id", "case_version", "seed", "fixture_sha256", "conditions", "role_budgets", "outputs"],
+  "properties": {
+    "case_id": {"const": "CDD-RECON-001"},
+    "case_version": {"const": "0.2.1"},
+    "seed": {"const": 0},
+    "fixture_sha256": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["quarterly_authority.ods", "management_draft.odp", "case_brief.md"],
+      "properties": {
+        "quarterly_authority.ods": {"$ref": "#/$defs/fileHash"},
+        "management_draft.odp": {"$ref": "#/$defs/fileHash"},
+        "case_brief.md": {"$ref": "#/$defs/fileHash"}
+      }
+    },
+    "conditions": {
+      "const": ["single_agent", "collaborative_isolated", "collaborative_shared"]
+    },
+    "role_budgets": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["A", "B"],
+      "properties": {
+        "A": {"$ref": "#/$defs/roleBudget"},
+        "B": {"$ref": "#/$defs/roleBudget"}
+      }
+    },
+    "outputs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["A", "B"],
+      "properties": {
+        "A": {"const": "outputs/agent_A/verified_analysis.ods"},
+        "B": {"const": "outputs/agent_B/final_management_brief.odp"}
+      }
+    }
+  },
+  "$defs": {
+    "fileHash": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sha256", "bytes"],
+      "properties": {
+        "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "bytes": {"type": "integer", "minimum": 1}
+      }
+    },
+    "roleBudget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["steps", "model_tokens"],
+      "properties": {
+        "steps": {"const": 60},
+        "model_tokens": {"const": 12000}
+      }
+    }
+  }
+}

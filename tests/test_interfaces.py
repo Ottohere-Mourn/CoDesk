@@ -126,6 +126,22 @@ def test_codex_and_pi_config(tmp_path, monkeypatch):
     assert 'base_url = "http://gateway/v1"' in toml and "requires_openai_auth = false" in toml
     assert 'args = ["-m", "oscombo.desktop_tools", "--mcp"]' in toml
     assert 'OSCOMBO_GUEST_URL = "http://localhost:5999"' in toml and 'OSCOMBO_MAX_STEPS = "7"' in toml
+    assert "request_max_retries = 6" in toml and "stream_max_retries = 6" in toml
+    retry_spec = {"harness": "codex", "model": "m", "options": {
+        "base_url": "http://gateway/v1", "codex_bin": "true", "request_retries": 12,
+        "stream_retries": 12}}
+    retry_ctx = AgentContext(name="retryAgent", task_id="t", instruction="x", guest=_FakeGuest(),
+                             out=tmp_path, max_steps=7, spec=retry_spec)
+    make_harness(retry_spec).prepare(retry_ctx)
+    retry_toml = (tmp_path / "retryAgent/codex_home/config.toml").read_text()
+    assert "request_max_retries = 12" in retry_toml and "stream_max_retries = 12" in retry_toml
+    paced_spec = {"harness": "codex", "model": "m", "options": {
+        "base_url": "http://gateway/v1", "codex_bin": "true", "desktop_tool_cooldown_sec": 60}}
+    paced_ctx = AgentContext(name="pacedAgent", task_id="t", instruction="x", guest=_FakeGuest(),
+                             out=tmp_path, max_steps=7, spec=paced_spec)
+    make_harness(paced_spec).prepare(paced_ctx)
+    paced_toml = (tmp_path / "pacedAgent/codex_home/config.toml").read_text()
+    assert 'OSCOMBO_MCP_TURN_COOLDOWN_SEC = "60.0"' in paced_toml
     monkeypatch.setenv("OPENAI_API_KEY", "k")
     spec = {"harness": "pi", "model": "m", "effort": "high", "options": {"base_url": "http://gateway/v1",
                                                                           "pi_bin": "true"}}
@@ -163,11 +179,11 @@ def test_desktop_tools_budget_is_shared_across_processes(tmp_path, monkeypatch):
 
     monkeypatch.setattr(dt.requests, "get", lambda *a, **k: R())
     monkeypatch.setattr(dt.requests, "post", lambda *a, **k: R())
-    assert dt.run_tool("click", {"x": 10, "y": 10})[0].startswith("OK")
     assert dt.run_tool("screenshot", {})[1] is not None
+    assert dt.run_tool("click", {"x": 10, "y": 10})[0].startswith("OK")
     assert dt.run_tool("click", {"x": 1, "y": 1}) == (dt.OUT_OF_BUDGET, None)
     log = [json.loads(x) for x in (tmp_path / "actions.jsonl").read_text().splitlines()]
-    assert [x["n"] for x in log] == [1, 2] and log[0]["code"].startswith("pyautogui.click(15, 15")
+    assert [x["n"] for x in log] == [1, 2] and log[1]["code"].startswith("pyautogui.click(15, 15")
 
 
 def _write_run(root, name, mode, tasks, scores, agents, trace=()):
