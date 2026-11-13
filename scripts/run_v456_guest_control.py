@@ -19,8 +19,8 @@ BASE=Path('/dev/shm/codesk-next3/osworld-v2-ubuntu-x86.qcow2')
 TASKS={
 'v4':['v2/pgv4rooms','v2/pgv4facilities'],
 'v5':['v2/pgv5invoices','v2/pgv5expenses'],
-'v6':['v2/pgv6accommodations','v2/pgv6seating']}
-PORTS={'v4':8139,'v5':8140,'v6':8141}
+'v6':['v2/pgv6accommodations','v2/pgv6seating'],'v7':['v2/pgv7labcustody','v2/pgv7benchreview'],'v8':['v2/pgv8permitreview','v2/pgv8permitfees'],'v9':['v2/pgv9dispatch','v2/pgv9parts'],'v10':['v2/pgv10followup','v2/pgv10equipment']}
+PORTS={'v4':8139,'v5':8140,'v6':8141,'v7':8142,'v8':8143,'v9':8144,'v10':8145}
 def wait_reload(page,ms=400):
  page.wait_for_timeout(ms)
 def choose(page,item):
@@ -33,6 +33,11 @@ def select(page,key,value):
  page.locator('#f-'+key).select_option(label=str(value),timeout=10000)
 def save(page):
  page.locator('#save').click(timeout=10000);page.wait_for_timeout(700)
+def generic_form(page,values):
+ for key,value in values.items():
+  field=page.locator('#f-'+key)
+  if field.evaluate('(el)=>el.tagName.toLowerCase()')=='select':field.select_option(label=str(value))
+  else:field.fill(str(value))
 def positive_control(case,page,expected):
  if case=='v4':
   panel(page,'A')
@@ -58,8 +63,13 @@ def positive_control(case,page,expected):
   panel(page,'B')
   for iid,row in expected['B'].items():
    choose(page,iid);select(page,'room',row['room']);fill(page,'seat',row['seat']);fill(page,'arrival',row['arrival']);select(page,'equipment',row['equipment']);save(page)
+ else:
+  for which in ('A','B'):
+   panel(page,which)
+   for iid,row in expected[which].items():
+    choose(page,iid);generic_form(page,row);save(page)
 def main(case):
- if case not in TASKS:raise SystemExit('usage: run_v456_guest_control.py v4|v5|v6')
+ if case not in TASKS:raise SystemExit('usage: run_v456_guest_control.py v4|v5|v6|v7|v8|v9|v10')
  runid=f'cdesk3-{case}-scripted-joint-{datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")}-{os.getpid()}'
  out=RUNROOT/runid;over=OVERLAY_TMP/runid;archive=OVERLAY_ARCHIVE/runid
  out.mkdir(parents=True,exist_ok=False);over.mkdir(parents=True,exist_ok=False)
