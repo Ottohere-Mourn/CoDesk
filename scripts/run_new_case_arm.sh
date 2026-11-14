@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 if [[ $# -ne 2 ]]; then
-  echo "usage: run_new_case_arm.sh <s1|k1|k2|q1|e1|v1|v2|v3|v4|v5|v6|v7|v8|v9|v10> <ma-id|shared|shared-lock>" >&2
+  echo "usage: run_new_case_arm.sh <s1|k1|k2|q1|e1|v1|v2|v3|v4|v5|v6|v7|v8|v9|v10|v11|v12> <ma-id|shared|shared-lock>" >&2
   exit 2
 fi
 CASE_ID="$1"; ARM="$2"
@@ -21,6 +21,8 @@ case "$CASE_ID" in
   v8) TASK_A="v2/pgv8permitreview"; TASK_B="v2/pgv8permitfees" ;;
   v9) TASK_A="v2/pgv9dispatch"; TASK_B="v2/pgv9parts" ;;
   v10) TASK_A="v2/pgv10followup"; TASK_B="v2/pgv10equipment" ;;
+  v11) TASK_A="v2/pgv11holds"; TASK_B="v2/pgv11returns" ;;
+  v12) TASK_A="v2/pgv12review"; TASK_B="v2/pgv12intake" ;;
   *) echo "unknown case: $CASE_ID" >&2; exit 2 ;;
 esac
 case "$ARM" in
@@ -33,7 +35,7 @@ REPO="/home/mjh/Projects/CoDesk-three-new-dualagent-cases-20261112"
 OSW="/home/mjh/Projects/_deps/OSWorld-V2-osworld-v2.1"
 SWC="/home/mjh/Projects/CoDesk-candidate-repair-20261104"
 EXTRA_CASE_SOURCE=()
-if [[ "$CASE_ID" == v4 || "$CASE_ID" == v5 || "$CASE_ID" == v6 || "$CASE_ID" == v7 || "$CASE_ID" == v8 || "$CASE_ID" == v9 || "$CASE_ID" == v10 ]]; then
+if [[ "$CASE_ID" == v4 || "$CASE_ID" == v5 || "$CASE_ID" == v6 || "$CASE_ID" == v7 || "$CASE_ID" == v8 || "$CASE_ID" == v9 || "$CASE_ID" == v10 || "$CASE_ID" == v11 || "$CASE_ID" == v12 ]]; then
   EXTRA_CASE_SOURCE=(tasks/paragui/build_v456.py tasks/paragui/app_v456_template.py tasks/paragui/v456_data.json scripts/run_v456_guest_control.py)
 fi
 case "$CASE_ID" in
@@ -52,6 +54,8 @@ case "$CASE_ID" in
   v8) TASK_MODULES="pg_common.py pg_v456_oracle.py pg_v8.py task_pgv8permitreview.py task_pgv8permitfees.py" ;;
   v9) TASK_MODULES="pg_common.py pg_v456_oracle.py pg_v9.py task_pgv9dispatch.py task_pgv9parts.py" ;;
   v10) TASK_MODULES="pg_common.py pg_v456_oracle.py pg_v10.py task_pgv10followup.py task_pgv10equipment.py" ;;
+  v11) TASK_MODULES="pg_common.py pg_v456_oracle.py pg_v11.py task_pgv11holds.py task_pgv11returns.py" ;;
+  v12) TASK_MODULES="pg_common.py pg_v456_oracle.py pg_v12.py task_pgv12review.py task_pgv12intake.py" ;;
 esac
 for module in $TASK_MODULES; do
   source_module="$REPO/tasks/paragui/$module"
