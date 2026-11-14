@@ -19,8 +19,8 @@ BASE=Path('/dev/shm/codesk-next3/osworld-v2-ubuntu-x86.qcow2')
 TASKS={
 'v4':['v2/pgv4rooms','v2/pgv4facilities'],
 'v5':['v2/pgv5invoices','v2/pgv5expenses'],
-'v6':['v2/pgv6accommodations','v2/pgv6seating'],'v7':['v2/pgv7labcustody','v2/pgv7benchreview'],'v8':['v2/pgv8permitreview','v2/pgv8permitfees'],'v9':['v2/pgv9dispatch','v2/pgv9parts'],'v10':['v2/pgv10followup','v2/pgv10equipment'],'v11':['v2/pgv11holds','v2/pgv11returns'],'v12':['v2/pgv12review','v2/pgv12intake'],'v13':['v2/pgv13catalog','v2/pgv13access'],'v14':['v2/pgv14disposition','v2/pgv14rework'],'v15':['v2/pgv15badge','v2/pgv15induction']}
-PORTS={'v4':8139,'v5':8140,'v6':8141,'v7':8142,'v8':8143,'v9':8144,'v10':8145,'v11':8146,'v12':8147,'v13':8148,'v14':8149,'v15':8150}
+'v6':['v2/pgv6accommodations','v2/pgv6seating'],'v7':['v2/pgv7labcustody','v2/pgv7benchreview'],'v8':['v2/pgv8permitreview','v2/pgv8permitfees'],'v9':['v2/pgv9dispatch','v2/pgv9parts'],'v10':['v2/pgv10followup','v2/pgv10equipment'],'v11':['v2/pgv11holds','v2/pgv11returns'],'v12':['v2/pgv12review','v2/pgv12intake'],'v13':['v2/pgv13catalog','v2/pgv13access'],'v14':['v2/pgv14disposition','v2/pgv14rework'],'v15':['v2/pgv15badge','v2/pgv15induction'],'v16':['v2/pgv16temp','v2/pgv16lot'],'v17':['v2/pgv17condition','v2/pgv17exhibit'],'v18':['v2/pgv18commission','v2/pgv18utility']}
+PORTS={'v4':8139,'v5':8140,'v6':8141,'v7':8142,'v8':8143,'v9':8144,'v10':8145,'v11':8146,'v12':8147,'v13':8148,'v14':8149,'v15':8150,'v16':8151,'v17':8152,'v18':8153}
 def wait_reload(page,ms=400):
  page.wait_for_timeout(ms)
 def choose(page,item):
@@ -69,7 +69,7 @@ def positive_control(case,page,expected):
    for iid,row in expected[which].items():
     choose(page,iid);generic_form(page,row);save(page)
 def main(case):
- if case not in TASKS:raise SystemExit('usage: run_v456_guest_control.py v4|v5|v6|v7|v8|v9|v10|v11|v12|v13|v14|v15')
+ if case not in TASKS:raise SystemExit('usage: run_v456_guest_control.py v4|v5|v6|v7|v8|v9|v10|v11|v12|v13|v14|v15|v16|v17|v18')
  runid=f'cdesk3-{case}-scripted-joint-{datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")}-{os.getpid()}'
  out=RUNROOT/runid;over=OVERLAY_TMP/runid;archive=OVERLAY_ARCHIVE/runid
  out.mkdir(parents=True,exist_ok=False);over.mkdir(parents=True,exist_ok=False)

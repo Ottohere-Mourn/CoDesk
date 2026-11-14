@@ -1,19 +1,19 @@
 # CoDesk case portfolio — consolidated branch handoff
 
-Date: 2026-11-14 (updated with V13–V15)
+Date: 2026-11-14 (updated with V13–V18)
 Branch: `codex/all-codesk-cases-20261113`
 Remote: `git@github.com:Ottohere-Mourn/CoDesk.git`
-Scope: case definitions, fixtures, app/runner code, tests and result summaries from the 13-case dual-agent portfolio, the Human-Agent scripted-normal-user extension, and the 2026-11-12/13/14 additional dual-agent pilot branches, including the V7–V15 additions.
+Scope: case definitions, fixtures, app/runner code, tests and result summaries from the 13-case dual-agent portfolio, the Human-Agent scripted-normal-user extension, and the 2026-11-12/13/14 additional dual-agent pilot branches, including the V7–V18 additions.
 
 ## Executive counts
 
-There are **28 one-time dual-agent cases** with an effective result satisfying the core tuple `MA-ID/Independent PASS + Shared FAIL + Shared+Lock FAIL`, after applying the original handoff's validity and quality audit. This is a one-time score-pattern screening count (14 earlier 13-case-handoff cases + 5 latest candidate-screen cases + 4 V7–V10 pilots + 2 V11–V12 pilots + 3 V13–V15 pilots), not repeatability or probability evidence. V7–V15 are workflow-level variants of shared active-work-area/panel context; runs include Agent-visible observations and Oracle scores, but no independent semantic panel-transition telemetry.
+There are **31 one-time dual-agent cases** with an effective result satisfying the core tuple `MA-ID/Independent PASS + Shared FAIL + Shared+Lock FAIL`, after applying the original handoff's validity and quality audit. This is a one-time score-pattern screening count (14 earlier 13-case-handoff cases + 5 latest candidate-screen cases + 4 V7–V10 pilots + 2 V11–V12 pilots + 3 V13–V15 pilots + 3 V16–V18 pilots), not repeatability or probability evidence. V7–V18 are workflow-level variants of shared active-work-area/panel context; runs include Agent-visible observations and Oracle scores, but no independent semantic panel-transition telemetry.
 
 Separately, **7 Human-Agent normal-user cases** have one effective natural-Shared observation in which User fails while the real GUI Agent passes, with passing controls as detailed below. One additional Human-Agent case (HA-MAIL) has the same impact only under a deliberately fixed 25-second start-offset probe; it is not counted as a natural-shared case. These two actor compositions are complementary and should not be mixed into one statistical denominator.
 
-Therefore, at the **case-task pilot level**, the merged portfolio contains **35 cases with a one-time qualifying observation under their track-specific criterion** (28 dual-agent + 7 Human-Agent natural impact), plus 1 separately reported controlled Human-Agent probe. The repo contains 56 rostered workflow entries across the two tracks: not every inventory item has full valid experiment evidence, and some have overlapping underlying mechanisms. No case has a second valid triplet/repeat required by this handoff.
+Therefore, at the **case-task pilot level**, the merged portfolio contains **38 cases with a one-time qualifying observation under their track-specific criterion** (31 dual-agent + 7 Human-Agent natural impact), plus 1 separately reported controlled Human-Agent probe. The repo contains 59 rostered workflow entries across the two tracks: not every inventory item has full valid experiment evidence, and some have overlapping underlying mechanisms. No case has a second valid triplet/repeat required by this handoff.
 
-## 1. Core dual-agent cases: 39 rostered, 14+5+4+2+3=28 qualified once
+## 1. Core dual-agent cases: 42 rostered, 14+5+4+2+3+3=31 qualified once
 
 ### Earlier 19-case portfolio
 
@@ -74,7 +74,15 @@ V13–V15 each passed a scripted two-task Guest positive control and completed o
 - V14 NORTHLINE-MANUFACTURING-NCR — nonconformance disposition / rework verification.
 - V15 BUILDING-OPS-VISITOR-ACCESS — temporary badge / site-induction record.
 
-**Core tuple total: 14 + 5 + 4 + 2 + 3 = 28** one-time qualifying case tasks. This is not 28 independent mechanisms: clipboard variants and stale-artifact/lost-update workflows cluster by mechanism family (e.g., PAY-1 / DATA-REL1 / AP-1 / SITEACT-STATE1 / CRM-LU1).
+### Three appended workflows: V16–V18
+
+V16–V18 each passed a scripted two-task Guest positive control and completed one GPT-6-Sol MA-ID / Shared / Shared+Lock triplet. Each once met the same one-time tuple. They cover synthetic food cold-chain correction/lot hold, museum object condition/exhibition placement, and solar commissioning/utility handover. As with V7–V15, they are workflow variants using the app-level shared active-panel/current-record family, not new independent mechanisms. V16 Shared and Shared+Lock each failed the temperature record while lot disposition passed; V17 Shared failed exhibition placement and Shared+Lock failed both records; V18 Shared failed utility handover and Shared+Lock failed both. All run results were state-readable and top-level error-free; failure attribution remains within the shared app panel context, not independently instrumented OS window focus. See [V16–V18 cards](THREE_NEW_DUALAGENT_CASES_V16_V18_20261114_ZH.md) and [full model results](../tasks/paragui/V16_V18_MODEL_RESULTS_20261114_ZH.md).
+
+- V16 LAKESIDE-COLD-CHAIN — cooler temperature correction / affected-lot disposition.
+- V17 HARBOR-MUSEUM-COLLECTION — condition report / gallery placement.
+- V18 SUNFIELD-SOLAR-HANDOVER — commissioning test / utility authorization.
+
+**Core tuple total: 14 + 5 + 4 + 2 + 3 + 3 = 31** one-time qualifying case tasks. This is not 31 independent mechanisms: clipboard variants and stale-artifact/lost-update workflows cluster by mechanism family (e.g., PAY-1 / DATA-REL1 / AP-1 / SITEACT-STATE1 / CRM-LU1).
 
 ## 2. Human-Agent normal-user extension
 
@@ -122,9 +130,9 @@ This branch combines the following remote lines of work (source branches remain 
 
 ### Aggregate inventory versus usable count
 
-- Dual-Agent: 19 workflows from the 13-case handoff (14 strict tuple hits) + 11 entries in the latest pilot screen (5 strict tuple hits) + 4 V7–V10 additions (4 one-time tuple hits) + 2 V11–V12 additions (2 one-time tuple hits) + 3 V13–V15 additions (3 one-time tuple hits) = 39 rostered attempts, 28 one-time qualified.
+- Dual-Agent: 19 workflows from the 13-case handoff (14 strict tuple hits) + 11 entries in the latest pilot screen (5 strict tuple hits) + 4 V7–V10 additions (4 one-time tuple hits) + 2 V11–V12 additions (2 one-time tuple hits) + 3 V13–V15 additions (3 one-time tuple hits) + 3 V16–V18 additions (3 one-time tuple hits) = 42 rostered attempts, 31 one-time qualified.
 - Human-Agent: 17 task-family/app/workflow inventory entries, 7 one-time natural Shared user-impact hits and 1 separately controlled-offset-only probe.
-- Across the tracks this is 56 rostered entries, **35 case-workflow pilots with a qualifying one-time observation**, plus the separate HA-MAIL controlled probe. This is not 35 repeated/reliable cases and not one pooled metric. The remaining 21 rostered entries do not meet their track’s main one-time criterion; they remain neutral, invalid, no-go, incomplete, or otherwise not qualified. HA-MAIL’s controlled-offset probe is reported separately. See the linked audits rather than silently dropping outcomes.
+- Across the tracks this is 59 rostered entries, **38 case-workflow pilots with a qualifying one-time observation**, plus the separate HA-MAIL controlled probe. This is not 38 repeated/reliable cases and not one pooled metric. The remaining 21 rostered entries do not meet their track’s main one-time criterion; they remain neutral, invalid, no-go, incomplete, or otherwise not qualified. HA-MAIL’s controlled-offset probe is reported separately. See the linked audits rather than silently dropping outcomes.
 
 ## 5. What is and is not in Git; usage
 
@@ -140,7 +148,7 @@ python -m pytest -q
 
 On HealthCare, the case wrappers in `infra/run_human_agent_*.sh` expect `OSWORLD_DIR`, its Python environment, a `swcub.resource_safety` provider through `SWCUB_SAFETY_ROOT`, the existing OSWorld Guest image/runtime, RAID output, and runtime-injected model credentials. Case scripts are not a single universal CLI; check the case's handoff before running it. Never store API keys in source, arguments, logs, or run artifacts. Do not start model/Guest runs as part of merely cloning/testing.
 
-Earlier consolidation baseline: the focused harness/Human-Agent/runner suite passed 52 tests; after importing the Case 3/4 Lite packages, their focused tests passed 15/15. A complete suite run before the Lite import reported 409 passed, 1 skipped, and 3 failed in `tests/test_ticket_to_resolution.py`; its positive-path tests do not produce all the newer audit/provenance evidence required by the strict oracle. Therefore the full suite is not green. At the original consolidation snapshot, no model or Guest experiment was started. The later V7–V10 addition passed its focused 21-test Oracle/control suite and four scripted Guest joint positive controls; its 12 one-shot model runs are recorded in the linked results report. The V11–V12 follow-up passed the focused Oracle/reference-control suite (27 tests) and two scripted Guest joint positives; both one-shot model triplets met the screening tuple, with V12 Shared+Lock’s 60-call/max_steps caveat and invalid transport attempts documented separately. V13–V15 passed their focused 36-test Oracle/reference-control suite, three scripted Guest joint positives, and nine one-shot model arms; all three triplets met the screening tuple. V13/V15 date-entry refinements and V15’s application-context failure are documented in their result audit; V15 Shared+Lock ended with a non-fatal tmpfs overlay archive permission warning, while complete results remained on RAID.
+Earlier consolidation baseline: the focused harness/Human-Agent/runner suite passed 52 tests; after importing the Case 3/4 Lite packages, their focused tests passed 15/15. A complete suite run before the Lite import reported 409 passed, 1 skipped, and 3 failed in `tests/test_ticket_to_resolution.py`; its positive-path tests do not produce all the newer audit/provenance evidence required by the strict oracle. Therefore the full suite is not green. At the original consolidation snapshot, no model or Guest experiment was started. The later V7–V10 addition passed its focused 21-test Oracle/control suite and four scripted Guest joint positive controls; its 12 one-shot model runs are recorded in the linked results report. The V11–V12 follow-up passed the focused Oracle/reference-control suite (27 tests) and two scripted Guest joint positives; both one-shot model triplets met the screening tuple, with V12 Shared+Lock’s 60-call/max_steps caveat and invalid transport attempts documented separately. V13–V15 passed their focused 36-test Oracle/reference-control suite, three scripted Guest joint positives, and nine one-shot model arms; all three triplets met the screening tuple. V13/V15 date-entry refinements and V15’s application-context failure are documented in their result audit; V15 Shared+Lock ended with a non-fatal tmpfs overlay archive permission warning, while complete results remained on RAID. V16–V18 pass the focused 45-test Oracle/reference-control suite, three scripted Guest joint positives, and nine one-shot GPT-6-Sol triplet arms; all three meet the one-time tuple. They extend cold-chain, museum collections and solar handover workflows while remaining within the app-level shared-panel/current-record mechanism family. See the linked V16–V18 cards and results audit.
 
 ### Main source handoffs
 
@@ -149,5 +157,6 @@ Earlier consolidation baseline: the focused harness/Human-Agent/runner suite pas
 - `docs/codesk/THREE_NEW_CASES_HANDOFF_20261112_ZH.md` — latest dual-agent roster, audited no-go outcomes, and candidate results.
 - `docs/FOUR_NEW_DUALAGENT_CASES_V7_V10_20261113_ZH.md` and `tasks/paragui/V7_V10_MODEL_RESULTS_20261113_ZH.md` — V7–V10 cards and their one-shot model triplets.
 - docs/TWO_NEW_DUALAGENT_CASES_V11_V12_20261114_ZH.md and tasks/paragui/V11_V12_MODEL_RESULTS_20261114_ZH.md — V11–V12 task cards, validity notes and one-shot model triplets.
+- docs/THREE_NEW_DUALAGENT_CASES_V16_V18_20261114_ZH.md and tasks/paragui/V16_V18_MODEL_RESULTS_20261114_ZH.md — V16–V18 task cards, scripted controls and one-shot model triplets.
 
 Use one-time tuples as screening evidence only. There are no repeat runs sufficient for confidence intervals or failure-rate claims. Keep workflow novelty distinct from underlying mechanism novelty.
