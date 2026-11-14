@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 if [[ $# -ne 2 ]]; then
-  echo "usage: run_new_case_arm.sh <s1|k1|k2|q1|e1|v1|v2|v3|v4|v5|v6|v7|v8|v9|v10|v11|v12|v13|v14|v15|v16|v17|v18> <ma-id|shared|shared-lock>" >&2
+  echo "usage: run_new_case_arm.sh <s1|k1|k2|q1|e1|v1|v2|v3|v4|v5|v6|v7|v8|v9|v10|v11|v12|v13|v14|v15|v16|v17|v18|v19|v20|v21|v22> <ma-id|shared|shared-lock>" >&2
   exit 2
 fi
 CASE_ID="$1"; ARM="$2"
@@ -29,6 +29,10 @@ case "$CASE_ID" in
   v16) TASK_A="v2/pgv16temp"; TASK_B="v2/pgv16lot" ;;
   v17) TASK_A="v2/pgv17condition"; TASK_B="v2/pgv17exhibit" ;;
   v18) TASK_A="v2/pgv18commission"; TASK_B="v2/pgv18utility" ;;
+  v19) TASK_A="v2/pgv19housekeeping"; TASK_B="v2/pgv19arrival" ;;
+  v20) TASK_A="v2/pgv20exportdocs"; TASK_B="v2/pgv20loadplan" ;;
+  v21) TASK_A="v2/pgv21accession"; TASK_B="v2/pgv21pickup" ;;
+  v22) TASK_A="v2/pgv22turnover"; TASK_B="v2/pgv22techcall" ;;
   *) echo "unknown case: $CASE_ID" >&2; exit 2 ;;
 esac
 case "$ARM" in
@@ -41,7 +45,7 @@ REPO="/home/mjh/Projects/CoDesk-three-new-dualagent-cases-20261112"
 OSW="/home/mjh/Projects/_deps/OSWorld-V2-osworld-v2.1"
 SWC="/home/mjh/Projects/CoDesk-candidate-repair-20261104"
 EXTRA_CASE_SOURCE=()
-if [[ "$CASE_ID" == v4 || "$CASE_ID" == v5 || "$CASE_ID" == v6 || "$CASE_ID" == v7 || "$CASE_ID" == v8 || "$CASE_ID" == v9 || "$CASE_ID" == v10 || "$CASE_ID" == v11 || "$CASE_ID" == v12 || "$CASE_ID" == v13 || "$CASE_ID" == v14 || "$CASE_ID" == v15 || "$CASE_ID" == v16 || "$CASE_ID" == v17 || "$CASE_ID" == v18 ]]; then
+if [[ "$CASE_ID" == v4 || "$CASE_ID" == v5 || "$CASE_ID" == v6 || "$CASE_ID" == v7 || "$CASE_ID" == v8 || "$CASE_ID" == v9 || "$CASE_ID" == v10 || "$CASE_ID" == v11 || "$CASE_ID" == v12 || "$CASE_ID" == v13 || "$CASE_ID" == v14 || "$CASE_ID" == v15 || "$CASE_ID" == v16 || "$CASE_ID" == v17 || "$CASE_ID" == v18 || "$CASE_ID" == v19 || "$CASE_ID" == v20 || "$CASE_ID" == v21 || "$CASE_ID" == v22 ]]; then
   EXTRA_CASE_SOURCE=(tasks/paragui/build_v456.py tasks/paragui/app_v456_template.py tasks/paragui/v456_data.json scripts/run_v456_guest_control.py)
 fi
 case "$CASE_ID" in
@@ -68,6 +72,10 @@ case "$CASE_ID" in
   v16) TASK_MODULES="pg_common.py pg_v456_oracle.py pg_v16.py task_pgv16temp.py task_pgv16lot.py" ;;
   v17) TASK_MODULES="pg_common.py pg_v456_oracle.py pg_v17.py task_pgv17condition.py task_pgv17exhibit.py" ;;
   v18) TASK_MODULES="pg_common.py pg_v456_oracle.py pg_v18.py task_pgv18commission.py task_pgv18utility.py" ;;
+  v19) TASK_MODULES="pg_common.py pg_v456_oracle.py pg_v19.py task_pgv19housekeeping.py task_pgv19arrival.py" ;;
+  v20) TASK_MODULES="pg_common.py pg_v456_oracle.py pg_v20.py task_pgv20exportdocs.py task_pgv20loadplan.py" ;;
+  v21) TASK_MODULES="pg_common.py pg_v456_oracle.py pg_v21.py task_pgv21accession.py task_pgv21pickup.py" ;;
+  v22) TASK_MODULES="pg_common.py pg_v456_oracle.py pg_v22.py task_pgv22turnover.py task_pgv22techcall.py" ;;
 esac
 for module in $TASK_MODULES; do
   source_module="$REPO/tasks/paragui/$module"
