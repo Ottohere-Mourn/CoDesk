@@ -11,16 +11,16 @@ SWC=Path('/home/mjh/Projects/CoDesk-candidate-repair-20261104')
 sys.path[:0]=[str(REPO),str(SWC),str(OSW)]
 from oscombo import combo
 from oscombo.osworld import load_task,task_get
-ASSETS=Path('/mnt/raid1/mjh/Projects/codesk-next3-20261112/assets')
-RUNROOT=Path('/mnt/raid1/mjh/Projects/codesk-next3-20261112/runs/triplets')
-OVERLAY_TMP=Path('/dev/shm/codesk-next3/overlays')
-OVERLAY_ARCHIVE=Path('/mnt/raid1/mjh/Projects/codesk-next3-20261112/overlays')
+ASSETS=Path(os.environ.get('CO_DESK_ASSETS_ROOT','/mnt/raid1/mjh/Projects/codesk-next3-20261112/assets'))
+RUNROOT=Path(os.environ.get('CO_DESK_RUN_ROOT','/mnt/raid1/mjh/Projects/codesk-next3-20261112/runs/triplets'))
+OVERLAY_TMP=Path(os.environ.get('CO_DESK_OVERLAY_ROOT','/dev/shm/codesk-next3/overlays'))
+OVERLAY_ARCHIVE=Path(os.environ.get('CO_DESK_OVERLAY_ARCHIVE_ROOT','/mnt/raid1/mjh/Projects/codesk-next3-20261112/overlays'))
 BASE=Path('/dev/shm/codesk-next3/osworld-v2-ubuntu-x86.qcow2')
 TASKS={
 'v4':['v2/pgv4rooms','v2/pgv4facilities'],
 'v5':['v2/pgv5invoices','v2/pgv5expenses'],
-'v6':['v2/pgv6accommodations','v2/pgv6seating'],'v7':['v2/pgv7labcustody','v2/pgv7benchreview'],'v8':['v2/pgv8permitreview','v2/pgv8permitfees'],'v9':['v2/pgv9dispatch','v2/pgv9parts'],'v10':['v2/pgv10followup','v2/pgv10equipment'],'v11':['v2/pgv11holds','v2/pgv11returns'],'v12':['v2/pgv12review','v2/pgv12intake'],'v13':['v2/pgv13catalog','v2/pgv13access'],'v14':['v2/pgv14disposition','v2/pgv14rework'],'v15':['v2/pgv15badge','v2/pgv15induction'],'v16':['v2/pgv16temp','v2/pgv16lot'],'v17':['v2/pgv17condition','v2/pgv17exhibit'],'v18':['v2/pgv18commission','v2/pgv18utility'],'v19':['v2/pgv19housekeeping','v2/pgv19arrival'],'v20':['v2/pgv20exportdocs','v2/pgv20loadplan'],'v21':['v2/pgv21accession','v2/pgv21pickup'],'v22':['v2/pgv22turnover','v2/pgv22techcall']}
-PORTS={'v4':8139,'v5':8140,'v6':8141,'v7':8142,'v8':8143,'v9':8144,'v10':8145,'v11':8146,'v12':8147,'v13':8148,'v14':8149,'v15':8150,'v16':8151,'v17':8152,'v18':8153,'v19':8154,'v20':8155,'v21':8156,'v22':8157}
+'v6':['v2/pgv6accommodations','v2/pgv6seating'],'v7':['v2/pgv7labcustody','v2/pgv7benchreview'],'v8':['v2/pgv8permitreview','v2/pgv8permitfees'],'v9':['v2/pgv9dispatch','v2/pgv9parts'],'v10':['v2/pgv10followup','v2/pgv10equipment'],'v11':['v2/pgv11holds','v2/pgv11returns'],'v12':['v2/pgv12review','v2/pgv12intake'],'v13':['v2/pgv13catalog','v2/pgv13access'],'v14':['v2/pgv14disposition','v2/pgv14rework'],'v15':['v2/pgv15badge','v2/pgv15induction'],'v16':['v2/pgv16temp','v2/pgv16lot'],'v17':['v2/pgv17condition','v2/pgv17exhibit'],'v18':['v2/pgv18commission','v2/pgv18utility'],'v19':['v2/pgv19housekeeping','v2/pgv19arrival'],'v20':['v2/pgv20exportdocs','v2/pgv20loadplan'],'v21':['v2/pgv21accession','v2/pgv21pickup'],'v22':['v2/pgv22turnover','v2/pgv22techcall'],'v23':['v2/pgv23claimreview','v2/pgv23repairdispatch'],'v24':['v2/pgv24advisory','v2/pgv24dispatch'],'v25':['v2/pgv25containment','v2/pgv25recovery'],'v26':['v2/pgv26clearance','v2/pgv26release'],'v27':['v2/pgv27awardreview','v2/pgv27disbursement']}
+PORTS={'v4':8139,'v5':8140,'v6':8141,'v7':8142,'v8':8143,'v9':8144,'v10':8145,'v11':8146,'v12':8147,'v13':8148,'v14':8149,'v15':8150,'v16':8151,'v17':8152,'v18':8153,'v19':8154,'v20':8155,'v21':8156,'v22':8157,'v23':8158,'v24':8159,'v25':8160,'v26':8161,'v27':8162}
 def wait_reload(page,ms=400):
  page.wait_for_timeout(ms)
 def choose(page,item):
@@ -33,11 +33,24 @@ def select(page,key,value):
  page.locator('#f-'+key).select_option(label=str(value),timeout=10000)
 def save(page):
  page.locator('#save').click(timeout=10000);page.wait_for_timeout(700)
+FORM_RETRIES=[]
 def generic_form(page,values):
  for key,value in values.items():
   field=page.locator('#f-'+key)
+  field.wait_for(state='visible',timeout=10000)
   if field.evaluate('(el)=>el.tagName.toLowerCase()')=='select':field.select_option(label=str(value))
   else:field.fill(str(value))
+  actual=field.input_value()
+  if str(actual)!=str(value):raise RuntimeError(f'form input readback mismatch for {key}: {actual!r}')
+def apply_form(page,values):
+ for attempt in range(3):
+  generic_form(page,values);save(page)
+  actual={key:page.locator('#f-'+key).input_value() for key in values}
+  if all(str(actual[key])==str(value) for key,value in values.items()):
+   FORM_RETRIES.append(attempt)
+   return
+  page.wait_for_timeout(350)
+ raise RuntimeError(f'form save readback mismatch after 3 attempts: {actual!r}')
 def positive_control(case,page,expected):
  if case=='v4':
   panel(page,'A')
@@ -67,9 +80,9 @@ def positive_control(case,page,expected):
   for which in ('A','B'):
    panel(page,which)
    for iid,row in expected[which].items():
-    choose(page,iid);generic_form(page,row);save(page)
+    choose(page,iid);apply_form(page,row)
 def main(case):
- if case not in TASKS:raise SystemExit('usage: run_v456_guest_control.py v4|v5|v6|v7|v8|v9|v10|v11|v12|v13|v14|v15|v16|v17|v18|v19|v20|v21|v22')
+ if case not in TASKS:raise SystemExit('usage: run_v456_guest_control.py v4|v5|v6|v7|v8|v9|v10|v11|v12|v13|v14|v15|v16|v17|v18|v19|v20|v21|v22|v23|v24|v25|v26|v27')
  runid=f'cdesk3-{case}-scripted-joint-{datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")}-{os.getpid()}'
  out=RUNROOT/runid;over=OVERLAY_TMP/runid;archive=OVERLAY_ARCHIVE/runid
  out.mkdir(parents=True,exist_ok=False);over.mkdir(parents=True,exist_ok=False)
@@ -77,7 +90,7 @@ def main(case):
   'SWCUB_OSWORLD_DOCKER_RUNTIME_IMAGE':'swcub/osworld-v2.1-qemu-runtime:local','SWCUB_OSWORLD_OVERLAY_HOST_DIR':str(over),
   'SWCUB_RUN_ID':runid,'SWCUB_OWNER_TOKEN':os.urandom(32).hex(),'SWCUB_RESOURCE_LEDGER':str(out/'resources/resource_ledger.jsonl'),
   'SWCUB_OSWORLD_VM_READY_TIMEOUT':'600','PYTHONPATH':f'{REPO}:{SWC}:{OSW}'})
- result={'run_id':runid,'case':case,'kind':'scripted_gui_joint_positive','tasks':TASKS[case],'started_utc':datetime.now(timezone.utc).isoformat(),'error':None}
+ result={'run_id':runid,'case':case,'kind':'scripted_gui_joint_positive','tasks':TASKS[case],'started_utc':datetime.now(timezone.utc).isoformat(),'error':None,'form_retries':FORM_RETRIES}
  env=None
  try:
   fixture={}
@@ -103,6 +116,9 @@ def main(case):
    if f':{port}/' not in page.url:page.goto(url)
    page.wait_for_load_state('domcontentloaded');page.wait_for_selector('.tab',timeout=30000)
    positive_control(case,page,expected)
+   pair_module=__import__(f'evaluation_examples.task_class.pg_{case}',fromlist=['state'])
+   state_now=pair_module.state(env)
+   result['post_control_state']={'desk':state_now.get('desk'),'items':[{'id':row.get('id'),'data_a':row.get('data_a'),'data_b':row.get('data_b')} for row in state_now.get('items',[])]}
    result['end_url']=page.url;page.screenshot(path=str(out/'end-browser.png'),full_page=True)
    (out/'end.png').write_bytes(guest.screenshot());browser.close()
   result['scores']=combo.evaluate_tasks(env,tasks,[False,False],result);result['status']='complete'
@@ -116,8 +132,9 @@ def main(case):
    try:env.close()
    except Exception as e:result.setdefault('warnings',[]).append(f'close:{type(e).__name__}:{e}'[:200])
   try:
-   archive.mkdir(parents=True,exist_ok=True)
-   if over.exists():subprocess.run(['cp','-r','--sparse=auto','--no-preserve=all',str(over)+'/.',str(archive)],check=True)
+   if over.resolve()!=archive.resolve():
+    archive.mkdir(parents=True,exist_ok=True)
+    if over.exists():subprocess.run(['cp','-r','--sparse=auto','--no-preserve=all',str(over)+'/.',str(archive)],check=True)
   except Exception as e:result.setdefault('warnings',[]).append(f'overlay_archive:{type(e).__name__}:{e}'[:200])
   result['finished_utc']=datetime.now(timezone.utc).isoformat();(out/'result.json').write_text(json.dumps(result,indent=2))
  print(json.dumps(result,indent=2))

@@ -1,4 +1,5 @@
-import json
+import json,re
+from decimal import Decimal,InvalidOperation
 from datetime import datetime
 
 def _obj(v):
@@ -16,6 +17,31 @@ def _minutes(value):
         return (a, b) if b > a else None
     except Exception:
         return None
+
+def _amount(value):
+    raw=str(value or '').replace(',','')
+    match=re.search(r'-?\d+(?:\.\d+)?',raw)
+    if not match:return None
+    try:return Decimal(match.group(0))
+    except InvalidOperation:return None
+
+def _date_value(value):
+    raw=str(value or '').strip()
+    for fmt in ('%Y-%m-%d','%m/%d/%Y','%Y/%m/%d'):
+        try:
+            return datetime.strptime(raw,fmt).date()
+        except ValueError:
+            pass
+    return None
+
+def _field_matches(case_id,key,actual,target):
+    if (case_id,key) in {('v23','reserve_amount'),('v27','recommended_award')}:
+        got,want=_amount(actual),_amount(target)
+        return got is not None and want is not None and got==want
+    if (case_id,key)==('v27','scheduled_date'):
+        got,want=_date_value(actual),_date_value(target)
+        return got is not None and want is not None and got==want
+    return str(actual)==str(target)
 
 def checks(state, expected, panel, case_id):
     if not state or not isinstance(state.get('items'), list):
@@ -66,7 +92,7 @@ def checks(state, expected, panel, case_id):
         for iid, target in wanted.items():
             row = items.get(iid)
             actual = _obj(row.get('data_' + panel.lower())) if row else {}
-            ok = all(str(actual.get(k, '')) == str(v) for k, v in target.items())
+            ok = all(_field_matches(case_id,k,actual.get(k,''),v) for k,v in target.items())
             good[iid] = bool(ok)
             out[iid + '_exact'] = bool(ok)
     passed = sum(bool(v) for v in good.values())
