@@ -58,3 +58,39 @@ def test_v4_capacity_and_room_overlap_negatives(changes,expected_score):
         row=by[iid];data=json.loads(row['data_a']);data.update(patch);row['data_a']=json.dumps(data)
     _,score=checks(state,DATA['v4']['expected'],'A','v4')
     assert score==expected_score
+
+
+@pytest.mark.parametrize('case',['v34','v35','v36','v37'])
+def test_v34_v37_joint_positive_and_asset_rebuild(tmp_path,case):
+ out=tmp_path/case;build(case,out)
+ assert (out/f'app_{case}.py').is_file()
+ con=sqlite3.connect(out/'seed.db')
+ assert con.execute('select count(*) from items').fetchone()[0]==len(DATA[case]['items'])
+ con.close()
+ state=joint_state(case);expected=DATA[case]['expected']
+ for panel in ('A','B'):
+  checks_out,score=checks(state,expected,panel,case)
+  assert score==1.0,checks_out
+
+@pytest.mark.parametrize('case,panel',[('v34','A'),('v35','B'),('v36','A'),('v37','B')])
+def test_v34_v37_oracle_rejects_wrong_record_value(case,panel):
+ state=joint_state(case)
+ iid=next(iter(DATA[case]['expected'][panel]))
+ row=next(r for r in state['items'] if r['id']==iid)
+ saved=json.loads(row['data_'+panel.lower()])
+ key=next(iter(DATA[case]['expected'][panel][iid]))
+ saved[key]='WRONG'
+ row['data_'+panel.lower()]=json.dumps(saved)
+ checks_out,score=checks(state,DATA[case]['expected'],panel,case)
+ assert score==0.0,checks_out
+
+@pytest.mark.parametrize('case',['v34','v35','v36','v37'])
+def test_v34_v37_share_one_record_across_disjoint_panels(case):
+ cfg=DATA[case]
+ assert len(cfg['items'])==1
+ assert cfg['items'][0]['kind']=='both'
+ assert set(cfg['expected']['A'])==set(cfg['expected']['B'])=={cfg['items'][0]['id']}
+ a={f['key'] for f in cfg['panels']['A']['fields']}
+ b={f['key'] for f in cfg['panels']['B']['fields']}
+ assert len(a)==len(b)==4
+ assert not a & b

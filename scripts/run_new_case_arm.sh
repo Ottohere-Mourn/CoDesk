@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 if [[ $# -ne 2 ]]; then
-  echo "usage: run_new_case_arm.sh <s1|k1|k2|q1|e1|v1|v2|v3|v4|v5|v6|v7|v8|v9|v10|v11|v12|v13|v14|v15|v16|v17|v18|v19|v20|v21|v22|v23|v24|v25|v26|v27|v28|v29|v30|v31|v32|v33> <ma-id|shared|shared-lock>" >&2
+  echo "usage: run_new_case_arm.sh <s1|k1|k2|q1|e1|v1|v2|v3|v4|v5|v6|v7|v8|v9|v10|v11|v12|v13|v14|v15|v16|v17|v18|v19|v20|v21|v22|v23|v24|v25|v26|v27|v28|v29|v30|v31|v32|v33|v34|v35|v36|v37> <ma-id|shared|shared-lock>" >&2
   exit 2
 fi
 CASE_ID="$1"; ARM="$2"
@@ -44,6 +44,10 @@ case "$CASE_ID" in
   v31) TASK_A="v2/pgv31civicreview"; TASK_B="v2/pgv31releaseprep" ;;
   v32) TASK_A="v2/pgv32meterreview"; TASK_B="v2/pgv32sitevisit" ;;
   v33) TASK_A="v2/pgv33intaketriage"; TASK_B="v2/pgv33transfer" ;;
+  v34) TASK_A="v2/pgv34waterreview"; TASK_B="v2/pgv34advisorycloseout" ;;
+  v35) TASK_A="v2/pgv35appealdecision"; TASK_B="v2/pgv35enrollmentverify" ;;
+  v36) TASK_A="v2/pgv36sealaudit"; TASK_B="v2/pgv36kitrelease" ;;
+  v37) TASK_A="v2/pgv37incidentreview"; TASK_B="v2/pgv37restorationvalidate" ;;
   *) echo "unknown case: $CASE_ID" >&2; exit 2 ;;
 esac
 case "$ARM" in
@@ -56,7 +60,7 @@ REPO="/home/mjh/Projects/CoDesk-three-new-dualagent-cases-20261112"
 OSW="/home/mjh/Projects/_deps/OSWorld-V2-osworld-v2.1"
 SWC="/home/mjh/Projects/CoDesk-candidate-repair-20261104"
 EXTRA_CASE_SOURCE=()
-if [[ "$CASE_ID" == v4 || "$CASE_ID" == v5 || "$CASE_ID" == v6 || "$CASE_ID" == v7 || "$CASE_ID" == v8 || "$CASE_ID" == v9 || "$CASE_ID" == v10 || "$CASE_ID" == v11 || "$CASE_ID" == v12 || "$CASE_ID" == v13 || "$CASE_ID" == v14 || "$CASE_ID" == v15 || "$CASE_ID" == v16 || "$CASE_ID" == v17 || "$CASE_ID" == v18 || "$CASE_ID" == v19 || "$CASE_ID" == v20 || "$CASE_ID" == v21 || "$CASE_ID" == v22 || "$CASE_ID" == v23 || "$CASE_ID" == v24 || "$CASE_ID" == v25 || "$CASE_ID" == v26 || "$CASE_ID" == v27 || "$CASE_ID" == v28 || "$CASE_ID" == v29 || "$CASE_ID" == v30 || "$CASE_ID" == v31 || "$CASE_ID" == v32 || "$CASE_ID" == v33 ]]; then
+if [[ "$CASE_ID" == v4 || "$CASE_ID" == v5 || "$CASE_ID" == v6 || "$CASE_ID" == v7 || "$CASE_ID" == v8 || "$CASE_ID" == v9 || "$CASE_ID" == v10 || "$CASE_ID" == v11 || "$CASE_ID" == v12 || "$CASE_ID" == v13 || "$CASE_ID" == v14 || "$CASE_ID" == v15 || "$CASE_ID" == v16 || "$CASE_ID" == v17 || "$CASE_ID" == v18 || "$CASE_ID" == v19 || "$CASE_ID" == v20 || "$CASE_ID" == v21 || "$CASE_ID" == v22 || "$CASE_ID" == v23 || "$CASE_ID" == v24 || "$CASE_ID" == v25 || "$CASE_ID" == v26 || "$CASE_ID" == v27 || "$CASE_ID" == v28 || "$CASE_ID" == v29 || "$CASE_ID" == v30 || "$CASE_ID" == v31 || "$CASE_ID" == v32 || "$CASE_ID" == v33 || "$CASE_ID" == v34 || "$CASE_ID" == v35 || "$CASE_ID" == v36 || "$CASE_ID" == v37 ]]; then
   EXTRA_CASE_SOURCE=(tasks/paragui/build_v456.py tasks/paragui/app_v456_template.py tasks/paragui/v456_data.json scripts/run_v456_guest_control.py)
 fi
 case "$CASE_ID" in
@@ -98,6 +102,10 @@ case "$CASE_ID" in
   v31) TASK_MODULES="pg_common.py pg_v456_oracle.py pg_v31.py task_pgv31civicreview.py task_pgv31releaseprep.py" ;;
   v32) TASK_MODULES="pg_common.py pg_v456_oracle.py pg_v32.py task_pgv32meterreview.py task_pgv32sitevisit.py" ;;
   v33) TASK_MODULES="pg_common.py pg_v456_oracle.py pg_v33.py task_pgv33intaketriage.py task_pgv33transfer.py" ;;
+  v34) TASK_MODULES="pg_common.py pg_v456_oracle.py pg_v34.py task_pgv34waterreview.py task_pgv34advisorycloseout.py" ;;
+  v35) TASK_MODULES="pg_common.py pg_v456_oracle.py pg_v35.py task_pgv35appealdecision.py task_pgv35enrollmentverify.py" ;;
+  v36) TASK_MODULES="pg_common.py pg_v456_oracle.py pg_v36.py task_pgv36sealaudit.py task_pgv36kitrelease.py" ;;
+  v37) TASK_MODULES="pg_common.py pg_v456_oracle.py pg_v37.py task_pgv37incidentreview.py task_pgv37restorationvalidate.py" ;;
 esac
 for module in $TASK_MODULES; do
   source_module="$REPO/tasks/paragui/$module"
@@ -120,6 +128,10 @@ ASSETS="${CO_DESK_ASSETS_ROOT:-/mnt/raid1/mjh/Projects/codesk-next3-20261112/ass
 BASE="/dev/shm/codesk-next3/osworld-v2-ubuntu-x86.qcow2"
 OVERLAY_TMP_ROOT="${CO_DESK_OVERLAY_ROOT:-/dev/shm/codesk-next3/overlays}"
 OVERLAY_ARCHIVE_ROOT="${CO_DESK_OVERLAY_ARCHIVE_ROOT:-/mnt/raid1/mjh/Projects/codesk-next3-20261112/overlays}"
+# Keep the later pilot overlays on RAID rather than consuming the remaining /dev/shm.
+if [[ "$CASE_ID" == v36 || "$CASE_ID" == v37 ]]; then
+  OVERLAY_TMP_ROOT="$OVERLAY_ARCHIVE_ROOT"
+fi
 SWCUB_OSWORLD_VM_READY_TIMEOUT=600
 export SWCUB_OSWORLD_VM_READY_TIMEOUT
 OUT_ROOT="${CO_DESK_RUN_ROOT:-/mnt/raid1/mjh/Projects/codesk-next3-20261112/runs/triplets}"
