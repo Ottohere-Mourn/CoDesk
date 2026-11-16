@@ -20,5 +20,5 @@ def build(case_id,out):
  (out/'expected.json').write_text(json.dumps(c['expected'],ensure_ascii=False,indent=2),encoding='utf-8')
  (out/'case.json').write_text(json.dumps({'title':c['title'],'subtitle':c['subtitle']},ensure_ascii=False,indent=2),encoding='utf-8')
 if __name__=='__main__':
- if len(sys.argv)!=3:raise SystemExit('usage: build_v456.py v4|v5|v6|v7|v8|v9|v10|v11|v12|v13|v14|v15|v16|v17|v18|v19|v20|v21|v22|v23|v24|v25|v26|v27|v28|v29|v30 OUT')
+ if len(sys.argv)!=3:raise SystemExit('usage: build_v456.py v4|v5|v6|v7|v8|v9|v10|v11|v12|v13|v14|v15|v16|v17|v18|v19|v20|v21|v22|v23|v24|v25|v26|v27|v28|v29|v30|v31|v32|v33 OUT')
  build(sys.argv[1],sys.argv[2])

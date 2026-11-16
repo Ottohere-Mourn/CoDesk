@@ -1,19 +1,19 @@
 # CoDesk case portfolio — consolidated branch handoff
 
-Date: 2026-11-15 (updated with V23–V30)
+Date: 2026-11-16 (updated with V23–V33)
 Branch: `codex/all-codesk-cases-20261113`
 Remote: `git@github.com:Ottohere-Mourn/CoDesk.git`
-Scope: case definitions, fixtures, app/runner code, tests and result summaries from the 13-case dual-agent portfolio, the Human-Agent scripted-normal-user extension, and the 2026-11-12/13/14/15 additional dual-agent pilot branches, including the V7–V27 additions.
+Scope: case definitions, fixtures, app/runner code, tests and result summaries from the 13-case dual-agent portfolio, the Human-Agent scripted-normal-user extension, and the 2026-11-12/13/14/15 additional dual-agent pilot branches, including the V7–V33 additions.
 
 ## Executive counts
 
-There are **38 one-time dual-agent cases** with an effective result satisfying the core tuple MA-ID/Independent PASS + Shared FAIL + Shared+Lock FAIL, after applying the original handoff validity and quality audit. This is a one-time score-pattern screening count: 14 earlier 13-case-handoff cases + 5 latest candidate-screen cases + 4 V7–V10 pilots + 2 V11–V12 pilots + 3 V13–V15 pilots + 3 V16–V18 pilots + 4 V19–V22 pilots + 3 V24–V26 pilots. V28–V30 add three rostered workflows and zero strict tuple hits. This is not repeatability or probability evidence; several workflows share the same app-level active-panel/current-record family and there is no independent OS-level focus-misrouting signal.
+There are **39 one-time dual-agent cases** with an effective result satisfying the core tuple MA-ID/Independent PASS + Shared FAIL + Shared+Lock FAIL, after applying the original handoff validity and quality audit. This is a one-time score-pattern screening count: 14 earlier 13-case-handoff cases + 5 latest candidate-screen cases + 4 V7–V10 pilots + 2 V11–V12 pilots + 3 V13–V15 pilots + 3 V16–V18 pilots + 4 V19–V22 pilots + 3 V24–V26 pilots. V28–V30 add three rostered workflows and zero strict tuple hits. V31–V33 add three more workflows, with one task-level tuple hit (V33 Agent B/transfer); V31 and V32 add none. V33 Agent A timed out in Shared+Lock and is excluded from the failure count. This is not repeatability or probability evidence; several workflows share the same app-level active-panel/current-record family and there is no independent OS-level focus-misrouting signal.
 
 Separately, **7 Human-Agent normal-user cases** have one effective natural-Shared observation in which User fails while the real GUI Agent passes, with passing controls as detailed below. One additional Human-Agent case (HA-MAIL) has the same impact only under a deliberately fixed 25-second start-offset probe; it is not counted as a natural-shared case. These two actor compositions are complementary and should not be mixed into one statistical denominator.
 
-Therefore, at the **case-task pilot level**, the merged portfolio contains **45 cases with a one-time qualifying observation under their track-specific criterion** (38 dual-agent + 7 Human-Agent natural impact), plus 1 separately reported controlled Human-Agent probe. The repo contains 71 rostered workflow entries across the two tracks: not every inventory item has full valid experiment evidence, and some have overlapping underlying mechanisms. No case has a second valid triplet/repeat required by this handoff.
+Therefore, at the **case-task pilot level**, the merged portfolio contains **46 cases with a one-time qualifying observation under their track-specific criterion** (39 dual-agent + 7 Human-Agent natural impact), plus 1 separately reported controlled Human-Agent probe. The repo contains 74 rostered workflow entries across the two tracks: not every inventory item has full valid experiment evidence, and some have overlapping underlying mechanisms. No case has a second valid triplet/repeat required by this handoff.
 
-## 1. Core dual-agent cases: 54 rostered, 14+5+4+2+3+3+4+3+0=38 qualified once
+## 1. Core dual-agent cases: 57 rostered, 14+5+4+2+3+3+4+3+0+1=39 qualified once
 
 ### Earlier 19-case portfolio
 
@@ -109,7 +109,15 @@ Each passed a scripted joint Guest positive control and received one GPT-6-Sol M
 - V29 NORTHSTAR UNIVERSITY — synthetic candidate screening / interview coordination for APP-7246 (no-go: all-pass).
 - V30 BRIGHTPATH SaaS — synthetic customer handoff / training plan for ONB-6194 (no-go: Shared all-pass; lock 1/2).
 
-**Core tuple total: 14 + 5 + 4 + 2 + 3 + 3 + 4 + 3 + 0 = 38** one-time qualifying case tasks. This is not 38 independent mechanisms: clipboard variants and stale-artifact/lost-update workflows cluster by mechanism family (e.g., PAY-1 / DATA-REL1 / AP-1 / SITEACT-STATE1 / CRM-LU1).
+### Three appended workflows: V31–V33
+
+V31–V33 each passed the scripted joint Guest positive control and completed MA-ID and Shared GPT-6-Sol runs. V31 is all-pass; V32 has one Shared Oracle failure but Shared+Lock is 2/2 PASS; V33 has one Shared failure and a same-Actor B/transfer Oracle failure in Shared+Lock. Under the task-level tuple rule used by this handoff, V33 contributes one one-time hit: its transfer task passes MA-ID, fails Shared, and finishes with Oracle FAIL under Shared+Lock. Agent A timed out in that locked run at 2400s and is explicitly excluded; this is not a claim that both locked actors completed or that timeout is a mechanism failure. V33 Agent B used 59/60 calls. The runs log no focus_switch_action or misrouted_focus_before events, so these cases do not add OS-level focus-misrouting evidence. All three are workflow variants of the existing Synthetic Desk active-panel/current-record family. Full task cards, fixture hashes, control results, run IDs, costs, timeout and telemetry boundaries are in [V31–V33 cards](THREE_NEW_DUALAGENT_CASES_V31_V33_20261115_ZH.md) and [model result audit](../tasks/paragui/V31_V33_MODEL_RESULTS_20261115_ZH.md).
+
+- V31 CIVIC-DATA-OFFICE — governance review / open-data release for DAT-6028 (no-go: all-pass).
+- V32 NORTHSHORE-ENERGY — meter discrepancy review / site revisit for MTR-1472 (no-go: Shared failure recovered under lock).
+- V33 GREAT-LAKES-WILDLIFE — wildlife intake triage / transfer for WILD-3381 (one task-level tuple hit on transfer; Agent A lock timeout is excluded).
+
+**Core tuple total: 14 + 5 + 4 + 2 + 3 + 3 + 4 + 3 + 0 + 1 = 39** one-time qualifying case tasks. This is not evidence for 39 independent mechanisms: clipboard variants and stale-artifact/lost-update workflows cluster by mechanism family (e.g., PAY-1 / DATA-REL1 / AP-1 / SITEACT-STATE1 / CRM-LU1).
 
 ## 2. Human-Agent normal-user extension
 
@@ -157,9 +165,9 @@ This branch combines the following remote lines of work (source branches remain 
 
 ### Aggregate inventory versus usable count
 
-- Dual-Agent: 19 workflows from the 13-case handoff (14 strict tuple hits) + 11 entries in the latest pilot screen (5 strict tuple hits) + 4 V7–V10 additions (4 one-time tuple hits) + 2 V11–V12 additions (2 one-time tuple hits) + 3 V13–V15 additions (3 one-time tuple hits) + 3 V16–V18 additions (3 one-time tuple hits) + 4 V19–V22 additions (4 one-time tuple hits) + 5 V23–V27 additions (3 one-time tuple hits; V23 and V27 no-go) + 3 V28–V30 additions (0 one-time tuple hits) = 54 rostered attempts, 38 one-time qualified.
+- Dual-Agent: 19 workflows from the 13-case handoff (14 strict tuple hits) + 11 entries in the latest pilot screen (5 strict tuple hits) + 4 V7–V10 additions (4 one-time tuple hits) + 2 V11–V12 additions (2 one-time tuple hits) + 3 V13–V15 additions (3 one-time tuple hits) + 3 V16–V18 additions (3 one-time tuple hits) + 4 V19–V22 additions (4 one-time tuple hits) + 5 V23–V27 additions (3 one-time tuple hits; V23 and V27 no-go) + 3 V28–V30 additions (0 one-time tuple hits) + V31–V33 additions (1 one-time task-level tuple hit) = 57 rostered attempts, 39 one-time qualified.
 - Human-Agent: 17 task-family/app/workflow inventory entries, 7 one-time natural Shared user-impact hits and 1 separately controlled-offset-only probe.
-- Across the tracks this is 71 rostered entries, **45 case-workflow pilots with a qualifying one-time observation**, plus the separate HA-MAIL controlled probe. This is not 45 repeated/reliable cases and not one pooled metric. The remaining 26 rostered entries do not meet their track criterion; they remain neutral, invalid, no-go, incomplete, or otherwise not qualified. HA-MAIL controlled-offset results are reported separately.
+- Across the tracks this is 74 rostered entries, **46 case-workflow pilots with a qualifying one-time observation**, plus the separate HA-MAIL controlled probe. This is not 46 repeated/reliable cases and not one pooled metric. The remaining 28 rostered entries are not counted among these primary per-track hits; this remainder includes HA-MAIL, which only meets its separately reported controlled-offset probe, plus neutral, invalid, no-go, incomplete, or otherwise unqualified items.
 
 ## 5. What is and is not in Git; usage
 
@@ -189,5 +197,6 @@ Earlier consolidation baseline: the focused harness/Human-Agent/runner suite pas
 - docs/FOUR_NEW_DUALAGENT_CASES_V19_V22_20261114_ZH.md and tasks/paragui/V19_V22_MODEL_RESULTS_20261114_ZH.md — V19–V22 cards, scripted controls, triplet IDs, scores and limitations.
 - docs/FIVE_NEW_DUALAGENT_CASES_V23_V27_20261115_ZH.md and tasks/paragui/V23_V27_MODEL_RESULTS_20261115_ZH.md — V23–V27 cards and one-shot results. Three qualify; V23/V27 no-go, with all controls and Oracle corrections retained.
 - docs/THREE_NEW_DUALAGENT_CASES_V28_V30_20261115_ZH.md and tasks/paragui/V28_V30_MODEL_RESULTS_20261115_ZH.md — V28–V30 cards, scripted controls, one-shot triplets and budget/telemetry limitations; none qualifies.
+- docs/THREE_NEW_DUALAGENT_CASES_V31_V33_20261115_ZH.md and tasks/paragui/V31_V33_MODEL_RESULTS_20261115_ZH.md — V31–V33 cards, scripted controls, full run IDs and result audit; V33 has one task-level tuple hit with an Actor A timeout caveat.
 
 Use one-time tuples as screening evidence only. There are no repeat runs sufficient for confidence intervals or failure-rate claims. Keep workflow novelty distinct from underlying mechanism novelty.
