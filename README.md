@@ -1,5 +1,8 @@
 # oscombo — composite OSWorld tasks on one shared desktop
 
+Current execution host (2026-11-13): **`cpu15`**, project data at **`~/data/paraGUI`**.
+See [server plan](docs/SERVER_PLAN.md) and [session recovery / saved-task audit](docs/RECOVERY_20261113.md).
+
 Run several **official OSWorld tasks in one Ubuntu Guest at the same time**, each driven by its own agent that
 only sees its own instruction, and score every task with **its own official evaluator**. The question this
 answers: what happens to GUI agents when they share one desktop (focus theft, keystrokes landing in the other
@@ -60,13 +63,19 @@ infra/
   build_runtime.sh  build it
   make_pngfast_image.sh  derive a Guest image with fast (non-optimized) PNG screenshots, for TCG hosts
 configs/env.example.sh   every environment variable in one place (copy to env.sh, git-ignored)
+configs/env.vm10.example.sh  VM10 paths and conservative Guest / queue settings
 tasks/paragui/      paraGUI task pairs: two tasks sharing one live app/session (35 pairs, specs, builders, checkers)
 lists/              combo definitions (OSWorld 1, OSWorld 2.0, paraGUI v1, attack round 1) and a smoke list
+docs/SERVER_PLAN.md VM10 deployment, resource budget, storage and result backup (Chinese)
 docs/NOTES.md       operational notes and pitfalls found while running this at scale
 tests/              unit tests with an in-memory DesktopEnv (no Guest needed)
 ```
 
 ## Setup
+
+For our VM10 CPU server, follow [the server plan](docs/SERVER_PLAN.md) and use
+[`configs/env.vm10.example.sh`](configs/env.vm10.example.sh). It covers the jump-host connection, local `/data`
+storage, container KVM verification, and a one-run queue to start on this shared 32-logical-CPU host.
 
 Requirements on the machine that runs the Guests: Linux x86-64, docker (rootless works), `git`, `uv`, `curl`,
 `unzip`, ~20 GB disk for the image plus a few GB per concurrent Guest. `/dev/kvm` is strongly recommended;
@@ -102,7 +111,7 @@ python -m oscombo run --mode parallel --policy scripted --out runs/smoke \
 python -m oscombo run --mode parallel --policy openai-cua --model <model> --max-steps 48 --out runs/p1 \
     --tasks chrome/bb5e4c0d-f964-439c-97b6-bdb9747de3f4 libreoffice_calc/42e0a640-4f19-4b28-973d-729602b5a4a7
 
-# an experiment: expand combos (both task orders x modes x repeats + solo baselines), run 4 at a time
+# an experiment on a host sized for 4 concurrent runs (VM10: start with --lanes 1; see docs/SERVER_PLAN.md)
 python -m oscombo matrix lists/osworld1_combos.txt --prefix e1 --mode parallel:2 --mode sequential:1 > runs_e1.txt
 nohup python -m oscombo queue runs_e1.txt --out-root runs --lanes 4 --run-timeout 7200 --archive /durable/dir \
     -- --policy openai-cua --model <model> --max-steps 48 > queue.out 2>&1 &
@@ -196,6 +205,18 @@ note of the agent's own recent steps, so tasks can run past the 50-image limit o
 `wall_s` (default 7200) caps an agent's wall clock. Both are agent options (`--opt chain_steps=60`).
 
 ## Tests
+
+The professional-software pilot has [recorded GUI trajectories and collection
+instructions](docs/PROFESSIONAL_TRAJECTORIES.md) for Blender, FreeCAD and QGIS.
+These are separate Docker desktop trials using the synthetic authoring package.
+The [shared-desktop follow-up](experiments/PROFESSIONAL_SHARED.md) runs independent
+A/B agents on one application and project, with parallel or sequential scheduling
+and a globally ordered action trace. The earlier solo archive remains unchanged.
+
+The native Codex/Freehand runner (`experiments/PROFESSIONAL_NATIVE.md`) defaults
+to hybrid GUI+CLI/code for new runs. GUI-only is an explicit ablation; programming
+is not prohibited by the benchmark. The six new professional task candidates
+and their readiness are documented in `tasks/professional_v2/README.md`.
 
 `python -m pytest -q` runs the pipeline (all modes, setup dedup, decoupled evaluation, infra handling,
 harnesses, transports, analysis) against an in-memory DesktopEnv.

@@ -1,0 +1,250 @@
+{
+  "schema_version": 2,
+  "dataset": "paraGUI-professional-v2-candidates-20261102",
+  "origin": "original_synthetic_benchmark_inspired",
+  "official_benchmark_subset": false,
+  "shared_state": "Two independent agents, one desktop, one application process, one native project",
+  "track": "hybrid_gui_cli",
+  "agent_trajectories": 0,
+  "policy": {
+    "allowed": ["mouse", "keyboard", "screenshots", "ordinary application field expressions", "container terminal and CLI", "Python console", "script editor", "application APIs and code execution inside experiment containers"],
+    "forbidden": ["reading graders or reference solutions", "accessing host files or credentials", "overwriting coagent edits with a stale project"],
+    "enforcement": "Container isolation and hidden evaluation assets; programming is allowed, semantic ownership remains a task rule",
+    "ablation": "gui-only must be selected and reported explicitly; it is not the benchmark-wide policy",
+    "workflow_policy": "planned_gui_phases and planned_hybrid_phases are authoring suggestions, not required action sequences; agents may choose GUI, code, or both",
+    "shared_state_policy": "Auxiliary CLI processes may inspect or transform owned data, but results must be integrated into the one shared live project without clobbering coagent work",
+    "host_unrestricted_codex": false,
+    "grading": "Common saved final state after both agents stop; per-role checks plus preservation gates",
+    "promotion_requirements": ["native inputs", "isolated grader", "negative controls", "A-only and B-only", "A-to-B and B-to-A semantic equivalence", "GUI reopen", "solo hybrid pilot", "same-desktop sequential and parallel hybrid pilots", "GUI/CLI channel and stale-save evidence"]
+  },
+  "pairs": [
+    {
+      "id": "p4",
+      "software": "Blender",
+      "title": "Hinge motion and instrument finish",
+      "status": "authoring_implemented_not_harness_registered",
+      "native_file": "HingeStudio.blend",
+      "runtime": "Existing professional-authoring image; Blender 3.4.1 validation target",
+      "provenance": {
+        "type": "original_synthetic_benchmark_inspired",
+        "sources": ["https://refresh.dev/blog/blenderbench", "https://blendergym.github.io/"],
+        "inspiration": "Editable motion on an existing asset, separate material finish, preserve unrequested scene state",
+        "copied_assets": false,
+        "copied_prompts": false
+      },
+      "inputs": ["Original two-product scene; CaseLid origin already at its hinge", "Independent ShellBody and ControlDial with existing Principled materials", "Fixed camera, lights, frame range 1-61 and 24 fps"],
+      "agents": {
+        "a": {
+          "instruction_file": "p4/task_a.md",
+          "writes": ["CaseLid.rotation_euler", "CaseLid.animation_data"],
+          "outputs": ["HingeStudio.blend"],
+          "planned_gui_phases": ["Select CaseLid and inspect pivot", "Set X-rotation keys on frames 1/31/61", "Set linear interpolation in animation editor", "Scrub intermediate frames and save"],
+          "planned_hybrid_phases": ["Inspect CaseLid and existing action data", "Use bpy or GUI controls to edit only the lid rotation F-curve", "Check frame samples with code or timeline inspection", "Save the current shared project without replacing B's material changes"],
+          "checks": ["editable_rotation_keys", "three_key_poses", "linear_midpoint_motion", "hinge_geometry_preserved", "scene_preserved", "native_reopened"]
+        },
+        "b": {
+          "instruction_file": "p4/task_b.md",
+          "writes": ["ShellFinish.PrincipledBSDF", "DialFinish.PrincipledBSDF"],
+          "outputs": ["HingeStudio.blend"],
+          "planned_gui_phases": ["Select ShellBody and open material properties", "Set sRGB hex, roughness and metallic", "Repeat for ControlDial", "Inspect material preview and save"],
+          "planned_hybrid_phases": ["Inspect the existing material node connections", "Set the owned shader inputs with bpy or GUI, converting sRGB values correctly", "Inspect the resulting appearance", "Save without resetting A's animation"],
+          "checks": ["shell_color", "shell_surface", "dial_color", "dial_surface", "connected_material_slots", "assets_preserved"]
+        }
+      },
+      "shared_output": "HingeStudio.blend",
+      "interference_surfaces": ["active object", "Properties editor context", "timeline frame", "Graph Editor versus material editor", "save dialog"],
+      "independence": "A changes lid motion; B changes materials on a different product. No render/export depends on the other role finishing. Evaluator renders final state after both stop.",
+      "validation": "See fresh validation/manifest.json; scripted references are not agent trajectories. Not enabled by the existing p1-p3 runners."
+    },
+    {
+      "id": "p5",
+      "software": "Blender",
+      "title": "Bracket modifiers and independent label UV",
+      "status": "spec_only",
+      "native_file": "BracketLabel.blend",
+      "runtime": "Software already in authoring image; new assets and grader not built",
+      "provenance": {
+        "type": "original_synthetic_benchmark_inspired",
+        "sources": ["https://refresh.dev/blog/blenderbench", "https://blendergym.github.io/"],
+        "inspiration": "Non-destructive geometry and material/texture editing with preservation constraints",
+        "copied_assets": false,
+        "copied_prompts": false
+      },
+      "inputs": ["HalfBracket mesh in metres with boundary vertices on local X=0", "Separate LabelPlate with six quad faces and identity transforms", "Original checker-label texture with marked front region, packed into the blend"],
+      "agents": {
+        "a": {
+          "instruction": "On HalfBracket, keep the source mesh unchanged. Add a live X Mirror with merge/clipping at 0.0001 m, followed by angle-limited Bevel of width 0.002 m and 3 segments. Preserve scale and location. Save BracketLabel.blend; export only the evaluated bracket to bracket.stl.",
+          "writes": ["HalfBracket.modifiers"],
+          "outputs": ["BracketLabel.blend", "bracket.stl"],
+          "planned_gui_phases": ["Select correct half-mesh", "Configure mirror and bevel in order", "Inspect seam and silhouettes", "Export selection only and save"],
+          "planned_hybrid_phases": ["Inspect mesh boundary coordinates with bpy", "Configure non-destructive modifiers using code or GUI", "Check evaluated seam geometry and silhouette", "Export only the bracket and preserve B's UV work in the live project"],
+          "checks": ["editable_mirror_settings", "editable_bevel_settings_and_order", "source_mesh_unchanged", "evaluated_symmetry_and_manifoldness", "STL_matches_evaluated_geometry", "native_reopens"]
+        },
+        "b": {
+          "instruction": "UV unwrap LabelPlate without changing its mesh. Keep all UV islands inside [0,1] with at least 0.02 spacing and no positive-area overlaps. Map the front face upright onto the marked label region [0.1,0.6] x [0.2,0.8] of the supplied texture; connect it to the existing material Base Color. Save the shared blend and export label_uv.svg.",
+          "writes": ["LabelPlate.uv_layers", "LabelMaterial.node_tree"],
+          "outputs": ["BracketLabel.blend", "label_uv.svg"],
+          "planned_gui_phases": ["Select separate label object and edit mode", "Unwrap and place front island", "Pack remaining islands and connect packed texture", "Inspect checker and export UV layout"],
+          "planned_hybrid_phases": ["Inspect label faces, texture and UV topology", "Generate or edit UV coordinates using code or GUI", "Check island overlap and texture orientation", "Export label UVs and preserve A's modifier stack"],
+          "checks": ["UV_layer_complete", "UV_bounds_and_spacing", "no_positive_area_overlap", "front_orientation_and_region", "material_uses_packed_texture", "SVG_geometry_corresponds_to_UV"]
+        }
+      },
+      "shared_output": "BracketLabel.blend",
+      "interference_surfaces": ["Object versus Edit mode", "active mesh", "UV editor", "modifier tab", "file export dialog"],
+      "independence": "Separate objects and material data. B never unwraps the geometry A changes. Each export includes only the owning role's asset.",
+      "validation": "Need native asset construction, UV spacing feasibility, semantic SVG parser and both-order reference validation."
+    },
+    {
+      "id": "p6",
+      "software": "FreeCAD",
+      "title": "Clamp plate and independent drawing bushing",
+      "status": "spec_only",
+      "native_file": "ClampStation.FCStd",
+      "runtime": "Software already in authoring image; new assets and grader not built",
+      "provenance": {
+        "type": "original_synthetic_benchmark_inspired",
+        "sources": ["https://github.com/Zdong104/CADWORLD"],
+        "inspiration": "Sketch constraints, parametric solid validity and native TechDraw relationships",
+        "copied_assets": false,
+        "copied_prompts": false
+      },
+      "inputs": ["Document with independent PlateBody and BushingBody at separated placements", "Named empty sketches and an A4 TechDraw template; millimetre units", "No cross-body expressions or shared mutable dimension spreadsheet"],
+      "agents": {
+        "a": {
+          "instruction": "In PlateBody, create a fully constrained 90 x 60 mm rectangular sketch centred at the origin, pad 8 mm, and make four through holes of diameter 6 mm at (±32, ±18) mm. Keep editable feature history. Save ClampStation.FCStd and export only PlateBody to plate.step; do not modify BushingBody or its drawing.",
+          "writes": ["PlateBody.features", "PlateBody.sketch_constraints"],
+          "outputs": ["ClampStation.FCStd", "plate.step"],
+          "planned_gui_phases": ["Activate PlateBody and sketch", "Dimension and constrain", "Pad and through-pocket holes", "Recompute and selection-only STEP export"],
+          "planned_hybrid_phases": ["Inspect PlateBody feature history and sketch constraints", "Use FreeCAD Python APIs or GUI to build constrained editable features", "Recompute and check dimensions and valid solids", "Export only PlateBody and save without replacing B's drawing"],
+          "checks": ["sketch_zero_remaining_DOF", "dimensions_and_thickness", "four_hole_axes_and_radii", "one_valid_solid_and_volume", "editable_feature_history", "STEP_reopens_and_matches_plate"]
+        },
+        "b": {
+          "instruction": "In BushingBody, create an editable coaxial sleeve of outer diameter 18, bore diameter 10 and length 24 mm. Make an A4 portrait TechDraw page containing front, top and isometric views sourced only from BushingBody, with an outer-diameter and length dimension. Save the shared document and export bushing.step and bushing_drawing.pdf.",
+          "writes": ["BushingBody.features", "BushingDrawing.page_and_views"],
+          "outputs": ["ClampStation.FCStd", "bushing.step", "bushing_drawing.pdf"],
+          "planned_gui_phases": ["Activate independent bushing body", "Constrain rings and pad", "Switch to TechDraw and insert own-body views", "Dimension and export own artifacts"],
+          "planned_hybrid_phases": ["Inspect independent bushing parameters", "Create constrained bushing and TechDraw references with APIs or GUI", "Check projected views and dimensions", "Export only owned drawing and body artifacts; retain A's features"],
+          "checks": ["sleeve_dimensions", "coaxial_through_bore", "editable_valid_body", "native_page_and_view_sources", "dimension_values_not_literal_glyphs", "STEP_and_PDF_reopen"]
+        }
+      },
+      "shared_output": "ClampStation.FCStd",
+      "interference_surfaces": ["active body", "Sketcher task panel", "workbench", "tree selection", "TechDraw page", "export selection"],
+      "independence": "B draws its own bushing, not A's unfinished plate. Bodies have no linked geometry or cross-body expressions.",
+      "validation": "Need native solids, sketch DOF inspection, tolerant geometry/export checks and both-order reference validation."
+    },
+    {
+      "id": "p7",
+      "software": "QGIS",
+      "title": "Flood analysis and independent route survey sheet",
+      "status": "spec_only",
+      "native_file": "ValleySurvey.qgz",
+      "runtime": "Software already in authoring image; new datasets and grader not built",
+      "provenance": {
+        "type": "original_synthetic_benchmark_inspired",
+        "sources": ["https://weavebench.github.io/trajectories/tasks/SPA_task_1_qgis_flood_zone.html"],
+        "inspiration": "Raster/vector analysis followed by field verification and native layout/export inspection",
+        "copied_assets": false,
+        "copied_prompts": false
+      },
+      "inputs": ["Original synthetic projected DEM with no NoData pixels within 12 parcel polygons", "Read-only roads and checkpoints; separate editable survey_routes.gpkg", "All source geometry in EPSG:32630; fixed survey map theme excludes analysis output"],
+      "agents": {
+        "a": {
+          "instruction": "Compute mean DEM elevation per parcel into a new parcels_analysis.gpkg. Classify High for mean <35 m, Medium for 35<=mean<55 m, otherwise Low. Use red/orange/green categorical symbols. Export only High parcels to high_risk.geojson in EPSG:4326. Keep inputs unchanged and save the shared project.",
+          "writes": ["parcels_analysis.gpkg", "Analysis layer and renderer"],
+          "outputs": ["ValleySurvey.qgz", "parcels_analysis.gpkg", "high_risk.geojson"],
+          "planned_gui_phases": ["Inspect CRS and raster coverage", "Run zonal statistics", "Calculate class and style", "Filter, reproject and export"],
+          "planned_hybrid_phases": ["Inspect CRS, raster coverage and feature identifiers with CLI or PyQGIS", "Compute zonal statistics and classes with processing APIs or GUI", "Update only owned layer styling in the shared project", "Validate exported geometry and attributes without replacing B's route or layout"],
+          "checks": ["zonal_means_with_numeric_tolerance", "boundary_correct_classification", "categorical_renderer", "source_geometry_and_CRS_unchanged", "High_subset_feature_identity", "GeoJSON_WGS84_geometry"]
+        },
+        "b": {
+          "instruction": "Create a survey route through pre-existing checkpoints CP1→CP2→CP3→CP4, snapped within 0.5 m, in survey_routes.gpkg; label its segments by sequence. Make one A4 landscape layout using only the supplied roads/checkpoints and your route at 1:5000 with a linked metre scale bar. Export route_survey.pdf and route_survey.png. Do not reference the risk layer or wait for analysis.",
+          "writes": ["survey_routes.gpkg", "SurveyRoute layer style", "RouteSurvey layout"],
+          "outputs": ["ValleySurvey.qgz", "route_survey.pdf", "route_survey.png"],
+          "planned_gui_phases": ["Activate route layer editing and snapping", "Digitize ordered segments", "Label sequence", "Create locked-layer layout and export"],
+          "planned_hybrid_phases": ["Inspect stop geometry and route constraints", "Create ordered route features with PyQGIS or GUI", "Construct an own-layer locked layout and inspect its rendering", "Export the survey sheet and preserve A's analysis layer"],
+          "checks": ["route_order_and_snapping", "valid_connected_geometry", "segment_labels", "A4_landscape_and_locked_layer_set", "scale_bar_units_and_map_link", "PDF_and_PNG_content_extent"]
+        }
+      },
+      "shared_output": "ValleySurvey.qgz",
+      "interference_surfaces": ["active layer", "editing toggle", "processing dialogs", "map extent", "layout window", "save/export dialogs"],
+      "independence": "Separate writable GeoPackages avoid introducing a database lock dependency. B's map uses fixed layers, not A's output or active style.",
+      "validation": "Need raster boundary fixtures, CRS-safe reference results, map-extent and export inspection, and both-order validation."
+    },
+    {
+      "id": "p8",
+      "software": "KiCad",
+      "title": "Sensor board routing and assembly silkscreen",
+      "status": "spec_only_runtime_extension",
+      "native_file": "SensorHub.kicad_pcb",
+      "runtime": "Not registered in current desktop harness; image/version support must be built and verified",
+      "provenance": {
+        "type": "original_synthetic_benchmark_inspired",
+        "sources": ["https://weavebench.github.io/trajectories/tasks/SPA_task_2_kicad_pcb_route.html"],
+        "inspiration": "Fixed placement, routing constraints, native DRC and manufacturable exports",
+        "copied_assets": false,
+        "copied_prompts": false
+      },
+      "inputs": ["Original low-voltage synthetic 40 x 30 mm two-layer board with frozen footprints and 8 unrouted nets", "Defined 0.25 mm track width and 0.20 mm copper clearance", "Predefined silk-only annotation area clear of pads and courtyards"],
+      "agents": {
+        "a": {
+          "instruction": "Route all eight existing nets with 0.25 mm tracks, copper clearance at least 0.20 mm and no more than six vias. Do not move footprints, edit nets or change rules. Resolve unrouted items and new copper DRC errors. Save SensorHub.kicad_pcb and export copper Gerbers and drill files only.",
+          "writes": ["board.tracks", "board.vias"],
+          "outputs": ["SensorHub.kicad_pcb", "routing_exports/"],
+          "planned_gui_phases": ["Inspect netlist and ratsnest", "Route using PCB editor", "Run DRC and fix copper violations", "Export own copper/drill artifacts"],
+          "planned_hybrid_phases": ["Inspect connectivity and rules with supported KiCad APIs or CLI", "Route with code-assisted geometry or PCB GUI tools", "Run DRC and inspect copper geometry", "Export copper and drill files without replacing B's silkscreen edits"],
+          "checks": ["netlist_unchanged", "zero_unrouted", "width_clearance_and_via_budget", "no_new_copper_DRC_errors", "frozen_placement_and_outline", "copper_and_drill_exports_match_board"]
+        },
+        "b": {
+          "instruction": "Within the designated annotation area, add front-silkscreen assembly notes and orient connector reference labels upright. Text height must be at least 1 mm and stroke 0.15 mm; keep at least 0.25 mm clear of solder-mask openings and avoid overlaps. Do not move footprints or touch copper. Save the shared board and export only F.SilkS to assembly_silk.svg.",
+          "writes": ["board.silkscreen_text", "footprint.reference_text_position"],
+          "outputs": ["SensorHub.kicad_pcb", "assembly_silk.svg"],
+          "planned_gui_phases": ["Activate silk layer", "Edit reference texts without moving footprints", "Place assembly notes and inspect clearances", "Plot silk-only SVG"],
+          "planned_hybrid_phases": ["Inspect text bounds, pad openings and immutable footprint placement", "Update only owned silkscreen fields using supported APIs or GUI", "Check spacing numerically and visually", "Export silk-only graphics and preserve A's current routing"],
+          "checks": ["required_notes_and_reference_association", "minimum_font_and_stroke", "upright_orientation", "mask_clearance_and_nonoverlap", "copper_and_placement_preserved", "silk_export_reopens_and_matches"]
+        }
+      },
+      "shared_output": "SensorHub.kicad_pcb",
+      "interference_surfaces": ["active PCB layer", "routing tool", "selection filters", "DRC modal", "plot dialog"],
+      "independence": "B edits silk in pad-free space; no combined all-layer export is required before A finishes. Copper and silk have separate semantic ownership.",
+      "validation": "Need installed KiCad, deterministic DRC baseline, actual native board, geometry-aware SVG checks and GUI pilots. Not ready to execute."
+    },
+    {
+      "id": "p9",
+      "software": "CloudCompare",
+      "title": "Scan alignment and independent section inspection",
+      "status": "spec_only_runtime_extension",
+      "native_file": "ScanInspection.bin",
+      "runtime": "Not registered in current desktop harness; image/version support must be built and verified",
+      "provenance": {
+        "type": "original_synthetic_benchmark_inspired",
+        "sources": ["https://weavebench.github.io/trajectories/tasks/SPA_task_14_cloudcompare_scan_vs_cad.html"],
+        "inspiration": "Point-cloud alignment, deviation inspection, cross-section work and evidence exports",
+        "copied_assets": false,
+        "copied_prompts": false
+      },
+      "inputs": ["Original synthetic ScanA and NominalA with a known rigid perturbation and a deliberately out-of-tolerance patch", "Independent already-aligned ScanB with two predefined cross-section planes", "Locked units in millimetres, asymmetric geometry and known landmarks to remove registration ambiguity"],
+      "agents": {
+        "a": {
+          "instruction": "Rigidly align ScanA to NominalA without rescaling or deleting the injected defect patch. Add signed cloud-to-mesh distance, use a display range [-0.5,0.5] mm, and export points with absolute deviation above 0.3 mm to scanA_outliers.ply. Save the shared BIN while preserving B's entities.",
+          "writes": ["ScanA.transform", "ScanA.distance_scalar_field", "ScanA_outliers"],
+          "outputs": ["ScanInspection.bin", "scanA_outliers.ply"],
+          "planned_gui_phases": ["Choose correct scan/reference pair", "Register without scale change", "Compute and visualize signed distances", "Filter by tolerance and export"],
+          "planned_hybrid_phases": ["Inspect ScanA and NominalA units and landmarks", "Run rigid registration and distance analysis using CLI or GUI", "Verify transform and defect retention numerically and visually", "Integrate owned entities into the shared BIN and preserve B's sections"],
+          "checks": ["rigid_transform_accuracy", "no_scale_change_or_point_loss", "distance_field_numeric_accuracy", "signed_display_range", "outlier_subset_precision_recall", "native_and_PLY_reopen"]
+        },
+        "b": {
+          "instruction": "From ScanB only, extract slices of thickness 0.4 mm centred on local X=10 and X=30 mm. Keep slice point entities named Section10 and Section30, preserve ScanB, and export each slice separately to PLY. Configure an orthographic inspection view and save the shared BIN. Do not process ScanA or NominalA.",
+          "writes": ["Section10", "Section30", "ScanB inspection display"],
+          "outputs": ["ScanInspection.bin", "section10.ply", "section30.ply"],
+          "planned_gui_phases": ["Select independent ScanB", "Configure section box and thickness", "Extract two slices", "Inspect own view and export slices"],
+          "planned_hybrid_phases": ["Inspect ScanB coordinates and section specifications", "Extract section point subsets through CLI, code or GUI", "Inspect section location and orthographic view", "Integrate own sections and exports without overwriting A's alignment"],
+          "checks": ["source_scan_unchanged", "two_slice_entities", "plane_location_and_thickness", "slice_membership_accuracy", "orthographic_view", "PLY_geometry_matches_slices"]
+        }
+      },
+      "shared_output": "ScanInspection.bin",
+      "interference_surfaces": ["DB tree selection", "registration dialog", "scalar-field selector", "clip box", "shared camera", "save entity selection"],
+      "independence": "B uses a separate pre-aligned scan, not A's registration output. A's deviation checks are view-independent; B's display view is its own requirement.",
+      "validation": "Need CloudCompare runtime and BIN inspector, deterministic geometry/registration fixtures, native save-all check and GUI pilots. Not ready to execute."
+    }
+  ]
+}

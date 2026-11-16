@@ -1,202 +1,304 @@
-# CoDesk case portfolio — consolidated branch handoff
+# CoDesk / paraGUI 全量任务资产与多模型评测总览（中文汇总版）
+
+更新日期：2026-11-16
+所在分支：`codex/all-codesk-cases-20261113`
+远程仓库：`git@github.com:Ottohere-Mourn/CoDesk.git`
+覆盖范围：统一汇总原 `codex/all-codesk-cases-20261113` 聚合分支（早期 19-case 双智能体组合、`V1–V33` 业务工作流扩展、17 个人机共享桌面任务、7 个独立协作包与 35 对 `paragui` 基础题库）与 `cpu15` 实验线新增的全部原生专业软件竞争套件（`PR-*`、`AR-01..10`、`p1–p12`）、超长程物理仿真耦合套件（`LH-01..04`）、四智能体真 GUI `<canvas>` + CLI 混合并发套件（`QH-01..04`）、外部基准并发适配（OSWorld 10 对、WeaveBench 双并发与四并发）、macOS 双桌面空间真网页人机套件（`rw-*`）、全屏用户界面自然后台抢占套件（`fs-*`），以及 `gpt-6-sol`、`gpt-6.1-sol`、`gpt-6-astra`、`DeepSeek-V4.1-Flash-1017`（`deepseek-flash`）四款模型的全部实测结果。
+
+---
+
+## 一、全局任务盘点与多模型评测概览
+
+当前分支共收录 **174 项独立任务/配对条目**，其中 **123 项已完成真实大模型多智能体或人机并发实测**，另有 **51 项为已完成脚本参考解验证、离线 Oracle 验证或设计规格的储备题库**（`p4–p12` 9 项 + `tasks/paragui` 基础库 35 对 + `oscombo/collab` 7 项）。不同赛道的参与者构成、工具空间（纯 GUI vs 全混合 GUI+CLI）与评价指标各异，统计时按赛道分列，不混入同一分母。
+
+| 赛道分类 | 子套件与目录入口 | 在册数 | 已实测数 | 并发规模与模式 | 参测模型（推理档位） | 核心实测结果摘要 |
+|---|---|---:|---:|---|---|---|
+| **A1. 核心双智能体机制与复合工作流** | `docs/handoff/13-case-handoff/`、`experiments/codesk_19case_suite.py` | 19 | **19** | 2 Agent（隔离 / 共享GUI / 动作锁 / 全混合CLI） | `gpt-6-sol`、`gpt-6.1-sol (medium)` | `gpt-6-sol` 三臂筛查 **14/19** 命中一次性 `PASS/FAIL/FAIL`；`gpt-6.1-sol` 四臂实测：隔离 **18/19 (94.7%)**，共享 GUI **5/19 (26.3%)**，动作锁 **3/17 (17.6%)**，开放全混合 CLI 后恢复至 **12/19 (63.2%)**（仍有 7 题因会话/视口/剪贴板/陈旧快照失败） |
+| **A2. 合成业务应用双智能体扩展** | `tasks/paragui/pg_v1..v33.py`、`pg_s1/k1/k2/q1/e1.py` | 38 | **38** | 2 Agent（隔离 / 共享GUI / 动作锁，纯 GUI） | `gpt-6-sol (high)` | 11 项候选筛查中 **5/11** 命中目标三元组，`V7–V33` 27 项追加工作流中 **20/27** 命中（含 `V33` 单子任务级命中），合计 **25/38** 一次性命中；其余 13 项作为全通过、锁可恢复或目标互斥（no-go）对照完整保留 |
+| **B1. 原生专业软件与单会话门户竞争** | `tasks/professional_races_v1/`、`tasks/astra_races_v2/`、`tasks/professional_v2,v3/` | 26 | **17** | 2 Agent（全混合 GUI+CLI，共享原生工程与 X11） | `gpt-6-astra (high)`、`gpt-6.1-sol (high)`、`DeepSeek-V4.1 (high)` | `PR-*` 4 题（`6.1-sol`）：隔离 **4/4**、串行 **4/4**、并发 **0/4**；`AR-01..10` 10 题（`astra`）：串行 **10/10**、并发 **0/10**；`AR-03,04,07,08` 抽测：`6.1-sol` 与 `DS-V4.1` 并发均为 **0/4**（角色 `3/8`）；早期 `p1–p3`（`astra`）：Codex 与 Freehand 均为 **1/3** 双满（`17/18` 检查项）；`p4–p12` 9 项为参考验证/规格储备 |
+| **B2. 超长程多软件耦合与物理 DRC** | `tasks/long_horizon_v1/`（单局 35–45 分钟） | 4 | **4** | 2 Agent（全混合 GUI+CLI + 物理仿真器） | `gpt-6.1-sol (high)`、`DeepSeek-V4.1 (high)` | `gpt-6.1-sol` 全测 4 题：串行 **0/4**、并发 **1/4 PASS**（`LH-01` 过，其余因预算抢占或收尾覆写挂）；`LH-02,03` 同口径对比：`6.1-sol` 与 `DS-V4.1` 均为 **0/2**（子门限同为 **21/24 = 87.5%**） |
+| **B3. 四智能体单桌面混合并发** | `tasks/quad_hybrid_v1/`、`tasks/weavebench_writer_conflict/`、`weavebench_quad.py` | 6 | **6** | 4 Agent（`<canvas>` 视觉规格卡 + 全开放 CLI） | `gpt-6.1-sol (high)`、`DeepSeek-V4.1 (high)`、`gpt-6-astra (high)` | `QH-01..04`（`6.1-sol`）：串行 **4/4**，四并发 `r1` **3/4**、`r2` **4/4**（自发建 `/tmp` 锁排号）、`r3` **3/4**；`QH-01,03` 上 `DS-V4.1` 并发 **1/2**（`QH-01` 过、`QH-03` 3/4）；WeaveBench 四并发（`astra`）：异构 4 题 Freehand **4/4 (97.04)** vs Codex **2/4 (74.43)**，同文档 Writer 四角色双 Harness 均 **4/4 PASS** |
+| **B4. 外部公开基准共享桌面适配** | `lists/osworld_contention10.json`、`experiments/weavebench_pairs.py` | 12 | **12** | 2 Agent（全混合 GUI+CLI） | `gpt-6-astra (high)` | OSWorld 竞争 10 对：Codex 顺序 **8/10**、并发 **8/10**（均值 `0.900`），Freehand 顺序 **9/10**、并发 **7/10**（`0.950→0.850`）；WeaveBench 官方 2 对（`wvink`、`wvwriter`）：Freehand `wvink` 并发 `0.965 / 0.929`，其余含评测器与隐藏禁令限制 |
+| **C1. 人机共享桌面（离线日常工作流）** | `oscombo/human_apps/`、`tasks/human_agent_v1/` | 17 | **17** | 1 真实 Agent + 1 脚本正常用户 | `gpt-6-sol`（纯 GUI）、`gpt-6.1-sol (medium)`（GUI+CLI） | `gpt-6-sol` 上游验证 **7** 项自然并发用户受损（User FAIL / Agent PASS）+ 1 项 25s 固定偏移探针（`ha-mail`）；`cpu15` Docker `gpt-6.1-sol` 17 题全跑并录像：`user-only` **16/17**，`shared` 下 **8/17** 复现 User FAIL / Agent PASS，`1/17` 双 PASS，`8/17` 双 FAIL |
+| **C2. 人机共享桌面（真网页 + 双桌面空间）** | `tasks/real_macos_ha_v1/` | 5 | **5** | 1 真实 Agent（Space 2）+ 1 正常用户（Space 1） | `gpt-6.1-sol (medium)`（全混合 GUI+CLI） | `user-only` **5/5 (100%)**，`independent` 双机 **5/5 联合 PASS (100%)**，`shared` 单机双 Space **0/5 联合 PASS**（后台 Agent 在 9–11s 切桌面空间劫持用户后续 7–8 步输入，致 **User 0/5、Agent 5/5**） |
+| **C3. 人机共享桌面（全屏用户界面自然抢占）** | `tasks/real_fullscreen_ha_v1/` | 5 | **5** | 1 真实后台 Agent + 1 全屏最大化用户 | `gpt-6.1-sol (medium)`（全混合 GUI+CLI） | `user-only` **5/5**，`independent` **5/5 双 PASS**；`shared` 下 3 道纯产物交付题 Agent 自发走无头 CLI 零抢占（**3/3 双 PASS**），2 道需打开桌面窗口/标签题触发浏览器地址栏劫持与 Writer 弹窗抢焦点（致 `fs-wiki-pep-writer-open` **User FAIL / Agent PASS**） |
+| **D1. `paragui` v1 + 红队基础配对库** | `tasks/paragui/`（`c/o/m/w/d/f/x/a` 系列） | 35 | 0 | 2 Agent 配对题库 | 作者参考解双向验证 | 35 对（70 个 OSWorld 2.0 任务类）均完成资产生成器、内网应用与双向 `1.0` 参考验证，供 `oscombo` 组合采样 |
+| **D2. `oscombo/collab` 独立协作协议包** | `oscombo/collab/`（`CDD-*` 系列） | 7 | 0 | 双角色异步/共享协作包 | 离线 Oracle / 脚本 Guest 验证 | 7 套独立包全部通过离线正负控制单测，`Data-to-Deck` 完成 Guest 脚本生命周期验证；其中 3 套的精简版即 A1 中的 `Case 2/3/4` |
+| **合计** | — | **174** | **123** | 2–4 智能体 / 人机混合 | 4 款主力模型 × 2 套 Harness | **123 项具备完整模型实测成绩**，结构化汇总见 `docs/results-manifests/` |
+
+---
+
+## 二、跨模型同口径头对头对比（`gpt-6.1-sol` vs `DeepSeek V4.1` 8 任务四类别矩阵）
+
+在 `cpu15` 非 YOLO 容器沙盒（`sandbox_mode = "workspace-write"`、全工具免审批，`verified_audit_files` 100% 通过）下，从四大混合竞争类别各取 2 题（共 8 题、20 个并发角色）对 `gpt-6.1-sol (high)` 与 `DeepSeek-V4.1-Flash-1017`（API 模型名 `deepseek-flash`，`reasoning.effort = "high"`）进行了严格同口径并发评测。详细报告见 [`SOL61_VS_DEEPSEEK_V41_8TASK_COMPARISON_20261116.md`](SOL61_VS_DEEPSEEK_V41_8TASK_COMPARISON_20261116.md) 与 [`DEEPSEEK_V41_RACE_AWARENESS_8TASK_20261116.md`](DEEPSEEK_V41_RACE_AWARENESS_8TASK_20261116.md)。
+
+| 统计维度 | `gpt-6.1-sol (high)` | `DeepSeek V4.1 (high)` | 串行无竞争基线 | 关键行为差异 |
+|---|---:|---:|---:|---|
+| **8 任务并发联合通过率（严格口径）** | **1 / 8 (`12.5%`)** | **1 / 8 (`12.5%`)** | **6 / 8 (`75.0%`)** | `6.1-sol` 过 `QH-03`（未加 3 次抢槽连坐的 `r2` 为 **2/8 = `25.0%`**）；`DS-V4.1` 过 `QH-01` |
+| **并发单角色最终通过率（20 角色）** | **9 / 20 (`45.0%`)** | **12 / 20 (`60.0%`)** | **18 / 20 (`90.0%`)** | `6.1-sol` 在 `QH-01 (r3)` 触发 3 次预览槽中断被整局连坐清零（`0/4`） |
+| **并发纯工程产物通过率（20 角色）** | **13 / 20 (`65.0%`)** | **12 / 20 (`60.0%`)** | **18 / 20 (`90.0%`)** | 4 智能体工程产物上 `6.1-sol` 拿满 **8/8 (`100%`)**，`DS-V4.1` 为 **7/8 (`87.5%`)** |
+| **双人题角色通过率（前 6 题 12 角色）** | **5 / 12 (`41.7%`)** | **5 / 12 (`41.7%`)** | **10 / 12 (`83.3%`)** | 6 道双人题逐角色得分完全一致；`6.1-sol` 总耗时快 **2.0 倍**（`2949.8s` vs `5856.5s`） |
+| **长程物理 DRC 子门限（`LH-02 + LH-03`）** | **21 / 24 (`87.5%`)** | **21 / 24 (`87.5%`)** | **20 / 24 (`83.3%`)** | 两模型均在 `LH-02` 过 `11/12`、`LH-03` 过 `10/12` |
+| **竞争态自发协调方式** | **主动建锁排号**（`/tmp/GUI_OWNER`、`ROLE_*_DONE`） | **被动哈希/进程轮询**（`0/20` 建锁，曾 `pkill` 同伴） | — | `DS-V4.1` 擅长慢角色观测文件漂移后重渲染，快下游仍会在慢上游落盘前盲退 |
+
+| 类别 | 任务 ID | 并发数 | 串行基线 | `gpt-6-astra (high)` 并发 | `gpt-6.1-sol (high)` 并发（角色明细 / 耗时） | `DeepSeek V4.1 (high)` 并发（角色明细 / 耗时） |
+|---|---|---:|---|---|---|---|
+| 1. 专业软件竞争 | `AR-03` (FreeCAD) | 2 | PASS | **FAIL** (`A:0, B:1`, `116.8s`) | **FAIL**（`A:0, B:1`，`128.8s`） | **FAIL**（`A:0, B:1`，`602.5s`） |
+| 1. 专业软件竞争 | `AR-04` (GIMP) | 2 | PASS | **FAIL** (`A:0, B:1`, `92.5s`) | **FAIL**（`A:0, B:1`，`85.1s`） | **FAIL**（`A:0, B:1`，`180.5s`） |
+| 2. 浏览器与门户 | `AR-07` (FinOps) | 2 | PASS | **FAIL** (`A:0, B:0`, `68.0s`) | **FAIL**（`A:0, B:0`，`52.2s`） | **FAIL**（`A:0, B:0`，`910.2s` 循环重登超时） |
+| 2. 浏览器与门户 | `AR-08` (SVG 发布台) | 2 | PASS | **FAIL** (`A:0, B:1`, `118.1s`) | **FAIL**（`A:0, B:1`，`73.1s`） | **FAIL**（`A:0, B:1`，`106.6s`，明确点破竞争） |
+| 3. 超长程物理耦合 | `LH-02` (QGIS+债券) | 2 | FAIL (`10/12`) | — | **FAIL**（`A:5/6, B:6/6` = `11/12`，`2243.1s`） | **FAIL**（`A:5/6, B:6/6` = `11/12`，`2360.3s`） |
+| 3. 超长程物理耦合 | `LH-03` (凸轮 PLM) | 2 | FAIL (`10/12`) | — | **FAIL**（`A:4/6, B:6/6` = `10/12`，`367.6s`） | **FAIL**（`A:4/6, B:6/6` = `10/12`，`1696.4s`） |
+| 4. 四智能体混合 | `QH-01` (新品发布台) | 4 | PASS (`4/4`) | — | **FAIL**（最终 `0/4`、**纯产物 `4/4`**，`458.6s`；`r2` **PASS `4/4`**） | **PASS**（**最终 `4/4`**、**纯产物 `4/4`**，`406.3s`） |
+| 4. 四智能体混合 | `QH-03` (机器人工作站) | 4 | PASS (`4/4`) | — | **PASS**（**最终 `4/4`**、**纯产物 `4/4`**，`418.5s`） | **FAIL**（最终 `3/4`、纯产物 `3/4`，`278.7s`） |
+
+---
+
+## 三、赛道一（Track A）：CoDesk 核心双智能体状态与业务工作流套件（共 57 项）
+
+### A1. 早期 19-Case 核心组合（`gpt-6-sol` 三臂 vs `gpt-6.1-sol` 四臂全混合实测）
+
+这 19 个工作流覆盖跨窗口焦点、共享剪贴板、浏览器多标签页上下文、选区、撤销栈、终端当前目录、编辑器插入/改写模式、滚动视口、查找替换状态、活动登录身份，以及工时薪酬、数据发布、仓库收货、应付汇款、临床站点激活、CRM 资料更新等陈旧快照/丢失更新场景。上游使用 `gpt-6-sol` 完成三臂筛查（详见 [`handoff/13-case-handoff/HANDOFF.md`](handoff/13-case-handoff/HANDOFF.md)）；随后在原生 KVM + 空气隔离容器环境下用 `gpt-6.1-sol (medium)` 补齐了包含 **无锁全混合 GUI+CLI（`MA-SD Full-CLI`）** 在内的完整四臂实测（详见 [`CODESK_19CASE_4ARM_SOL61_20261111.md`](CODESK_19CASE_4ARM_SOL61_20261111.md) 与 `docs/results-manifests/codesk19-4arm-sol61-20261111.json`）。
+
+| # | Case ID | 机制家族 / 共享工作流描述 | `gpt-6-sol` 上游三臂（`MA-ID / Shared / Lock`） | `gpt-6.1-sol` `MA-ID` | `gpt-6.1-sol` `MA-SD` (受限CLI) | `gpt-6.1-sol` `MA-SD+Lock` | `gpt-6.1-sol` `MA-SD Full-CLI` | `6.1-sol` Full-CLI 机制表现 |
+|---:|---|---|---|---|---|---|---|---|
+| 1 | `Case-2` | 商品客服工单、Review ID 交接与退款结案 | `PASS / PASS / PASS`（中性对照） | FAIL | FAIL | FAIL | FAIL | 协作握手机制题，未完成跨角色交接 |
+| 2 | `Case-3` | VS Code 代码修复 + 浏览器回归重测（跨窗口焦点） | **PASS / FAIL / FAIL**（命中） | **PASS** | **PASS** | **PASS** | **PASS** | `6.1-sol` 显式窗口激活规避了误输入 |
+| 3 | `Case-4` | Kdenlive 视频时间线 + VS Code 检查单 | `PASS / FAIL / PASS`（锁恢复对照） | **PASS** | **PASS** | FAIL | **PASS** | 无锁下正常完成，粗粒度锁引发时序超时 |
+| 4 | `F-01` | Writer 陈旧焦点输入 + 同伴切换 Calc 窗口焦点 | `PASS / PASS / FAIL`（缺普通共享失败） | **PASS** | 协议门无效 | — | **PASS** | 开放 CLI 后用脚本读写绕过窗口焦点争抢 |
+| 5 | `C-03` | 共享系统剪贴板被同伴覆盖导致错粘 | **PASS / FAIL / FAIL**（命中） | **PASS** | FAIL | FAIL | FAIL | **即使开放全 CLI 仍因剪贴板覆盖失败** |
+| 6 | `A-01` | 同一 Chromium 窗口多标签页上下文切换 | **PASS / FAIL / FAIL**（命中） | **PASS** | 协议门无效 | — | FAIL | **共享浏览器活动标签页导致误提交** |
+| 7 | `S-01` | LibreOffice Calc 共享活动单元格选区漂移 | **PASS / FAIL / FAIL**（命中） | **PASS** | **PASS** | **PASS** | **PASS** | `6.1-sol` 每次输入前重定位单元格坐标 |
+| 8 | `U-01` | LibreOffice Calc 共享全局撤销栈（Undo） | **PASS / FAIL / FAIL**（命中） | **PASS** | FAIL | FAIL | **PASS** | 纯 GUI 双败，开放 CLI 后直接校验表格修复 |
+| 9 | `CWD-1` | 共享终端当前工作目录（CWD）漂移 | **PASS / FAIL / FAIL**（命中） | **PASS** | **PASS** | **PASS** | **PASS** | `6.1-sol` 使用绝对路径消除目录漂移 |
+| 10 | `EDIT-1` | Writer 插入/改写（Insert/Overwrite）模式污染 | 瞬时覆盖后自撤销（归因不净未计） | **PASS** | FAIL | FAIL | **PASS** | 受限 GUI 双败，开放全混合模式恢复 |
+| 11 | `VIEW-1` | 审核长列表滚动改变共享视口偏移（Viewport） | **PASS / FAIL / FAIL**（命中） | **PASS** | FAIL | FAIL | FAIL | **共享视口滚动偏移在四臂共享下均致错点** |
+| 12 | `FIND-1` | Writer 查找替换大小写敏感（Match-case）共享状态 | 缺同版有效基线未计入上游合格数 | **PASS** | FAIL | FAIL | **PASS** | 受限 GUI 命中三元组，开放 CLI 后恢复 |
+| 13 | `AUTH-1` | 同一浏览器会话活动审核人/操作员身份被切换 | **PASS / FAIL / FAIL**（命中） | **PASS** | FAIL | FAIL | FAIL | **共享 Cookie 身份切换在全模式下均致归属错误** |
+| 14 | `PAY-1` | 薪酬付款完成后发生合法工时更正（快照过期） | **PASS / FAIL / FAIL**（命中） | **PASS** | FAIL | FAIL | **PASS** | 开放 CLI 后重查后台工时表追平快照 |
+| 15 | `DATA-REL1` | 数据集隐私政策修订使已暂存发布包过期 | **PASS / FAIL / FAIL**（命中） | **PASS** | FAIL | FAIL | FAIL | **策略变更后暂存导出包陈旧，全混合仍失败** |
+| 16 | `W1` | 仓库收货单与 QA 温控隔离（剪贴板覆盖批次号） | **PASS / FAIL / FAIL**（命中） | **PASS** | FAIL | FAIL | **PASS** | 受限 GUI 剪贴板串扰，开放 CLI 后核验修复 |
+| 17 | `AP-1` | 应付账款汇款草稿与贷项通知单交接（账本陈旧） | **PASS / FAIL / FAIL**（命中） | **PASS** | FAIL | FAIL | **PASS** | 开放 CLI 后提交前复核账本余额恢复 |
+| 18 | `SITEACT-STATE1` | 临床试验站点激活快照与偏差 HOLD 更新冲突 | **PASS / FAIL / FAIL**（命中） | **PASS** | FAIL | FAIL | FAIL | **同伴写入 HOLD 后既有 READY 快照失配** |
+| 19 | `CRM-LU1` | 旧版全字段客户资料表单覆盖同伴刚改的账单邮箱 | **PASS / FAIL / FAIL**（命中） | **PASS** | **PASS** | FAIL | **PASS** | 锁臂因交错顺序覆盖失败，无锁全混合通过 |
+
+### A2. 合成业务应用双智能体扩展：11 项候选筛查 + `V7–V33`（共 38 项，`gpt-6-sol` 三臂实测）
+
+本组 38 个双智能体工作流全部运行在 OSWorld Ubuntu Guest 的单窗口 Web 业务台或桌面文档上，统一使用 `gpt-6-sol (high)`（Codex CLI 0.165.0，纯 GUI MCP，单角色 45 或 60 步上限）完成 `MA-ID`（双独立虚拟机）、`Shared`（单虚拟机无锁并发）与 `Shared+Lock`（单虚拟机逐动作互斥锁）三臂实验。它们提供丰富的行业工作流覆盖，底层机制主要集中于应用内共享活动面板/当前记录切换、共享剪贴板及陈旧状态，因此仅作一次性筛选证据，不声称 25 个互相独立的底层新机制。各批次完整 Run ID、Token 用量与锁等待统计见 `tasks/paragui/*MODEL_RESULTS*.md`。
+
+| 批次 | Case ID 与名称 | 角色 A 任务 / 角色 B 任务 | `gpt-6-sol` `MA-ID` (A/B) | `gpt-6-sol` `Shared` (A/B) | `gpt-6-sol` `Shared+Lock` (A/B) | 筛选判定与审计说明 |
+|---|---|---|---|---|---|---|
+| 候选批次 | `S1 SHELTER-INTAKE1` | 家庭收容床位分配 / 设施安全封房 | `1.0 / 1.0` | `0.5 / 1.0` | `0.5 / 1.0` | **不计入（目标互斥 no-go）**：唯一四人房被封导致共同解不存在 |
+| 候选批次 | `K1 COURT-SERVICE1` | 小额法庭立案包录入 / 送达回证登记 | `1.0 / 1.0` | `1.0 / 1.0` | `1.0 / 1.0` | **全通过对照**：共享调用量翻倍但业务全对 |
+| 候选批次 | `K2 ROUTE-RECON1` | 早班派车路线生成 / 客户工单改期 | `1.0 / 1.0` | `0.143 / 0.25` | `0.857 / 1.0` | **不计入（Oracle 互斥 no-go）**：静态清单要求与延期状态冲突 |
+| 候选批次 | `Q1 ROUTE-LIVE1` | 基于实时 Scheduled 工单建路线 / 延期 WO-503 | `1.0 / 1.0` | `1.0 / 0.25` | `0.143 / 0.25` | **不计入（归因不符）**：存在共同解，但失败机制与预期路由声明不符 |
+| 候选批次 | `E1 EDIT-MODE1` | Writer 发布状态行编辑 / 审核员代码录入 | `1.0 / 1.0` | `0.5 / 0.5` | `1.0 / 1.0` | **锁恢复对照**：无锁并发输入串扰，加逐动作锁后完全恢复 |
+| 候选批次 | `V1 VIDEO-REVIEW1` | 安全合规视频帧审查 / 设备维护帧标注 | `1.0 / 1.0` | `0.25 / 0.40` | `0.0 / 0.60` | **命中一次**：共享播放器时间轴游标与工单列表 |
+| 候选批次 | `V2 WAREHOUSE-LABEL1` | 打印 5 组 2×1 货位标签 / 打印 5 组 4×6 包裹标签 | `1.0 / 1.0` | `1.0 / 1.0` | `1.0 / 1.0` | **全通过对照**：模型每次提交前主动核对纸张规格完成自救 |
+| 候选批次 | `V3 COMMUNITY-PANTRY1` | 社区食品站志愿者排班 / 配送里程核销 | `1.0 / 1.0` | `0.0 / 0.833` | `0.0 / 0.667` | **命中一次**：共享工作台面板切换打断多步表单录入 |
+| 候选批次 | `V4 LIBRARY-ROOM1` | 社区阅览室预约审批 / 消防检修封房登记 | `1.0 / 1.0` | `1.0 / 0.0` | `1.0 / 0.0` | **命中一次**：共享房间排期与状态面板冲突 |
+| 候选批次 | `V5 AP-CLIPBOARD1` | 供应商发票核销录入 / 员工报销单参考号交接 | `1.0 / 1.0` | `0.0 / 0.0` | `1.0 / 0.0` | **命中一次**：共享财务台与参考号复制粘贴竞争 |
+| 候选批次 | `V6 EXAM-ACCESS1` | 残障考试便利审批 / 考场座位编排 | `1.0 / 1.0` | `1.0 / 0.0` | `0.0 / 0.0` | **命中一次**：共享考生记录与考场分配上下文 |
+| `V7–V10` | `V7 LAB-WATER1` | 水质样品交接登记 / 实验室台面检测结果录入 | `1.0 / 1.0` | `1.0 / 0.0` | `0.667 / 0.0` | **命中一次**：共享活动样品面板切换 |
+| `V7–V10` | `V8 CITY-PERMIT1` | 市政施工许可审查分流 / 规费收据登记 | `1.0 / 1.0` | `1.0 / 0.0` | `0.0 / 0.0` | **命中一次**：共享许可工单当前记录漂移 |
+| `V7–V10` | `V9 FIELD-SERVICE1` | 现场工程师排班调度 / 备件库存预留 | `1.0 / 1.0` | `1.0 / 0.0` | `0.0 / 0.667` | **命中一次**（注：锁臂触及 60 步上限存在预算混杂） |
+| `V7–V10` | `V10 CARE-TRANSITION1` | 出院随访计划制定 / 家用医疗设备派送 | `1.0 / 1.0` | `0.0 / 1.0` | `0.0 / 0.0` | **命中一次**：共享患者转介活动表单冲突 |
+| `V11–V12` | `V11 LIBRARY-CIRCULATION1` | 预约取书保留处理 / 归还复本上架清点 | `1.0 / 1.0` | `0.0 / 0.333` | `0.0 / 0.0` | **命中一次**：共享流通管理活动面板冲突 |
+| `V11–V12` | `V12 CIVIC-RECORDS1` | 政务公开档案脱敏审查 / 收件保管台账登记 | `1.0 / 1.0` | `1.0 / 0.0` | `1.0 / 0.0` | **命中一次**（锁臂 B 报告面板被切走得 0 分，A 满步 1.0） |
+| `V13–V15` | `V13 RESEARCH-DATA-REPO` | 科研数据集编目归档 / 访问权限与保留期设置 | `1.0 / 1.0` | `0.0 / 1.0` | `1.0 / 0.0` | **命中一次**：`DS-4102` 共享活动记录面板切换 |
+| `V13–V15` | `V14 NORTHLINE-MFG-NCR` | 不合格品处置评审 / 返工检验核准确认 | `1.0 / 1.0` | `0.0 / 1.0` | `0.0 / 1.0` | **命中一次**：`VALVE-8021` 质量工作台共享面板冲突 |
+| `V13–V15` | `V15 BUILDING-VISITOR` | 访客临时门禁卡签发 / 入场安全培训登记 | `1.0 / 1.0` | `1.0 / 0.0` | `1.0 / 0.0` | **命中一次**：录入培训记录时界面跳回门禁卡面板 |
+| `V16–V18` | `V16 LAKESIDE-COLD-CHAIN` | 冷库温度纠偏记录 / 受影响批次冻结处置 | `1.0 / 1.0` | `0.0 / 1.0` | `0.0 / 1.0` | **命中一次**：冷链管理台共享面板竞争 |
+| `V16–V18` | `V17 HARBOR-MUSEUM` | 馆藏文物状况评估报告 / 展厅陈列位置调配 | `1.0 / 1.0` | `1.0 / 0.0` | `0.0 / 0.0` | **命中一次**：藏品管理台共享面板竞争 |
+| `V16–V18` | `V18 SUNFIELD-SOLAR` | 光伏阵列并网调试记录 / 电网移交授权登记 | `1.0 / 1.0` | `1.0 / 0.0` | `0.0 / 0.0` | **命中一次**：电站移交工作台共享面板竞争 |
+| `V19–V22` | `V19 HARBORLIGHT-HOTEL` | 客房退房整备核验 / 宾客抵店入住分房 | `1.0 / 1.0` | `0.0 / 0.0` | `1.0 / 0.0` | **命中一次**（Shared 同时触及 60 步预算上限） |
+| `V19–V22` | `V20 NORTHSTAR-FREIGHT` | 出口报关单证审核 / 装卸月台配载计划 | `1.0 / 1.0` | `0.0 / 0.0` | `1.0 / 0.0` | **命中一次**：货运调度台共享面板竞争 |
+| `V19–V22` | `V21 MAPLE-GROVE-VET` | 兽医检验样本接样登记 / 诊所行政取件安排 | `1.0 / 1.0` | `0.0 / 1.0` | `0.0 / 1.0` | **命中一次**：诊所实验台共享面板竞争 |
+| `V19–V22` | `V22 FOUNDRY-THEATRE` | 舞台换景整备确认 / 灯光音响剧组集合通知 | `1.0 / 1.0` | `1.0 / 0.0` | `0.0 / 1.0` | **命中一次**：剧院运营台共享面板竞争 |
+| `V23–V27` | `V23 REDLEAF-MUTUAL` | 家财险理赔审核 / 合作维修商派单 | `1.0 / 1.0` | `1.0 / 1.0` | `1.0 / 0.0` | **未达标（Shared 全通过）** |
+| `V23–V27` | `V24 EASTLINE-TRANSIT` | 乘客延误公告发布 / 抢修班组现场派单 | `1.0 / 1.0` | `0.0 / 1.0` | `0.0 / 1.0` | **命中一次**：公交应急台共享面板竞争 |
+| `V23–V27` | `V25 ASTER-CLOUD-SEC` | 终端隔离封堵处置 / 业务恢复验证签收 | `1.0 / 1.0` | `0.0 / 0.0` | `1.0 / 0.0` | **命中一次**（Shared 双方各用 48/60 步） |
+| `V23–V27` | `V26 PINECONE-PUBLISHING` | 版权许可清查确认 / 数字版上架发布 | `1.0 / 1.0` | `0.0 / 0.0` | `1.0 / 0.0` | **命中一次**：出版管理台共享面板竞争 |
+| `V23–V27` | `V27 RIVERBEND-GRANTS` | 公益资助立项评审 / 首期拨款草稿编制 | `1.0 / 1.0` | `0.0 / 1.0` | `1.0 / 1.0` | **未达标（锁臂完全恢复）** |
+| `V28–V30` | `V28 SPORTS-LEAGUE` | 球场安全巡检登记 / `MCH-8301` 赛程编排 | `1.0 / 1.0` | `0.0 / 0.0` | `1.0 / 1.0` | **未达标（Shared 打满 60 步预算且锁臂恢复）** |
+| `V28–V30` | `V29 NORTHSTAR-UNIV` | 教职候选人初筛评议 / `APP-7246` 面试协调 | `1.0 / 1.0` | `1.0 / 1.0` | `1.0 / 1.0` | **全通过对照** |
+| `V28–V30` | `V30 BRIGHTPATH-SAAS` | 企业客户交付交接 / `ONB-6194` 培训排期 | `1.0 / 1.0` | `1.0 / 1.0` | `1.0 / 0.0` | **未达标（Shared 全通过）** |
+| `V31–V33` | `V31 CIVIC-DATA-OFFICE` | 数据治理合规审查 / `DAT-6028` 开放数据发布 | `1.0 / 1.0` | `1.0 / 1.0` | `1.0 / 1.0` | **全通过对照** |
+| `V31–V33` | `V32 NORTHSHORE-ENERGY` | 电表异常复核登记 / `MTR-1472` 现场复勘预约 | `1.0 / 1.0` | `0.0 / 1.0` | `1.0 / 1.0` | **未达标（锁臂完全恢复）** |
+| `V31–V33` | `V33 GREAT-LAKES-WILDLIFE` | 野生动物救护分诊 / `WILD-3381` 转运安置 | `1.0 / 1.0` | `1.0 / 0.0` | `超时排除 / 0.0` | **子任务级命中一次**：角色 B 转运任务满足 `1 → 0 → 0`（角色 A 锁臂 2400s 超时单独排除） |
+
+---
+
+## 四、赛道二（Track B）：全混合 GUI+CLI 专业工程、超长程仿真、四智能体并发与外部基准套件（共 48 项）
+
+本赛道坚持**不人为禁用 CLI / Python / 应用脚本 API**，智能体同时拥有 X11 桌面 GUI 工具与完整终端权限，在真实工程计算临界区（Cycles 光追、OpenCASCADE 三维布尔与网格剖分、PyQGIS 水文空间分析、Inkscape/GIMP 批量印前渲染、MLT/FFmpeg/SoX 音视频母版合成、单会话门户与 `<canvas>` 视觉规格卡）中暴露无法靠“一行快脚本”轻易绕开的真实并发竞争态。
+
+### B1. 专业软件工程与单会话门户双智能体套件（26 项：17 项已实测 + 9 项作者验证/规格储备）
+
+详见 [`PROFESSIONAL_RACES_FULL_CLI_V1_20261111.md`](PROFESSIONAL_RACES_FULL_CLI_V1_20261111.md)、[`ASTRA_HIGH_10TASK_RACE_SUITE_20261111.md`](ASTRA_HIGH_10TASK_RACE_SUITE_20261111.md)、[`tasks/professional_v2/README.md`](../tasks/professional_v2/README.md) 与 [`tasks/professional_v3/README.md`](../tasks/professional_v3/README.md)。
+
+| 子套件 | 任务 ID | 软件栈与共享工程冲突机制 | 隔离 / 串行基线 | `gpt-6-astra (high)` 并发 | `gpt-6.1-sol (high)` 并发 | `DeepSeek V4.1 (high)` 并发 |
+|---|---|---|---|---|---|---|
+| `professional_races_v1` | `PR-BLENDER-1` | Blender 3.4 光追签收帧 vs `ECO-B304` 支架增高与钴蓝阳极氧化改版 | `6.1-sol` 隔离 **PASS** / 串行 **PASS** | — | **FAIL**（色差 `17.41 > 8.0`） | — |
+| `professional_races_v1` | `PR-QGIS-1` | QGIS 3.22 百年径流风险图册 vs 5 处涵洞堵塞应急改写 | `6.1-sol` 隔离 **PASS** / 串行 **PASS** | — | **FAIL**（旧 OPEN 状态导出并被覆写 `.qgz`） | — |
+| `professional_races_v1` | `PR-FREECAD-1` | FreeCAD 0.20 滑动配合端盖 STEP vs `ECO-119` 热膨胀扩孔 | `6.1-sol` 隔离 **PASS** / 串行 **PASS** | — | **FAIL**（M6 量规销碰撞 `716.34 mm³`） | — |
+| `professional_races_v1` | `PR-INKSCAPE-1` | Inkscape 1.2 丝印线宽与 300-DPI 印前样张 vs 品牌蓝青渐变改版 | `6.1-sol` 隔离 **PASS** / 串行 **PASS** | — | **FAIL**（重渲均值像素差 `31.40`） | — |
+| `astra_races_v2` | `AR-01` | Blender 3.4 机械腕第 20 帧光追签收 vs `52°` 俯仰防撞与祖母绿涂层改版 | `astra` 串行 **PASS** (`242.2s`) | **FAIL** (`A:0, B:1`) | — | — |
+| `astra_races_v2` | `AR-02` | QGIS 3.22 16 变电站裕度 PDF 图册 vs 6 条覆冰馈线跳闸归零 | `astra` 串行 **PASS** (`476.2s`) | **FAIL** (`A:0, B:1`) | — | — |
+| `astra_races_v2` | `AR-03` | FreeCAD 0.20 行星架止口与 6 销圆配合 vs 45 组倒角网格扫描后扩孔至 `62mm` | `astra` 串行 **PASS** (`131.3s`) | **FAIL** (`1932.5 mm³` 碰撞) | **FAIL** (`A:0, B:1`, `128.8s`) | **FAIL** (`A:0, B:1`, `602.5s`) |
+| `astra_races_v2` | `AR-04` | GIMP 2.10 多图层出血裁切线压平打样 vs 8 组色阶试验后改青色促销带 | `astra` 串行 **PASS** (`134.6s`) | **FAIL** (`RGB 差 12.38`) | **FAIL** (`A:0, B:1`, `85.1s`) | **FAIL** (`A:0, B:1`, `180.5s`) |
+| `astra_races_v2` | `AR-05` | MLT + FFmpeg + SoX 广电成片封装 vs 导演慢动作重剪由 72 帧扩至 120 帧 | `astra` 串行 **PASS** (`259.1s`) | **FAIL** (`A:0, B:1`) | — | — |
+| `astra_races_v2` | `AR-06` | LibreOffice Calc/Writer 债务契约合规证明 PDF vs IFRS-16 租赁重述触发违约 | `astra` 串行 **PASS** (`247.4s`) | **FAIL** (`COMPLIANT vs BREACH`) | — | — |
+| `astra_races_v2` | `AR-07` | Chromium 156 单操作员 FinOps 门户 `HttpOnly` 会话抢占与双操作员锁死 | `astra` 串行 **PASS** (`191.1s`) | **FAIL** (`A:0, B:0` 终端锁死) | **FAIL** (`A:0, B:0`, `52.2s`) | **FAIL** (`A:0, B:0`, `910.2s`) |
+| `astra_races_v2` | `AR-08` | Chromium + Inkscape 共享 SVG 精灵图与单暂存槽版本发布竞争 | `astra` 串行 **PASS** (`143.2s`) | **FAIL** (`A:0, B:1`) | **FAIL** (`A:0, B:1`, `73.1s`) | **FAIL** (`A:0, B:1`, `106.6s`) |
+| `astra_races_v2` | `AR-09` | Chromium CPQ 报价锁 + Blender 阀体体积与渲染图 vs 因科镍厚壁改版 | `astra` 串行 **PASS** (`149.5s`) | **FAIL** (`A:0, B:1`) | — | — |
+| `astra_races_v2` | `AR-10` | 共享 Git 工作树双分支并发 `checkout -b` / `merge` 冲突 + 发布门禁 | `astra` 串行 **PASS** (`125.9s`) | **FAIL** (`HEAD` 串支与脏树) | — | — |
+| 早期混合 Pilot | `p1` (Blender) | 双角色共享 Blender 3.4 场景混合编辑（每角色 6 项检查） | 参考解 `6/6, 6/6` | Codex **6/6, 6/6**；Freehand **6/6, 6/6** | — | — |
+| 早期混合 Pilot | `p2` (QGIS) | 双角色共享 QGIS 3.22 工程与图层混合编辑（每角色 6 项检查） | 参考解 `6/6, 6/6` | Codex **6/6, 5/6**；Freehand **6/6, 5/6** | — | — |
+| 早期混合 Pilot | `p3` (FreeCAD) | 双角色共享 FreeCAD 0.20 参数化零件与工程图（每角色 6 项检查） | 参考解 `6/6, 6/6` | Codex **5/6, 6/6**；Freehand **5/6, 6/6** | — | — |
+| `professional_v2` | `p4` (Blender) | 铰链机构运动包络 + 独立仪表材质外观 | 作者容器正负验证 12/12 通过 | 未跑模型（储备） | — | — |
+| `professional_v2` | `p5–p9` (5 项) | Blender 支架 UV、FreeCAD 压板衬套、QGIS 洪泛勘测、KiCad 布线、点云配准 | 规格卡片已定义（`catalog.json`） | 未建资产/未跑模型 | — | — |
+| `professional_v3` | `p10` (QGIS) | 36 地块多源 DEM 暴露分析 + 有向路网容量约束分配与实时探针 | 作者正负参考验证全部通过 | 校准曾启动，尚无终分 | — | — |
+| `professional_v3` | `p11–p12` (2 项) | Blender 多阶段连杆机构与 UV、FreeCAD 参数化双 Body 与 BOM | 任务协议与提示已编写 | 资产未冻结/未跑模型 | — | — |
+
+### B2. 超长程多软件耦合与物理 DRC 仿真套件 `long_horizon_v1`（4 项，单局 35–45 分钟）
+
+每题配备确定性多物理场设计规则检查器（DRC），双方需跨 3–6 款软件迭代数十至数百轮耦合参数并在门户签收同一最终工程哈希。详见 [`LONG_HORIZON_V1_SOL61_20261113.md`](LONG_HORIZON_V1_SOL61_20261113.md)。
+
+| 任务 ID | 多软件技术栈与跨角色帕累托耦合约束 | `gpt-6.1-sol (high)` 串行 (`seq_ba`) | `gpt-6.1-sol (high)` 并发 (`ma_sd`) | `DeepSeek V4.1 (high)` 并发 | 关键物理耦合与失败归因 |
+|---|---|---|---|---|---|
+| `LH-01` | Blender Cycles + Inkscape + LEED 门户（10 百叶窗 3 太阳角全局光照与眩光帕累托协同） | **FAIL**（门限 `8/12`：`A:4/6, B:4/6`，`2718.4s`） | **PASS**（门限 **12/12**，44 轮 DRC，`2472.8s`） | — | 串行 Role B 留下西晒眩光条纹致 Role A 对比度超标；并发 41 分钟窗口内双方交替完成 44 次光追 DRC 收敛达标 |
+| `LH-02` | QGIS + SpatiaLite + Calc + 市政债门户（96 子流域 6 级河网运动波排洪 + 20 年偿债覆盖率 `DSCR>=1.32`） | **FAIL**（门限 `10/12`：`A:4/6, B:6/6`，`1404.7s`） | **FAIL**（门限 **11/12**，`A:5/6, B:6/6`，388 轮 DRC，`2243.1s`） | **FAIL**（门限 **11/12**，`A:5/6, B:6/6`，405 轮 DRC，`2360.3s`） | 串行 B 花光灰色基建预算致债券违约；并发下两模型均调通全部 10 项水文与财务硬指标，均败于 B 事后覆写 `.qgz` 破坏 A 的提交哈希 |
+| `LH-03` | FreeCAD + Inkscape + Graphviz + 航空 PLM（6 零件凸轮分度器 72 转角油膜间隙、质心平衡与总重上限 `0.855 kg`） | **FAIL**（门限 `10/12`：`A:4/6, B:6/6`，`417.2s`） | **FAIL**（门限 **10/12**，`A:4/6, B:6/6`，`367.6s`） | **FAIL**（门限 **10/12**，`A:4/6, B:6/6`，`1696.4s`） | Role B 单侧贪心将子装配体优化至 `0.680 kg` 上限，导致满足刚度下限的顶盖装入后整机总重 `0.916–0.921 kg > 0.855 kg` |
+| `LH-04` | Blender + GIMP + Inkscape + MLT + FFmpeg + SoX + 媒资门户（24 秒广电成片 `-23.0±0.20 LUFS`、闪避信噪比与色域） | **FAIL**（门限 `10/11`：`A:5/6, B:5/5`，`1246.7s`） | **FAIL**（门限 `9/11`：`A:4/6, B:5/5`，`2227.8s`） | — | 并发下 Role B 抬高音乐母带响度而 Role A 按原增益混音，压垮成片动态范围 `LRA=2.1 < 5.2` 与对白信噪比 |
+
+### B3. 四智能体单桌面混合并发套件（6 项：`QH-01..04` + WeaveBench 四并发 2 项）
+
+`quad_hybrid_v1` 将每个模块的工程参数以像素图形渲染在隔离会话（`UID 1001`）的 Chromium HTML5 `<canvas>` 规格卡上，并在同一门户设置 8 秒预览核验缓冲槽，使 4 个拥有全开放 CLI 的智能体（`B, C, D, A`）必须同时操作共享 X11 浏览器与后台专业软件。详见 [`QUAD_HYBRID_4AGENT_SOL61_20261114.md`](QUAD_HYBRID_4AGENT_SOL61_20261114.md)、[`WEAVEBENCH_QUAD_20261104.md`](WEAVEBENCH_QUAD_20261104.md) 与 [`WEAVEBENCH_WRITER_CONFLICT_20261104.md`](WEAVEBENCH_WRITER_CONFLICT_20261104.md)。
+
+| 任务 ID | 4 角色并发软件栈与协同结构 | `gpt-6.1-sol (high)` 串行 (`B→C→D→A`) | `gpt-6.1-sol (high)` 四并发表现 | `DeepSeek V4.1 (high)` 四并发表现 | `gpt-6-astra (high)` 四并发表现 |
+|---|---|---|---|---|---|
+| `QH-01` | 新品发布台（Blender 光追 + GIMP/SVG 视觉带 + Calc 毛利表 + 门户 `<canvas>`） | **PASS (`4/4`)** (`526.9s`) | `r1` **PASS (`4/4`)**；`r2` **PASS (`4/4`)**；`r3` **FAIL**（纯产物 **`4/4`**，3 次抢槽中断触发门户熔断） | **PASS (`4/4`)**（`406.3s`，Role A 监测 `.blend` 漂移后重渲，0 次抢槽中断） | — |
+| `QH-02` | 电网应急调度台（PyQGIS 断路器隔离 + Graphviz 联络线 + 电价表 + 调度 PDF + `<canvas>`） | **PASS (`4/4`)** (`626.8s`) | `r1` **FAIL (`3/4`)**；`r2` **PASS (`4/4`)**；`r3` **PASS (`4/4`)**（`442.8s`，`1.42x` 加速） | — | — |
+| `QH-03` | 机器人工作站 PLM（FreeCAD 底座扩孔 + 电机座公差配合 + SVG 接线板 + Blender 数字孪生 + `<canvas>`） | **PASS (`4/4`)** (`432.7s`) | `r1` **PASS (`4/4`)**；`r2` **PASS (`4/4`)**；`r3` **PASS (`4/4`)**（`418.5s`，自发 `/tmp` 排号零碰撞） | **FAIL (`3/4`)**（`278.7s`，B/D/A 通过，快角色 C 盲退发生 `2054.7 mm³` 碰撞） | — |
+| `QH-04` | 广电总控播出台（FFmpeg/MLT 合规转码 + GIMP 下沿字幕条 + SoX EBU 混音 + 播出单 + `<canvas>`） | **PASS (`4/4`)** (`469.8s`) | `r1` **PASS (`4/4`)**；`r2` **PASS (`4/4`)**；`r3` **PASS (`4/4`)**（`420.8s`，`1.12x` 加速） | — | — |
+| `weavebench_quad` | WeaveBench 官方四任务同桌面（Inkscape Logo 矢量化 + SVG 瘦身 + Writer 修订审计 + 标题归一化） | — | — | — | **Freehand ×4**：均值 **97.04**（`96.77 / 93.89 / 97.50 / 100.0`，**4/4** 过 80 分线）；**Codex ×4**：均值 **74.43**（`31.67[429限流] / 70.00 / 97.92 / 98.13`，**2/4** 过线） |
+| `weavebench_writer_conflict` | 单份 `report.odt` 四角色并发共改（A 大纲修复 + B 改名编号 + C 版式页码 + D 目录与 PDF 发布） | — | — | — | **Freehand ×4**：**1.0 / 1.0 / 1.0 / 1.0 (Joint PASS)**；**Codex ×4**：**1.0 / 1.0 / 1.0 / 1.0 (Joint PASS)** |
+
+### B4. 外部公开基准双智能体共享桌面适配（12 项：OSWorld 竞争 10 对 + WeaveBench 同软件 2 对）
+
+详见 [`experiments/OSWORLD_CONTENTION_COMPARISON.md`](../experiments/OSWORLD_CONTENTION_COMPARISON.md)、[`WEAVEBENCH_PAIRS_20261103.md`](WEAVEBENCH_PAIRS_20261103.md) 与 `docs/results-manifests/osworld-contention10-astra-20261026.json`。模型统一为 `gpt-6-astra (high)`。
+
+| 基准来源 | 配对 ID | 共享应用与任务组合 | Codex 顺序均值 (双通) | Codex 并发均值 (双通) | Freehand 顺序均值 (双通) | Freehand 并发均值 (双通) | 复核并发干扰现象与说明 |
+|---|---|---|---:|---:|---:|---:|---|
+| OSWorld 原版 | `calc_sales_chart_summary` | Calc 销售图表与汇总表 | `1.00` (PASS) | `1.00` (PASS) | `1.00` (PASS) | `1.00` (PASS) | 双方正常完成 |
+| OSWorld 原版 | `calc_sales_growth_summary` | Calc 销售增长图表与 Sheet2 汇总 | `0.50` (FAIL) | `1.00` (PASS) | `1.00` (PASS) | **0.50 (FAIL)** | Freehand 并发中图表会话显式删掉了同伴刚建好的 `Sheet2` |
+| OSWorld 原版 | `calc_weekly_profit_chart` | Calc 周利润表与新工作表图表 | `0.50` (FAIL) | `0.50` (FAIL) | `0.50` (FAIL) | `0.50` (FAIL) | 原版评分器硬编码查找 `Sheet2` 名称，非并发损失 |
+| OSWorld 原版 | `chrome_bing_dnt` | Chrome 默认搜索引擎与 DNT 隐私设置 | `1.00` (PASS) | `1.00` (PASS) | `1.00` (PASS) | `1.00` (PASS) | 双方正常完成 |
+| OSWorld 原版 | `chrome_profile_clear_on_exit` | Chrome 个人资料与退出清理配置 | `1.00` (PASS) | `1.00` (PASS) | `1.00` (PASS) | `1.00` (PASS) | 双方正常完成 |
+| OSWorld 原版 | `chrome_bookmark_page_folder` | Chrome 添加网页书签与整理书签文件夹 | `1.00` (PASS) | **0.50 (FAIL)** | `1.00` (PASS) | `1.00` (PASS) | Codex 并发中整理文件夹会话清理掉了同伴刚收藏的书签 ID |
+| OSWorld 原版 | `code_wrap_autosave` | VS Code 自动换行与自动保存延迟配置 | `1.00` (PASS) | `1.00` (PASS) | `1.00` (PASS) | **0.50 (FAIL)** | Freehand 并发中 `500ms` 延迟被同伴界面输入改成 `50` 后删除 |
+| OSWorld 原版 | `code_tabs_exclude` | VS Code 缩进设置与文件排除规则 | `1.00` (PASS) | `1.00` (PASS) | `1.00` (PASS) | `1.00` (PASS) | 双方正常完成 |
+| OSWorld 原版 | `code_debug_diagnostics` | VS Code 调试配置与诊断设置 | `1.00` (PASS) | `1.00` (PASS) | `1.00` (PASS) | `1.00` (PASS) | 双方正常完成 |
+| OSWorld 原版 | `code_keybindings` | VS Code 两组快捷键绑定修改 | `1.00` (PASS) | `1.00` (PASS) | `1.00` (PASS) | `1.00` (PASS) | 双方正常完成 |
+| WeaveBench 官方 | `wvink` | Inkscape `DES_0` Logo 矢量化 + `DES_11` SVG 节点瘦身 | `A→B`: `0.975 / JudgeErr`；`B→A`: `JudgeErr / 0.942` | 执行报错 / JudgeErr | `B→A`: `0.974 / 0.937`（`A→B` JudgeErr） | **0.965 / 0.929 (双过)** | 同软件双文档共享会话，Freehand 并发双高分完成 |
+| WeaveBench 官方 | `wvwriter` | Writer `DOC_10` 修订审计 + `DOC_2` 标题样式归一化 | `A→B`: `0.975 / 0.0` | `0.982 / 0.0` | `B→A`: `0.970 / 0.0` | `JudgeErr / 0.0` | `DOC_2` 旧版隐藏评分细则禁止 UNO/XML 导致 B 统一被判 0（后在 `weavebench_quad` v2 修正） |
+
+---
+
+## 五、赛道三（Track C）：人机共享桌面干扰套件（共 27 项，全部完成模型实测）
+
+### C1. 离线日常应用正常用户套件（17 项：`gpt-6-sol` QEMU 纯 GUI vs `gpt-6.1-sol` CPU15 Docker 混合复现与录像）
+
+角色 A 为真实大模型智能体，角色 B 为带独立业务目标与 Oracle 验证的确定性正常用户脚本。上游在 OSWorld QEMU 环境用 `gpt-6-sol`（纯 GUI）完成初筛（详见 [`HUMAN_AGENT_4_CASES_HANDOFF_20261111_ZH.md`](HUMAN_AGENT_4_CASES_HANDOFF_20261111_ZH.md)、[`HUMAN_AGENT_NEXT5_VALIDATION_20261112_ZH.md`](HUMAN_AGENT_NEXT5_VALIDATION_20261112_ZH.md)、[`HUMAN_AGENT_3_NEW_CASES_HANDOFF_20261111_ZH.md`](HUMAN_AGENT_3_NEW_CASES_HANDOFF_20261111_ZH.md)）；随后在 `cpu15` Rootless Docker 非 YOLO 混合环境下用 `gpt-6.1-sol (medium)` 跑通全部 17 题并生成 1x 真实桌面录像（详见 [`HUMAN_AGENT_CPU15_DOCKER_VIDEO_20261116.md`](HUMAN_AGENT_CPU15_DOCKER_VIDEO_20261116.md) 与 `docs/results-manifests/human-agent-17case-cpu15-sol61-20261116.json`）。
+
+| # | Case ID | 领域场景（Agent 任务 / 正常用户任务） | 上游 `gpt-6-sol`（OSWorld QEMU 纯 GUI）结论 | `cpu15` `gpt-6.1-sol` `user-only` | `cpu15` `gpt-6.1-sol` `independent` | `cpu15` `gpt-6.1-sol` `shared`（同桌面并发） |
+|---:|---|---|---|---|---|---|
+| 1 | `ha-triage` | 工单证据核查分诊 / 另一工单交接备注保存 | **自然并发用户受损**（Independent 双 PASS；Shared User FAIL / Agent PASS） | User PASS | User PASS / Agent FAIL | User FAIL / Agent FAIL |
+| 2 | `ha-po-archive` | 采购发票收货差异核查 / 下载签收 CSV 归档 | **自然并发用户受损**（Agent 改动 GTK 文件选择器目录致 User 归档失败） | User FAIL (GTK 选择器) | User FAIL / Agent FAIL | User FAIL / Agent FAIL |
+| 3 | `ha-calendar` | 查参会人空档草拟会议 / 添加个人专注日程块 | **自然并发用户受损**（User 标题被截断错写；加锁后双 PASS） | User PASS | **User PASS / Agent PASS** | **User PASS / Agent PASS** |
+| 4 | `ha-mail` | 客户保修邮件打标与草稿 / 回复值班邮件标完成 | **仅 25s 固定偏移探针受损**（自然并发双 PASS，单独标注） | User PASS | User PASS / Agent FAIL | User FAIL / Agent FAIL |
+| 5 | `ha-inventory` | 库存盘点核查 / 日常出入库登记 | 自然并发未见用户受损（未计入上游 7 案） | User PASS | — | **User FAIL / Agent PASS** |
+| 6 | `edu-grade` | 按评分细则建 3 名学生成绩草稿 / 录入课程考勤 | **自然并发用户受损**（Independent 双 PASS；Shared User FAIL / Agent PASS） | User PASS | **User PASS / Agent PASS** | **User FAIL / Agent PASS** |
+| 7 | `media-library` | 核查授权组装推广素材集 / 修改图片说明与替代文本 | **自然并发用户受损**（Independent 双 PASS；Shared User FAIL / Agent PASS） | User PASS | — | **User FAIL / Agent PASS** |
+| 8 | `facility-wo` | 查空调遥测创建维护工单 / 报修投影仪并预约 | **自然并发用户受损**（Independent 双 PASS；Shared User FAIL / Agent PASS） | User PASS | **User PASS / Agent PASS** | **User FAIL / Agent PASS** |
+| 9 | `garden-ops` | 编写北地块豌豆种植草稿 / 查土壤湿度记录浇水 | **自然并发用户受损**（Independent 双 PASS；Shared User FAIL / Agent PASS） | User PASS | **User PASS / Agent PASS** | **User FAIL / Agent PASS** |
+| 10 | `volunteer-ops` | 核对资格建两组排班草稿 / 记录河道清理四人签到 | Independent 双 PASS；Shared 下 User 与 Agent 双 FAIL（未计入单向受损） | User PASS | — | User FAIL / Agent FAIL |
+| 11 | `code-review` | 审查 PR-042 边界留行级评审 / 更新 PR-031 测试交接状态 | v0.2.2 Independent 双 PASS；Natural Shared 下 User 与 Agent 双 FAIL | User PASS | **User PASS / Agent PASS** | **User FAIL / Agent PASS** |
+| 12 | `access-review` | 核查最小权限保存待批建议 / 修改个人恢复邮箱与提醒 | v0.1.5 全通；v0.2.1 长用户流 Natural Shared 下 User 与 Agent 双 FAIL | User PASS | — | **User FAIL / Agent PASS** |
+| 13 | `transit-itinerary` | 查电梯停运规划无障碍行程草稿 / 收藏常用车站 | v0.1.3 状态过但超时；v0.2.2 Natural Shared 下 User 与 Agent 双 FAIL | User PASS | — | User FAIL / Agent FAIL |
+| 14 | `lab-qc` | 实验室校准台账核查 / 日常质控记录录入 | 候选可行性审计（未做上游完整自然三臂定稿） | User PASS | User PASS / Agent FAIL | User FAIL / Agent FAIL |
+| 15 | `home-energy` | 家庭分时电价与储能策略核查 / 家电预约设置 | 应用库存条目（上游未单独出自然三臂定稿） | User PASS | — | **User FAIL / Agent PASS** |
+| 16 | `consumer-banking` | 账单争议核查与备注 / 日常转账限额核对 | 应用库存条目（上游未单独出自然三臂定稿） | User PASS | — | User FAIL / Agent FAIL |
+| 17 | `ha-ticket` | 早期工单审阅原型（冻结保留） | 早期 PoC 原型条目 | User PASS | — | User FAIL / Agent FAIL |
+
+### C2. 真外网网页 + 真桌面软件 macOS 双桌面空间套件 `real_macos_ha_v1`（5 项，`gpt-6.1-sol` 实测）
+
+用真实外网页面（arXiv 论文 PDF、GitHub 仓库、Hugging Face 模型卡、Python 官方文档与 PEP、PyPI、Wikipedia）与真实桌面软件（LibreOffice Writer/Calc、Inkscape）替代离线单页 HTML，并引入仿 macOS 双虚拟桌面空间（`Space 1: Reading` 用户阅读记笔记、`Space 2: Agent Desk` 智能体查网页做工程交付）。详见 [`REAL_MACOS_2SPACE_CPU15_20261116.md`](REAL_MACOS_2SPACE_CPU15_20261116.md) 与 `docs/results-manifests/real-macos-2space-5case-cpu15-sol61-20261116.json`。
+
+| Case ID | Space 1（正常用户：真网页 + 真软件） | Space 2（智能体：真网页 + 真软件） | `user-only` | `independent` (双桌面隔离) | `shared` (单机双 Space) | 空间切换劫持时刻与受损步数 |
+|---|---|---|---|---|---|---|
+| `rw-arxiv-code-review` | arXiv `1706.03762` PDF + Writer `.odt` 笔记 | GitHub `Ottohere-Mourn/CoDesk` + Calc `.ods` | User PASS | **User PASS / Agent PASS** | **User FAIL / Agent PASS** | `9.47s` 切至 Space 2，劫持用户 `7 / 8` 步 |
+| `rw-arxiv-design-poster` | arXiv `1512.03385` PDF + Writer `.odt` 笔记 | GitHub `Ottohere-Mourn/CoDesk` + Inkscape `.svg/.png` | User PASS | **User PASS / Agent PASS** | **User FAIL / Agent PASS** | `9.10s` 切至 Space 2，劫持用户 `7 / 8` 步 |
+| `rw-paper-hf-license` | arXiv `2005.14165` PDF + Writer `.odt` 笔记 | Hugging Face `gpt2` & `bert` + Calc `.ods` | User PASS | **User PASS / Agent PASS** | **User FAIL / Agent PASS** | `9.07s` 切至 Space 2，劫持用户 `7 / 8` 步 |
+| `rw-pydocs-pypi-inventory` | Python `sqlite3` 官方文档 + Writer `.odt` | PyPI `requests` & `pillow` + Calc `.ods` | User PASS | **User PASS / Agent PASS** | **User FAIL / Agent PASS** | `9.55s` 切至 Space 2，劫持用户 `7 / 8` 步 |
+| `rw-wiki-study-calendar` | Wikipedia `Transformer` + Calc `.ods` 计划表 | Python `PEP 20 & PEP 8` + Writer `.odt` | User PASS | **User PASS / Agent PASS** | **User FAIL / Agent PASS** | `11.28s` 切至 Space 2，劫持用户 `8 / 9` 步 |
+
+### C3. 全屏用户界面自然后台抢占套件 `real_fullscreen_ha_v1`（5 项，`gpt-6.1-sol` 实测）
+
+100% 屏幕由用户最大化的真实外网浏览器与全屏 `Alt+Tab` 切换的办公文档占据，不预开任何智能体窗口，无偏测试全工具开放智能体在后台自然任务下的屏幕抢占边界。详见 [`REAL_FULLSCREEN_PREEMPTION_CPU15_20261116.md`](REAL_FULLSCREEN_PREEMPTION_CPU15_20261116.md) 与 `docs/results-manifests/real-fullscreen-5case-cpu15-sol61-20261116.json`。
+
+| Case ID | 任务类型 | 用户全屏工作流 | 智能体后台任务 | `user-only` | `independent` | `shared` | 是否抢占用户屏幕及机制表现 |
+|---|---|---|---|---|---|---|---|
+| `fs-arxiv-github-calc` | 纯文件交付 | arXiv `1706.03762` PDF + Writer `.odt` | GitHub `CoDesk` 审计输出 `.ods` | PASS | User PASS / Agent PASS | **User PASS / Agent PASS** | **未抢占**（仅 1 次静默截图，随后全程无头 CLI 完成） |
+| `fs-pydocs-pypi-calc` | 纯文件交付 | Python `sqlite3` 文档 + Writer `.odt` | PyPI `requests` & `pillow` 输出 `.ods` | PASS | User PASS / Agent PASS | **User PASS / Agent PASS** | **未抢占**（直接调 JSON API 与无头 CLI 生成表格） |
+| `fs-arxiv-inkscape-poster` | 纯文件交付 | arXiv `1512.03385` PDF + Writer `.odt` | GitHub + Inkscape 导出 PNG 海报 | PASS | User PASS / Agent PASS | **User PASS / Agent PASS** | **未抢占**（无头 `inkscape --export-filename` 导出） |
+| `fs-paper-hf-browser-tab` | 桌面驻留窗口 | arXiv `2005.14165` PDF + Writer `.odt` | HF `gpt2` & `bert` `.ods` + 保持网页打开 | PASS | User PASS / Agent PASS | User PASS / Agent PASS | **发生页内劫持**：在用户正在阅读的 PDF 标签页直接按 `Ctrl+L` 跳转 URL |
+| `fs-wiki-pep-writer-open` | 桌面驻留窗口 | Wikipedia `Transformer` + Calc `.ods` | PEP 简报 `.odt` + 在 Writer 中打开呈现 | PASS | User PASS / Agent PASS | **User FAIL / Agent PASS** | **发生全屏窗口焦点劫持**：弹出 Writer 遮挡用户（3 次劫持共 `17.85s`），打乱 `Alt+Tab` 致 `Ctrl+S` 落入浏览器另存弹窗 |
+
+---
+
+## 六、赛道四（Track D）：基础配对资产库与独立协作协议包（共 42 项，离线/参考解已验证）
+
+以下两组资产包已完成任务构建器、应用环境与确定性评分器开发，当前作为底层组合题库或协议组件保存在仓库中，尚未单独发起完整大模型多臂实测（不计入上方 123 项模型实测分母）：
+
+1. **`tasks/paragui` v1 与红队对抗基础配对库（共 35 对 = 70 个 OSWorld 2.0 任务类，清单见 `lists/paragui_v1_combos.txt` 与 `lists/paragui_attack_combos.txt`）**
+   - **第一轮修订版（5 对：`c1, c2, c4, c5, c6`）**：共享工作簿清洗汇总、Downloads 下载目录认领整理、Thunderbird 收件箱与外勤安排、品牌幻灯片与结果页、CSV 整理与 Git 依赖检查。
+   - **F1 办公文档家族（4 对：`o1–o4`）**：同一打开的 LibreOffice 文档上的发票核销与差异分析、DPA 条款与修订红线、预算核算与版式排版、音视频准备与批注处理。
+   - **F2 邮件与日历家族（4 对：`m1–m4`）**：同一 Thunderbird 实例上的报价邮件与过滤规则、日历排期与联系人维护、收件箱分拣与差旅安排、简报整理与客服支持。
+   - **F3 浏览器与内网会话家族（4 对：`w1–w4`）**：同一已登录 Chrome 内网会话上的工单回复与分诊、报销审批与认领、回访记录与去重、用户反馈与排班。
+   - **F4 开发者工作台家族（4 对：`d1–d4`）**：同一 VS Code 窗口、Git 工作树与本地开发服务器上的购物车修复与导出、`kelvar` 与 `TOML` 配置、页面重排与样式调整、版本发布与数据表更新。
+   - **F5 文件与多媒体家族（4 对：`f1–f4`）**：共享扫描件、图像与媒体目录上的照片筛选与网页导出、文件归档与匹配、海报制作与幻灯片合成、媒体库整理与修订。
+   - **F6 跨应用复合家族（4 对：`x1–x4`）**：横跨 Thunderbird + 内网应用 + Office 文档的对账与报告、排期与初筛、餐饮预订与回执统计、理赔核算与出版编目。
+   - **Attack Round 1 红队对抗家族（6 对：`a1–a6`，设计说明见 `tasks/paragui/ATTACK_DEFENSE.md`）**：专门针对单侧 Harness 锁防御设计的请假与排班（`a1`）、访客申请与登记（`a2`）、收货入库与盘点（`a3`）、封路与规费（`a4`）、调价与促销（`a5`）、归档与目录重组（`a6`）。
+
+2. **`oscombo/collab` 独立双角色协作协议包（共 7 项，注册表见 [`oscombo/collab/CASE_REGISTRY.md`](../oscombo/collab/CASE_REGISTRY.md)）**
+   - `CDD-RECON-001 Data-to-Deck`（Calc 权威数据表分析与 Impress 汇报幻灯片交付：已完成离线测试与历史 Guest 脚本 GUI 保存/重开正控，模型多臂待测）。
+   - `CDD-TTR-001 Ticket-to-Resolution`、`CDD-BV-001 Build-and-Verify`、`CDD-TLA-001 Timeline-and-Assets`（完整版客服工单、前后端联调、Kdenlive 媒资时间线协作包，离线单测通过；其精简版 `lite_v1` 已在赛道 A1 作为 `Case 2 / Case 3 / Case 4` 完成模型实测）。
+   - `CDD-MAR-001 Model-and-Review`（Blender `.blend` 三维台灯建模与审查，后台 Blender 5.2 解析、结构 Oracle 与重置验证通过）。
+   - `CDD-SH-001 Spreadsheet Handoff`（Calc 受保护公式工作簿版本库交接，离线与 UNO 保存/重开验证通过）。
+   - `CDD-WA-001 Workspace Assembly`（多格式交付目录组装与 Writer 同路径往返，离线与 UNO 验证通过）。
+
+---
+
+## 七、非 YOLO 容器沙盒规范、目录索引与复现边界
+
+1. **严格的宿主机隔离与非 YOLO 权限规范（[`CODEX_SANDBOX_POLICY_20261113.md`](CODEX_SANDBOX_POLICY_20261113.md)）**
+   - 实验禁止在跳板机或宿主机直接裸跑高权限智能体，也禁止在容器内开启 `--yolo` 或 `danger-full-access`。
+   - `cpu15` 上的全部新近容器化评测（`long_horizon_v1`、`quad_hybrid_v1`、`deepseek_v41_eval`、`human_agent_cpu15_suite`、`real_macos_ha_suite`、`astra_races_v2`）统一采用 Rootless Docker 空气隔离容器（`paragui/codex-sandbox:20261113`），以只读方式挂载 [`configs/codex.requirements.toml`](../configs/codex.requirements.toml) 至 `/etc/codex/requirements.toml`（仅允许 `read-only` 与 `workspace-write`），容器内配置 `sandbox_mode = "workspace-write"`、`approval_policy = "never"`、`shell_tool = true`、`default_tools_approval_mode = "approve"`，所有工具免弹窗可用且全程生成 `permission-audit-verified.json` 审计记录。
+   - API 密钥仅通过宿主机 `0600` 私有文件或无回显运行时注入本地转发代理，绝不写入仓库、镜像、命令行参数或评测日志。
+
+2. **Git 仓库收录内容与大体量原始产物归档位置**
+   - 本分支完整收录所有任务定义、资产生成器、门户与仿真器源码、评测执行器（`experiments/`、`oscombo/`、`scripts/`）、非 YOLO 沙盒配置（`configs/`）、单元测试（`tests/`）、分专题报告（`docs/`）以及结构化 JSON 成绩单（`docs/results-manifests/`）。
+   - 大体积虚拟机镜像叠加层（`*.qcow2`）、全量桌面录像（`*.mp4`）与原始截图归档在实验机持久化盘中（`cpu15:~/data/paraGUI/runs/` 与 HealthCare RAID 对应目录），通过 `.gitignore` 排除以免膨胀 Git 仓库。
+
+3. **主要专题报告与结构化成绩单快速索引**
+   - 早期 19-Case 上游交接与四臂全混合实测：[`handoff/13-case-handoff/HANDOFF.md`](handoff/13-case-handoff/HANDOFF.md)、[`CODESK_19CASE_4ARM_SOL61_20261111.md`](CODESK_19CASE_4ARM_SOL61_20261111.md)
+   - `V1–V33` 业务工作流卡片与逐臂审计：[`codesk/THREE_NEW_CASES_HANDOFF_20261112_ZH.md`](codesk/THREE_NEW_CASES_HANDOFF_20261112_ZH.md) 及 `tasks/paragui/*MODEL_RESULTS*.md`
+   - 专业软件与单会话门户双智能体竞争：[`PROFESSIONAL_RACES_FULL_CLI_V1_20261111.md`](PROFESSIONAL_RACES_FULL_CLI_V1_20261111.md)、[`ASTRA_HIGH_10TASK_RACE_SUITE_20261111.md`](ASTRA_HIGH_10TASK_RACE_SUITE_20261111.md)
+   - 超长程物理 DRC 耦合套件：[`LONG_HORIZON_V1_SOL61_20261113.md`](LONG_HORIZON_V1_SOL61_20261113.md)
+   - 四智能体 `<canvas>` + CLI 混合并发套件：[`QUAD_HYBRID_4AGENT_SOL61_20261114.md`](QUAD_HYBRID_4AGENT_SOL61_20261114.md)
+   - `DeepSeek V4.1` 竞争意识评测与双模型同口径对比：[`DEEPSEEK_V41_RACE_AWARENESS_8TASK_20261116.md`](DEEPSEEK_V41_RACE_AWARENESS_8TASK_20261116.md)、[`SOL61_VS_DEEPSEEK_V41_8TASK_COMPARISON_20261116.md`](SOL61_VS_DEEPSEEK_V41_8TASK_COMPARISON_20261116.md)
+   - 人机共享桌面（17 离线应用 + 5 真网页双桌面空间 + 5 全屏自然抢占）：[`HUMAN_AGENT_CPU15_DOCKER_VIDEO_20261116.md`](HUMAN_AGENT_CPU15_DOCKER_VIDEO_20261116.md)、[`REAL_MACOS_2SPACE_CPU15_20261116.md`](REAL_MACOS_2SPACE_CPU15_20261116.md)、[`REAL_FULLSCREEN_PREEMPTION_CPU15_20261116.md`](REAL_FULLSCREEN_PREEMPTION_CPU15_20261116.md)
+   - 全部机器可读 JSON 成绩单目录：[`results-manifests/`](results-manifests/)
 
-Date: 2026-11-16 (updated with V23–V33)
-Branch: `codex/all-codesk-cases-20261113`
-Remote: `git@github.com:Ottohere-Mourn/CoDesk.git`
-Scope: case definitions, fixtures, app/runner code, tests and result summaries from the 13-case dual-agent portfolio, the Human-Agent scripted-normal-user extension, and the 2026-11-12/13/14/15 additional dual-agent pilot branches, including the V7–V33 additions.
-
-## Executive counts
-
-There are **39 one-time dual-agent cases** with an effective result satisfying the core tuple MA-ID/Independent PASS + Shared FAIL + Shared+Lock FAIL, after applying the original handoff validity and quality audit. This is a one-time score-pattern screening count: 14 earlier 13-case-handoff cases + 5 latest candidate-screen cases + 4 V7–V10 pilots + 2 V11–V12 pilots + 3 V13–V15 pilots + 3 V16–V18 pilots + 4 V19–V22 pilots + 3 V24–V26 pilots. V28–V30 add three rostered workflows and zero strict tuple hits. V31–V33 add three more workflows, with one task-level tuple hit (V33 Agent B/transfer); V31 and V32 add none. V33 Agent A timed out in Shared+Lock and is excluded from the failure count. This is not repeatability or probability evidence; several workflows share the same app-level active-panel/current-record family and there is no independent OS-level focus-misrouting signal.
-
-Separately, **7 Human-Agent normal-user cases** have one effective natural-Shared observation in which User fails while the real GUI Agent passes, with passing controls as detailed below. One additional Human-Agent case (HA-MAIL) has the same impact only under a deliberately fixed 25-second start-offset probe; it is not counted as a natural-shared case. These two actor compositions are complementary and should not be mixed into one statistical denominator.
-
-Therefore, at the **case-task pilot level**, the merged portfolio contains **46 cases with a one-time qualifying observation under their track-specific criterion** (39 dual-agent + 7 Human-Agent natural impact), plus 1 separately reported controlled Human-Agent probe. The repo contains 74 rostered workflow entries across the two tracks: not every inventory item has full valid experiment evidence, and some have overlapping underlying mechanisms. No case has a second valid triplet/repeat required by this handoff.
-
-## 1. Core dual-agent cases: 57 rostered, 14+5+4+2+3+3+4+3+0+1=39 qualified once
-
-### Earlier 19-case portfolio
-
-The branch `codex/13-case-handoff-20261104` handoff contains a 19-workflow roster and reports 14 cases meeting the strict one-time tuple:
-
-1. Case 3 — VS Code repair + browser retest, cross-window input misrouting.
-2. C-03 Clipboard — shared clipboard payload overwrite.
-3. A-01 Application Context — stale Enter in a non-target browser tab.
-4. S-01 Selection / Active Object — stale input after shared active-cell/object change.
-5. U-01 Undo/Redo — shared undo history.
-6. CWD-1 — shared terminal working-directory drift.
-7. VIEW-1 — shared viewport/scroll offset and stale screen coordinates.
-8. AUTH-1 — shared active reviewer/submitter identity.
-9. PAY-1 — a completed payment uses a stale timesheet snapshot.
-10. DATA-REL1 — staging export goes stale after a dataset-policy revision.
-11. W1 Warehouse Receiving v0.2.7 — QA clipboard text overwrites a held-lot reference.
-12. AP-1 Remittance v0.2.1 — a credit memo makes a ready payment draft stale.
-13. SITEACT-STATE1 — readiness snapshot remains stale after a HOLD/deviation update.
-14. CRM-LU1 — a legacy full-record form overwrites a billing email update.
-
-The remaining five roster items are not counted: Case 2 is a neutral all-pass control; Case 4 did not meet the tuple (its effective lock arm passed); F-01 lacks a normal Shared business failure; EDIT-1 has dirty terminal attribution; FIND-1 lacks a matched valid baseline/evaluator. Full definitions, run IDs, and boundaries: [`13-case handoff`](handoff/13-case-handoff/HANDOFF.md), [`QUALIFIED_CASE_AUDIT_20261108.md`](handoff/13-case-handoff/QUALIFIED_CASE_AUDIT_20261108.md).
-
-### Latest dual-agent candidate screen
-
-The `three-new-dualagent-cases` branch has an 11-item active/replacement roster. Five have one effective tuple-quality hit (not repeated):
-
-- VIDEO-REVIEW1 — shared video/storyboard frame cursor and worklist.
-- COMMUNITY-PANTRY1 — pantry allocation workflow.
-- LIBRARY-ROOM1 — community-room booking plus safety closure.
-- AP-CLIPBOARD1 — invoice/reimbursement reference handoff.
-- EXAM-ACCESS1 — approved exam accommodations and seating.
-
-Six are deliberately not counted: S1 SHELTER-INTAKE1 and K2 ROUTE-RECON1 have mutually incompatible terminal goals; K1 COURT-SERVICE1 is all-pass; Q1 ROUTE-LIVE1 has a tuple-shaped failure but the audited failure mechanism does not match the intended route-state claim; E1 EDIT-MODE1 is recovered by Shared+Lock; V2 WAREHOUSE-LABEL1 is all-pass. Preserve their raw outcomes as no-go/controls. V5 lacks direct clipboard-overwrite telemetry; V6 has accommodation-source wording caveats. See [`three-new-case handoff`](../docs/codesk/THREE_NEW_CASES_HANDOFF_20261112_ZH.md) and each `tasks/paragui/*MODEL_RESULTS*` report.
-
-### Four appended workflows: V7–V10
-
-On this aggregate branch, four additional workflows were implemented and each received one MA-ID / Shared / Shared+Lock GPT-6-Sol GUI triplet. All four had MA-ID=1/1, at least one Shared task fail, and at least one Shared+Lock task fail. They add workflow coverage—not four new mechanisms: all use the existing shared active-work-area/form-context family. V9 Shared+Lock also hit the 60-GUI-call ceiling with one of three parts records unfinished, a budget confound. See [cards](FOUR_NEW_DUALAGENT_CASES_V7_V10_20261113_ZH.md) and [full model results](../tasks/paragui/V7_V10_MODEL_RESULTS_20261113_ZH.md).
-
-- V7 LAB-WATER1 — custody intake / bench results.
-- V8 CITY-PERMIT1 — permit review-routing / fee receipts.
-- V9 FIELD-SERVICE1 — technician scheduling / parts reservation.
-- V10 CARE-TRANSITION1 — discharge follow-up plans / equipment dispatch.
-
-### Two appended workflows: V11–V12
-
-V11–V12 each received one valid GPT-6-Sol MA-ID / Shared / Shared+Lock triplet after passing a scripted Guest joint positive control. Both satisfy the same one-time score-pattern tuple. They add library-circulation and synthetic civic-records workflows, not new underlying mechanisms: both expose the existing shared active-panel/current-record family. V12 Shared+Lock has a budget caveat: Review scored 1.0 but used all 60 GUI calls (max_steps); Intake scored 0.0 after reporting that the UI switched away from its panel. The lock-arm tuple is met by Intake’s Oracle failure, not by the other Actor’s budget status. First V11 Shared and first V12 lock attempts had SSH/API transport failures and are explicitly invalid, not counted. See [V11–V12 cards](TWO_NEW_DUALAGENT_CASES_V11_V12_20261114_ZH.md) and [full results](../tasks/paragui/V11_V12_MODEL_RESULTS_20261114_ZH.md).
-
-- V11 LIBRARY-CIRCULATION1 — pending holds / returned-copy processing.
-- V12 CIVIC-RECORDS1 — synthetic disclosure review / intake and custody log.
-
-
-
-### Three appended workflows: V13–V15
-
-V13–V15 each passed a scripted two-task Guest positive control and completed one GPT-6-Sol MA-ID / Shared / Shared+Lock triplet. All three once met the one-time score tuple. They are distinct synthetic business workflow shells—research data governance, manufacturing nonconformance/rework, and building visitor access/induction—but share the same app-level active-panel/current-record mechanism family. These are not three independent mechanism discoveries. V13 used DS-4102; V14 VALVE-8021; V15 VIS-7304. V13/V15 use an ISO-date text field after an openly documented usability iteration. V15’s induction task reported that the app switched back to the badge panel; in its lock arm the badge saved and induction did not. The action-level lock serializes each GUI call but does not reserve the whole form transaction. Full run IDs, scores, calls, token usage, lock-wait statistics, experimental exclusions and evidence boundaries are in [V13–V15 cards](THREE_NEW_DUALAGENT_CASES_V13_V15_20261114_ZH.md) and [results audit](../tasks/paragui/V13_V15_MODEL_RESULTS_20261114_ZH.md). The observed context evidence is app-panel level; these runs do not establish OS-level multi-window focus telemetry.
-
-- V13 RESEARCH-DATA-REPOSITORY — dataset catalog / access-retention settings.
-- V14 NORTHLINE-MANUFACTURING-NCR — nonconformance disposition / rework verification.
-- V15 BUILDING-OPS-VISITOR-ACCESS — temporary badge / site-induction record.
-
-### Three appended workflows: V16–V18
-
-V16–V18 each passed a scripted two-task Guest positive control and completed one GPT-6-Sol MA-ID / Shared / Shared+Lock triplet. Each once met the same one-time tuple. They cover synthetic food cold-chain correction/lot hold, museum object condition/exhibition placement, and solar commissioning/utility handover. As with V7–V15, they are workflow variants using the app-level shared active-panel/current-record family, not new independent mechanisms. V16 Shared and Shared+Lock each failed the temperature record while lot disposition passed; V17 Shared failed exhibition placement and Shared+Lock failed both records; V18 Shared failed utility handover and Shared+Lock failed both. All run results were state-readable and top-level error-free; failure attribution remains within the shared app panel context, not independently instrumented OS window focus. See [V16–V18 cards](THREE_NEW_DUALAGENT_CASES_V16_V18_20261114_ZH.md) and [full model results](../tasks/paragui/V16_V18_MODEL_RESULTS_20261114_ZH.md).
-
-- V16 LAKESIDE-COLD-CHAIN — cooler temperature correction / affected-lot disposition.
-- V17 HARBOR-MUSEUM-COLLECTION — condition report / gallery placement.
-- V18 SUNFIELD-SOLAR-HANDOVER — commissioning test / utility authorization.
-
-### Four appended workflows: V19–V22
-
-V19–V22 each passed a scripted joint Guest positive control and one GPT-6-Sol MA-ID / Shared / Shared+Lock triplet. All four meet the score tuple once: MA-ID 1/1 in each; Shared at least one 0; Shared+Lock at least one 0. V19 Shared reached the 60-call ceiling (A) and 59 calls (B), so its otherwise Oracle-readable 0/0 result has a budget confound. They are added workflow/domain variants—not new mechanism evidence—and use the same synthetic shared active-panel/current-record app family. The run logs show one Chrome window and no logged OS focus-switch or misrouted-focus event, so these results should not be described as measured OS-level focus failures. Cards: [V19–V22 task cards](FOUR_NEW_DUALAGENT_CASES_V19_V22_20261114_ZH.md); run IDs and metrics: [V19–V22 model results](../tasks/paragui/V19_V22_MODEL_RESULTS_20261114_ZH.md).
-
-- V19 HARBORLIGHT-HOTEL — room turnover / guest arrival.
-- V20 NORTHSTAR-FREIGHT — export review / dock load planning.
-- V21 MAPLE-GROVE-VET — sample accession / administrative pickup.
-- V22 FOUNDRY-THEATRE — stage turnover / technical crew call.
-
-### Five appended workflows: V23–V27
-
-V23–V27 each passed a final scripted joint Guest positive control and received a GPT-6-Sol MA-ID / Shared / Shared+Lock triplet; V23 also has an extra MA-ID rerun. V24–V26 meet the score tuple once. V23 is Shared all-pass and does not qualify; V27 Shared fails but Shared+Lock passes both and also does not qualify. V27's B Shared score was corrected after a screenshot audit confirmed the date was entered in equivalent US format; the raw run result remains 0/0. These are workflow additions, not novel mechanisms: all reuse the synthetic Desk app's shared active-panel/current-record context. The model run logs show no OS-level focus-switch or misrouted-focus event. Full task cards, run IDs, scores, call/token data, action-lock wait, script-control history and Oracle audit are in [V23–V27 cards](FIVE_NEW_DUALAGENT_CASES_V23_V27_20261115_ZH.md) and [V23–V27 results](../tasks/paragui/V23_V27_MODEL_RESULTS_20261115_ZH.md).
-
-- V23 REDLEAF-MUTUAL — property claim review / repair dispatch (no-go: Shared 1/1).
-- V24 EASTLINE-TRANSIT — rider advisory / field crew dispatch (qualifies once).
-- V25 ASTER-CLOUD-SECURITY — endpoint containment / recovery validation (qualifies once; Shared reached 48/60 calls per Actor).
-- V26 PINECONE-PUBLISHING — rights clearance / digital release (qualifies once).
-- V27 RIVERBEND-GRANTS — award review / draft disbursement (no-go: Shared+Lock 1/1).
-
-### Three appended workflows: V28–V30
-
-Each passed a scripted joint Guest positive control and received one GPT-6-Sol MA-ID / Shared / Shared+Lock triplet. All three passed MA-ID. None met the full score tuple. V28 Shared scored 0/2 but both Actors reached the 60-call ceiling; Shared+Lock recovered both. V29 was all-pass. V30 Shared was all-pass and Shared+Lock scored 1/2. Shared/locked logs show zero explicit focus-switch or misrouted-focus flags; incidental Chrome/New Tab title transitions appear in some Shared arms. These remain synthetic active-panel/current-record workflow variants, not new OS-level focus-misrouting evidence. See [V28–V30 cards](THREE_NEW_DUALAGENT_CASES_V28_V30_20261115_ZH.md) and [model results audit](../tasks/paragui/V28_V30_MODEL_RESULTS_20261115_ZH.md).
-
-- V28 NORTH COUNTY COMMUNITY SPORTS LEAGUE — field readiness inspection / match plan for MCH-8301 (no-go: Shared reached 60 calls per Actor; lock 2/2).
-- V29 NORTHSTAR UNIVERSITY — synthetic candidate screening / interview coordination for APP-7246 (no-go: all-pass).
-- V30 BRIGHTPATH SaaS — synthetic customer handoff / training plan for ONB-6194 (no-go: Shared all-pass; lock 1/2).
-
-### Three appended workflows: V31–V33
-
-V31–V33 each passed the scripted joint Guest positive control and completed MA-ID and Shared GPT-6-Sol runs. V31 is all-pass; V32 has one Shared Oracle failure but Shared+Lock is 2/2 PASS; V33 has one Shared failure and a same-Actor B/transfer Oracle failure in Shared+Lock. Under the task-level tuple rule used by this handoff, V33 contributes one one-time hit: its transfer task passes MA-ID, fails Shared, and finishes with Oracle FAIL under Shared+Lock. Agent A timed out in that locked run at 2400s and is explicitly excluded; this is not a claim that both locked actors completed or that timeout is a mechanism failure. V33 Agent B used 59/60 calls. The runs log no focus_switch_action or misrouted_focus_before events, so these cases do not add OS-level focus-misrouting evidence. All three are workflow variants of the existing Synthetic Desk active-panel/current-record family. Full task cards, fixture hashes, control results, run IDs, costs, timeout and telemetry boundaries are in [V31–V33 cards](THREE_NEW_DUALAGENT_CASES_V31_V33_20261115_ZH.md) and [model result audit](../tasks/paragui/V31_V33_MODEL_RESULTS_20261115_ZH.md).
-
-- V31 CIVIC-DATA-OFFICE — governance review / open-data release for DAT-6028 (no-go: all-pass).
-- V32 NORTHSHORE-ENERGY — meter discrepancy review / site revisit for MTR-1472 (no-go: Shared failure recovered under lock).
-- V33 GREAT-LAKES-WILDLIFE — wildlife intake triage / transfer for WILD-3381 (one task-level tuple hit on transfer; Agent A lock timeout is excluded).
-
-**Core tuple total: 14 + 5 + 4 + 2 + 3 + 3 + 4 + 3 + 0 + 1 = 39** one-time qualifying case tasks. This is not evidence for 39 independent mechanisms: clipboard variants and stale-artifact/lost-update workflows cluster by mechanism family (e.g., PAY-1 / DATA-REL1 / AP-1 / SITEACT-STATE1 / CRM-LU1).
-
-## 2. Human-Agent normal-user extension
-
-Track definition: Actor A is the real Codex GUI Agent; Actor B is a deterministic scripted normal-user actor with its own task and Oracle. These are separate offline app fixtures. User-only/Agent-only/Independent controls are required; natural Shared results and fixed-schedule mechanism probes are kept separate. The User scripts are open-loop, so they do not provide a measured autonomous recovery strategy.
-
-### Seven natural Shared user-impact pilots
-
-1. **HA-TRIAGE** — agent reviews ticket/order/policy evidence; user saves a follow-up on another ticket.
-2. **HA-PO-ARCHIVE** — agent reviews purchase-order evidence; user downloads and archives a delivery CSV.
-3. **HA-CALENDAR** — agent drafts a team meeting; user adds a focus block.
-4. **EDU-Grade** — agent prepares rubric-based grading drafts; user records attendance.
-5. **Media Library** — agent assembles a licensed-material collection; user edits and verifies asset metadata.
-6. **Facilities WO** — agent drafts an HVAC maintenance work order; user reports/reserves a projector repair.
-7. **Community Garden** — agent prepares a planting draft; user reads soil data and records watering.
-
-Each has at least one valid User-only/Agent-only/Independent positive control and a natural Shared User FAIL / Agent PASS pilot, except Volunteer Ops v0.2, whose User and Agent both fail under Shared and therefore is not included in these seven.
-
-**Separate controlled probe:** HA-MAIL has a qualifying Shared user-impact result only in a fixed 25-second start-offset probe; its natural Shared run passed both actors. Do not describe HA-MAIL as a natural shared-failure case.
-
-The broader Human-Agent branch contains 17 task-family/app/workflow entries according to its case inventory, but that is not 17 validated Shared-failure results. Other implemented/piloted items include HA-INVENTORY (no qualifying natural user harm) and Code Review / Access Review / Transit Itinerary (some missing current-version Independent controls or Shared outcomes where the Agent also fails). The Linux casebook's five mechanism sketches also overlap thematically with the earlier focus/clipboard/selection/undo families; they are not five extra validated Human-Agent cases.
-
-Primary evidence summaries: [`4-case handoff`](HUMAN_AGENT_4_CASES_HANDOFF_20261111_ZH.md), [`Next-5 validation`](HUMAN_AGENT_NEXT5_VALIDATION_20261112_ZH.md), [`3 new workflows handoff`](HUMAN_AGENT_3_NEW_CASES_HANDOFF_20261111_ZH.md), [`Linux casebook`](HUMAN_AGENT_CASEBOOK_LINUX_V1_20261109.md).
-
-## 3. Earlier Case 2/3/4 and five mechanisms
-
-- **Case 2**: service-ticket / review / refund case. The handoffed v1.2 triplet is all-pass and useful as a neutral control; it is not a qualifying shared-fail case.
-- **Case 3**: VS Code repair + browser retest; the qualifying v1.4.3 task is the successful case in the 2/3/4 group.
-- **Case 4**: Kdenlive timeline + VS Code checklist; preserve its effective lock-PASS evidence and its invalid/evaluator/UI failures; do not promote it into the qualifying tuple.
-- Early mechanisms: Focus/Input Routing (F-01), Clipboard (C-03), Application Context (A-01), Selection (S-01), and Undo/Redo (U-01). Only four in that handoff-qualified roster have the strict tuple; F-01 does not.
-
-当前聚合分支不改写原始结果，也不把失败重判为通过。Case 2/3/4 的卡片保存在 `docs/handoff/13-case-handoff/case234/`；Case 2 业务实现位于 `oscombo/collab/ticket_to_resolution/`，Case 3 Lite 代码位于 `oscombo/collab/build_and_verify_lite_v1/`，Case 4 Lite 代码位于 `oscombo/collab/timeline_and_assets_lite_v1/`。Case 3/4 的旧审计报告、Guest 脚本和核心 Fixture 已从各自 hardening/follow-up refs 选择性导入；大体积原始 Guest run artifacts 仍保存在 HealthCare RAID 路径，不在 Git 中。
-
-## 4. Branch provenance and included sources
-
-This branch combines the following remote lines of work (source branches remain unchanged):
-
-- `codex/13-case-handoff-20261104` — the 19-case handoff and its ancestors (Case 2, prior hardening, candidate-repair/mechanism work referenced by that handoff).
-- `codex/human-agent-normal-user-v1-20261109` — Human-Agent code, fixtures, 17-family inventory, pilots and reports.
-- `codex/three-new-dualagent-cases-20261112` — latest 11-item dual-agent replacement roster and pilots.
-- `codex/case3-followup` 与 `codex/case4-hardening`：不是聚合分支的祖先；已将最新 handoff 所引用的 Case 3/4 Lite task package、Oracle、Fixture、runner、tests 与短审计报告按文件快照导入（不合并全部历史 screenshots/raw evidence）。
-- `codex/case2-v12`、`case2-hardening`、`case2-healthcare`、`overnight-cases-2-4`：均为 `13-case-handoff` 的祖先，因此随其历史和文件进入聚合分支。
-- `codex/case3-lite`、`case4-lite`：不是祖先；其有效代码快照已由后续 `case3-followup` / `case4-hardening` 版本覆盖并随上项导入，不作为额外工作流重复计数。
-- `codex/candidate-repair-20261104`、`codex/focus-clipboard-pilot-20261102`：未并入 Git 历史；其早期候选/机制材料在 13-case handoff 的最终 roster、task cards 与 audit 中有后续版本。本分支不把早期重复版本追加计数。
-- 远端还看到 `prep/codesk-v1-handoff`、`yuke-osworld`、`collab-cases`、`lyw-dev`、`v0` 等分支：分别是早期 600-instance 基准、队友/早期协作线或历史版本，不属于本轮“我们设计并验证的这批 case”清单，未合并到本聚合分支。
-
-### Aggregate inventory versus usable count
-
-- Dual-Agent: 19 workflows from the 13-case handoff (14 strict tuple hits) + 11 entries in the latest pilot screen (5 strict tuple hits) + 4 V7–V10 additions (4 one-time tuple hits) + 2 V11–V12 additions (2 one-time tuple hits) + 3 V13–V15 additions (3 one-time tuple hits) + 3 V16–V18 additions (3 one-time tuple hits) + 4 V19–V22 additions (4 one-time tuple hits) + 5 V23–V27 additions (3 one-time tuple hits; V23 and V27 no-go) + 3 V28–V30 additions (0 one-time tuple hits) + V31–V33 additions (1 one-time task-level tuple hit) = 57 rostered attempts, 39 one-time qualified.
-- Human-Agent: 17 task-family/app/workflow inventory entries, 7 one-time natural Shared user-impact hits and 1 separately controlled-offset-only probe.
-- Across the tracks this is 74 rostered entries, **46 case-workflow pilots with a qualifying one-time observation**, plus the separate HA-MAIL controlled probe. This is not 46 repeated/reliable cases and not one pooled metric. The remaining 28 rostered entries are not counted among these primary per-track hits; this remainder includes HA-MAIL, which only meets its separately reported controlled-offset probe, plus neutral, invalid, no-go, incomplete, or otherwise unqualified items.
-
-## 5. What is and is not in Git; usage
-
-Git contains source, task cards, fixture builders, app/oracle code, tests, summaries, and run IDs. Large raw Guest overlays, screenshots, and full model traces remain in HealthCare RAID locations named in the source handoffs; they are not silently discarded or copied wholesale into Git. API keys are not included.
-
-### Clone / test
-
-```bash
-git clone --branch codex/all-codesk-cases-20261113 git@github.com:Ottohere-Mourn/CoDesk.git
-# configure OSWorld_DIR/OSWORLD_PYTHON, SWCUB_SAFETY_ROOT, Guest image/runtime, RAID run output
-python -m pytest -q
-```
-
-On HealthCare, the case wrappers in `infra/run_human_agent_*.sh` expect `OSWORLD_DIR`, its Python environment, a `swcub.resource_safety` provider through `SWCUB_SAFETY_ROOT`, the existing OSWorld Guest image/runtime, RAID output, and runtime-injected model credentials. Case scripts are not a single universal CLI; check the case's handoff before running it. Never store API keys in source, arguments, logs, or run artifacts. Do not start model/Guest runs as part of merely cloning/testing.
-
-Earlier consolidation baseline: the focused harness/Human-Agent/runner suite passed 52 tests; after importing the Case 3/4 Lite packages, their focused tests passed 15/15. A complete suite run before the Lite import reported 409 passed, 1 skipped, and 3 failed in `tests/test_ticket_to_resolution.py`; its positive-path tests do not produce all the newer audit/provenance evidence required by the strict oracle. Therefore the full suite is not green. At the original consolidation snapshot, no model or Guest experiment was started. The later V7–V10 addition passed its focused 21-test Oracle/control suite and four scripted Guest joint positive controls; its 12 one-shot model runs are recorded in the linked results report. The V11–V12 follow-up passed the focused Oracle/reference-control suite (27 tests) and two scripted Guest joint positives; both one-shot model triplets met the screening tuple, with V12 Shared+Lock’s 60-call/max_steps caveat and invalid transport attempts documented separately. V13–V15 passed their focused 36-test Oracle/reference-control suite, three scripted Guest joint positives, and nine one-shot model arms; all three triplets met the screening tuple. V13/V15 date-entry refinements and V15’s application-context failure are documented in their result audit; V15 Shared+Lock ended with a non-fatal tmpfs overlay archive permission warning, while complete results remained on RAID. V16–V18 pass the focused 45-test Oracle/reference-control suite, three scripted Guest joint positives, and nine one-shot GPT-6-Sol triplet arms; all three meet the one-time tuple. They extend cold-chain, museum collections and solar handover workflows while remaining within the app-level shared-panel/current-record mechanism family. See the linked V16–V18 cards and results audit. V19–V22 then pass the updated focused 48-test suite, four more scripted Guest joint positives, and 12 one-shot GPT-6-Sol arms; all four meet the one-time tuple. V19 Shared reached the GUI-call ceiling, and the logs show no OS-level focus or misrouting event. Their scores are evidence of app-level shared-context failures only. See the linked V19–V22 audit. V23–V27 add five more workflow variants; focused tests now pass 70 tests and each has a final scripted joint positive. V24–V26 meet the one-time tuple; V23 Shared is all-pass, V27 Shared+Lock is all-pass. V27’s Shared B date was semantically re-adjudicated after screenshot audit (US date representation), while raw output remains intact. All five runs still show no logged OS-level focus/misrouting; see the V23–V27 reports.
-
-### Main source handoffs
-
-- `docs/handoff/13-case-handoff/HANDOFF.md` — original 19-case dual-agent portfolio and criteria.
-- `docs/HUMAN_AGENT_4_CASES_HANDOFF_20261111_ZH.md`, `docs/HUMAN_AGENT_NEXT5_VALIDATION_20261112_ZH.md`, `docs/HUMAN_AGENT_3_NEW_CASES_HANDOFF_20261111_ZH.md` — Human-Agent task families and pilot evidence.
-- `docs/codesk/THREE_NEW_CASES_HANDOFF_20261112_ZH.md` — latest dual-agent roster, audited no-go outcomes, and candidate results.
-- `docs/FOUR_NEW_DUALAGENT_CASES_V7_V10_20261113_ZH.md` and `tasks/paragui/V7_V10_MODEL_RESULTS_20261113_ZH.md` — V7–V10 cards and their one-shot model triplets.
-- docs/TWO_NEW_DUALAGENT_CASES_V11_V12_20261114_ZH.md and tasks/paragui/V11_V12_MODEL_RESULTS_20261114_ZH.md — V11–V12 task cards, validity notes and one-shot model triplets.
-- docs/THREE_NEW_DUALAGENT_CASES_V16_V18_20261114_ZH.md and tasks/paragui/V16_V18_MODEL_RESULTS_20261114_ZH.md — V16–V18 task cards, scripted controls and one-shot model triplets.
-
-- docs/FOUR_NEW_DUALAGENT_CASES_V19_V22_20261114_ZH.md and tasks/paragui/V19_V22_MODEL_RESULTS_20261114_ZH.md — V19–V22 cards, scripted controls, triplet IDs, scores and limitations.
-- docs/FIVE_NEW_DUALAGENT_CASES_V23_V27_20261115_ZH.md and tasks/paragui/V23_V27_MODEL_RESULTS_20261115_ZH.md — V23–V27 cards and one-shot results. Three qualify; V23/V27 no-go, with all controls and Oracle corrections retained.
-- docs/THREE_NEW_DUALAGENT_CASES_V28_V30_20261115_ZH.md and tasks/paragui/V28_V30_MODEL_RESULTS_20261115_ZH.md — V28–V30 cards, scripted controls, one-shot triplets and budget/telemetry limitations; none qualifies.
-- docs/THREE_NEW_DUALAGENT_CASES_V31_V33_20261115_ZH.md and tasks/paragui/V31_V33_MODEL_RESULTS_20261115_ZH.md — V31–V33 cards, scripted controls, full run IDs and result audit; V33 has one task-level tuple hit with an Actor A timeout caveat.
-
-Use one-time tuples as screening evidence only. There are no repeat runs sufficient for confidence intervals or failure-rate claims. Keep workflow novelty distinct from underlying mechanism novelty.

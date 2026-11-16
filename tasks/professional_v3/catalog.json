@@ -1,0 +1,82 @@
+{
+  "schema_version": 1,
+  "dataset": "paragui-professional-hard-v3-20261103",
+  "status": "p10_calibration_ready",
+  "origin": "original_synthetic_benchmark_inspired",
+  "official_benchmark_subset": false,
+  "difficulty_calibrated": false,
+  "agent_trajectories": 0,
+  "trajectory_count_scope": "completed published calibration snapshots, not live in-progress runs",
+  "policy": {
+    "track": "hybrid_gui_cli",
+    "shared_state": "one desktop, one primary application instance, one live native project and shared task filesystem",
+    "programming_allowed": true,
+    "application_apis_allowed": true,
+    "agent_initiated_locks_allowed": true,
+    "automatic_input_lock": false,
+    "required_click_count": null,
+    "required_channel_switch_count": null,
+    "private_final_projects_allowed": false,
+    "host_unrestricted_codex": false,
+    "reference_access_allowed": false,
+    "grading": "common final native state plus trusted, time-local live-application evidence",
+    "cross_role_dependency": "neither role requires an unfinished output from the other role",
+    "success": "all critical requirements and all applicable integrity gates pass; weighted progress is diagnostic",
+    "preservation_points": 0,
+    "role_score_comparison_to_weavebench_passrate": false
+  },
+  "baseline_budget": {"model": "gpt-6-astra", "reasoning_effort": "high", "max_actions": 300, "max_responses": 90, "timeout_seconds": 1500, "image_history_limit": 4},
+  "required_readiness": ["native_inputs", "independent_grader", "references_both_orders", "native_negative_controls", "trusted_live_observer", "gui_reopen", "runner_registration", "hybrid_calibration"],
+  "calibration_prerequisites": ["native_inputs", "independent_grader", "references_both_orders", "native_negative_controls", "trusted_live_observer", "gui_reopen", "runner_registration"],
+  "conditions": ["solo_a", "solo_b", "sequential_ab", "sequential_ba", "parallel_shared"],
+  "optional_condition": "parallel_isolated_api_control",
+  "pairs": [
+    {
+      "id": "p10", "software": "QGIS", "title": "Riverton resilience and evacuation release",
+      "status": "native_validated_calibration_ready", "native_file": "RivertonReview.qgz", "shared_store": "review.gpkg",
+      "readiness": {"native_inputs": true, "independent_grader": true, "references_both_orders": true, "native_negative_controls": true, "trusted_live_observer": true, "gui_reopen": true, "runner_registration": true, "hybrid_calibration": false},
+      "validation_evidence": "runs/authoring/professional-v3-p10-20261103/validation.json",
+      "observer_trust_boundary": "host records screenshots and read-only instrumentation snapshots; QGIS process integrity is assumed, not adversarially enforced",
+      "provenance": {"sources": ["https://weavebench.github.io/", "https://weavebench.github.io/trajectories/tasks/SPA_task_1_qgis_flood_zone.html"], "copied_assets": false, "copied_prompts": false},
+      "input_design": ["32-48 synthetic parcels with stable IDs and repairable geometry defects", "Two DEM sources with declared horizontal CRS, vertical units, NoData and a common vertical datum", "Versioned population observations and explicit quality/cutoff rules", "Directed road graph, fixed closures, 12 demand origins and capacity-limited shelters", "Shared GeoPackage, live project, named role groups and immutable basemap", "Public analysis and review policies; no reference answers in inputs"],
+      "agents": {
+        "a": {"instruction_file": "p10/task_a.md", "writes": ["review.gpkg:exposure_*", "project:Exposure_Review", "exports:exposure/*"], "outputs": ["RivertonReview.qgz", "review.gpkg", "exposure_release.gpkg", "exposure_summary.csv", "exposure_review.pdf"], "critical_checks": ["geometry_and_population_join", "crs_vertical_units_and_nodata", "area_weighted_depth_and_coverage", "risk_and_unknown_classification", "native_layer_and_layout_binding", "exchange_and_pdf_consistency", "portable_project_reopen", "live_table_canvas_review"]},
+        "b": {"instruction_file": "p10/task_b.md", "writes": ["review.gpkg:access_*", "project:Access_Review", "exports:access/*"], "outputs": ["RivertonReview.qgz", "review.gpkg", "access_routes.gpkg", "allocation.csv", "access_review.pdf"], "critical_checks": ["directed_graph_and_closures", "capacity_and_demand_conservation", "minimum_unserved_demand", "allocation_cost_bound", "route_geometry_and_native_binding", "exception_and_pdf_consistency", "portable_project_reopen", "live_route_canvas_review"]}
+      },
+      "independence": "A reads supplied terrain/population; B reads supplied road closures/demand, never A's risk output. Role layouts and exports are separate. Final group membership is compared by semantic IDs, not insertion order.",
+      "concurrency_surfaces": ["same SQLite/GeoPackage writer", "stale QGZ layer-registry save", "in-memory layer cache versus committed table", "active layer/table selection/layout window", "export before own transaction is committed"],
+      "negative_controls": ["stale B save drops A layer references", "stale GeoPackage copy removes the other role's tables", "plausible CSV with wrong CRS or NoData treatment", "route ignores one-way closure or shelter capacity", "export disagrees with its saved native source", "static composite impersonates live selection evidence"],
+      "difficulty_axes": ["multi-source reconciliation", "spatial numerical correctness", "capacitated graph optimization", "native/data/export consistency", "live semantic inspection"]
+    },
+    {
+      "id": "p11", "software": "Blender", "title": "Articulated enclosure motion and optical identification",
+      "status": "spec_only", "native_file": "EnclosureReview.blend", "shared_store": "EnclosureReview.blend",
+      "readiness": {"native_inputs": false, "independent_grader": false, "references_both_orders": false, "native_negative_controls": false, "trusted_live_observer": false, "gui_reopen": false, "runner_registration": false, "hybrid_calibration": false},
+      "provenance": {"sources": ["https://weavebench.github.io/", "https://refresh.dev/blog/blenderbench"], "copied_assets": false, "copied_prompts": false},
+      "input_design": ["Original multi-part enclosure with inherited transforms, named datums and protected meshes", "Editable but incomplete hinge/linkage rig and multi-phase motion brief", "Independent calibration chart, material references and packed label atlas", "Role B may change UV/material attributes on meshes whose transforms A animates; neither changes topology", "Immutable camera definitions and a declared motion envelope", "Protected reference assets sharing some initial material datablocks"],
+      "agents": {
+        "a": {"instruction_file": "p11/task_a.md", "writes": ["objects:MotionRig.constraints", "objects:MotionRig.animation", "objects:MotionRig.drivers", "exports:motion/*"], "outputs": ["EnclosureReview.blend", "motion_samples.csv", "motion_review.json"], "critical_checks": ["datum_correct_pivots", "editable_rig_and_dependencies", "multi_phase_trajectory", "coupled_linkage_constraints", "dense_frame_clearance", "continuous_motion_and_hold", "parameter_response", "live_timeline_review"]},
+        "b": {"instruction_file": "p11/task_b.md", "writes": ["objects:FinishTargets.uv", "objects:FinishTargets.material_assignments", "materials:FinishTargets.nodes", "exports:finish/*"], "outputs": ["EnclosureReview.blend", "finish_contact_sheet.png", "finish_review.json"], "critical_checks": ["reference_color_and_surface", "UV_orientation_and_density", "UV_overlap_and_bleed", "decal_placement_and_legibility", "multi_view_visual_consistency", "editable_connected_shader_graph", "target_specific_material_assignment", "live_shader_and_viewport_review"]}
+      },
+      "independence": "Motion changes transforms/rig, finish changes UV/material attributes; meshes and review camera definitions are fixed. Evaluator renders the combined motion only after both stop; B's own contact sheet is a material review, not a promise to include unfinished A motion.",
+      "concurrency_surfaces": ["Object/Edit/Pose mode and active selection", "shared current frame and editor area", "material aliasing versus object-specific ownership", "whole-scene stale save", "preview from stale dependency graph"],
+      "negative_controls": ["stale finish scene deletes completed animation", "static endpoint poses without editable motion", "mid-frame collision hidden by sparse screenshots", "global material edit changes protected assets", "UV mirrored under inherited transform", "fabricated preview unrelated to native project"],
+      "difficulty_axes": ["transform and constraint reasoning", "dense temporal correctness", "visual specification inference", "non-destructive native editing", "shared-data aliasing"]
+    },
+    {
+      "id": "p12", "software": "FreeCAD", "title": "Parametric clamp and pickup assembly release",
+      "status": "spec_only", "native_file": "ClampRelease.FCStd", "shared_store": "ClampRelease.FCStd",
+      "readiness": {"native_inputs": false, "independent_grader": false, "references_both_orders": false, "native_negative_controls": false, "trusted_live_observer": false, "gui_reopen": false, "runner_registration": false, "hybrid_calibration": false},
+      "provenance": {"sources": ["https://weavebench.github.io/", "https://github.com/Zdong104/CADWORLD"], "copied_assets": false, "copied_prompts": false},
+      "input_design": ["Original incomplete base and pickup Bodies with named immutable mating datums", "Dimensioned drawings with linked dimensions, tolerances and public admissible parameter ranges", "Shared spreadsheet with reserved Base_* and Pickup_* aliases", "Editable sketches/features and independent native TechDraw pages", "Protected purchased components and fixed assembly interface envelopes", "Separate role exports, no role must wait for the other to finish"],
+      "agents": {
+        "a": {"instruction_file": "p12/task_a.md", "writes": ["Body:BaseBody", "Spreadsheet:Base_*", "TechDraw:BasePage", "exports:base/*"], "outputs": ["ClampRelease.FCStd", "base.step", "base_drawing.pdf", "base_parameter_check.csv"], "critical_checks": ["drawing_dimensions_and_datums", "fully_constrained_design_intent", "valid_editable_feature_history", "public_range_parameter_response", "native_section_and_detail_views", "STEP_native_geometry_agreement", "linked_dimensions_and_tolerances", "live_parameter_recompute_review"]},
+        "b": {"instruction_file": "p12/task_b.md", "writes": ["Body:PickupBody", "Spreadsheet:Pickup_*", "TechDraw:PickupPage", "exports:pickup/*"], "outputs": ["ClampRelease.FCStd", "pickup.step", "pickup_drawing.pdf", "pickup_bom.csv"], "critical_checks": ["pickup_geometry_and_interface", "fully_constrained_linked_parameters", "valid_editable_feature_history", "public_range_parameter_response", "native_views_and_dimensions", "STEP_native_geometry_agreement", "BOM_and_drawing_consistency", "live_parameter_recompute_review"]}
+      },
+      "independence": "Both Bodies attach to immutable supplied interface datums; neither expression references the other role's mutable parameters. Spreadsheet aliases and pages are disjoint. A→B and B→A must agree semantically across the documented parameter ranges.",
+      "concurrency_surfaces": ["active Body/document/workbench", "shared spreadsheet edits", "open edit transaction and recompute state", "topology references invalidated by careless replacement", "stale FCStd save", "STEP/PDF generated before own recompute"],
+      "negative_controls": ["stale save deletes the other Body's features", "static imported solid masquerades as parametric solution", "nominal-only model breaks on admissible dimension changes", "shape valid but not to drawing", "decorative PDF dimensions not linked to native geometry", "BOM or STEP comes from an obsolete native revision"],
+      "difficulty_axes": ["technical drawing interpretation", "parametric design intent", "topological robustness", "native TechDraw semantics", "release consistency"]
+    }
+  ]
+}

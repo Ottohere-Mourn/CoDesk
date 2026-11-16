@@ -3,6 +3,9 @@
 Things that cost real debugging time when running composite OSWorld tasks at scale. Most are already handled
 in code; the notes say where, so they are not undone by accident.
 
+For the current VM10 CPU server, use [the server plan](SERVER_PLAN.md) for paths, resource limits and backup.
+Its `/data` disk is independent of the GPU nodes' Blob mounts; check KVM inside a container before choosing TCG.
+
 ## Correctness of composite runs
 
 - **One task cache per run.** `DesktopEnv` keeps per-task state under `cache_dir/<task_id>/`; OSWorld 2.0 web
@@ -58,7 +61,8 @@ in code; the notes say where, so they are not undone by accident.
   `OSCOMBO_SHOT_PATIENCE` s (300 for Blender combos) before failing the run as `INFRA`. Heavy apps want
   `OSCOMBO_GUEST_CPUS=12`.
 - Concurrency: on a 96-core host, ~6 TCG Guests at once were stable; 8 made Guests stop answering mid-run.
-  Other CPU-heavy jobs on the host cause the same symptom. `queue --lanes` caps runs, `isolated` runs count N.
+  Other CPU-heavy jobs on the host cause the same symptom. `queue --lanes` caps runs, not Guests: each `isolated`
+  run starts N Guests for N tasks. This historical capacity is not a sizing target for the shared 32-CPU VM10.
 - GNOME notification banners (e.g. "Low Disk Space") cover click targets; the runner turns banners off.
 - Under heavy load the screen can stay black after setup; agents starting on a black screen give up within a few
   steps. The runner waits for a drawn desktop (nudging the pointer) and marks the run INFRA otherwise
@@ -89,3 +93,15 @@ in code; the notes say where, so they are not undone by accident.
 
 - `result.json` records the oscombo and OSWorld commits (`+dirty` if modified) and the full agent specs.
 - Keep outputs on durable storage (`queue --archive`); node-local disks of batch jobs disappear with the job.
+
+## Professional Hybrid Policy (2026-11-03)
+
+- The benchmark allows GUI plus CLI/programming. The native professional runner
+  defaults to `--interaction-mode hybrid`; `gui-only` is an explicit ablation.
+- Shell access does not relax host/VM Codex settings. Container-unrestricted
+  permissions remain explicit, guarded and scoped only to experimental Docker.
+- Use a new hybrid preflight and output directory. Old GUI-only preflights,
+  frozen task bundles and recorded scores must not be relabelled as hybrid.
+- Six professional v2 candidates now include optional code workflows; p4 still
+  needs runtime registration and real agent pilots. See
+  `../experiments/PROFESSIONAL_NATIVE.md` for validation and access boundaries.
