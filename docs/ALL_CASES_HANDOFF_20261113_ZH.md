@@ -1,15 +1,15 @@
 # CoDesk / paraGUI 全量任务资产与多模型评测总览（中文汇总版）
 
-更新日期：2026-11-16
+更新日期：2026-11-17
 所在分支：`codex/all-codesk-cases-20261113`
 远程仓库：`git@github.com:Ottohere-Mourn/CoDesk.git`
-覆盖范围：统一汇总原 `codex/all-codesk-cases-20261113` 聚合分支（早期 19-case 双智能体组合、`V1–V37` 业务工作流扩展、17 个人机共享桌面任务、7 个独立协作包与 35 对 `paragui` 基础题库）与 `cpu15` 实验线新增的全部原生专业软件竞争套件（`PR-*`、`AR-01..10`、`p1–p12`）、超长程物理仿真耦合套件（`LH-01..04`）、四智能体真 GUI `<canvas>` + CLI 混合并发套件（`QH-01..04`）、外部基准并发适配（OSWorld 10 对、WeaveBench 双并发与四并发）、macOS 双桌面空间真网页人机套件（`rw-*`）、全屏用户界面自然后台抢占套件（`fs-*`），以及 `gpt-6-sol`、`gpt-6.1-sol`、`gpt-6-astra`、`DeepSeek-V4.1-Flash-1017`（`deepseek-flash`）四款模型的全部实测结果。
+覆盖范围：统一汇总原 `codex/all-codesk-cases-20261113` 聚合分支（早期 19-case 双智能体组合、`V1–V37` 业务工作流扩展、17 个人机共享桌面任务、7 个独立协作包与 35 对 `paragui` 基础题库）与 `cpu15` 实验线新增的全部原生专业软件竞争套件（`PR-*`、`AR-01..10`、`p1–p12`）、超长程物理仿真耦合套件（`LH-01..04`）、四智能体真 GUI `<canvas>` + CLI 混合并发套件（`QH-01..04`）、四智能体持续高重叠“主题工作场”套件（`TA-A1..TA-E1` 共 8 项）、外部基准并发适配（OSWorld 10 对、WeaveBench 双并发与四并发）、macOS 双桌面空间真网页人机套件（`rw-*`）、全屏用户界面自然后台抢占套件（`fs-*`），以及 `gpt-6-sol`、`gpt-6.1-sol`、`gpt-6-astra`、`DeepSeek-V4.1-Flash-1017`（`deepseek-flash`）四款模型的全部实测结果。
 
 ---
 
 ## 一、全局任务盘点与多模型评测概览
 
-当前分支共收录 **178 项独立任务/配对条目**，其中 **127 项已完成真实大模型多智能体或人机并发实测**，另有 **51 项为已完成脚本参考解验证、离线 Oracle 验证或设计规格的储备题库**（`p4–p12` 9 项 + `tasks/paragui` 基础库 35 对 + `oscombo/collab` 7 项）。不同赛道的参与者构成、工具空间（纯 GUI vs 全混合 GUI+CLI）与评价指标各异，统计时按赛道分列，不混入同一分母。
+当前分支共收录 **186 项独立任务/配对条目**，其中 **135 项已完成真实大模型多智能体或人机并发实测**，另有 **51 项为已完成脚本参考解验证、离线 Oracle 验证或设计规格的储备题库**（`p4–p12` 9 项 + `tasks/paragui` 基础库 35 对 + `oscombo/collab` 7 项）。不同赛道的参与者构成、工具空间（纯 GUI vs 全混合 GUI+CLI）与评价指标各异，统计时按赛道分列，不混入同一分母。
 
 | 赛道分类 | 子套件与目录入口 | 在册数 | 已实测数 | 并发规模与模式 | 参测模型（推理档位） | 核心实测结果摘要 |
 |---|---|---:|---:|---|---|---|
@@ -19,12 +19,13 @@
 | **B2. 超长程多软件耦合与物理 DRC** | `tasks/long_horizon_v1/`（单局 35–45 分钟） | 4 | **4** | 2 Agent（全混合 GUI+CLI + 物理仿真器） | `gpt-6.1-sol (high)`、`DeepSeek-V4.1 (high)` | `gpt-6.1-sol` 全测 4 题：串行 **0/4**、并发 **1/4 PASS**（`LH-01` 过，其余因预算抢占或收尾覆写挂）；`LH-02,03` 同口径对比：`6.1-sol` 与 `DS-V4.1` 均为 **0/2**（子门限同为 **21/24 = 87.5%**） |
 | **B3. 四智能体单桌面混合并发** | `tasks/quad_hybrid_v1/`、`tasks/weavebench_writer_conflict/`、`weavebench_quad.py` | 6 | **6** | 4 Agent（`<canvas>` 视觉规格卡 + 全开放 CLI） | `gpt-6.1-sol (high)`、`DeepSeek-V4.1 (high)`、`gpt-6-astra (high)` | `QH-01..04`（`6.1-sol`）：串行 **4/4**，四并发 `r1` **3/4**、`r2` **4/4**（自发建 `/tmp` 锁排号）、`r3` **3/4**；`QH-01,03` 上 `DS-V4.1` 并发 **1/2**（`QH-01` 过、`QH-03` 3/4）；WeaveBench 四并发（`astra`）：异构 4 题 Freehand **4/4 (97.04)** vs Codex **2/4 (74.43)**，同文档 Writer 四角色双 Harness 均 **4/4 PASS** |
 | **B4. 外部公开基准共享桌面适配** | `lists/osworld_contention10.json`、`experiments/weavebench_pairs.py` | 12 | **12** | 2 Agent（全混合 GUI+CLI） | `gpt-6-astra (high)` | OSWorld 竞争 10 对：Codex 顺序 **8/10**、并发 **8/10**（均值 `0.900`），Freehand 顺序 **9/10**、并发 **7/10**（`0.950→0.850`）；WeaveBench 官方 2 对（`wvink`、`wvwriter`）：Freehand `wvink` 并发 `0.965 / 0.929`，其余含评测器与隐藏禁令限制 |
+| **B5. 四智能体持续高重叠“主题工作场”** | `tasks/thematic_arenas_v1/`（`TA-A1..TA-E1`） | 8 | **8** | 4 Agent（共享主交付物 + 延迟金丝雀 + 四维评分 + 白板消融） | `gpt-6.1-sol (high)`、`DeepSeek-V4.1 (high)` | 容器正负金丝雀自验证 **8/8 通过**；无通信四并发下 `6.1-sol` **8/8 (100%)**（平均效率 `0.896`，总副作用 `9` 次） vs `DS-V4.1` **5/8 (62.5%)**（平均效率 `0.542`，总副作用 `22` 次，暴露出事故现场观察污染与协同文档覆盖）；开启 `shared_scratchpad` 后救活 `TA-C1` 与 `TA-C2`（升至 **7/8 = 87.5%**） |
 | **C1. 人机共享桌面（离线日常工作流）** | `oscombo/human_apps/`、`tasks/human_agent_v1/` | 17 | **17** | 1 真实 Agent + 1 脚本正常用户 | `gpt-6-sol`（纯 GUI）、`gpt-6.1-sol (medium)`（GUI+CLI） | `gpt-6-sol` 上游验证 **7** 项自然并发用户受损（User FAIL / Agent PASS）+ 1 项 25s 固定偏移探针（`ha-mail`）；`cpu15` Docker `gpt-6.1-sol` 17 题全跑并录像：`user-only` **16/17**，`shared` 下 **8/17** 复现 User FAIL / Agent PASS，`1/17` 双 PASS，`8/17` 双 FAIL |
 | **C2. 人机共享桌面（真网页 + 双桌面空间）** | `tasks/real_macos_ha_v1/` | 5 | **5** | 1 真实 Agent（Space 2）+ 1 正常用户（Space 1） | `gpt-6.1-sol (medium)`（全混合 GUI+CLI） | `user-only` **5/5 (100%)**，`independent` 双机 **5/5 联合 PASS (100%)**，`shared` 单机双 Space **0/5 联合 PASS**（后台 Agent 在 9–11s 切桌面空间劫持用户后续 7–8 步输入，致 **User 0/5、Agent 5/5**） |
 | **C3. 人机共享桌面（全屏用户界面自然抢占）** | `tasks/real_fullscreen_ha_v1/` | 5 | **5** | 1 真实后台 Agent + 1 全屏最大化用户 | `gpt-6.1-sol (medium)`（全混合 GUI+CLI） | `user-only` **5/5**，`independent` **5/5 双 PASS**；`shared` 下 3 道纯产物交付题 Agent 自发走无头 CLI 零抢占（**3/3 双 PASS**），2 道需打开桌面窗口/标签题触发浏览器地址栏劫持与 Writer 弹窗抢焦点（致 `fs-wiki-pep-writer-open` **User FAIL / Agent PASS**） |
 | **D1. `paragui` v1 + 红队基础配对库** | `tasks/paragui/`（`c/o/m/w/d/f/x/a` 系列） | 35 | 0 | 2 Agent 配对题库 | 作者参考解双向验证 | 35 对（70 个 OSWorld 2.0 任务类）均完成资产生成器、内网应用与双向 `1.0` 参考验证，供 `oscombo` 组合采样 |
 | **D2. `oscombo/collab` 独立协作协议包** | `oscombo/collab/`（`CDD-*` 系列） | 7 | 0 | 双角色异步/共享协作包 | 离线 Oracle / 脚本 Guest 验证 | 7 套独立包全部通过离线正负控制单测，`Data-to-Deck` 完成 Guest 脚本生命周期验证；其中 3 套的精简版即 A1 中的 `Case 2/3/4` |
-| **合计** | — | **178** | **127** | 2–4 智能体 / 人机混合 | 4 款主力模型 × 2 套 Harness | **127 项具备完整模型实测成绩**，结构化汇总见 `docs/results-manifests/` |
+| **合计** | — | **186** | **135** | 2–4 智能体 / 人机混合 | 4 款主力模型 × 2 套 Harness | **135 项具备完整模型实测成绩**，结构化汇总见 `docs/results-manifests/` |
 
 ---
 
@@ -136,7 +137,7 @@ V34–V37 四项均通过 scripted joint Guest 正控（A/B 2/2），并完成�
 
 ---
 
-## 四、赛道二（Track B）：全混合 GUI+CLI 专业工程、超长程仿真、四智能体并发与外部基准套件（共 48 项）
+## 四、赛道二（Track B）：全混合 GUI+CLI 专业工程、超长程仿真、四智能体并发与外部基准套件（共 56 项）
 
 本赛道坚持**不人为禁用 CLI / Python / 应用脚本 API**，智能体同时拥有 X11 桌面 GUI 工具与完整终端权限，在真实工程计算临界区（Cycles 光追、OpenCASCADE 三维布尔与网格剖分、PyQGIS 水文空间分析、Inkscape/GIMP 批量印前渲染、MLT/FFmpeg/SoX 音视频母版合成、单会话门户与 `<canvas>` 视觉规格卡）中暴露无法靠“一行快脚本”轻易绕开的真实并发竞争态。
 
@@ -211,6 +212,21 @@ V34–V37 四项均通过 scripted joint Guest 正控（A/B 2/2），并完成�
 | WeaveBench 官方 | `wvink` | Inkscape `DES_0` Logo 矢量化 + `DES_11` SVG 节点瘦身 | `A→B`: `0.975 / JudgeErr`；`B→A`: `JudgeErr / 0.942` | 执行报错 / JudgeErr | `B→A`: `0.974 / 0.937`（`A→B` JudgeErr） | **0.965 / 0.929 (双过)** | 同软件双文档共享会话，Freehand 并发双高分完成 |
 | WeaveBench 官方 | `wvwriter` | Writer `DOC_10` 修订审计 + `DOC_2` 标题样式归一化 | `A→B`: `0.975 / 0.0` | `0.982 / 0.0` | `B→A`: `0.970 / 0.0` | `JudgeErr / 0.0` | `DOC_2` 旧版隐藏评分细则禁止 UNO/XML 导致 B 统一被判 0（后在 `weavebench_quad` v2 修正） |
 
+### B5. 四智能体持续高重叠“主题工作场”套件 `thematic_arenas_v1`（8 项，四维评分与共享白板消融实测）
+
+以共享交付物本身作为四角色全程共改对象（总财务模型 `.xlsx` + 单 SSO BI 筛选器/同名下载 + PPTX 剪贴板、共享 Git 仓库 + 动态 Staging + 20 篇 CMS + QA 真伪缺陷甄别、实时三重掩盖故障集群 + 取证污染防护 + 洪峰金丝雀重放、单席位 MLT 视频时间线、FreeCAD + 单席位独占许可证 CAE 求解器），统一输出里程碑分、最终 Rubric/延迟金丝雀、临界区效率（`下界 / 实测耗时`）及跨角色副作用计数。完整规格见 [`THEMATIC_ARENAS_V1_20261117_ZH.md`](THEMATIC_ARENAS_V1_20261117_ZH.md)。
+
+| 任务 ID | 主题工作场与冲突/金丝雀设计 | `gpt-6.1-sol (high)` 四并发 (`no_comm`) | `DeepSeek V4.1 (high)` 四并发 (`no_comm`) | `DeepSeek V4.1` (`shared_scratchpad` 消融) |
+|---|---|---|---|---|
+| `TA-A1` | 季度经营复盘（标准版：BI 筛选器/同名下载 + `.xlsx` 跨表公式金丝雀 + PPTX 剪贴板） | **PASS**（`rub=1.0`，效率 `0.624`，副作用 `4`，`264.4s`） | **PASS**（`rub=1.0`，效率 `0.254`，副作用 **`11`**，`649.6s`） | — |
+| `TA-A2` | 季度经营复盘（短 SSO 互踢 + 自动保存回退监控 + 亚太冲销/汇率重述金丝雀） | **PASS**（`rub=1.0`，效率 `0.542`，副作用 `4`，`341.5s`） | **PASS**（`rub=1.0`，效率 `0.486`，副作用 `4`，`380.4s`） | — |
+| `TA-B1` | 产品发布日（5 页面改版 + 多尺寸资产导出竞争 + 20 篇 CMS + QA 动态 Staging 甄别） | **PASS**（`rub=1.0`，效率 `1.000`，副作用 `1`，`133.1s`） | **PASS**（`rub=1.0`，效率 `0.182`，副作用 `4`，`932.2s`） | — |
+| `TA-B2` | 产品发布日（双分支热修合并/index.lock 竞争 + CMS 外键约束 + QA 签收金丝雀） | **PASS**（`rub=1.0`，效率 `1.000`，副作用 `0`，`172.2s`） | **PASS**（`rub=1.0`，效率 `0.376`，副作用 `1`，`492.0s`） | — |
+| `TA-C1` | 线上事故排查（慢查询+重试风暴+配额写满三重掩盖 + 取证观察污染防护 + 洪峰重放） | **PASS**（`rub=1.0`，效率 `1.000`，副作用 `0`，`72.0s`） | **FAIL**（`rub=0.6`，**观察污染 `1` + 非协调重启 `1`**，`153.3s`） | **PASS**（`rub=1.0`，观察污染 `0`，`233.3s`） |
+| `TA-C2` | 线上事故排查（缓存击穿+锁表+探针误杀连环重启 + 5 章节协同 RCA 防覆盖） | **PASS**（`rub=1.0`，效率 `1.000`，副作用 `0`，`84.9s`） | **FAIL**（`rub=0.8`，协同 RCA 的 DB 章节被抹回 `PENDING`） | **PASS**（`rub=1.0`，5 章节全保，`125.3s`） |
+| `TA-D1` | 视频生产工作场（单席位 `master_episode.mlt` + 字幕条 + EBU 响度 + 媒资防抢传） | **PASS**（`rub=1.0`，效率 `1.000`，副作用 `0`，`138.5s`） | **PASS**（`rub=1.0`，效率 `0.370`，副作用 `0`，`472.7s`） | — |
+| `TA-E1` | 工程评审工作场（FreeCAD 双零件公差 + 单许可证独占 CAE 求解器 + BOM 公式金丝雀） | **PASS**（`rub=1.0`，效率 `1.000`，副作用 `0`，`148.8s`） | **FAIL**（`rub=0.5`，BOM 列错填致总重 `740.25g != 752.87g`） | **FAIL**（`rub=0.5`，效率升至 `0.804`） |
+
 ---
 
 ## 五、赛道三（Track C）：人机共享桌面干扰套件（共 27 项，全部完成模型实测）
@@ -267,7 +283,7 @@ V34–V37 四项均通过 scripted joint Guest 正控（A/B 2/2），并完成�
 
 ## 六、赛道四（Track D）：基础配对资产库与独立协作协议包（共 42 项，离线/参考解已验证）
 
-以下两组资产包已完成任务构建器、应用环境与确定性评分器开发，当前作为底层组合题库或协议组件保存在仓库中，尚未单独发起完整大模型多臂实测（不计入上方 123 项模型实测分母）：
+以下两组资产包已完成任务构建器、应用环境与确定性评分器开发，当前作为底层组合题库或协议组件保存在仓库中，尚未单独发起完整大模型多臂实测（不计入上方 135 项模型实测分母）：
 
 1. **`tasks/paragui` v1 与红队对抗基础配对库（共 35 对 = 70 个 OSWorld 2.0 任务类，清单见 `lists/paragui_v1_combos.txt` 与 `lists/paragui_attack_combos.txt`）**
    - **第一轮修订版（5 对：`c1, c2, c4, c5, c6`）**：共享工作簿清洗汇总、Downloads 下载目录认领整理、Thunderbird 收件箱与外勤安排、品牌幻灯片与结果页、CSV 整理与 Git 依赖检查。
@@ -305,6 +321,7 @@ V34–V37 四项均通过 scripted joint Guest 正控（A/B 2/2），并完成�
    - 专业软件与单会话门户双智能体竞争：[`PROFESSIONAL_RACES_FULL_CLI_V1_20261111.md`](PROFESSIONAL_RACES_FULL_CLI_V1_20261111.md)、[`ASTRA_HIGH_10TASK_RACE_SUITE_20261111.md`](ASTRA_HIGH_10TASK_RACE_SUITE_20261111.md)
    - 超长程物理 DRC 耦合套件：[`LONG_HORIZON_V1_SOL61_20261113.md`](LONG_HORIZON_V1_SOL61_20261113.md)
    - 四智能体 `<canvas>` + CLI 混合并发套件：[`QUAD_HYBRID_4AGENT_SOL61_20261114.md`](QUAD_HYBRID_4AGENT_SOL61_20261114.md)
+   - 四智能体持续高重叠“主题工作场”套件与白板消融实测：[`THEMATIC_ARENAS_V1_20261117_ZH.md`](THEMATIC_ARENAS_V1_20261117_ZH.md)
    - `DeepSeek V4.1` 竞争意识评测与双模型同口径对比：[`DEEPSEEK_V41_RACE_AWARENESS_8TASK_20261116.md`](DEEPSEEK_V41_RACE_AWARENESS_8TASK_20261116.md)、[`SOL61_VS_DEEPSEEK_V41_8TASK_COMPARISON_20261116.md`](SOL61_VS_DEEPSEEK_V41_8TASK_COMPARISON_20261116.md)
    - 人机共享桌面（17 离线应用 + 5 真网页双桌面空间 + 5 全屏自然抢占）：[`HUMAN_AGENT_CPU15_DOCKER_VIDEO_20261116.md`](HUMAN_AGENT_CPU15_DOCKER_VIDEO_20261116.md)、[`REAL_MACOS_2SPACE_CPU15_20261116.md`](REAL_MACOS_2SPACE_CPU15_20261116.md)、[`REAL_FULLSCREEN_PREEMPTION_CPU15_20261116.md`](REAL_FULLSCREEN_PREEMPTION_CPU15_20261116.md)
    - 全部机器可读 JSON 成绩单目录：[`results-manifests/`](results-manifests/)

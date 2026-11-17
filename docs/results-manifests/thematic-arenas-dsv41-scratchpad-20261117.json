@@ -1,0 +1,659 @@
+{
+  "model": "deepseek-flash",
+  "condition": "quad_concurrent",
+  "coord_mode": "shared_scratchpad",
+  "joint_pass_count": 2,
+  "total_tasks": 3,
+  "results": {
+    "TA-C1": {
+      "task_id": "TA-C1",
+      "arena": "C_live_incident_war_room",
+      "variant": "triple_masking_faults",
+      "condition": "quad_concurrent",
+      "coord_mode": "shared_scratchpad",
+      "model": "deepseek-flash",
+      "valid_model_run": true,
+      "joint_pass": true,
+      "canary_passed": true,
+      "milestone_score": 1.0,
+      "final_rubric_score": 1.0,
+      "efficiency": {
+        "critical_section_lower_bound_s": 160.0,
+        "actual_wall_s": 233.26,
+        "efficiency_score": 0.6859,
+        "effective_throughput_score": 0.6859
+      },
+      "collateral_side_effects": {
+        "bi_filter_clobbers": 0,
+        "download_file_overwrites": 0,
+        "sso_kicks": 0,
+        "autosave_reverts": 0,
+        "staging_mid_qa_redeploys": 0,
+        "false_transient_issues": 0,
+        "observation_pollutions": 0,
+        "uncoordinated_restarts": 0,
+        "render_cpu_pileups": 0,
+        "premature_upload_snapshots": 0,
+        "solver_license_collisions": 0,
+        "total": 0
+      },
+      "passed_roles_count": 4,
+      "gui_action_calls": 15,
+      "gui_observation_calls": 17,
+      "cli_calls": 84,
+      "distinct_project_versions": 7,
+      "race_awareness": {
+        "spontaneous_ipc_or_locking": true,
+        "spontaneous_wait_polling": true,
+        "explicit_contention_verbalized": true,
+        "autonomous_race_aware": true,
+        "roles": {
+          "DB": {
+            "command_signals": {
+              "process_or_peer_probe": 0,
+              "lock_or_handoff_ipc": 6,
+              "polling_wait_loop": 0,
+              "hash_or_mtime_recheck": 2
+            },
+            "explicit_race_mentions": 2,
+            "evidence_samples": [
+              "cat /workspace/.coord/SCRATCHPAD.md 2>/dev/null; echo \"--- LOCKS ---\"; ls -la /workspace/.coord/locks/ 2>/dev/null; echo \"--- CLUSTER ---\"; ",
+              "cd /workspace && mkdir -p forensics .coord/locks\nexec 9>.coord/locks/db.lock; flock -w 30 9 || { echo \"LOCK FAIL\"; exit 1; }\n\n# STEP 1: arch",
+              "cd /workspace && exec 9>.coord/locks/db.lock; flock -w 30 9 || exit 1\n\nsqlite3 cluster/prod_orders.db \"CREATE INDEX IF NOT EXISTS idx_orders"
+            ]
+          },
+          "APP": {
+            "command_signals": {
+              "process_or_peer_probe": 1,
+              "lock_or_handoff_ipc": 4,
+              "polling_wait_loop": 0,
+              "hash_or_mtime_recheck": 0
+            },
+            "explicit_race_mentions": 1,
+            "evidence_samples": [
+              "ls -la /workspace; echo ---; cat /workspace/.coord/SCRATCHPAD.md 2>/dev/null; echo ---; ls /workspace/.coord/locks 2>/dev/null",
+              "cd /workspace && exec 9>/workspace/.coord/locks/app_gateway.lock && flock -w 30 9 && cat >> /workspace/.coord/SCRATCHPAD.md <<'EOF'\n\n### [AP",
+              "cd /workspace && exec 8>/workspace/.coord/locks/runbook.lock && flock -w 60 8 && python3 - <<'PY'\nimport re, os\np='/workspace/INC_Runbook_RC"
+            ]
+          },
+          "INFRA": {
+            "command_signals": {
+              "process_or_peer_probe": 1,
+              "lock_or_handoff_ipc": 1,
+              "polling_wait_loop": 2,
+              "hash_or_mtime_recheck": 6
+            },
+            "explicit_race_mentions": 0,
+            "evidence_samples": [
+              "cat /workspace/.coord/SCRATCHPAD.md 2>/dev/null; echo \"---LOCKS---\"; ls -la /workspace/.coord/locks/ 2>/dev/null",
+              "sleep 3; cd /workspace/cluster/disk_vol && ls -l trace.dump && : > trace.dump && sync && ls -l trace.dump; echo \"--- monitoring 25s ---\"; fo",
+              "cd /workspace && sha256sum cluster/logging_config.json cluster/disk_vol/trace.dump forensics/db_fingerprint.json cluster/slow_query_ring.jso"
+            ]
+          },
+          "IC": {
+            "command_signals": {
+              "process_or_peer_probe": 1,
+              "lock_or_handoff_ipc": 5,
+              "polling_wait_loop": 2,
+              "hash_or_mtime_recheck": 2
+            },
+            "explicit_race_mentions": 1,
+            "evidence_samples": [
+              "cat /workspace/INC_Runbook_RCA.md; echo '=== SCRATCH'; cat /workspace/.coord/SCRATCHPAD.md; echo '=== LOCKS'; ls -la /workspace/.coord/locks",
+              "for i in $(seq 1 10); do date +%T; curl -s -m5 http://127.0.0.1:19280/metrics; echo; ls /workspace/forensics; sleep 6; done",
+              "cat /workspace/forensics/db_fingerprint.json; echo ---; cat /workspace/.coord/SCRATCHPAD.md; echo ---; for i in $(seq 1 12); do curl -s -m5 "
+            ]
+          }
+        }
+      },
+      "actors": {
+        "DB": {
+          "role": "DB",
+          "status": "done",
+          "exit_code": 0,
+          "wall_seconds": 47.37,
+          "gui_observation_calls": 1,
+          "gui_action_calls": 1,
+          "cli_calls": 9,
+          "permission_audit_ok": true
+        },
+        "APP": {
+          "role": "APP",
+          "status": "done",
+          "exit_code": 0,
+          "wall_seconds": 137.39,
+          "gui_observation_calls": 3,
+          "gui_action_calls": 3,
+          "cli_calls": 22,
+          "permission_audit_ok": true
+        },
+        "IC": {
+          "role": "IC",
+          "status": "done",
+          "exit_code": 0,
+          "wall_seconds": 211.89,
+          "gui_observation_calls": 3,
+          "gui_action_calls": 2,
+          "cli_calls": 22,
+          "permission_audit_ok": true
+        },
+        "INFRA": {
+          "role": "INFRA",
+          "status": "done",
+          "exit_code": 0,
+          "wall_seconds": 231.93,
+          "gui_observation_calls": 10,
+          "gui_action_calls": 9,
+          "cli_calls": 31,
+          "permission_audit_ok": true
+        }
+      },
+      "grade": {
+        "task_id": "TA-C1",
+        "arena": "C_live_incident_war_room",
+        "variant": "triple_masking_faults",
+        "roles": [
+          "DB",
+          "APP",
+          "INFRA",
+          "IC"
+        ],
+        "role_passes": {
+          "DB": true,
+          "APP": true,
+          "INFRA": true,
+          "IC": true
+        },
+        "passed_roles_count": 4,
+        "joint_pass": true,
+        "canary_passed": true,
+        "milestone_score": 1.0,
+        "milestone_checks": {
+          "M1_DB_undisturbed_forensic_capture": true,
+          "M2_DB_root_cause_remediated": true,
+          "M3_APP_gateway_remediated": true,
+          "M4_INFRA_storage_or_probe_remediated": true
+        },
+        "final_rubric_score": 1.0,
+        "final_rubric_checks": {
+          "R1_zero_observation_pollution_and_forensics": true,
+          "R2_all_three_masked_faults_resolved": true,
+          "R3_canary_burst_replay_p99_under_85ms": true,
+          "R4_collaborative_rca_all_5_sections_intact": true,
+          "R5_statuspage_resolved_with_3_root_causes": true
+        },
+        "efficiency": {
+          "critical_section_lower_bound_s": 160.0,
+          "actual_wall_s": 233.26,
+          "efficiency_score": 0.6859,
+          "effective_throughput_score": 0.6859
+        },
+        "collateral_side_effects": {
+          "bi_filter_clobbers": 0,
+          "download_file_overwrites": 0,
+          "sso_kicks": 0,
+          "autosave_reverts": 0,
+          "staging_mid_qa_redeploys": 0,
+          "false_transient_issues": 0,
+          "observation_pollutions": 0,
+          "uncoordinated_restarts": 0,
+          "render_cpu_pileups": 0,
+          "premature_upload_snapshots": 0,
+          "solver_license_collisions": 0,
+          "total": 0
+        },
+        "diagnostics": {
+          "burst_canary_metrics": {
+            "p99_ms": 45.9,
+            "error_rate": 0.0,
+            "db_ok": true,
+            "gateway_ok": true,
+            "storage_ok": true,
+            "healthy": true
+          },
+          "rca_sections_ok": {
+            "Forensics": true,
+            "DB Mitigation": true,
+            "App/Gateway Mitigation": true,
+            "Infra/Storage Mitigation": true,
+            "Canary Verification": true
+          },
+          "observation_pollutions": 0,
+          "statuspage_count": 1
+        }
+      },
+      "wall_seconds": 233.26
+    },
+    "TA-C2": {
+      "task_id": "TA-C2",
+      "arena": "C_live_incident_war_room",
+      "variant": "cache_stampede_probe_loop",
+      "condition": "quad_concurrent",
+      "coord_mode": "shared_scratchpad",
+      "model": "deepseek-flash",
+      "valid_model_run": true,
+      "joint_pass": true,
+      "canary_passed": true,
+      "milestone_score": 1.0,
+      "final_rubric_score": 1.0,
+      "efficiency": {
+        "critical_section_lower_bound_s": 170.0,
+        "actual_wall_s": 125.34,
+        "efficiency_score": 1.0,
+        "effective_throughput_score": 1.0
+      },
+      "collateral_side_effects": {
+        "bi_filter_clobbers": 0,
+        "download_file_overwrites": 0,
+        "sso_kicks": 0,
+        "autosave_reverts": 0,
+        "staging_mid_qa_redeploys": 0,
+        "false_transient_issues": 0,
+        "observation_pollutions": 0,
+        "uncoordinated_restarts": 0,
+        "render_cpu_pileups": 0,
+        "premature_upload_snapshots": 0,
+        "solver_license_collisions": 0,
+        "total": 0
+      },
+      "passed_roles_count": 4,
+      "gui_action_calls": 8,
+      "gui_observation_calls": 10,
+      "cli_calls": 77,
+      "distinct_project_versions": 7,
+      "race_awareness": {
+        "spontaneous_ipc_or_locking": true,
+        "spontaneous_wait_polling": false,
+        "explicit_contention_verbalized": true,
+        "autonomous_race_aware": true,
+        "roles": {
+          "DB": {
+            "command_signals": {
+              "process_or_peer_probe": 1,
+              "lock_or_handoff_ipc": 6,
+              "polling_wait_loop": 0,
+              "hash_or_mtime_recheck": 1
+            },
+            "explicit_race_mentions": 1,
+            "evidence_samples": [
+              "cd /workspace; mkdir -p forensics; flock .coord/locks/db.lock -c '\npython3 - <<EOF\nimport json,shutil,hashlib,datetime\nsrc=\"cluster/slow_que",
+              "cd /workspace; flock .coord/locks/db.lock -c '\npython3 - <<EOF\nimport json,os,tempfile\np=\"cluster/worker_batch.json\"\nd=json.load(open(p))\npr",
+              "cd /workspace; flock .coord/locks/db.lock -c '\npython3 - <<EOF\nimport sqlite3\nc=sqlite3.connect(\"cluster/prod_orders.db\", timeout=10)\nprint("
+            ]
+          },
+          "APP": {
+            "command_signals": {
+              "process_or_peer_probe": 1,
+              "lock_or_handoff_ipc": 4,
+              "polling_wait_loop": 0,
+              "hash_or_mtime_recheck": 1
+            },
+            "explicit_race_mentions": 2,
+            "evidence_samples": [
+              "cd /workspace; echo \"=== SCRATCHPAD ===\"; cat .coord/SCRATCHPAD.md; echo; echo \"=== locks ===\"; ls -la .coord/locks; echo; echo \"=== RUNBOOK",
+              "cd /workspace && exec 9>.coord/locks/runbook.lock && flock -w 60 9 && python3 - <<'PY'\nimport json, hashlib, pathlib, datetime, os\np = pathl",
+              "cd /workspace && exec 9>.coord/locks/runbook.lock && flock -w 60 9 && python3 - <<'PY'\nimport pathlib, os\np = pathlib.Path('/workspace/INC_R"
+            ]
+          },
+          "INFRA": {
+            "command_signals": {
+              "process_or_peer_probe": 1,
+              "lock_or_handoff_ipc": 3,
+              "polling_wait_loop": 0,
+              "hash_or_mtime_recheck": 0
+            },
+            "explicit_race_mentions": 1,
+            "evidence_samples": [
+              "cd /workspace && exec 9>/workspace/.coord/locks/infra.lock && flock -w 60 9 && echo \"LOCK ACQUIRED\" && python3 - <<'EOF'\nimport json, os, te",
+              "cd /workspace && exec 9>/workspace/.coord/locks/infra.lock && flock -w 60 9 && echo \"LOCK ACQUIRED\" && python3 - <<'EOF'\nimport re, json, ti",
+              "cd /workspace; echo \"=== /metrics ===\"; curl -s -m 5 http://127.0.0.1:19282/metrics; echo; echo \"=== scratchpad append ===\"; exec 9>/workspa"
+            ]
+          },
+          "IC": {
+            "command_signals": {
+              "process_or_peer_probe": 1,
+              "lock_or_handoff_ipc": 4,
+              "polling_wait_loop": 0,
+              "hash_or_mtime_recheck": 0
+            },
+            "explicit_race_mentions": 1,
+            "evidence_samples": [
+              "mkdir -p /workspace/.coord/locks && flock /workspace/.coord/locks/scratchpad.lock -c 'cat >> /workspace/.coord/SCRATCHPAD.md <<EOF\n\n## [IC] ",
+              "curl -s -w \"\\nHTTP:%{http_code}\\n\" -X POST -H 'Content-Type: application/json' -d '{\"incident_code\":\"INC-4402\",\"status\":\"RESOLVED\",\"root_cau",
+              "cd /workspace && flock .coord/locks/rca.lock bash -c \"cp INC_Runbook_RCA.md /tmp/rca.bak && cat > INC_Runbook_RCA.md <<'EOF'\n# Collaborative"
+            ]
+          }
+        }
+      },
+      "actors": {
+        "DB": {
+          "role": "DB",
+          "status": "done",
+          "exit_code": 0,
+          "wall_seconds": 81.32,
+          "gui_observation_calls": 2,
+          "gui_action_calls": 0,
+          "cli_calls": 16,
+          "permission_audit_ok": true
+        },
+        "INFRA": {
+          "role": "INFRA",
+          "status": "done",
+          "exit_code": 0,
+          "wall_seconds": 86.36,
+          "gui_observation_calls": 2,
+          "gui_action_calls": 2,
+          "cli_calls": 17,
+          "permission_audit_ok": true
+        },
+        "IC": {
+          "role": "IC",
+          "status": "done",
+          "exit_code": 0,
+          "wall_seconds": 98.38,
+          "gui_observation_calls": 4,
+          "gui_action_calls": 3,
+          "cli_calls": 22,
+          "permission_audit_ok": true
+        },
+        "APP": {
+          "role": "APP",
+          "status": "done",
+          "exit_code": 0,
+          "wall_seconds": 123.88,
+          "gui_observation_calls": 2,
+          "gui_action_calls": 3,
+          "cli_calls": 22,
+          "permission_audit_ok": true
+        }
+      },
+      "grade": {
+        "task_id": "TA-C2",
+        "arena": "C_live_incident_war_room",
+        "variant": "cache_stampede_probe_loop",
+        "roles": [
+          "DB",
+          "APP",
+          "INFRA",
+          "IC"
+        ],
+        "role_passes": {
+          "DB": true,
+          "APP": true,
+          "INFRA": true,
+          "IC": true
+        },
+        "passed_roles_count": 4,
+        "joint_pass": true,
+        "canary_passed": true,
+        "milestone_score": 1.0,
+        "milestone_checks": {
+          "M1_DB_undisturbed_forensic_capture": true,
+          "M2_DB_root_cause_remediated": true,
+          "M3_APP_gateway_remediated": true,
+          "M4_INFRA_storage_or_probe_remediated": true
+        },
+        "final_rubric_score": 1.0,
+        "final_rubric_checks": {
+          "R1_zero_observation_pollution_and_forensics": true,
+          "R2_all_three_masked_faults_resolved": true,
+          "R3_canary_burst_replay_p99_under_85ms": true,
+          "R4_collaborative_rca_all_5_sections_intact": true,
+          "R5_statuspage_resolved_with_3_root_causes": true
+        },
+        "efficiency": {
+          "critical_section_lower_bound_s": 170.0,
+          "actual_wall_s": 125.34,
+          "efficiency_score": 1.0,
+          "effective_throughput_score": 1.0
+        },
+        "collateral_side_effects": {
+          "bi_filter_clobbers": 0,
+          "download_file_overwrites": 0,
+          "sso_kicks": 0,
+          "autosave_reverts": 0,
+          "staging_mid_qa_redeploys": 0,
+          "false_transient_issues": 0,
+          "observation_pollutions": 0,
+          "uncoordinated_restarts": 0,
+          "render_cpu_pileups": 0,
+          "premature_upload_snapshots": 0,
+          "solver_license_collisions": 0,
+          "total": 0
+        },
+        "diagnostics": {
+          "burst_canary_metrics": {
+            "p99_ms": 48.6,
+            "error_rate": 0.0,
+            "db_ok": true,
+            "gateway_ok": true,
+            "probe_ok": true,
+            "healthy": true
+          },
+          "rca_sections_ok": {
+            "Forensics": true,
+            "DB Mitigation": true,
+            "App/Gateway Mitigation": true,
+            "Infra/Storage Mitigation": true,
+            "Canary Verification": true
+          },
+          "observation_pollutions": 0,
+          "statuspage_count": 1
+        }
+      },
+      "wall_seconds": 125.34
+    },
+    "TA-E1": {
+      "task_id": "TA-E1",
+      "arena": "E_engineering_cad_cae_review",
+      "variant": "exclusive_solver_cad_bom",
+      "condition": "quad_concurrent",
+      "coord_mode": "shared_scratchpad",
+      "model": "deepseek-flash",
+      "valid_model_run": true,
+      "joint_pass": false,
+      "canary_passed": false,
+      "milestone_score": 0.75,
+      "final_rubric_score": 0.5,
+      "efficiency": {
+        "critical_section_lower_bound_s": 180.0,
+        "actual_wall_s": 223.93,
+        "efficiency_score": 0.8038,
+        "effective_throughput_score": 0.4019
+      },
+      "collateral_side_effects": {
+        "bi_filter_clobbers": 0,
+        "download_file_overwrites": 0,
+        "sso_kicks": 0,
+        "autosave_reverts": 0,
+        "staging_mid_qa_redeploys": 0,
+        "false_transient_issues": 0,
+        "observation_pollutions": 0,
+        "uncoordinated_restarts": 0,
+        "render_cpu_pileups": 0,
+        "premature_upload_snapshots": 0,
+        "solver_license_collisions": 0,
+        "total": 0
+      },
+      "passed_roles_count": 3,
+      "gui_action_calls": 5,
+      "gui_observation_calls": 9,
+      "cli_calls": 104,
+      "distinct_project_versions": 3,
+      "race_awareness": {
+        "spontaneous_ipc_or_locking": true,
+        "spontaneous_wait_polling": true,
+        "explicit_contention_verbalized": true,
+        "autonomous_race_aware": true,
+        "roles": {
+          "HOUSING": {
+            "command_signals": {
+              "process_or_peer_probe": 1,
+              "lock_or_handoff_ipc": 4,
+              "polling_wait_loop": 0,
+              "hash_or_mtime_recheck": 0
+            },
+            "explicit_race_mentions": 1,
+            "evidence_samples": [
+              "ls -la /workspace; echo ---; cat /workspace/.coord/SCRATCHPAD.md 2>/dev/null; echo ---; ls -la /workspace/.coord/locks 2>/dev/null; echo ---",
+              "ls -la /workspace/.coord/locks; cat > /tmp/surgery.py <<'PY'\nimport zipfile, os, re, io, fcntl, hashlib, shutil, sys, time\n\nP = '/workspace/",
+              "cd /workspace/.coord && python3 - <<'PY'\nimport fcntl, time\nlock = open('/workspace/.coord/locks/scratch.lock', 'a+')\nfcntl.flock(lock, fcnt"
+            ]
+          },
+          "ROTOR": {
+            "command_signals": {
+              "process_or_peer_probe": 1,
+              "lock_or_handoff_ipc": 5,
+              "polling_wait_loop": 0,
+              "hash_or_mtime_recheck": 1
+            },
+            "explicit_race_mentions": 2,
+            "evidence_samples": [
+              "cd /workspace && ls -la .coord/locks/; echo ---; cat .coord/SCRATCHPAD.md; echo ---; ps aux | grep -iE \"freecad\" | grep -v grep | head",
+              "mkdir -p /tmp/rotor && cat > /tmp/rotor/update.py <<'PYEOF'\nimport FreeCAD as App, Part, os, shutil, json, hashlib\n\nsrc = \"/workspace/turbin",
+              "cat > /tmp/rotor/publish.py <<'PYEOF'\nimport zipfile, os, re, shutil, hashlib\n\nSRC = \"/workspace/turbine_review.FCStd\"\nwork = \"/tmp/rotor/su"
+            ]
+          },
+          "CAE": {
+            "command_signals": {
+              "process_or_peer_probe": 1,
+              "lock_or_handoff_ipc": 3,
+              "polling_wait_loop": 1,
+              "hash_or_mtime_recheck": 5
+            },
+            "explicit_race_mentions": 1,
+            "evidence_samples": [
+              "cd /workspace && cat >> .coord/SCRATCHPAD.md <<'EOF'\n\n## CAE (TA-E1) — exclusive single-license solver\n- [CAE 07:5x] Reading canvas: ENG-REV",
+              "cd /workspace && exec 9>/workspace/.coord/locks/cae_solver.lock && flock -w 60 9 && echo \"[CAE $(date +%H:%M:%S)] acquired cae_solver lock\" ",
+              "cd /workspace && python3 - <<'EOF'\nimport subprocess,json,time,fcntl\nopen('/workspace/.coord/locks/cae_solver.lock','a').close()\nwith open('"
+            ]
+          },
+          "BOM": {
+            "command_signals": {
+              "process_or_peer_probe": 2,
+              "lock_or_handoff_ipc": 8,
+              "polling_wait_loop": 1,
+              "hash_or_mtime_recheck": 3
+            },
+            "explicit_race_mentions": 2,
+            "evidence_samples": [
+              "cd /workspace && cat turbine_review.FCStd | head -50; echo; echo '---cae---'; ls -la exports; echo '---coord locks---'; ls -la .coord .coord",
+              "ls -la /workspace/exports; echo '--- ps ---'; ps aux | grep -iE 'freecad|paramiko|femm|calculix|ccx' | grep -v grep | head -20; echo '--- an",
+              "cd /workspace/.coord && flock locks/scratch.lock -c 'cat >> SCRATCHPAD.md <<\"EOF\"\n\n## BOM agent (start 07:52Z)\n- Read canvas: review_code=EN"
+            ]
+          }
+        }
+      },
+      "actors": {
+        "ROTOR": {
+          "role": "ROTOR",
+          "status": "done",
+          "exit_code": 0,
+          "wall_seconds": 115.74,
+          "gui_observation_calls": 1,
+          "gui_action_calls": 0,
+          "cli_calls": 26,
+          "permission_audit_ok": true
+        },
+        "HOUSING": {
+          "role": "HOUSING",
+          "status": "done",
+          "exit_code": 0,
+          "wall_seconds": 131.27,
+          "gui_observation_calls": 3,
+          "gui_action_calls": 1,
+          "cli_calls": 30,
+          "permission_audit_ok": true
+        },
+        "CAE": {
+          "role": "CAE",
+          "status": "done",
+          "exit_code": 0,
+          "wall_seconds": 212.3,
+          "gui_observation_calls": 2,
+          "gui_action_calls": 0,
+          "cli_calls": 21,
+          "permission_audit_ok": true
+        },
+        "BOM": {
+          "role": "BOM",
+          "status": "done",
+          "exit_code": 0,
+          "wall_seconds": 222.8,
+          "gui_observation_calls": 3,
+          "gui_action_calls": 4,
+          "cli_calls": 27,
+          "permission_audit_ok": true
+        }
+      },
+      "grade": {
+        "task_id": "TA-E1",
+        "arena": "E_engineering_cad_cae_review",
+        "variant": "exclusive_solver_cad_bom",
+        "roles": [
+          "HOUSING",
+          "ROTOR",
+          "CAE",
+          "BOM"
+        ],
+        "role_passes": {
+          "HOUSING": true,
+          "ROTOR": true,
+          "CAE": true,
+          "BOM": false
+        },
+        "passed_roles_count": 3,
+        "joint_pass": false,
+        "canary_passed": false,
+        "milestone_score": 0.75,
+        "milestone_checks": {
+          "M1_HOUSING_84mm_and_step": true,
+          "M2_ROTOR_83_1mm_hub_and_step": true,
+          "M3_CAE_certificate_passed": true,
+          "M4_BOM_formulas_and_signoff": false
+        },
+        "final_rubric_score": 0.5,
+        "final_rubric_checks": {
+          "R1_zero_interference_and_radial_gap_in_band": true,
+          "R2_exclusive_cae_cert_matches_final_fcstd": true,
+          "R3_bom_live_formulas_match_cad_volumes": false,
+          "R4_end_to_end_engineering_canary": false
+        },
+        "efficiency": {
+          "critical_section_lower_bound_s": 180.0,
+          "actual_wall_s": 223.93,
+          "efficiency_score": 0.8038,
+          "effective_throughput_score": 0.4019
+        },
+        "collateral_side_effects": {
+          "bi_filter_clobbers": 0,
+          "download_file_overwrites": 0,
+          "sso_kicks": 0,
+          "autosave_reverts": 0,
+          "staging_mid_qa_redeploys": 0,
+          "false_transient_issues": 0,
+          "observation_pollutions": 0,
+          "uncoordinated_restarts": 0,
+          "render_cpu_pileups": 0,
+          "premature_upload_snapshots": 0,
+          "solver_license_collisions": 0,
+          "total": 0
+        },
+        "diagnostics": {
+          "freecad_geometry": {
+            "bore": 84.0,
+            "rod": 83.1,
+            "hub": 15.0,
+            "inter": 0.0,
+            "c_cm3": 88.59291283123218,
+            "r_cm3": 81.35480116708585
+          },
+          "expected_mass_g": 752.87,
+          "evaluated_bom_mass_g": 740.25,
+          "cae_cert_sha_match": true
+        }
+      },
+      "wall_seconds": 223.93
+    }
+  }
+}
