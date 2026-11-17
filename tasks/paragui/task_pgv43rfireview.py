@@ -8,7 +8,7 @@ class TaskV43Rfireview(BaseTask):
  intermediate_eval_safe=False
  id="pgv43rfireview";snapshot="paragui";source="paragui";trajectory="trajectories/";related_apps=["chrome"]
  proxy=False;fixed_ip=False;possibility_of_env_change="low"
- instruction='Complete the synthetic architect response for construction RFI-731. Record the disposition, drawing sheet, detail, and response due date; save.'
+ instruction="Complete the synthetic architect response for construction RFI-731 from its source information. Record the disposition, drawing sheet, drawing detail exactly as stated (including the word Detail, e.g. Detail 3), and response due date; save."
  def setup(self,setup_controller:"SetupController",use_proxy:bool=False)->None:pair.setup(setup_controller)
  def evaluate(self,env:"DesktopEnv"):return pair.evaluate(env,"A","pgv43rfireview_result")
 TASK_CLASS=TaskV43Rfireview

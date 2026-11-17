@@ -24,8 +24,8 @@
 - Fixture builder / Web app：`tasks/paragui/build_v456.py`、`tasks/paragui/app_v456_template.py`。
 - 双角色 OSWorld adapter：`tasks/paragui/pg_v43.py`–`pg_v47.py` 及对应 `task_pgv*.py`。
 - Oracle：`tasks/paragui/pg_v456_oracle.py`。默认精确匹配；仅数值字段支持数值等价、V44 use-by 支持常见日期格式，少数明确的自然语言字段允许忽略大小写/多余空白。引用号、状态枚举、交易号、构建号仍严格匹配。
-- 自动化 Oracle tests：`tests/test_v456_oracles.py`。截至本批实现，完整文件测试为 **58 passed**，包括新题种子正例、错误值负例、字段隔离、资产重建、五个本地 HTTP 页面/保存路由 roundtrip 及有限的数值/日期/大小写等价检查。该 HTTP roundtrip 仍不是 OSWorld Guest GUI 控制。
-- 这并不等同于 Guest GUI 正控：5 题的 scripted GUI Guest 控制尚未执行。
+- 自动化 Oracle tests：`tests/test_v456_oracles.py`。截至本批实现，完整文件测试为 **63 passed**，包括新题种子正例、错误值负例、字段隔离、资产重建、五个本地 HTTP 页面/保存路由 roundtrip 及有限的数值/日期/大小写等价检查。该 HTTP roundtrip 仍不是 OSWorld Guest GUI 控制。
+- OSWorld Guest scripted joint 正控已完成 **5/5**（五题各自 A/B 均为 1.0）：V43 `cdesk3-v43-scripted-joint-20261117T101342Z-4076241`，V44 `...T101910Z-4078443`，V45 `...T102444Z-4080659`，V46 `...T102745Z-4082142`，V47 `...T103044Z-4083593`。结果、截图和 overlays 留在 RAID 的 `runs/triplets/` 与 `overlays/`；每次仅启动自己的动态分配 Docker Guest，未停止/重置外部 `sharp_bhabha`。
 
 ## 复现/实验入口
 
@@ -49,8 +49,8 @@ for c in v43 v44 v45 v46 v47; do
 done
 ```
 
-单题的 scripted joint GUI 正控入口为 `scripts/run_v456_guest_control.py v43` 至 `v47`。模型筛查须先确认 OSWorld 固定端口服务已释放，先跑 scripted Guest 正控，再按预注册门控进行 `MA-ID → Shared → Shared+Lock`；Shared 没有双角色有效失败时不把锁臂跳过描述成 FAIL。
+单题 scripted joint GUI 正控入口为 `scripts/run_v456_guest_control.py v43` 至 `v47`。GPT-6-Sol 三臂均已完成：V43 在原 task wording 下曾有 A=0/B=1；截图确认 A 录入 `3`，而 source 为 `Detail 3`，因此明确要求精确抄录含 `Detail` 前缀并按新指令重跑 MA-ID，修订后 A/B 均 PASS。其他四题使用原指令和同一 Oracle。5/5 题 MA-ID 均为 A/B 双 PASS；5/5 配对级 Shared 与 Shared+Lock 均失败至少一角色；V43、V45、V47 在同一角色上达到 `PASS → FAIL → FAIL`；V44/V46 虽然配对失败持续，但失败角色在两共享臂间切换。V47 首次 Shared 的 B runner 退出码错误，证据予以保留，并仅作一次 infrastructure retry 后取得有效 arm 结果；未把无效首跑计作 FAIL。完整 run IDs/token/time 见 [模型结果审计](../tasks/paragui/V43_V47_MODEL_RESULTS_20261117_ZH.md)。
 
 ## 互补性 / 局限
 
-这些五题扩宽建筑、食品救援、极端高温响应、金融争议和数字无障碍的行业表面，但底层竞争仍然是 Synthetic Desk 的共享活动面板/当前记录。它们补充旧题而非证明五种新机制；行业需求真实性主要来自可识别的工作对象和操作目标，应用本身仍是合成站点。若后续扩成研究主结果，应至少补足实际 Guest 操作证据，并优先扩展出不同于活动面板切换的竞争源。
+DockerProvider 使用锁保护的动态端口分配；本批 scripted Guest 正控与三臂实验均已完成，外部 `sharp_bhabha` 与其 QEMU 未被停止/重置。五题覆盖建筑、食品救援、极端高温响应、金融争议和数字无障碍业务表面，但底层竞争仍是 Synthetic Desk 的共享活动面板/当前记录；五题是行业任务变体，不是五种独立机制。已观察到稳定的配对级干扰，但该结果仍基于合成 Web App；若作为主结果，下一步应优先验证到真实生产软件/OS-level contention，而非继续堆叠同一 active-panel 机制的表层案例。

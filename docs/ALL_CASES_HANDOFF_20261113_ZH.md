@@ -9,12 +9,12 @@
 
 ## 一、全局任务盘点与多模型评测概览
 
-当前分支共收录 **196 项独立任务/配对条目**：其中 **137 项已完成完整模型多臂实验**，**3 项另有有效 MA-ID/Shared 前置筛查但未完成锁臂**（按门控停止或 Shared actor timeout），另有 **56 项为脚本参考解验证、离线 Oracle 验证或设计规格储备题库**（既有 `p4–p12` 9 项 + `tasks/paragui` 基础库 35 对 + `oscombo/collab` 7 项 + 本批 V43–V47 5 项）。因此共有 140 项至少取得一个有效模型臂结果；timeout 不计作 FAIL。不同赛道工具空间与指标各异，按赛道分列。
+当前分支共收录 **196 项独立任务/配对条目**：其中 **142 项已完成完整模型多臂实验**，**3 项另有有效 MA-ID/Shared 前置筛查但未完成全部锁臂**（按门控停止或 Shared actor timeout），另有 **51 项为脚本参考解验证、离线 Oracle 验证或设计规格储备题库**（`p4–p12` 9 项 + `tasks/paragui` 基础库 35 对 + `oscombo/collab` 7 项）；V43–V47 已纳入完整模型多臂实验。因此共有 145 项至少取得一个有效模型臂结果；timeout 不计作 FAIL。不同赛道工具空间与指标各异，按赛道分列。
 
 | 赛道分类 | 子套件与目录入口 | 在册数 | 已实测数 | 并发规模与模式 | 参测模型（推理档位） | 核心实测结果摘要 |
 |---|---|---:|---:|---|---|---|
 | **A1. 核心双智能体机制与复合工作流** | `docs/handoff/13-case-handoff/`、`experiments/codesk_19case_suite.py` | 19 | **19** | 2 Agent（隔离 / 共享GUI / 动作锁 / 全混合CLI） | `gpt-6-sol`、`gpt-6.1-sol (medium)` | `gpt-6-sol` 三臂筛查 **14/19** 命中一次性 `PASS/FAIL/FAIL`；`gpt-6.1-sol` 四臂实测：隔离 **18/19 (94.7%)**，共享 GUI **5/19 (26.3%)**，动作锁 **3/17 (17.6%)**，开放全混合 CLI 后恢复至 **12/19 (63.2%)**（仍有 7 题因会话/视口/剪贴板/陈旧快照失败） |
-| **A2. 合成业务应用双智能体扩展** | `tasks/paragui/pg_v1..v47.py`、`pg_s1/k1/k2/q1/e1.py` | 52 | **44 完整 + 3 部分 + 5 未模型筛查** | 2 Agent（隔离 / 共享GUI / 动作锁，纯 GUI） | `gpt-6-sol (high)` | 11 项候选筛查中 **5/11** 命中；`V7–V37` 追加工作流 **21/31** 命中（含 `V33` 子任务级命中）；V38–V42 有 **2 项完整三臂 + 3 项部分筛查**，V40 一次命中目标组合；V43–V47 完成案例、Fixture、Oracle 和 OSWorld adapter，但尚未模型筛查。当前已筛查 47 项中 **27 次一次性命中**（含 V33 子任务级），不把未筛查的 5 项记为通过。
+| **A2. 合成业务应用双智能体扩展** | `tasks/paragui/pg_v1..v47.py`、`pg_s1/k1/k2/q1/e1.py` | 52 | **49 完整 + 3 部分 + 0 未模型筛查** | 2 Agent（隔离 / 共享GUI / 动作锁，纯 GUI） | `gpt-6-sol (high)` | 11 项候选筛查中 **5/11** 命中；`V7–V37` 追加工作流 **21/31** 命中（含 `V33` 子任务级命中）；V38–V42 有 **2 项完整三臂 + 3 项部分筛查**，V40 一次命中目标组合；V43–V47 完成案例、Fixture、Oracle、OSWorld adapter 与 5/5 scripted Guest 正控；V43–V47 均完成三臂（V47 的首次 Shared 含一个 API runner error，保留后另做一次 infra retry，以有效 retry 作为 Shared 结果）；五题全部满足“配对任务级”独立双 PASS、Shared/Lock 两臂至少一方 FAIL，其中 V43/V45/V47 同一角色沿 MA-ID→Shared→Lock 连续 PASS/FAIL/FAIL，V44/V46 则是 Shared 与 Lock 分别由不同角色失败；当前 A2 已筛查 52 项中 **30 次一次性命中**（含 V33 子任务级）；V43–V47 的完整臂结果见下表与批次审计。
 | **B1. 原生专业软件与单会话门户竞争** | `tasks/professional_races_v1/`、`tasks/astra_races_v2/`、`tasks/professional_v2,v3/` | 26 | **17** | 2 Agent（全混合 GUI+CLI，共享原生工程与 X11） | `gpt-6-astra (high)`、`gpt-6.1-sol (high)`、`DeepSeek-V4.1 (high)` | `PR-*` 4 题（`6.1-sol`）：隔离 **4/4**、串行 **4/4**、并发 **0/4**；`AR-01..10` 10 题（`astra`）：串行 **10/10**、并发 **0/10**；`AR-03,04,07,08` 抽测：`6.1-sol` 与 `DS-V4.1` 并发均为 **0/4**（角色 `3/8`）；早期 `p1–p3`（`astra`）：Codex 与 Freehand 均为 **1/3** 双满（`17/18` 检查项）；`p4–p12` 9 项为参考验证/规格储备 |
 | **B2. 超长程多软件耦合与物理 DRC** | `tasks/long_horizon_v1/`（单局 35–45 分钟） | 4 | **4** | 2 Agent（全混合 GUI+CLI + 物理仿真器） | `gpt-6.1-sol (high)`、`DeepSeek-V4.1 (high)` | `gpt-6.1-sol` 全测 4 题：串行 **0/4**、并发 **1/4 PASS**（`LH-01` 过，其余因预算抢占或收尾覆写挂）；`LH-02,03` 同口径对比：`6.1-sol` 与 `DS-V4.1` 均为 **0/2**（子门限同为 **21/24 = 87.5%**） |
 | **B3. 四智能体单桌面混合并发** | `tasks/quad_hybrid_v1/`、`tasks/weavebench_writer_conflict/`、`weavebench_quad.py` | 6 | **6** | 4 Agent（`<canvas>` 视觉规格卡 + 全开放 CLI） | `gpt-6.1-sol (high)`、`DeepSeek-V4.1 (high)`、`gpt-6-astra (high)` | `QH-01..04`（`6.1-sol`）：串行 **4/4**，四并发 `r1` **3/4**、`r2` **4/4**（自发建 `/tmp` 锁排号）、`r3` **3/4**；`QH-01,03` 上 `DS-V4.1` 并发 **1/2**（`QH-01` 过、`QH-03` 3/4）；WeaveBench 四并发（`astra`）：异构 4 题 Freehand **4/4 (97.04)** vs Codex **2/4 (74.43)**，同文档 Writer 四角色双 Harness 均 **4/4 PASS** |
@@ -25,7 +25,7 @@
 | **C3. 人机共享桌面（全屏用户界面自然抢占）** | `tasks/real_fullscreen_ha_v1/` | 5 | **5** | 1 真实后台 Agent + 1 全屏最大化用户 | `gpt-6.1-sol (medium)`（全混合 GUI+CLI） | `user-only` **5/5**，`independent` **5/5 双 PASS**；`shared` 下 3 道纯产物交付题 Agent 自发走无头 CLI 零抢占（**3/3 双 PASS**），2 道需打开桌面窗口/标签题触发浏览器地址栏劫持与 Writer 弹窗抢焦点（致 `fs-wiki-pep-writer-open` **User FAIL / Agent PASS**） |
 | **D1. `paragui` v1 + 红队基础配对库** | `tasks/paragui/`（`c/o/m/w/d/f/x/a` 系列） | 35 | 0 | 2 Agent 配对题库 | 作者参考解双向验证 | 35 对（70 个 OSWorld 2.0 任务类）均完成资产生成器、内网应用与双向 `1.0` 参考验证，供 `oscombo` 组合采样 |
 | **D2. `oscombo/collab` 独立协作协议包** | `oscombo/collab/`（`CDD-*` 系列） | 7 | 0 | 双角色异步/共享协作包 | 离线 Oracle / 脚本 Guest 验证 | 7 套独立包全部通过离线正负控制单测，`Data-to-Deck` 完成 Guest 脚本生命周期验证；其中 3 套的精简版即 A1 中的 `Case 2/3/4` |
-| **合计** | — | **196** | **137 完整 + 3 部分** | 2–4 智能体 / 人机混合 | 4 款主力模型 × 2 套 Harness | **137 项完整多臂成绩；另 3 项有效但未完成全部臂**，共 140 项至少有一个有效模型臂；56 项仍属参考/题库/设计储备，见 `docs/results-manifests/` 与赛道明细 |
+| **合计** | — | **196** | **142 完整 + 3 部分** | 2–4 智能体 / 人机混合 | 4 款主力模型 × 2 套 Harness | **142 项完整多臂成绩；另 3 项有效但未完成全部臂**，共 145 项至少有一个有效模型臂；51 项仍属参考/题库/设计储备，见 `docs/results-manifests/` 与赛道明细 |
 
 ---
 
@@ -83,9 +83,9 @@
 | 18 | `SITEACT-STATE1` | 临床试验站点激活快照与偏差 HOLD 更新冲突 | **PASS / FAIL / FAIL**（命中） | **PASS** | FAIL | FAIL | FAIL | **同伴写入 HOLD 后既有 READY 快照失配** |
 | 19 | `CRM-LU1` | 旧版全字段客户资料表单覆盖同伴刚改的账单邮箱 | **PASS / FAIL / FAIL**（命中） | **PASS** | **PASS** | FAIL | **PASS** | 锁臂因交错顺序覆盖失败，无锁全混合通过 |
 
-### A2. 合成业务应用双智能体扩展：11 项候选筛查 + `V7–V47`（共 52 项：44 完整、3 部分、5 未模型筛查）
+### A2. 合成业务应用双智能体扩展：11 项候选筛查 + `V7–V47`（共 52 项：49 完整、3 部分、0 未模型筛查）
 
-原有 42 个案例（11 项候选 + V7–V37）已完成三臂模型实验。新增 V38–V42 中，两项完成三臂、三项因 Shared 未双角色失败或 timeout 按门控停止；新增 V43–V47 已完成任务/Fixture/Oracle/OSWorld adapter 与离线正负控制，但尚未进入 Guest/模型臂。全套均沿用 OSWorld Ubuntu Guest 单窗口 Web 业务台、`gpt-6-sol (high)`（Codex CLI 0.165.0，纯 GUI MCP，60 步预算）和 `MA-ID` / `Shared` / `Shared+Lock` 协议；这些变体主要扩展行业工作流覆盖，不应宣称为独立机制。完整 Run ID、Token 用量与锁等待统计分别见各批次结果审计。
+原有 42 个案例（11 项候选 + V7–V37）已完成三臂模型实验。新增 V38–V42 中，两项完成三臂、三项因 Shared 未双角色失败或 timeout 按门控停止；新增 V43–V47 均完成 Guest scripted 正控和 GPT-6-Sol 三臂；V47 首次 Shared 有一个 runner exit-code error，保留后通过一次 infra retry 获得有效结果。全套均沿用 OSWorld Ubuntu Guest 单窗口 Web 业务台、`gpt-6-sol (high)`（Codex CLI 0.165.0，纯 GUI MCP，60 步预算）和 `MA-ID` / `Shared` / `Shared+Lock` 协议；这些变体主要扩展行业工作流覆盖，不应宣称为独立机制。完整 Run ID、Token 用量与锁等待统计分别见各批次结果审计。
 
 | 批次 | Case ID 与名称 | 角色 A 任务 / 角色 B 任务 | `gpt-6-sol` `MA-ID` (A/B) | `gpt-6-sol` `Shared` (A/B) | `gpt-6-sol` `Shared+Lock` (A/B) | 筛选判定与审计说明 |
 |---|---|---|---|---|---|---|
@@ -132,10 +132,10 @@
 | `V34–V37` | `V36 NORTH WARD ELECTION SERVICES` | EPK-019 设备封签审计 / 投票套件放行 | `1.0 / 1.0` | `0.0 / 1.0*` | `1.0 / 1.0` | **未命中**：A 共享失败被锁恢复；B Shared 用完 60-call 预算 |
 | `V34–V37` | `V37 CEDARLINE TELECOM` | TEL-771 网络故障复核 / 服务恢复验证 | `1.0 / 1.0` | `1.0 / 0.0` | `超时排除 / 0.0` | **子任务级命中一次**：B restoration validation 满足 `1 → 0 → 0`；A 锁臂 2400s timeout 排除 |
 | `V38–V42` | `V38–V42`（见批次报告） | 食品召回处置 / 车队安全与线路覆盖 / 树木风险与班组派工 / 无障碍乘客协助 / 危废清单与取件 | 均 `1.0 / 1.0` | V38 `0/1`；V39 `1/0`；V40 `0/0`；V41 `0/1`；V42 A timeout / B `1.0` | V38 `1/0`；V40 `0/0`；其余按门控停止 | **完整三臂仅 V38、V40**；V40 一次达到角色级 `PASS/FAIL/FAIL`；V39/V41 仅一角色 Shared 失败；V42 Shared-A timeout 不算 FAIL。详见 [V38–V42 结果](../tasks/paragui/V38_V42_MODEL_RESULTS_20261117_ZH.md) |
-| `V43–V47` | `V43–V47`（本轮新增） | 建筑 RFI/施工包更新 / 食物救援接收与配送 / 高温避暑点启用与接驳 / 信用卡争议与补发 / 数字无障碍缺陷与发布门禁 | 未运行 | 未运行 | 未运行 | Fixture / Oracle / adapter 已就绪，离线正负控制通过；未运行 Guest 或模型。当前 HealthCare 上 OSWorld Guest 服务容器持续占用固定端口，避免与其他实验争用；不把此状态计作 FAIL。详见 [V43–V47 卡片](FIVE_NEW_DUALAGENT_CASES_V43_V47_20261117_ZH.md) 与 [运行审计](../tasks/paragui/V43_V47_MODEL_RESULTS_20261117_ZH.md) |
+| `V43–V47` | `V43–V47`（本轮新增） | 建筑 RFI/施工包更新 / 食物救援接收与配送 / 高温避暑点启用与接驳 / 信用卡争议与补发 / 数字无障碍缺陷与发布门禁 | V43 `A1/B1`（修订 task card 后通过）；V44 `A1/B1`；V45 `A1/B1`；V46 `A1/B1`；V47 `A1/B1` | V43 `A1/B0`；V44 `A0/B1`；V45 `A1/B0`；V46 `A1/B0`；V47 `A0/B1` | V43 `A1/B0`；V44 `A1/B0`；V45 `A0/B0`；V46 `A0/B1`；V47 `A0/B0` | 五题均为配对级 MA-ID 双 PASS、Shared 与 Shared+Lock 两臂各至少一角色有效 FAIL。V43/V45/V47 同一角色满足 PASS/FAIL/FAIL；V44/V46 的失败角色在两臂间切换，不计作同角色机制命中。V47 首次 Shared 的 B runner error 保留，另一次 infra retry 取得上述有效结果。5/5 scripted Guest 正控；动态端口 Guest 未触碰外部容器。详见 [V43–V47 卡片](FIVE_NEW_DUALAGENT_CASES_V43_V47_20261117_ZH.md) 与 [运行审计](../tasks/paragui/V43_V47_MODEL_RESULTS_20261117_ZH.md) |
 
 
-V34–V37 四项均通过 scripted joint Guest 正控（A/B 2/2），并完成一次 GPT-6-Sol 三臂筛查。星号表示 V36 B 的 Shared result score 虽为 1.0，但 run status 是 `max_steps`，不视为有效通过/失败。V37 B 锁臂完成 59/60 GUI calls 并 Oracle 失败；A timeout 不计作任务机制失败。四项全部属于同一 Synthetic Desk active-panel/current-record 应用层机制族，无显式 OS 焦点误路由遥测。卡片、Oracle、复现方式见 [V34–V37 卡片](FOUR_NEW_DUALAGENT_CASES_V34_V37_20261116_ZH.md) 和 [完整模型结果审计](../tasks/paragui/V34_V37_MODEL_RESULTS_20261116_ZH.md)。 V38–V42 与 V43–V47 独立报告见表内链接；V43–V47 的 Guest/模型实验待固定端口服务释放后再按统一协议进行。
+V34–V37 四项均通过 scripted joint Guest 正控（A/B 2/2），并完成一次 GPT-6-Sol 三臂筛查。星号表示 V36 B 的 Shared result score 虽为 1.0，但 run status 是 `max_steps`，不视为有效通过/失败。V37 B 锁臂完成 59/60 GUI calls 并 Oracle 失败；A timeout 不计作任务机制失败。四项全部属于同一 Synthetic Desk active-panel/current-record 应用层机制族，无显式 OS 焦点误路由遥测。卡片、Oracle、复现方式见 [V34–V37 卡片](FOUR_NEW_DUALAGENT_CASES_V34_V37_20261116_ZH.md) 和 [完整模型结果审计](../tasks/paragui/V34_V37_MODEL_RESULTS_20261116_ZH.md)。 V38–V42 与 V43–V47 独立报告见表内链接；V43–V47 的 5/5 Guest 正控与最终有效模型三臂均已完成；V47 首次 Shared 的 invalid run 与单次 retry 均保留。
 
 ---
 
