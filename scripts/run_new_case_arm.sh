@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 if [[ $# -ne 2 ]]; then
-  echo "usage: run_new_case_arm.sh <s1|k1|k2|q1|e1|v1|v2|v3|v4|v5|v6|v7|v8|v9|v10|v11|v12|v13|v14|v15|v16|v17|v18|v19|v20|v21|v22|v23|v24|v25|v26|v27|v28|v29|v30|v31|v32|v33|v34|v35|v36|v37|v38|v39|v40|v41|v42> <ma-id|shared|shared-lock>" >&2
+  echo "usage: run_new_case_arm.sh <s1|k1|k2|q1|e1|v1|v2|v3|v4|v5|v6|v7|v8|v9|v10|v11|v12|v13|v14|v15|v16|v17|v18|v19|v20|v21|v22|v23|v24|v25|v26|v27|v28|v29|v30|v31|v32|v33|v34|v35|v36|v37|v38|v39|v40|v41|v42|v43|v44|v45|v46|v47> <ma-id|shared|shared-lock>" >&2
   exit 2
 fi
 CASE_ID="$1"; ARM="$2"
@@ -53,6 +53,11 @@ case "$CASE_ID" in
   v40) TASK_A="v2/pgv40treehazard"; TASK_B="v2/pgv40crewdispatch" ;;
   v41) TASK_A="v2/pgv41assistancerequest"; TASK_B="v2/pgv41gatecoordination" ;;
   v42) TASK_A="v2/pgv42manifestreview"; TASK_B="v2/pgv42pickupscheduling" ;;
+  v43) TASK_A="v2/pgv43rfireview"; TASK_B="v2/pgv43workpackage" ;;
+  v44) TASK_A="v2/pgv44donationintake"; TASK_B="v2/pgv44pantrydelivery" ;;
+  v45) TASK_A="v2/pgv45coolingactivation"; TASK_B="v2/pgv45shuttlestaging" ;;
+  v46) TASK_A="v2/pgv46disputereview"; TASK_B="v2/pgv46cardsupport" ;;
+  v47) TASK_A="v2/pgv47a11ytriage"; TASK_B="v2/pgv47releasegate" ;;
   *) echo "unknown case: $CASE_ID" >&2; exit 2 ;;
 esac
 case "$ARM" in
@@ -65,7 +70,7 @@ REPO="/home/mjh/Projects/CoDesk-three-new-dualagent-cases-20261112"
 OSW="/home/mjh/Projects/_deps/OSWorld-V2-osworld-v2.1"
 SWC="/home/mjh/Projects/CoDesk-candidate-repair-20261104"
 EXTRA_CASE_SOURCE=()
-if [[ "$CASE_ID" == v4 || "$CASE_ID" == v5 || "$CASE_ID" == v6 || "$CASE_ID" == v7 || "$CASE_ID" == v8 || "$CASE_ID" == v9 || "$CASE_ID" == v10 || "$CASE_ID" == v11 || "$CASE_ID" == v12 || "$CASE_ID" == v13 || "$CASE_ID" == v14 || "$CASE_ID" == v15 || "$CASE_ID" == v16 || "$CASE_ID" == v17 || "$CASE_ID" == v18 || "$CASE_ID" == v19 || "$CASE_ID" == v20 || "$CASE_ID" == v21 || "$CASE_ID" == v22 || "$CASE_ID" == v23 || "$CASE_ID" == v24 || "$CASE_ID" == v25 || "$CASE_ID" == v26 || "$CASE_ID" == v27 || "$CASE_ID" == v28 || "$CASE_ID" == v29 || "$CASE_ID" == v30 || "$CASE_ID" == v31 || "$CASE_ID" == v32 || "$CASE_ID" == v33 || "$CASE_ID" == v34 || "$CASE_ID" == v35 || "$CASE_ID" == v36 || "$CASE_ID" == v37 || "$CASE_ID" == v38 || "$CASE_ID" == v39 || "$CASE_ID" == v40 || "$CASE_ID" == v41 || "$CASE_ID" == v42 ]]; then
+if [[ "$CASE_ID" == v4 || "$CASE_ID" == v5 || "$CASE_ID" == v6 || "$CASE_ID" == v7 || "$CASE_ID" == v8 || "$CASE_ID" == v9 || "$CASE_ID" == v10 || "$CASE_ID" == v11 || "$CASE_ID" == v12 || "$CASE_ID" == v13 || "$CASE_ID" == v14 || "$CASE_ID" == v15 || "$CASE_ID" == v16 || "$CASE_ID" == v17 || "$CASE_ID" == v18 || "$CASE_ID" == v19 || "$CASE_ID" == v20 || "$CASE_ID" == v21 || "$CASE_ID" == v22 || "$CASE_ID" == v23 || "$CASE_ID" == v24 || "$CASE_ID" == v25 || "$CASE_ID" == v26 || "$CASE_ID" == v27 || "$CASE_ID" == v28 || "$CASE_ID" == v29 || "$CASE_ID" == v30 || "$CASE_ID" == v31 || "$CASE_ID" == v32 || "$CASE_ID" == v33 || "$CASE_ID" == v34 || "$CASE_ID" == v35 || "$CASE_ID" == v36 || "$CASE_ID" == v37 || "$CASE_ID" == v38 || "$CASE_ID" == v39 || "$CASE_ID" == v40 || "$CASE_ID" == v41 || "$CASE_ID" == v42 || "$CASE_ID" == v43 || "$CASE_ID" == v44 || "$CASE_ID" == v45 || "$CASE_ID" == v46 || "$CASE_ID" == v47 ]]; then
   EXTRA_CASE_SOURCE=(tasks/paragui/build_v456.py tasks/paragui/app_v456_template.py tasks/paragui/v456_data.json scripts/run_v456_guest_control.py)
 fi
 case "$CASE_ID" in
@@ -116,6 +121,11 @@ case "$CASE_ID" in
   v40) TASK_MODULES="pg_common.py pg_v456_oracle.py pg_v40.py task_pgv40treehazard.py task_pgv40crewdispatch.py" ;;
   v41) TASK_MODULES="pg_common.py pg_v456_oracle.py pg_v41.py task_pgv41assistancerequest.py task_pgv41gatecoordination.py" ;;
   v42) TASK_MODULES="pg_common.py pg_v456_oracle.py pg_v42.py task_pgv42manifestreview.py task_pgv42pickupscheduling.py" ;;
+  v43) TASK_MODULES="pg_common.py pg_v456_oracle.py pg_v43.py task_pgv43rfireview.py task_pgv43workpackage.py" ;;
+  v44) TASK_MODULES="pg_common.py pg_v456_oracle.py pg_v44.py task_pgv44donationintake.py task_pgv44pantrydelivery.py" ;;
+  v45) TASK_MODULES="pg_common.py pg_v456_oracle.py pg_v45.py task_pgv45coolingactivation.py task_pgv45shuttlestaging.py" ;;
+  v46) TASK_MODULES="pg_common.py pg_v456_oracle.py pg_v46.py task_pgv46disputereview.py task_pgv46cardsupport.py" ;;
+  v47) TASK_MODULES="pg_common.py pg_v456_oracle.py pg_v47.py task_pgv47a11ytriage.py task_pgv47releasegate.py" ;;
 esac
 for module in $TASK_MODULES; do
   source_module="$REPO/tasks/paragui/$module"
@@ -139,7 +149,7 @@ BASE="/dev/shm/codesk-next3/osworld-v2-ubuntu-x86.qcow2"
 OVERLAY_TMP_ROOT="${CO_DESK_OVERLAY_ROOT:-/dev/shm/codesk-next3/overlays}"
 OVERLAY_ARCHIVE_ROOT="${CO_DESK_OVERLAY_ARCHIVE_ROOT:-/mnt/raid1/mjh/Projects/codesk-next3-20261112/overlays}"
 # Keep the later pilot overlays on RAID rather than consuming the remaining /dev/shm.
-if [[ "$CASE_ID" == v36 || "$CASE_ID" == v37 || "$CASE_ID" == v38 || "$CASE_ID" == v39 || "$CASE_ID" == v40 || "$CASE_ID" == v41 || "$CASE_ID" == v42 ]]; then
+if [[ "$CASE_ID" == v36 || "$CASE_ID" == v37 || "$CASE_ID" == v38 || "$CASE_ID" == v39 || "$CASE_ID" == v40 || "$CASE_ID" == v41 || "$CASE_ID" == v42 || "$CASE_ID" == v43 || "$CASE_ID" == v44 || "$CASE_ID" == v45 || "$CASE_ID" == v46 || "$CASE_ID" == v47 ]]; then
   OVERLAY_TMP_ROOT="$OVERLAY_ARCHIVE_ROOT"
 fi
 SWCUB_OSWORLD_VM_READY_TIMEOUT=600

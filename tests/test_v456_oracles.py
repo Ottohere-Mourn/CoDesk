@@ -144,3 +144,105 @@ def test_v38_v42_free_text_casefolds_only_targeted_semantic_fields(case,panel,ke
  saved[key]='wrong unrelated phrase';row['data_'+panel.lower()]=json.dumps(saved)
  _,score=checks(state,DATA[case]['expected'],panel,case)
  assert score==0.0
+
+
+@pytest.mark.parametrize('case',['v43','v44','v45','v46','v47'])
+def test_v43_v47_joint_positive_asset_rebuild_and_separate_fields(tmp_path,case):
+ cfg=DATA[case]
+ out=tmp_path/case;build(case,out)
+ assert (out/f'app_{case}.py').is_file()
+ con=sqlite3.connect(out/'seed.db')
+ assert con.execute('select count(*) from items').fetchone()[0]==1
+ con.close()
+ state=joint_state(case);expected=cfg['expected']
+ for panel in ('A','B'):
+  details,score=checks(state,expected,panel,case)
+  assert score==1.0,details
+ assert cfg['items'][0]['kind']=='both'
+ assert set(expected['A'])==set(expected['B'])=={cfg['items'][0]['id']}
+ a={f['key'] for f in cfg['panels']['A']['fields']}
+ b={f['key'] for f in cfg['panels']['B']['fields']}
+ assert len(a)==len(b)==4 and not a & b
+
+@pytest.mark.parametrize('case,panel',[('v43','A'),('v44','B'),('v45','A'),('v46','A'),('v47','B')])
+def test_v43_v47_oracles_reject_wrong_value(case,panel):
+ state=joint_state(case)
+ iid=next(iter(DATA[case]['expected'][panel]))
+ row=next(r for r in state['items'] if r['id']==iid)
+ saved=json.loads(row['data_'+panel.lower()])
+ key=next(iter(DATA[case]['expected'][panel][iid]))
+ saved[key]='WRONG'
+ row['data_'+panel.lower()]=json.dumps(saved)
+ details,score=checks(state,DATA[case]['expected'],panel,case)
+ assert score==0.0,details
+
+@pytest.mark.parametrize('case,panel,key,equivalent',[
+ ('v43','B','affected_trade','STRUCTURAL STEEL'),
+ ('v45','A','site','eastview library annex'),
+ ('v47','A','component','appointment booking modal'),
+])
+def test_v43_v47_only_normalize_selected_free_text(case,panel,key,equivalent):
+ state=joint_state(case);iid=next(iter(DATA[case]['expected'][panel]))
+ row=next(r for r in state['items'] if r['id']==iid)
+ saved=json.loads(row['data_'+panel.lower()]);saved[key]=equivalent;row['data_'+panel.lower()]=json.dumps(saved)
+ _,score=checks(state,DATA[case]['expected'],panel,case)
+ assert score==1.0
+ saved[key]='unrelated';row['data_'+panel.lower()]=json.dumps(saved)
+ _,score=checks(state,DATA[case]['expected'],panel,case)
+ assert score==0.0
+
+def test_v44_v45_v46_typed_values_are_numeric_or_date_equivalent():
+ for case,panel,key,alt in [('v44','B','crate_count','038'),('v45','A','guest_capacity','120.0'),('v46','A','dispute_amount','$86.40')]:
+  state=joint_state(case);iid=next(iter(DATA[case]['expected'][panel]))
+  row=next(r for r in state['items'] if r['id']==iid)
+  saved=json.loads(row['data_'+panel.lower()]);saved[key]=alt;row['data_'+panel.lower()]=json.dumps(saved)
+  _,score=checks(state,DATA[case]['expected'],panel,case)
+  assert score==1.0,(case,key,score)
+ state=joint_state('v44');iid='DON-244';row=next(r for r in state['items'] if r['id']==iid)
+ saved=json.loads(row['data_a']);saved['use_by']='11/20/2026';row['data_a']=json.dumps(saved)
+ _,score=checks(state,DATA['v44']['expected'],'A','v44')
+ assert score==1.0
+
+
+@pytest.mark.parametrize('case',['v43','v44','v45','v46','v47'])
+def test_v43_v47_local_app_http_roundtrip_writes_both_panels(tmp_path,case):
+ import socket,subprocess,sys,time,urllib.request
+ out=tmp_path/case;build(case,out)
+ with socket.socket() as sock:
+  sock.bind(('127.0.0.1',0));port=sock.getsockname()[1]
+ proc=subprocess.Popen([sys.executable,str(out/f'app_{case}.py'),'--db',str(out/'seed.db'),'--port',str(port)],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+ base=f'http://127.0.0.1:{port}'
+ try:
+  page=None
+  for _ in range(50):
+   try:
+    with urllib.request.urlopen(base+'/desk',timeout=1) as r:page=r.read().decode();break
+   except Exception:time.sleep(.1)
+  assert page and 'Active work area' in page
+  expected=DATA[case]['expected']
+  def post(path,payload):
+   req=urllib.request.Request(base+path,data=json.dumps(payload).encode(),headers={'Content-Type':'application/json'},method='POST')
+   with urllib.request.urlopen(req,timeout=3) as r:return json.loads(r.read())
+  for panel in ('A','B'):
+   post('/panel',{'panel':panel})
+   for iid,fields in expected[panel].items():
+    post('/select',{'id':iid});post('/save',fields)
+  con=sqlite3.connect(out/'seed.db');con.row_factory=sqlite3.Row
+  state={'items':[dict(r) for r in con.execute('select id,kind,name,details,clip_ref,facts,data_a,data_b,version from items order by rowid')]}
+  con.close()
+  for panel in ('A','B'):
+   details,score=checks(state,expected,panel,case)
+   assert score==1.0,(case,panel,details)
+ finally:
+  proc.terminate()
+  try:proc.wait(timeout=5)
+  except subprocess.TimeoutExpired:proc.kill();proc.wait(timeout=5)
+
+
+@pytest.mark.parametrize('case',['v43','v44','v45','v46','v47'])
+def test_v43_v47_every_expected_value_is_present_in_source_details(case):
+ details=DATA[case]['items'][0]['details'].casefold()
+ for panel in ('A','B'):
+  for row in DATA[case]['expected'][panel].values():
+   for value in row.values():
+    assert str(value).casefold() in details,(case,value)

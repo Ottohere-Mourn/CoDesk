@@ -35,13 +35,13 @@ def _date_value(value):
     return None
 
 def _field_matches(case_id,key,actual,target):
-    if (case_id,key) in {('v23','reserve_amount'),('v27','recommended_award')}:
+    if (case_id,key) in {('v23','reserve_amount'),('v27','recommended_award'),('v44','crate_count'),('v45','guest_capacity'),('v46','dispute_amount')}:
         got,want=_amount(actual),_amount(target)
         return got is not None and want is not None and got==want
-    if (case_id,key) in {('v27','scheduled_date'),('v38','response_deadline')}:
+    if (case_id,key) in {('v27','scheduled_date'),('v38','response_deadline'),('v44','use_by')}:
         got,want=_date_value(actual),_date_value(target)
         return got is not None and want is not None and got==want
-    if (case_id,key) in {('v39','defect'),('v40','hazard'),('v41','device')}:
+    if (case_id,key) in {('v39','defect'),('v40','hazard'),('v41','device'),('v43','affected_trade'),('v45','site'),('v47','component')}:
         return ' '.join(str(actual).split()).casefold()==' '.join(str(target).split()).casefold()
     return str(actual)==str(target)
 
