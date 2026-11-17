@@ -19,8 +19,8 @@ BASE=Path('/dev/shm/codesk-next3/osworld-v2-ubuntu-x86.qcow2')
 TASKS={
 'v4':['v2/pgv4rooms','v2/pgv4facilities'],
 'v5':['v2/pgv5invoices','v2/pgv5expenses'],
-'v6':['v2/pgv6accommodations','v2/pgv6seating'],'v7':['v2/pgv7labcustody','v2/pgv7benchreview'],'v8':['v2/pgv8permitreview','v2/pgv8permitfees'],'v9':['v2/pgv9dispatch','v2/pgv9parts'],'v10':['v2/pgv10followup','v2/pgv10equipment'],'v11':['v2/pgv11holds','v2/pgv11returns'],'v12':['v2/pgv12review','v2/pgv12intake'],'v13':['v2/pgv13catalog','v2/pgv13access'],'v14':['v2/pgv14disposition','v2/pgv14rework'],'v15':['v2/pgv15badge','v2/pgv15induction'],'v16':['v2/pgv16temp','v2/pgv16lot'],'v17':['v2/pgv17condition','v2/pgv17exhibit'],'v18':['v2/pgv18commission','v2/pgv18utility'],'v19':['v2/pgv19housekeeping','v2/pgv19arrival'],'v20':['v2/pgv20exportdocs','v2/pgv20loadplan'],'v21':['v2/pgv21accession','v2/pgv21pickup'],'v22':['v2/pgv22turnover','v2/pgv22techcall'],'v23':['v2/pgv23claimreview','v2/pgv23repairdispatch'],'v24':['v2/pgv24advisory','v2/pgv24dispatch'],'v25':['v2/pgv25containment','v2/pgv25recovery'],'v26':['v2/pgv26clearance','v2/pgv26release'],'v27':['v2/pgv27awardreview','v2/pgv27disbursement'],'v28':['v2/pgv28inspection','v2/pgv28schedule'],'v29':['v2/pgv29screening','v2/pgv29interview'],'v30':['v2/pgv30handoff','v2/pgv30training'],'v31':['v2/pgv31civicreview','v2/pgv31releaseprep'],'v32':['v2/pgv32meterreview','v2/pgv32sitevisit'],'v33':['v2/pgv33intaketriage','v2/pgv33transfer'],'v34':['v2/pgv34waterreview','v2/pgv34advisorycloseout'],'v35':['v2/pgv35appealdecision','v2/pgv35enrollmentverify'],'v36':['v2/pgv36sealaudit','v2/pgv36kitrelease'],'v37':['v2/pgv37incidentreview','v2/pgv37restorationvalidate']}
-PORTS={'v4':8139,'v5':8140,'v6':8141,'v7':8142,'v8':8143,'v9':8144,'v10':8145,'v11':8146,'v12':8147,'v13':8148,'v14':8149,'v15':8150,'v16':8151,'v17':8152,'v18':8153,'v19':8154,'v20':8155,'v21':8156,'v22':8157,'v23':8158,'v24':8159,'v25':8160,'v26':8161,'v27':8162,'v28':8163,'v29':8164,'v30':8165,'v31':8166,'v32':8167,'v33':8168,'v34':8169,'v35':8170,'v36':8171,'v37':8172}
+'v6':['v2/pgv6accommodations','v2/pgv6seating'],'v7':['v2/pgv7labcustody','v2/pgv7benchreview'],'v8':['v2/pgv8permitreview','v2/pgv8permitfees'],'v9':['v2/pgv9dispatch','v2/pgv9parts'],'v10':['v2/pgv10followup','v2/pgv10equipment'],'v11':['v2/pgv11holds','v2/pgv11returns'],'v12':['v2/pgv12review','v2/pgv12intake'],'v13':['v2/pgv13catalog','v2/pgv13access'],'v14':['v2/pgv14disposition','v2/pgv14rework'],'v15':['v2/pgv15badge','v2/pgv15induction'],'v16':['v2/pgv16temp','v2/pgv16lot'],'v17':['v2/pgv17condition','v2/pgv17exhibit'],'v18':['v2/pgv18commission','v2/pgv18utility'],'v19':['v2/pgv19housekeeping','v2/pgv19arrival'],'v20':['v2/pgv20exportdocs','v2/pgv20loadplan'],'v21':['v2/pgv21accession','v2/pgv21pickup'],'v22':['v2/pgv22turnover','v2/pgv22techcall'],'v23':['v2/pgv23claimreview','v2/pgv23repairdispatch'],'v24':['v2/pgv24advisory','v2/pgv24dispatch'],'v25':['v2/pgv25containment','v2/pgv25recovery'],'v26':['v2/pgv26clearance','v2/pgv26release'],'v27':['v2/pgv27awardreview','v2/pgv27disbursement'],'v28':['v2/pgv28inspection','v2/pgv28schedule'],'v29':['v2/pgv29screening','v2/pgv29interview'],'v30':['v2/pgv30handoff','v2/pgv30training'],'v31':['v2/pgv31civicreview','v2/pgv31releaseprep'],'v32':['v2/pgv32meterreview','v2/pgv32sitevisit'],'v33':['v2/pgv33intaketriage','v2/pgv33transfer'],'v34':['v2/pgv34waterreview','v2/pgv34advisorycloseout'],'v35':['v2/pgv35appealdecision','v2/pgv35enrollmentverify'],'v36':['v2/pgv36sealaudit','v2/pgv36kitrelease'],'v37':['v2/pgv37incidentreview','v2/pgv37restorationvalidate'],'v38':['v2/pgv38recallassessment','v2/pgv38storenotification'],'v39':['v2/pgv39vehicleinspection','v2/pgv39routecover'],'v40':['v2/pgv40treehazard','v2/pgv40crewdispatch'],'v41':['v2/pgv41assistancerequest','v2/pgv41gatecoordination'],'v42':['v2/pgv42manifestreview','v2/pgv42pickupscheduling']}
+PORTS={'v4':8139,'v5':8140,'v6':8141,'v7':8142,'v8':8143,'v9':8144,'v10':8145,'v11':8146,'v12':8147,'v13':8148,'v14':8149,'v15':8150,'v16':8151,'v17':8152,'v18':8153,'v19':8154,'v20':8155,'v21':8156,'v22':8157,'v23':8158,'v24':8159,'v25':8160,'v26':8161,'v27':8162,'v28':8163,'v29':8164,'v30':8165,'v31':8166,'v32':8167,'v33':8168,'v34':8169,'v35':8170,'v36':8171,'v37':8172,'v38':8173,'v39':8174,'v40':8175,'v41':8176,'v42':8177}
 def wait_reload(page,ms=400):
  page.wait_for_timeout(ms)
 def choose(page,item):
@@ -38,7 +38,9 @@ def generic_form(page,values):
  for key,value in values.items():
   field=page.locator('#f-'+key)
   field.wait_for(state='visible',timeout=10000)
-  if field.evaluate('(el)=>el.tagName.toLowerCase()')=='select':field.select_option(label=str(value))
+  if field.evaluate('(el)=>el.tagName.toLowerCase()')=='select':
+   selected=field.select_option(label=str(value))
+   if not selected:field.select_option(value=str(value))
   else:field.fill(str(value))
   actual=field.input_value()
   if str(actual)!=str(value):raise RuntimeError(f'form input readback mismatch for {key}: {actual!r}')
@@ -82,7 +84,7 @@ def positive_control(case,page,expected):
    for iid,row in expected[which].items():
     choose(page,iid);apply_form(page,row)
 def main(case):
- if case not in TASKS:raise SystemExit('usage: run_v456_guest_control.py v4|v5|v6|v7|v8|v9|v10|v11|v12|v13|v14|v15|v16|v17|v18|v19|v20|v21|v22|v23|v24|v25|v26|v27|v28|v29|v30|v31|v32|v33|v34|v35|v36|v37')
+ if case not in TASKS:raise SystemExit('usage: run_v456_guest_control.py v4|v5|v6|v7|v8|v9|v10|v11|v12|v13|v14|v15|v16|v17|v18|v19|v20|v21|v22|v23|v24|v25|v26|v27|v28|v29|v30|v31|v32|v33|v34|v35|v36|v37|v38|v39|v40|v41|v42')
  runid=f'cdesk3-{case}-scripted-joint-{datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")}-{os.getpid()}'
  out=RUNROOT/runid;over=OVERLAY_TMP/runid;archive=OVERLAY_ARCHIVE/runid
  out.mkdir(parents=True,exist_ok=False);over.mkdir(parents=True,exist_ok=False)

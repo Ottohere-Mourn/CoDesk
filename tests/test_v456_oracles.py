@@ -94,3 +94,53 @@ def test_v34_v37_share_one_record_across_disjoint_panels(case):
  b={f['key'] for f in cfg['panels']['B']['fields']}
  assert len(a)==len(b)==4
  assert not a & b
+
+@pytest.mark.parametrize('case',['v38','v39','v40','v41','v42'])
+def test_v38_v42_joint_positive_and_asset_rebuild(tmp_path,case):
+ out=tmp_path/case;build(case,out)
+ assert (out/f'app_{case}.py').is_file()
+ con=sqlite3.connect(out/'seed.db')
+ assert con.execute('select count(*) from items').fetchone()[0]==len(DATA[case]['items'])
+ con.close()
+ state=joint_state(case);expected=DATA[case]['expected']
+ for panel in ('A','B'):
+  checks_out,score=checks(state,expected,panel,case)
+  assert score==1.0,checks_out
+
+@pytest.mark.parametrize('case,panel',[('v38','A'),('v39','B'),('v40','A'),('v41','B'),('v42','A')])
+def test_v38_v42_oracle_rejects_wrong_value(case,panel):
+ state=joint_state(case)
+ iid=next(iter(DATA[case]['expected'][panel]))
+ row=next(r for r in state['items'] if r['id']==iid)
+ saved=json.loads(row['data_'+panel.lower()])
+ key=next(iter(DATA[case]['expected'][panel][iid]))
+ saved[key]='WRONG'
+ row['data_'+panel.lower()]=json.dumps(saved)
+ checks_out,score=checks(state,DATA[case]['expected'],panel,case)
+ assert score==0.0,checks_out
+
+@pytest.mark.parametrize('case',['v38','v39','v40','v41','v42'])
+def test_v38_v42_share_record_but_have_independent_panel_fields(case):
+ cfg=DATA[case]
+ assert len(cfg['items'])==1 and cfg['items'][0]['kind']=='both'
+ iid=cfg['items'][0]['id']
+ assert set(cfg['expected']['A'])==set(cfg['expected']['B'])=={iid}
+ a={f['key'] for f in cfg['panels']['A']['fields']}
+ b={f['key'] for f in cfg['panels']['B']['fields']}
+ assert len(a)==len(b)==4 and not a & b
+
+@pytest.mark.parametrize('case,panel,key,lower_value',[
+    ('v39','A','defect','left rear brake-line leak'),
+    ('v40','A','hazard','split limb over trail'),
+    ('v41','A','device','aisle chair'),
+])
+def test_v38_v42_free_text_casefolds_only_targeted_semantic_fields(case,panel,key,lower_value):
+ state=joint_state(case)
+ iid=next(iter(DATA[case]['expected'][panel]))
+ row=next(r for r in state['items'] if r['id']==iid)
+ saved=json.loads(row['data_'+panel.lower()]);saved[key]=lower_value;row['data_'+panel.lower()]=json.dumps(saved)
+ _,score=checks(state,DATA[case]['expected'],panel,case)
+ assert score==1.0
+ saved[key]='wrong unrelated phrase';row['data_'+panel.lower()]=json.dumps(saved)
+ _,score=checks(state,DATA[case]['expected'],panel,case)
+ assert score==0.0

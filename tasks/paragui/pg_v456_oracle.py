@@ -27,7 +27,7 @@ def _amount(value):
 
 def _date_value(value):
     raw=str(value or '').strip()
-    for fmt in ('%Y-%m-%d','%m/%d/%Y','%Y/%m/%d'):
+    for fmt in ('%Y-%m-%d','%m/%d/%Y','%d/%m/%Y','%Y/%m/%d'):
         try:
             return datetime.strptime(raw,fmt).date()
         except ValueError:
@@ -38,9 +38,11 @@ def _field_matches(case_id,key,actual,target):
     if (case_id,key) in {('v23','reserve_amount'),('v27','recommended_award')}:
         got,want=_amount(actual),_amount(target)
         return got is not None and want is not None and got==want
-    if (case_id,key)==('v27','scheduled_date'):
+    if (case_id,key) in {('v27','scheduled_date'),('v38','response_deadline')}:
         got,want=_date_value(actual),_date_value(target)
         return got is not None and want is not None and got==want
+    if (case_id,key) in {('v39','defect'),('v40','hazard'),('v41','device')}:
+        return ' '.join(str(actual).split()).casefold()==' '.join(str(target).split()).casefold()
     return str(actual)==str(target)
 
 def checks(state, expected, panel, case_id):

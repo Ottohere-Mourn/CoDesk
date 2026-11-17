@@ -9,12 +9,12 @@
 
 ## 一、全局任务盘点与多模型评测概览
 
-当前分支共收录 **178 项独立任务/配对条目**，其中 **127 项已完成真实大模型多智能体或人机并发实测**，另有 **51 项为已完成脚本参考解验证、离线 Oracle 验证或设计规格的储备题库**（`p4–p12` 9 项 + `tasks/paragui` 基础库 35 对 + `oscombo/collab` 7 项）。不同赛道的参与者构成、工具空间（纯 GUI vs 全混合 GUI+CLI）与评价指标各异，统计时按赛道分列，不混入同一分母。
+当前分支共收录 **183 项独立任务/配对条目**：其中 **129 项已完成完整三臂/四臂模型实验**，**3 项另有有效 MA-ID/Shared 前置筛查但未完成锁臂**（按门控停止或 Shared actor timeout），另有 **51 项为脚本参考解验证、离线 Oracle 验证或设计规格储备题库**。因此共有 132 项至少取得一个有效模型臂结果；timeout 不计作 FAIL。不同赛道工具空间与指标各异，按赛道分列，不混入同一机制分母。
 
 | 赛道分类 | 子套件与目录入口 | 在册数 | 已实测数 | 并发规模与模式 | 参测模型（推理档位） | 核心实测结果摘要 |
 |---|---|---:|---:|---|---|---|
 | **A1. 核心双智能体机制与复合工作流** | `docs/handoff/13-case-handoff/`、`experiments/codesk_19case_suite.py` | 19 | **19** | 2 Agent（隔离 / 共享GUI / 动作锁 / 全混合CLI） | `gpt-6-sol`、`gpt-6.1-sol (medium)` | `gpt-6-sol` 三臂筛查 **14/19** 命中一次性 `PASS/FAIL/FAIL`；`gpt-6.1-sol` 四臂实测：隔离 **18/19 (94.7%)**，共享 GUI **5/19 (26.3%)**，动作锁 **3/17 (17.6%)**，开放全混合 CLI 后恢复至 **12/19 (63.2%)**（仍有 7 题因会话/视口/剪贴板/陈旧快照失败） |
-| **A2. 合成业务应用双智能体扩展** | `tasks/paragui/pg_v1..v37.py`、`pg_s1/k1/k2/q1/e1.py` | 42 | **42** | 2 Agent（隔离 / 共享GUI / 动作锁，纯 GUI） | `gpt-6-sol (high)` | 11 项候选筛查中 **5/11** 命中目标三元组，`V7–V37` 31 项追加工作流中 **21/31** 命中（含 `V33` 单子任务级命中），合计 **26/42** 一次性命中；其余 16 项作为全通过、锁可恢复或目标互斥（no-go）对照完整保留 |
+| **A2. 合成业务应用双智能体扩展** | `tasks/paragui/pg_v1..v42.py`、`pg_s1/k1/k2/q1/e1.py` | 47 | **44 完整 + 3 部分** | 2 Agent（隔离 / 共享GUI / 动作锁，纯 GUI） | `gpt-6-sol (high)` | 11 项候选筛查中 **5/11** 命中目标三元组，`V7–V37` 31 项追加工作流中 **21/31** 命中（含 `V33` 单子任务级命中），既有 26/42 一次性命中；新增 V38–V42 中 V40 再命中 1 项，现累计 **27/47** 一次性角色/子任务级命中（其中 V33 是子任务级命中）；全通过、锁可恢复、目标互斥（no-go）与未达标项均完整保留 |
 | **B1. 原生专业软件与单会话门户竞争** | `tasks/professional_races_v1/`、`tasks/astra_races_v2/`、`tasks/professional_v2,v3/` | 26 | **17** | 2 Agent（全混合 GUI+CLI，共享原生工程与 X11） | `gpt-6-astra (high)`、`gpt-6.1-sol (high)`、`DeepSeek-V4.1 (high)` | `PR-*` 4 题（`6.1-sol`）：隔离 **4/4**、串行 **4/4**、并发 **0/4**；`AR-01..10` 10 题（`astra`）：串行 **10/10**、并发 **0/10**；`AR-03,04,07,08` 抽测：`6.1-sol` 与 `DS-V4.1` 并发均为 **0/4**（角色 `3/8`）；早期 `p1–p3`（`astra`）：Codex 与 Freehand 均为 **1/3** 双满（`17/18` 检查项）；`p4–p12` 9 项为参考验证/规格储备 |
 | **B2. 超长程多软件耦合与物理 DRC** | `tasks/long_horizon_v1/`（单局 35–45 分钟） | 4 | **4** | 2 Agent（全混合 GUI+CLI + 物理仿真器） | `gpt-6.1-sol (high)`、`DeepSeek-V4.1 (high)` | `gpt-6.1-sol` 全测 4 题：串行 **0/4**、并发 **1/4 PASS**（`LH-01` 过，其余因预算抢占或收尾覆写挂）；`LH-02,03` 同口径对比：`6.1-sol` 与 `DS-V4.1` 均为 **0/2**（子门限同为 **21/24 = 87.5%**） |
 | **B3. 四智能体单桌面混合并发** | `tasks/quad_hybrid_v1/`、`tasks/weavebench_writer_conflict/`、`weavebench_quad.py` | 6 | **6** | 4 Agent（`<canvas>` 视觉规格卡 + 全开放 CLI） | `gpt-6.1-sol (high)`、`DeepSeek-V4.1 (high)`、`gpt-6-astra (high)` | `QH-01..04`（`6.1-sol`）：串行 **4/4**，四并发 `r1` **3/4**、`r2` **4/4**（自发建 `/tmp` 锁排号）、`r3` **3/4**；`QH-01,03` 上 `DS-V4.1` 并发 **1/2**（`QH-01` 过、`QH-03` 3/4）；WeaveBench 四并发（`astra`）：异构 4 题 Freehand **4/4 (97.04)** vs Codex **2/4 (74.43)**，同文档 Writer 四角色双 Harness 均 **4/4 PASS** |
@@ -24,7 +24,7 @@
 | **C3. 人机共享桌面（全屏用户界面自然抢占）** | `tasks/real_fullscreen_ha_v1/` | 5 | **5** | 1 真实后台 Agent + 1 全屏最大化用户 | `gpt-6.1-sol (medium)`（全混合 GUI+CLI） | `user-only` **5/5**，`independent` **5/5 双 PASS**；`shared` 下 3 道纯产物交付题 Agent 自发走无头 CLI 零抢占（**3/3 双 PASS**），2 道需打开桌面窗口/标签题触发浏览器地址栏劫持与 Writer 弹窗抢焦点（致 `fs-wiki-pep-writer-open` **User FAIL / Agent PASS**） |
 | **D1. `paragui` v1 + 红队基础配对库** | `tasks/paragui/`（`c/o/m/w/d/f/x/a` 系列） | 35 | 0 | 2 Agent 配对题库 | 作者参考解双向验证 | 35 对（70 个 OSWorld 2.0 任务类）均完成资产生成器、内网应用与双向 `1.0` 参考验证，供 `oscombo` 组合采样 |
 | **D2. `oscombo/collab` 独立协作协议包** | `oscombo/collab/`（`CDD-*` 系列） | 7 | 0 | 双角色异步/共享协作包 | 离线 Oracle / 脚本 Guest 验证 | 7 套独立包全部通过离线正负控制单测，`Data-to-Deck` 完成 Guest 脚本生命周期验证；其中 3 套的精简版即 A1 中的 `Case 2/3/4` |
-| **合计** | — | **178** | **127** | 2–4 智能体 / 人机混合 | 4 款主力模型 × 2 套 Harness | **127 项具备完整模型实测成绩**，结构化汇总见 `docs/results-manifests/` |
+| **合计** | — | **183** | **129 完整 + 3 部分** | 2–4 智能体 / 人机混合 | 4 款主力模型 × 2 套 Harness | **129 项完整多臂成绩；另 3 项有效但未完成全部臂**，结构化汇总见 `docs/results-manifests/` |
 
 ---
 
@@ -54,7 +54,7 @@
 
 ---
 
-## 三、赛道一（Track A）：CoDesk 核心双智能体状态与业务工作流套件（共 57 项）
+## 三、赛道一（Track A）：CoDesk 核心双智能体状态与业务工作流套件（共 62 项）
 
 ### A1. 早期 19-Case 核心组合（`gpt-6-sol` 三臂 vs `gpt-6.1-sol` 四臂全混合实测）
 
@@ -82,9 +82,9 @@
 | 18 | `SITEACT-STATE1` | 临床试验站点激活快照与偏差 HOLD 更新冲突 | **PASS / FAIL / FAIL**（命中） | **PASS** | FAIL | FAIL | FAIL | **同伴写入 HOLD 后既有 READY 快照失配** |
 | 19 | `CRM-LU1` | 旧版全字段客户资料表单覆盖同伴刚改的账单邮箱 | **PASS / FAIL / FAIL**（命中） | **PASS** | **PASS** | FAIL | **PASS** | 锁臂因交错顺序覆盖失败，无锁全混合通过 |
 
-### A2. 合成业务应用双智能体扩展：11 项候选筛查 + `V7–V37`（共 42 项，`gpt-6-sol` 三臂实测）
+### A2. 合成业务应用双智能体扩展：11 项候选筛查 + `V7–V42`（共 47 项，`gpt-6-sol` 三臂筛查）
 
-本组 42 个双智能体工作流全部运行在 OSWorld Ubuntu Guest 的单窗口 Web 业务台或桌面文档上，统一使用 `gpt-6-sol (high)`（Codex CLI 0.165.0，纯 GUI MCP，单角色 45 或 60 步上限）完成 `MA-ID`（双独立虚拟机）、`Shared`（单虚拟机无锁并发）与 `Shared+Lock`（单虚拟机逐动作互斥锁）三臂实验。它们提供丰富的行业工作流覆盖，底层机制主要集中于应用内共享活动面板/当前记录切换、共享剪贴板及陈旧状态，因此仅作一次性筛选证据，不声称 26 个互相独立的底层新机制。各批次完整 Run ID、Token 用量与锁等待统计见 `tasks/paragui/*MODEL_RESULTS*.md`。
+原有 42 个工作流均完成三臂模型实验；新增 V38–V42 五题继续使用 OSWorld Ubuntu Guest、单窗口 Synthetic Desk 与 `gpt-6-sol (high)`。五题 scripted A/B 正控均 PASS；新增题中 V38、V40 完成有效三臂，V39、V41 因 Shared 并未让双方都 FAIL 按门控停止，V42 的 Shared A actor 超时而无效，故该批汇总为 44 项完整三臂 + 3 项部分筛查（不含纯脚本题库）。这五个新增工作流仍属于同一活动面板/当前记录切换机制族，不应声称为五种独立底层机制。完整 Run ID 与超时审计见 `tasks/paragui/V38_V42_MODEL_RESULTS_20261117_ZH.md`。
 
 | 批次 | Case ID 与名称 | 角色 A 任务 / 角色 B 任务 | `gpt-6-sol` `MA-ID` (A/B) | `gpt-6-sol` `Shared` (A/B) | `gpt-6-sol` `Shared+Lock` (A/B) | 筛选判定与审计说明 |
 |---|---|---|---|---|---|---|
@@ -133,6 +133,9 @@
 
 
 V34–V37 四项均通过 scripted joint Guest 正控（A/B 2/2），并完成一次 GPT-6-Sol 三臂筛查。星号表示 V36 B 的 Shared result score 虽为 1.0，但 run status 是 `max_steps`，不视为有效通过/失败。V37 B 锁臂完成 59/60 GUI calls 并 Oracle 失败；A timeout 不计作任务机制失败。四项全部属于同一 Synthetic Desk active-panel/current-record 应用层机制族，无显式 OS 焦点误路由遥测。卡片、Oracle、复现方式见 [V34–V37 卡片](FOUR_NEW_DUALAGENT_CASES_V34_V37_20261116_ZH.md) 和 [完整模型结果审计](../tasks/paragui/V34_V37_MODEL_RESULTS_20261116_ZH.md)。
+
+V38–V42 新增五题也都通过 scripted joint Guest 正控（A/B 1.0）。其中 V38、V40 完成三臂模型运行；仅 V40 满足角色级 MA-ID PASS / Shared FAIL / Shared+Lock FAIL（一次结果）。V39、V41 的 Shared 仅一角色失败，按门控不补锁臂；V42 Shared 的 A timeout 2400s，不计 FAIL。五题仍属 Synthetic Desk 单记录双面板的同一机制家族。详见 [V38–V42 模型结果审计](../tasks/paragui/V38_V42_MODEL_RESULTS_20261117_ZH.md) 与 [V38–V42 任务卡/复现说明](FIVE_NEW_DUALAGENT_CASES_V38_V42_20261117_ZH.md)。
+
 
 ---
 
