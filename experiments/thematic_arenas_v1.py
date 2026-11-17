@@ -80,7 +80,7 @@ def make_arena_handlers(desk: "ThematicArenaDesktop", role: str, action_log: Pat
         "description": "Execute bash command on the shared workstation as UID 1000 in /workspace.",
         "inputSchema": {
             "type": "object",
-            "properties": {"command": {"type": "string"}, "cwd": {"type": "string", "default": "/workspace"}, "timeout": {"type": "number", "default": 180}},
+            "properties": {"command": {"type": "string"}, "cwd": {"type": "string", "default": "/workspace"}, "timeout": {"type": "number", "default": 240}},
             "required": ["command"],
         },
     }
@@ -115,7 +115,7 @@ def make_arena_handlers(desk: "ThematicArenaDesktop", role: str, action_log: Pat
     def call_bash(_name: str, arguments: dict) -> dict:
         sync_once()
         log_act("guest_bash.guest_bash", arguments)
-        t_lim = int(min(300, max(5, float(arguments.get("timeout", 180)))))
+        t_lim = int(min(340, max(5, float(arguments.get("timeout", 240)))))
         cwd_val = str(arguments.get("cwd") or "/workspace")
         res = desk.exec_role(role, str(arguments["command"]), cwd=cwd_val, timeout_s=t_lim)
         return {"content": [{"type": "text", "text": json.dumps(res, ensure_ascii=False)}], "isError": not res["ok"]}
