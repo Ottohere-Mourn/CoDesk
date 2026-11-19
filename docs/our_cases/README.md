@@ -11,6 +11,8 @@
 
 ## 文件
 
+- [`静态 HTML 案例看板`](index.html)：支持关键词检索、按主题/截图状态筛选、卡片浏览和截图放大。
+
 - [`CASE_SUMMARIES.md`](CASE_SUMMARIES.md)：适合人阅读的 93 案逐项文本概要与可用截图链接。
 - [`case-catalog.csv`](case-catalog.csv)：机器可读摘要、模型/控制证据状态、来源文档、截图状态与原始截图路径；共 93 条。
 - [`screenshots/`](screenshots/)：当前 HealthCare 可访问且能可靠映射到 case 的精选关键 PNG；当前覆盖 **75/93** 个 case。只复制精简精选图，不复制原始 runs。
