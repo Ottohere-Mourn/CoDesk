@@ -1,6 +1,6 @@
 # CoDesk / paraGUI 全量任务资产与多模型评测总览（中文汇总版）
 
-更新日期：2026-11-17
+更新日期：2026-11-19
 所在分支：`codex/all-codesk-cases-20261113`
 远程仓库：`git@github.com:Ottohere-Mourn/CoDesk.git`
 覆盖范围：统一汇总原 `codex/all-codesk-cases-20261113` 聚合分支（早期 19-case 双智能体组合、`V1–V47` 业务工作流扩展、17 个人机共享桌面任务、7 个独立协作包与 35 对 `paragui` 基础题库）与 `cpu15` 实验线新增的全部原生专业软件竞争套件（`PR-*`、`AR-01..10`、`p1–p12`）、超长程物理仿真耦合套件（`LH-01..04`）、四智能体真 GUI `<canvas>` + CLI 混合并发套件（`QH-01..04`）、四智能体持续高重叠“主题工作场”套件（`TA-A1..TA-E1` 共 8 项）、超长程真实公网网站 + 真实原生桌面软件四智能体旗舰工作场套件（`UA-01..UA-15` 共 15 项，单局最高 70.0 分钟）、外部基准并发适配（OSWorld 10 对、WeaveBench 双并发与四并发）、macOS 双桌面空间真网页人机套件（`rw-*`）、全屏用户界面自然后台抢占套件（`fs-*`），以及 `gpt-6-sol`、`gpt-6.1-sol`、`gpt-6-astra`、`DeepSeek-V4.1-Flash-1017`（`deepseek-flash`）四款模型的全部实测结果。
@@ -9,12 +9,13 @@
 
 ## 一、全局任务盘点与多模型评测概览
 
-当前分支共收录 **211 项独立任务/配对条目**：其中 **157 项已完成完整模型多智能体/多臂实验**，**3 项另有有效 MA-ID/Shared 前置筛查但未完成全部锁臂**（按门控停止或 Shared actor timeout），另有 **51 项为脚本参考解验证、离线 Oracle 验证或设计规格储备题库**（`p4–p12` 9 项 + `tasks/paragui` 基础库 35 对 + `oscombo/collab` 7 项）；V43–V47 与 `UA-01..UA-15` 已纳入完整模型实测。因此共有 160 项至少取得一个有效模型臂结果；timeout 不计作 FAIL。不同赛道工具空间与指标各异，按赛道分列。
+当前分支共收录 **220 项独立任务/配对条目**：其中 **163 项已完成完整模型多智能体/多臂实验**，**3 项另有有效 MA-ID/Shared 前置筛查但未完成全部锁臂**（按门控停止或 Shared actor timeout），另有 **54 项为脚本参考解验证、离线 Oracle 验证或设计规格储备题库**（既有 `p4–p12` 9 项 + `tasks/paragui` 基础库 35 对 + `oscombo/collab` 7 项，另新增 MECH07–09 三个只有 scripted control 的任务）；V43–V47、`UA-01..UA-15` 与 MECH01–06 已纳入完整模型多臂实测。因此共有 166 项至少取得一个有效模型臂结果；timeout 不计作 FAIL。不同赛道工具空间与指标各异，按赛道分列。
 
 | 赛道分类 | 子套件与目录入口 | 在册数 | 已实测数 | 并发规模与模式 | 参测模型（推理档位） | 核心实测结果摘要 |
 |---|---|---:|---:|---|---|---|
 | **A1. 核心双智能体机制与复合工作流** | `docs/handoff/13-case-handoff/`、`experiments/codesk_19case_suite.py` | 19 | **19** | 2 Agent（隔离 / 共享GUI / 动作锁 / 全混合CLI） | `gpt-6-sol`、`gpt-6.1-sol (medium)` | `gpt-6-sol` 三臂筛查 **14/19** 命中一次性 `PASS/FAIL/FAIL`；`gpt-6.1-sol` 四臂实测：隔离 **18/19 (94.7%)**，共享 GUI **5/19 (26.3%)**，动作锁 **3/17 (17.6%)**，开放全混合 CLI 后恢复至 **12/19 (63.2%)**（仍有 7 题因会话/视口/剪贴板/陈旧快照失败） |
 | **A2. 合成业务应用双智能体扩展** | `tasks/paragui/pg_v1..v47.py`、`pg_s1/k1/k2/q1/e1.py` | 52 | **49 完整 + 3 部分 + 0 未模型筛查** | 2 Agent（隔离 / 共享GUI / 动作锁，纯 GUI） | `gpt-6-sol (high)` | 11 项候选筛查中 **5/11** 命中；`V7–V37` 追加工作流 **21/31** 命中（含 `V33` 子任务级命中）；V38–V42 有 **2 项完整三臂 + 3 项部分筛查**，V40 一次命中目标组合；V43–V47 完成案例、Fixture、Oracle、OSWorld adapter 与 5/5 scripted Guest 正控；V43–V47 均完成三臂（V47 的首次 Shared 含一个 API runner error，保留后另做一次 infra retry，以有效 retry 作为 Shared 结果）；五题全部满足“配对任务级”独立双 PASS、Shared/Lock 两臂至少一方 FAIL，其中 V43/V45/V47 同一角色沿 MA-ID→Shared→Lock 连续 PASS/FAIL/FAIL，V44/V46 则是 Shared 与 Lock 分别由不同角色失败；当前 A2 已筛查 52 项中 **30 次一次性命中**（含 V33 子任务级）；V43–V47 的完整臂结果见下表与批次审计。
+| **A3. 低覆盖桌面状态机制扩展** | `tasks/mechanism_expansion_v1/`、`docs/FIVE_LOW_COVERAGE_MECHANISM_CASES_20261118_ZH.md` | 9 | **6 完整模型三臂 + 3 scripted controls only** | 2 Agent（MA-ID / Shared / Shared+PerActionLock） | `gpt-6-sol (medium)` | MECH01–06 六个模型三臂均有效；MECH06 v0.5.0 一次满足 arm-level MA-ID 双 PASS、Shared 与 Shared+Lock 各至少一任务 FAIL。MECH01/04 有失败归因混杂，MECH05 锁臂 PASS；MECH07–09 仅有 Guest scripted 正负 controls，无模型结果。任务、截图索引与边界见 [`docs/our_cases/`](our_cases/README.md)，历史运行留在 RAID。|
 | **B1. 原生专业软件与单会话门户竞争** | `tasks/professional_races_v1/`、`tasks/astra_races_v2/`、`tasks/professional_v2,v3/` | 26 | **17** | 2 Agent（全混合 GUI+CLI，共享原生工程与 X11） | `gpt-6-astra (high)`、`gpt-6.1-sol (high)`、`DeepSeek-V4.1 (high)` | `PR-*` 4 题（`6.1-sol`）：隔离 **4/4**、串行 **4/4**、并发 **0/4**；`AR-01..10` 10 题（`astra`）：串行 **10/10**、并发 **0/10**；`AR-03,04,07,08` 抽测：`6.1-sol` 与 `DS-V4.1` 并发均为 **0/4**（角色 `3/8`）；早期 `p1–p3`（`astra`）：Codex 与 Freehand 均为 **1/3** 双满（`17/18` 检查项）；`p4–p12` 9 项为参考验证/规格储备 |
 | **B2. 超长程多软件耦合与物理 DRC** | `tasks/long_horizon_v1/`（单局 35–45 分钟） | 4 | **4** | 2 Agent（全混合 GUI+CLI + 物理仿真器） | `gpt-6.1-sol (high)`、`DeepSeek-V4.1 (high)` | `gpt-6.1-sol` 全测 4 题：串行 **0/4**、并发 **1/4 PASS**（`LH-01` 过，其余因预算抢占或收尾覆写挂）；`LH-02,03` 同口径对比：`6.1-sol` 与 `DS-V4.1` 均为 **0/2**（子门限同为 **21/24 = 87.5%**） |
 | **B3. 四智能体单桌面混合并发** | `tasks/quad_hybrid_v1/`、`tasks/weavebench_writer_conflict/`、`weavebench_quad.py` | 6 | **6** | 4 Agent（`<canvas>` 视觉规格卡 + 全开放 CLI） | `gpt-6.1-sol (high)`、`DeepSeek-V4.1 (high)`、`gpt-6-astra (high)` | `QH-01..04`（`6.1-sol`）：串行 **4/4**，四并发 `r1` **3/4**、`r2` **4/4**（自发建 `/tmp` 锁排号）、`r3` **3/4**；`QH-01,03` 上 `DS-V4.1` 并发 **1/2**（`QH-01` 过、`QH-03` 3/4）；WeaveBench 四并发（`astra`）：异构 4 题 Freehand **4/4 (97.04)** vs Codex **2/4 (74.43)**，同文档 Writer 四角色双 Harness 均 **4/4 PASS** |
@@ -26,7 +27,7 @@
 | **C3. 人机共享桌面（全屏用户界面自然抢占）** | `tasks/real_fullscreen_ha_v1/` | 5 | **5** | 1 真实后台 Agent + 1 全屏最大化用户 | `gpt-6.1-sol (medium)`（全混合 GUI+CLI） | `user-only` **5/5**，`independent` **5/5 双 PASS**；`shared` 下 3 道纯产物交付题 Agent 自发走无头 CLI 零抢占（**3/3 双 PASS**），2 道需打开桌面窗口/标签题触发浏览器地址栏劫持与 Writer 弹窗抢焦点（致 `fs-wiki-pep-writer-open` **User FAIL / Agent PASS**） |
 | **D1. `paragui` v1 + 红队基础配对库** | `tasks/paragui/`（`c/o/m/w/d/f/x/a` 系列） | 35 | 0 | 2 Agent 配对题库 | 作者参考解双向验证 | 35 对（70 个 OSWorld 2.0 任务类）均完成资产生成器、内网应用与双向 `1.0` 参考验证，供 `oscombo` 组合采样 |
 | **D2. `oscombo/collab` 独立协作协议包** | `oscombo/collab/`（`CDD-*` 系列） | 7 | 0 | 双角色异步/共享协作包 | 离线 Oracle / 脚本 Guest 验证 | 7 套独立包全部通过离线正负控制单测，`Data-to-Deck` 完成 Guest 脚本生命周期验证；其中 3 套的精简版即 A1 中的 `Case 2/3/4` |
-| **合计** | — | **211** | **157 完整 + 3 部分** | 2–4 智能体 / 人机混合 | 4 款主力模型 × 2 套 Harness | **157 项完整多智能体/多臂成绩；另 3 项有效但未完成全部臂**，共 160 项至少有一个有效模型臂；51 项仍属参考/题库/设计储备，见 `docs/results-manifests/` 与赛道明细 |
+| **合计** | — | **220** | **163 完整 + 3 部分** | 2–4 智能体 / 人机混合 | 4 款主力模型 × 2 套 Harness | **163 项完整多智能体/多臂成绩；另 3 项有效但未完成全部臂**，共 166 项至少有一个有效模型臂；54 项仍属参考/题库/设计储备，见 `docs/results-manifests/` 与赛道明细 |
 
 ---
 
@@ -56,7 +57,7 @@
 
 ---
 
-## 三、赛道一（Track A）：CoDesk 核心双智能体状态与业务工作流套件（共 57 项）
+## 三、赛道一（Track A）：CoDesk 核心双智能体状态、业务工作流与机制扩展套件（共 80 项：A1 19 + A2 52 + A3 9）
 
 ### A1. 早期 19-Case 核心组合（`gpt-6-sol` 三臂 vs `gpt-6.1-sol` 四臂全混合实测）
 
