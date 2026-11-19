@@ -6,25 +6,25 @@
 
 | Case | 任务概要 | 当前证据状态 | 关键截图 |
 |---|---|---|---|
-| `A-01` | 同一 Chromium 窗口多标签页上下文切换 | GPT-6-Sol ???PASS / FAIL / FAIL（命中） | [A-01_key.png](screenshots/A-01_key.png) |
-| `AP-1` | 应付账款汇款草稿与贷项通知单交接（账本陈旧） | GPT-6-Sol ???PASS / FAIL / FAIL（命中） | 未取得（见 CSV 原因） |
-| `AUTH-1` | 同一浏览器会话活动审核人/操作员身份被切换 | GPT-6-Sol ???PASS / FAIL / FAIL（命中） | 未取得（见 CSV 原因） |
-| `C-03` | 共享系统剪贴板被同伴覆盖导致错粘 | GPT-6-Sol ???PASS / FAIL / FAIL（命中） | [C-03_key.png](screenshots/C-03_key.png) |
-| `CRM-LU1` | 旧版全字段客户资料表单覆盖同伴刚改的账单邮箱 | GPT-6-Sol ???PASS / FAIL / FAIL（命中） | 未取得（见 CSV 原因） |
-| `CWD-1` | 共享终端当前工作目录（CWD）漂移 | GPT-6-Sol ???PASS / FAIL / FAIL（命中） | 未取得（见 CSV 原因） |
-| `Case-2` | 商品客服工单、Review ID 交接与退款结案 | GPT-6-Sol ???PASS / PASS / PASS（中性对照） | 未取得（见 CSV 原因） |
-| `Case-3` | VS Code 代码修复 + 浏览器回归重测（跨窗口焦点） | GPT-6-Sol ???PASS / FAIL / FAIL（命中） | 未取得（见 CSV 原因） |
-| `Case-4` | Kdenlive 视频时间线 + VS Code 检查单 | GPT-6-Sol ???PASS / FAIL / PASS（锁恢复对照） | 未取得（见 CSV 原因） |
-| `DATA-REL1` | 数据集隐私政策修订使已暂存发布包过期 | GPT-6-Sol ???PASS / FAIL / FAIL（命中） | 未取得（见 CSV 原因） |
-| `EDIT-1` | Writer 插入/改写（Insert/Overwrite）模式污染 | GPT-6-Sol ???瞬时覆盖后自撤销（归因不净未计） | 未取得（见 CSV 原因） |
-| `F-01` | Writer 陈旧焦点输入 + 同伴切换 Calc 窗口焦点 | GPT-6-Sol ???PASS / PASS / FAIL（缺普通共享失败） | [F-01_key.png](screenshots/F-01_key.png) |
-| `FIND-1` | Writer 查找替换大小写敏感（Match-case）共享状态 | GPT-6-Sol ???缺同版有效基线未计入上游合格数 | 未取得（见 CSV 原因） |
-| `PAY-1` | 薪酬付款完成后发生合法工时更正（快照过期） | GPT-6-Sol ???PASS / FAIL / FAIL（命中） | 未取得（见 CSV 原因） |
-| `S-01` | LibreOffice Calc 共享活动单元格选区漂移 | GPT-6-Sol ???PASS / FAIL / FAIL（命中） | [S-01_key.png](screenshots/S-01_key.png) |
-| `SITEACT-STATE1` | 临床试验站点激活快照与偏差 HOLD 更新冲突 | GPT-6-Sol ???PASS / FAIL / FAIL（命中） | 未取得（见 CSV 原因） |
-| `U-01` | LibreOffice Calc 共享全局撤销栈（Undo） | GPT-6-Sol ???PASS / FAIL / FAIL（命中） | [U-01_key.png](screenshots/U-01_key.png) |
-| `VIEW-1` | 审核长列表滚动改变共享视口偏移（Viewport） | GPT-6-Sol ???PASS / FAIL / FAIL（命中） | 未取得（见 CSV 原因） |
-| `W1` | 仓库收货单与 QA 温控隔离（剪贴板覆盖批次号） | GPT-6-Sol ???PASS / FAIL / FAIL（命中） | 未取得（见 CSV 原因） |
+| `A-01` | 同一 Chromium 窗口多标签页上下文切换 | GPT-6-Sol（MA-ID / Shared / Shared+Lock）：PASS / FAIL / FAIL（命中） | [A-01_key.png](screenshots/A-01_key.png) |
+| `AP-1` | 应付账款汇款草稿与贷项通知单交接（账本陈旧） | GPT-6-Sol（MA-ID / Shared / Shared+Lock）：PASS / FAIL / FAIL（命中） | 未取得（见 CSV 原因） |
+| `AUTH-1` | 同一浏览器会话活动审核人/操作员身份被切换 | GPT-6-Sol（MA-ID / Shared / Shared+Lock）：PASS / FAIL / FAIL（命中） | 未取得（见 CSV 原因） |
+| `C-03` | 共享系统剪贴板被同伴覆盖导致错粘 | GPT-6-Sol（MA-ID / Shared / Shared+Lock）：PASS / FAIL / FAIL（命中） | [C-03_key.png](screenshots/C-03_key.png) |
+| `CRM-LU1` | 旧版全字段客户资料表单覆盖同伴刚改的账单邮箱 | GPT-6-Sol（MA-ID / Shared / Shared+Lock）：PASS / FAIL / FAIL（命中） | 未取得（见 CSV 原因） |
+| `CWD-1` | 共享终端当前工作目录（CWD）漂移 | GPT-6-Sol（MA-ID / Shared / Shared+Lock）：PASS / FAIL / FAIL（命中） | 未取得（见 CSV 原因） |
+| `Case-2` | 商品客服工单、Review ID 交接与退款结案 | GPT-6-Sol（MA-ID / Shared / Shared+Lock）：PASS / PASS / PASS（中性对照） | 未取得（见 CSV 原因） |
+| `Case-3` | VS Code 代码修复 + 浏览器回归重测（跨窗口焦点） | GPT-6-Sol（MA-ID / Shared / Shared+Lock）：PASS / FAIL / FAIL（命中） | 未取得（见 CSV 原因） |
+| `Case-4` | Kdenlive 视频时间线 + VS Code 检查单 | GPT-6-Sol（MA-ID / Shared / Shared+Lock）：PASS / FAIL / PASS（锁恢复对照） | 未取得（见 CSV 原因） |
+| `DATA-REL1` | 数据集隐私政策修订使已暂存发布包过期 | GPT-6-Sol（MA-ID / Shared / Shared+Lock）：PASS / FAIL / FAIL（命中） | 未取得（见 CSV 原因） |
+| `EDIT-1` | Writer 插入/改写（Insert/Overwrite）模式污染 | GPT-6-Sol（MA-ID / Shared / Shared+Lock）：瞬时覆盖后自撤销（归因不净未计） | 未取得（见 CSV 原因） |
+| `F-01` | Writer 陈旧焦点输入 + 同伴切换 Calc 窗口焦点 | GPT-6-Sol（MA-ID / Shared / Shared+Lock）：PASS / PASS / FAIL（缺普通共享失败） | [F-01_key.png](screenshots/F-01_key.png) |
+| `FIND-1` | Writer 查找替换大小写敏感（Match-case）共享状态 | GPT-6-Sol（MA-ID / Shared / Shared+Lock）：缺同版有效基线未计入上游合格数 | 未取得（见 CSV 原因） |
+| `PAY-1` | 薪酬付款完成后发生合法工时更正（快照过期） | GPT-6-Sol（MA-ID / Shared / Shared+Lock）：PASS / FAIL / FAIL（命中） | 未取得（见 CSV 原因） |
+| `S-01` | LibreOffice Calc 共享活动单元格选区漂移 | GPT-6-Sol（MA-ID / Shared / Shared+Lock）：PASS / FAIL / FAIL（命中） | [S-01_key.png](screenshots/S-01_key.png) |
+| `SITEACT-STATE1` | 临床试验站点激活快照与偏差 HOLD 更新冲突 | GPT-6-Sol（MA-ID / Shared / Shared+Lock）：PASS / FAIL / FAIL（命中） | 未取得（见 CSV 原因） |
+| `U-01` | LibreOffice Calc 共享全局撤销栈（Undo） | GPT-6-Sol（MA-ID / Shared / Shared+Lock）：PASS / FAIL / FAIL（命中） | [U-01_key.png](screenshots/U-01_key.png) |
+| `VIEW-1` | 审核长列表滚动改变共享视口偏移（Viewport） | GPT-6-Sol（MA-ID / Shared / Shared+Lock）：PASS / FAIL / FAIL（命中） | 未取得（见 CSV 原因） |
+| `W1` | 仓库收货单与 QA 温控隔离（剪贴板覆盖批次号） | GPT-6-Sol（MA-ID / Shared / Shared+Lock）：PASS / FAIL / FAIL（命中） | 未取得（见 CSV 原因） |
 
 ## A2 Synthetic Desk 双 Agent
 
@@ -72,11 +72,11 @@
 | `V40` | Tree Hazard & Crew Desk：树木风险与班组派工；登记危险树木评估并配置现场班组。 | 完整三臂；一次命中目标角色级 PASS/FAIL/FAIL | [V40_key.png](screenshots/V40_key.png) |
 | `V41` | Accessible Passenger Service：无障碍乘客协助；处理乘客需求并安排支持服务。 | 仅前置筛查；Shared 使一个角色任务失败，按门控停止 | [V41_key.png](screenshots/V41_key.png) |
 | `V42` | Hazardous-Waste Manifest & Pickup：危废清单与取件；审核危废记录并协调承运取件。 | MA-ID 与 Shared 前置筛查；Shared-A timeout 不算 FAIL，未完成三臂 | [V42_key.png](screenshots/V42_key.png) |
-| `V43` | Bayview Construction RFI & Site Work Package：审查 RFI-731 的状态、图纸与回复期限，并同步受影响区域、专业工种、班次和施工包版本。 | ??????????????? | [V43_key.png](screenshots/V43_key.png) |
-| `V44` | Goodline Food Rescue Intake & Distribution：筛查 DON-244 食品捐赠批次及温度/保质期，并为接收机构安排数量、时间窗和路线。 | ??????????????? | [V44_key.png](screenshots/V44_key.png) |
-| `V45` | Metro Heat Response Cooling Center & Shuttle：启用 HEAT-305 避暑点，核定地点/容量并配置接驳车辆、路线和时段。 | ??????????????? | [V45_key.png](screenshots/V45_key.png) |
-| `V46` | Lakeside Credit Union Card Dispute & Member Support：审核 DIS-882 银行卡争议，同时完成冻结/补发卡与会员服务安排。 | ??????????????? | [V46_key.png](screenshots/V46_key.png) |
-| `V47` | CivicWeb Accessibility Triage & Release Gate：分级 AX-417 无障碍缺陷、关联 WCAG/修复票，并设置构建发布门禁和验证信息。 | ??????????????? | [V47_key.png](screenshots/V47_key.png) |
+| `V43` | Bayview Construction RFI & Site Work Package：审查 RFI-731 的状态、图纸与回复期限，并同步受影响区域、专业工种、班次和施工包版本。 | GPT-6-Sol 三臂：MA-ID A/B 双 PASS；Shared 与 Shared+Lock 均 B FAIL（修订提示词后，同角色 PASS→FAIL→FAIL）。 | [V43_key.png](screenshots/V43_key.png) |
+| `V44` | Goodline Food Rescue Intake & Distribution：筛查 DON-244 食品捐赠批次及温度/保质期，并为接收机构安排数量、时间窗和路线。 | GPT-6-Sol 三臂：MA-ID A/B 双 PASS；Shared A FAIL、Shared+Lock B FAIL（配对级命中，不是同角色持续失败）。 | [V44_key.png](screenshots/V44_key.png) |
+| `V45` | Metro Heat Response Cooling Center & Shuttle：启用 HEAT-305 避暑点，核定地点/容量并配置接驳车辆、路线和时段。 | GPT-6-Sol 三臂：MA-ID A/B 双 PASS；Shared B FAIL、Shared+Lock A/B 双 FAIL（B 同角色持续失败）。 | [V45_key.png](screenshots/V45_key.png) |
+| `V46` | Lakeside Credit Union Card Dispute & Member Support：审核 DIS-882 银行卡争议，同时完成冻结/补发卡与会员服务安排。 | GPT-6-Sol 三臂：MA-ID A/B 双 PASS；Shared B FAIL、Shared+Lock A FAIL（配对级命中，不是同角色持续失败）。 | [V46_key.png](screenshots/V46_key.png) |
+| `V47` | CivicWeb Accessibility Triage & Release Gate：分级 AX-417 无障碍缺陷、关联 WCAG/修复票，并设置构建发布门禁和验证信息。 | GPT-6-Sol 三臂：MA-ID A/B 双 PASS；Shared A FAIL、Shared+Lock A/B 双 FAIL（A 同角色持续失败；Shared 保留一次基础设施无效尝试后重跑）。 | [V47_key.png](screenshots/V47_key.png) |
 | `pg_e1` | Writer 合规文档中的 Insert/Overwrite（改写）模式竞争；核验一方文本修订与另一方普通文本是否按预期保存。 | 完成 GPT-6-Sol 三臂；见 A2 汇总与 e1 结果目录 | [pg_e1_key.png](screenshots/pg_e1_key.png) |
 
 ## C1 Human-Agent
