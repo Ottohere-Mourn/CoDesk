@@ -1,0 +1,170 @@
+{
+  "pair_id": "a1",
+  "case_name": "A1 - Elmbrook House Care Home: leave approvals vs filling the open shifts of the same week",
+  "record_type": "offline_authoring_selftest_summary_not_live_model_run",
+  "source_document": "tasks/paragui/spec_a1.md (lines 118-139) & tasks/paragui/pg_a1.py",
+  "source_commit": "e2727e4339c8c1c0bfcce229ab043a578a522286",
+  "live_model_result_json_status": "未找到/未知 (not synced to git remote or reachable servers)",
+  "roles": {
+    "A": "pga1leave",
+    "B": "pga1rota"
+  },
+  "pass_threshold": 0.8,
+  "checker_subitems_and_caps": {
+    "pga1leave": {
+      "weights": {
+        "decisions_ok_6_requests": 0.3,
+        "decline_reasons_3_declines": 0.05,
+        "december_request_still_pending": 0.03,
+        "requesters_off_shift": 0.15,
+        "vacated_shifts_covered": 0.15,
+        "cover_legal_no_rota_rule_breaks": 0.12,
+        "other_shifts_not_stripped": 0.05,
+        "summary_lines_ok": 0.1,
+        "summary_cover_named": 0.05
+      },
+      "caps": [
+        {
+          "condition": "decided == 0",
+          "max_score": 0.2
+        },
+        {
+          "condition": "not all(requesters_off_shift)",
+          "max_score": 0.6
+        },
+        {
+          "condition": "bool(cover_rule_breaks)",
+          "max_score": 0.7
+        },
+        {
+          "condition": "bool(decision_errors)",
+          "max_score": 0.75
+        }
+      ]
+    },
+    "pga1rota": {
+      "weights": {
+        "open_slots_filled_8_shifts": 0.24,
+        "fillers_eligible_in_final_rota": 0.32,
+        "week_fully_staffed": 0.1,
+        "no_seed_assignments_removed": 0.06,
+        "pdf_found": 0.06,
+        "pdf_week_labels": 0.04,
+        "pdf_no_open": 0.08,
+        "pdf_open_slots_shown_filled": 0.1
+      },
+      "caps": [
+        {
+          "condition": "filled == 0",
+          "max_score": 0.2
+        },
+        {
+          "condition": "bool(rostered_on_leave_in_open_slots)",
+          "max_score": 0.6
+        },
+        {
+          "condition": "eligible < 8",
+          "max_score": 0.75
+        }
+      ]
+    }
+  },
+  "recorded_offline_selftest_runs": [
+    {
+      "run_id": "a1-selftest-pristine",
+      "condition": "pristine",
+      "score_A": 0.08,
+      "score_B": 0.06,
+      "both_pass_ge_0_8": false,
+      "note": "Untouched seeded RotaDesk db"
+    },
+    {
+      "run_id": "a1-selftest-A-only",
+      "condition": "solo_A_ref",
+      "score_A": 1.0,
+      "score_B": 0.06,
+      "both_pass_ge_0_8": false,
+      "note": "Reference A alone"
+    },
+    {
+      "run_id": "a1-selftest-B-only",
+      "condition": "solo_B_ref",
+      "score_A": 0.08,
+      "score_B": 1.0,
+      "both_pass_ge_0_8": false,
+      "note": "Reference B alone"
+    },
+    {
+      "run_id": "a1-selftest-seq-AB",
+      "condition": "sequential_A_then_B_ref",
+      "score_A": 1.0,
+      "score_B": 1.0,
+      "both_pass_ge_0_8": true,
+      "note": "Exhaustively verified across all 28 valid A cover sets"
+    },
+    {
+      "run_id": "a1-selftest-seq-BA",
+      "condition": "sequential_B_then_A_ref",
+      "score_A": 1.0,
+      "score_B": 1.0,
+      "both_pass_ge_0_8": true,
+      "note": "B puts Amy on Thu Early; A covers both Wed & Thu; verified across all 72,296 valid B fills"
+    },
+    {
+      "run_id": "a1-selftest-neg-A-no-covers",
+      "condition": "negative_control_A",
+      "score_A": 0.43,
+      "score_B": null,
+      "both_pass_ge_0_8": false,
+      "note": "A approves only, no covers, no summary"
+    },
+    {
+      "run_id": "a1-selftest-neg-A-wrong-decisions",
+      "condition": "negative_control_A",
+      "score_A": 0.75,
+      "score_B": null,
+      "both_pass_ge_0_8": false,
+      "note": "A approves Daniel + Liam too -> decision_errors cap 0.75"
+    },
+    {
+      "run_id": "a1-selftest-neg-B-sloppy",
+      "condition": "negative_control_B",
+      "score_A": null,
+      "score_B": 0.4,
+      "both_pass_ge_0_8": false,
+      "note": "B picks first alphabetical name ignoring rules, no PDF"
+    },
+    {
+      "run_id": "a1-selftest-neg-B-no-pdf",
+      "condition": "negative_control_B",
+      "score_A": null,
+      "score_B": 0.72,
+      "both_pass_ge_0_8": false,
+      "note": "B fills slots legally without printing PDF"
+    },
+    {
+      "run_id": "a1-selftest-race-stale-plan",
+      "condition": "parallel_race_simulation",
+      "score_A": 0.6,
+      "score_B": 0.6,
+      "both_pass_ge_0_8": false,
+      "note": "Both plan from pristine week; B assigns Amy Clarke to Thu Early after A approved Amy's Wed-Thu leave -> both capped at 0.60"
+    },
+    {
+      "run_id": "a1-selftest-race-interleaved",
+      "condition": "parallel_race_simulation",
+      "score_A": 0.6,
+      "score_B": 0.6,
+      "both_pass_ge_0_8": false,
+      "note": "B assigns half, A approves, B assigns rest, A covers from earlier snapshot -> Amy rostered on approved leave -> both capped at 0.60"
+    },
+    {
+      "run_id": "a1-selftest-careful-interleaving",
+      "condition": "parallel_careful_feasible",
+      "score_A": 1.0,
+      "score_B": 1.0,
+      "both_pass_ge_0_8": true,
+      "note": "Each re-reads live rota and leave rows immediately before writing"
+    }
+  ]
+}

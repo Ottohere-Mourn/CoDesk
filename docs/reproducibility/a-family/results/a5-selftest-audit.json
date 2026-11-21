@@ -1,0 +1,145 @@
+{
+  "pair_id": "a5",
+  "case_name": "A5 - Fenwick & Bloom Home & Garden: one shop back office — supplier price increase vs Black Friday sale",
+  "record_type": "offline_authoring_selftest_summary_not_live_model_run",
+  "source_document": "tasks/paragui/spec_a5.md (lines 119-135) & tasks/paragui/pg_a5.py",
+  "source_commit": "e2727e4339c8c1c0bfcce229ab043a578a522286",
+  "live_model_result_json_status": "未找到/未知 (not synced to git remote or reachable servers)",
+  "roles": {
+    "A": "pga5prices",
+    "B": "pga5sale"
+  },
+  "pass_threshold": 0.8,
+  "checker_subitems_and_caps": {
+    "pga5prices": {
+      "weights": {
+        "repriced_10_products_cost_and_retail": 0.45,
+        "autumn_promo_pruner_recalculated": 0.06,
+        "no_promo_sale_prices_stale": 0.09,
+        "discontinued_item_status_and_unchanged_price": 0.05,
+        "no_other_products_changed": 0.05,
+        "summary_csv_10_rows": 0.25,
+        "summary_csv_no_extra_rows": 0.05
+      },
+      "caps": [
+        {
+          "condition": "pts == 0",
+          "max_score": 0.3
+        },
+        {
+          "condition": "any wrong final price or stale promo sale or pruner not recalculated",
+          "max_score": 0.75
+        },
+        {
+          "condition": "summary CSV missing",
+          "max_score": 0.7
+        }
+      ]
+    },
+    "pga5sale": {
+      "weights": {
+        "bf_13_products_sale_dates_label": 0.6,
+        "crossed_out_galvanised_can_excluded": 0.05,
+        "no_other_products_given_bf_promo": 0.05,
+        "printer_csv_consistent_snapshot": 0.25,
+        "printer_csv_no_extra_rows": 0.05
+      },
+      "caps": [
+        {
+          "condition": "pts == 0",
+          "max_score": 0.3
+        },
+        {
+          "condition": "any of 13 BF products wrong in ShopAdmin at end",
+          "max_score": 0.75
+        },
+        {
+          "condition": "printer CSV missing",
+          "max_score": 0.7
+        }
+      ]
+    }
+  },
+  "recorded_offline_selftest_runs": [
+    {
+      "run_id": "a5-selftest-pristine",
+      "condition": "pristine",
+      "score_A": 0.0,
+      "score_B": 0.0,
+      "both_pass_ge_0_8": false,
+      "note": "Seeded ShopAdmin db"
+    },
+    {
+      "run_id": "a5-selftest-A-only",
+      "condition": "solo_A_ref",
+      "score_A": 1.0,
+      "score_B": 0.0,
+      "both_pass_ge_0_8": false,
+      "note": "Reference A alone"
+    },
+    {
+      "run_id": "a5-selftest-B-only",
+      "condition": "solo_B_ref",
+      "score_A": 0.0,
+      "score_B": 1.0,
+      "both_pass_ge_0_8": false,
+      "note": "Reference B alone"
+    },
+    {
+      "run_id": "a5-selftest-seq-AB",
+      "condition": "sequential_A_then_B_ref",
+      "score_A": 1.0,
+      "score_B": 1.0,
+      "both_pass_ge_0_8": true,
+      "note": "A reprices first, B computes BF sales from new retails"
+    },
+    {
+      "run_id": "a5-selftest-seq-BA",
+      "condition": "sequential_B_then_A_ref",
+      "score_A": 1.0,
+      "score_B": 1.0,
+      "both_pass_ge_0_8": true,
+      "note": "B sets BF sales, A reprices and keeps BF discount % by recalculating sale_price"
+    },
+    {
+      "run_id": "a5-selftest-neg-partial-A",
+      "condition": "negative_control_A",
+      "score_A": 0.531,
+      "score_B": 0.0,
+      "both_pass_ge_0_8": false,
+      "note": "Typo GL-4471 missed, promo rule ignored, rake not discontinued, no CSV"
+    },
+    {
+      "run_id": "a5-selftest-neg-uncorrected-B",
+      "condition": "negative_control_B",
+      "score_A": 1.0,
+      "score_B": 0.7477,
+      "both_pass_ge_0_8": false,
+      "note": "B ignores handwritten corrections on flyer proof -> capped < 0.75"
+    },
+    {
+      "run_id": "a5-selftest-race-stale-forms",
+      "condition": "parallel_race_simulation",
+      "score_A": 0.75,
+      "score_B": 0.75,
+      "both_pass_ge_0_8": false,
+      "note": "Full-form Save overwrites peer fields on 2 shared products (LOST UPDATE) -> both capped at 0.75"
+    },
+    {
+      "run_id": "a5-selftest-race-stale-plan",
+      "condition": "parallel_race_simulation",
+      "score_A": 0.75,
+      "score_B": 0.7415,
+      "both_pass_ge_0_8": false,
+      "note": "B plans from pre-increase retails, A reprices, B saves 8 STALE sale prices"
+    },
+    {
+      "run_id": "a5-selftest-careful-interleaving",
+      "condition": "parallel_careful_feasible",
+      "score_A": 1.0,
+      "score_B": 1.0,
+      "both_pass_ge_0_8": true,
+      "note": "B reads retail in form at save time, A keeps discounts it finds"
+    }
+  ]
+}

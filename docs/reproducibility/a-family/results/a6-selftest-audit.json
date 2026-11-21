@@ -1,0 +1,162 @@
+{
+  "pair_id": "a6",
+  "case_name": "A6 - Kestrel Lane Accountants: restructuring the client files vs filing the morning post",
+  "record_type": "offline_authoring_selftest_summary_not_live_model_run",
+  "source_document": "tasks/paragui/spec_a6.md (lines 126-143) & tasks/paragui/pg_a6.py",
+  "source_commit": "e2727e4339c8c1c0bfcce229ab043a578a522286",
+  "live_model_result_json_status": "未找到/未知 (not synced to git remote or reachable servers)",
+  "roles": {
+    "spec_A": "pga6restructure",
+    "spec_B": "pga6filing",
+    "combo_list_order": [
+      "v2/pga6filing",
+      "v2/pga6restructure"
+    ]
+  },
+  "pass_threshold": 0.8,
+  "checker_subitems_and_caps": {
+    "pga6restructure": {
+      "weights": {
+        "folders_ok_12_clients": 0.25,
+        "no_stray_dirs_or_files": 0.1,
+        "seeded_38_files_renamed_ok": 0.25,
+        "other_documents_in_folders_conform": 0.1,
+        "no_seeded_doc_lost_or_duplicated": 0.1,
+        "readme_updated": 0.05,
+        "index_csv_12_rows": 0.15
+      },
+      "caps": [
+        {
+          "condition": "done < 0.5 (fewer than 6 folders right)",
+          "max_score": 0.4
+        },
+        {
+          "condition": "bool(lost) (any seeded document lost)",
+          "max_score": 0.6
+        },
+        {
+          "condition": "not others_clean (any non-conforming file in client folder)",
+          "max_score": 0.75
+        }
+      ]
+    },
+    "pga6filing": {
+      "weights": {
+        "placed_ok_10_docs_in_canonical_folder": 0.3,
+        "named_ok_matching_folder_convention": 0.25,
+        "duplicate_scan_kept_once": 0.1,
+        "nonclient_letter_left_in_inbox": 0.1,
+        "nothing_else_left_in_inbox": 0.1,
+        "filed_log_csv_12_rows": 0.15
+      },
+      "caps": [
+        {
+          "condition": "placed < 5 (fewer than half placed)",
+          "max_score": 0.4
+        },
+        {
+          "condition": "bool(filed_in_another_clients_folder)",
+          "max_score": 0.7
+        }
+      ]
+    }
+  },
+  "recorded_offline_selftest_runs": [
+    {
+      "run_id": "a6-selftest-pristine",
+      "condition": "pristine",
+      "score_A": 0.0,
+      "score_B": 0.0,
+      "both_pass_ge_0_8": false,
+      "note": "Untouched ~/Clients and ~/Scans/Inbox"
+    },
+    {
+      "run_id": "a6-selftest-A-only",
+      "condition": "solo_specA_ref",
+      "score_A": 1.0,
+      "score_B": 0.0,
+      "both_pass_ge_0_8": false,
+      "note": "pga6restructure alone"
+    },
+    {
+      "run_id": "a6-selftest-B-only",
+      "condition": "solo_specB_ref",
+      "score_A": 0.0,
+      "score_B": 1.0,
+      "both_pass_ge_0_8": false,
+      "note": "pga6filing alone"
+    },
+    {
+      "run_id": "a6-selftest-seq-AB",
+      "condition": "sequential_specA_then_specB_ref",
+      "score_A": 1.0,
+      "score_B": 1.0,
+      "both_pass_ge_0_8": true,
+      "note": "pga6restructure -> pga6filing (matrix o2)"
+    },
+    {
+      "run_id": "a6-selftest-seq-BA",
+      "condition": "sequential_specB_then_specA_ref",
+      "score_A": 1.0,
+      "score_B": 1.0,
+      "both_pass_ge_0_8": true,
+      "note": "pga6filing -> pga6restructure (matrix o1); log resolver accepts old & new folder paths"
+    },
+    {
+      "run_id": "a6-selftest-neg-A-partial",
+      "condition": "negative_control_specA",
+      "score_A": 0.78,
+      "score_B": null,
+      "both_pass_ge_0_8": false,
+      "note": "No README/index, 3 badly named files skipped (< 0.8)"
+    },
+    {
+      "run_id": "a6-selftest-neg-A-wrong-status",
+      "condition": "negative_control_specA",
+      "score_A": 0.73,
+      "score_B": null,
+      "both_pass_ge_0_8": false,
+      "note": "Ceased clients placed under Active"
+    },
+    {
+      "run_id": "a6-selftest-neg-B-patel-swap",
+      "condition": "negative_control_specB",
+      "score_A": null,
+      "score_B": 0.7,
+      "both_pass_ge_0_8": false,
+      "note": "Two Mr J Patel letters swapped -> misfiled cap 0.70"
+    },
+    {
+      "run_id": "a6-selftest-neg-B-partial",
+      "condition": "negative_control_specB",
+      "score_A": null,
+      "score_B": 0.7,
+      "both_pass_ge_0_8": false,
+      "note": "Duplicate kept, no filed_log.csv"
+    },
+    {
+      "run_id": "a6-selftest-race-stale-A-listing",
+      "condition": "parallel_race_simulation",
+      "score_A": 0.75,
+      "score_B": 0.75,
+      "both_pass_ge_0_8": false,
+      "note": "A plans batch rename, B files old-convention names meanwhile -> mixed convention caps A at 0.75 and fails B naming"
+    },
+    {
+      "run_id": "a6-selftest-race-stale-B-readme",
+      "condition": "parallel_race_simulation",
+      "score_A": 0.75,
+      "score_B": 0.25,
+      "both_pass_ge_0_8": false,
+      "note": "B reads old README/folders, A restructures, B mkdir -p recreates old folders splitting client files"
+    },
+    {
+      "run_id": "a6-selftest-careful-interleaving",
+      "condition": "parallel_careful_feasible",
+      "score_A": 1.0,
+      "score_B": 1.0,
+      "both_pass_ge_0_8": true,
+      "note": "A re-lists each folder before renaming; B re-locates canonical folder before each move"
+    }
+  ]
+}

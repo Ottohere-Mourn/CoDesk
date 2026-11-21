@@ -1,0 +1,176 @@
+{
+  "pair_id": "a3",
+  "case_name": "a3 - Copper Lane Cycles: one open Calc stock workbook — booking in deliveries vs applying a stock-take",
+  "record_type": "offline_authoring_selftest_summary_not_live_model_run",
+  "source_document": "tasks/paragui/spec_a3.md (lines 118-140) & tasks/paragui/pg_a3.py",
+  "source_commit": "e2727e4339c8c1c0bfcce229ab043a578a522286",
+  "live_model_result_json_status": "未找到/未知 (not synced to git remote or reachable servers)",
+  "roles": {
+    "A": "pga3goodsin",
+    "B": "pga3stocktake"
+  },
+  "pass_threshold": 0.8,
+  "checker_subitems_and_caps": {
+    "pga3goodsin": {
+      "weights": {
+        "onhand_ok_12_skus": 0.4,
+        "last_received_ok_12_skus": 0.1,
+        "goods_in_rows_12_lines": 0.2,
+        "trap_returned_item_not_booked": 0.04,
+        "trap_backorder_not_booked": 0.03,
+        "trap_wrong_ref_matched_TYR812": 0.03,
+        "other_skus_unchanged": 0.05,
+        "backorders_listed_txt": 0.15
+      },
+      "caps": [
+        {
+          "condition": "ok_oh < 6 (fewer than half of 12 receipts right)",
+          "max_score": 0.4
+        },
+        {
+          "condition": "ok_oh < 10 (more than 2 receipts wrong)",
+          "max_score": 0.75
+        }
+      ]
+    },
+    "pga3stocktake": {
+      "weights": {
+        "onhand_ok_13_counted_skus": 0.35,
+        "last_counted_ok_15_skus": 0.08,
+        "discontinued_deleted_3_rows": 0.12,
+        "new_skus_inserted_in_order_2_rows": 0.15,
+        "variance_sheet_rows_11": 0.17,
+        "variance_sheet_exact_title": 0.03,
+        "no_other_rows_missing_or_duplicated": 0.1
+      },
+      "caps": [
+        {
+          "condition": "nz_ok < 4.5 (fewer than half of 9 non-zero variance SKUs right)",
+          "max_score": 0.4
+        },
+        {
+          "condition": "len(overwritten_with_counted) >= 3",
+          "max_score": 0.5
+        },
+        {
+          "condition": "nz_ok < 7 (more than 2 variance SKUs wrong)",
+          "max_score": 0.75
+        }
+      ]
+    }
+  },
+  "recorded_offline_selftest_runs": [
+    {
+      "run_id": "a3-selftest-pristine",
+      "condition": "pristine",
+      "score_A": 0.0,
+      "score_B": 0.1077,
+      "both_pass_ge_0_8": false,
+      "note": "4 zero-variance SKUs trivially match On hand in pristine"
+    },
+    {
+      "run_id": "a3-selftest-A-only",
+      "condition": "solo_A_ref",
+      "score_A": 1.0,
+      "score_B": 0.1077,
+      "both_pass_ge_0_8": false,
+      "note": "Reference A alone"
+    },
+    {
+      "run_id": "a3-selftest-B-only",
+      "condition": "solo_B_ref",
+      "score_A": 0.0,
+      "score_B": 1.0,
+      "both_pass_ge_0_8": false,
+      "note": "Reference B alone"
+    },
+    {
+      "run_id": "a3-selftest-seq-AB",
+      "condition": "sequential_A_then_B_ref",
+      "score_A": 1.0,
+      "score_B": 1.0,
+      "both_pass_ge_0_8": true,
+      "note": "Receipt + variance deltas commute"
+    },
+    {
+      "run_id": "a3-selftest-seq-BA",
+      "condition": "sequential_B_then_A_ref",
+      "score_A": 1.0,
+      "score_B": 1.0,
+      "both_pass_ge_0_8": true,
+      "note": "Variance + receipt deltas commute"
+    },
+    {
+      "run_id": "a3-selftest-seq-AB-ddmm-swap",
+      "condition": "sequential_locale_tolerance",
+      "score_A": 1.0,
+      "score_B": 1.0,
+      "both_pass_ge_0_8": true,
+      "note": "dd/mm typed into en-US Calc tolerated"
+    },
+    {
+      "run_id": "a3-selftest-neg-partial-A-then-B",
+      "condition": "negative_control_A",
+      "score_A": 0.7383,
+      "score_B": 0.9731,
+      "both_pass_ge_0_8": false,
+      "note": "A books returned tyre + back-ordered rotor, misses 1 back-order"
+    },
+    {
+      "run_id": "a3-selftest-neg-B-overwrites-counted",
+      "condition": "negative_control_B",
+      "score_A": 0.4,
+      "score_B": 0.4,
+      "both_pass_ge_0_8": false,
+      "note": "B overwrites On hand with counted numbers instead of variance"
+    },
+    {
+      "run_id": "a3-selftest-neg-B-values-only",
+      "condition": "negative_control_B",
+      "score_A": 0.0,
+      "score_B": 0.5193,
+      "both_pass_ge_0_8": false,
+      "note": "B omits row deletes/inserts and Variance sheet"
+    },
+    {
+      "run_id": "a3-selftest-race-lost-update-A-over-B",
+      "condition": "parallel_race_simulation",
+      "score_A": 1.0,
+      "score_B": 0.4,
+      "both_pass_ge_0_8": false,
+      "note": "Both read On hand first; B saves, A types values from stale reading -> erases B variances"
+    },
+    {
+      "run_id": "a3-selftest-race-lost-update-B-over-A",
+      "condition": "parallel_race_simulation",
+      "score_A": 0.4,
+      "score_B": 1.0,
+      "both_pass_ge_0_8": false,
+      "note": "Both read On hand first; A saves, B types values from stale reading -> erases A receipts"
+    },
+    {
+      "run_id": "a3-selftest-race-row-shift",
+      "condition": "parallel_race_simulation",
+      "score_A": 0.4,
+      "score_B": 0.9731,
+      "both_pass_ge_0_8": false,
+      "note": "A caches row numbers, B deletes 3 / inserts 2 rows, A writes into shifted rows"
+    },
+    {
+      "run_id": "a3-selftest-race-script-vs-open-calc",
+      "condition": "parallel_race_simulation",
+      "score_A": 0.15,
+      "score_B": 1.0,
+      "both_pass_ge_0_8": false,
+      "note": "A edits xlsx on disk via script while B saves stale open Calc buffer over disk"
+    },
+    {
+      "run_id": "a3-selftest-careful-interleave",
+      "condition": "parallel_careful_feasible",
+      "score_A": 1.0,
+      "score_B": 1.0,
+      "both_pass_ge_0_8": true,
+      "note": "Re-read cell right before writing and locate rows by SKU code"
+    }
+  ]
+}

@@ -1,0 +1,1090 @@
+{
+  "schema_version": "1.0",
+  "audit_date_utc": "2026-11-21",
+  "audit_mode": "read_only_no_model_reruns",
+  "repository": {
+    "remote_url": "git@github.com:Ottohere-Mourn/CoDesk.git",
+    "https_url": "https://github.com/Ottohere-Mourn/CoDesk.git",
+    "authoring_commit_a_family": "e2727e4339c8c1c0bfcce229ab043a578a522286",
+    "yuke_osworld_head_commit": "976024720adba9a6087ec4c8526f26be0c8555db",
+    "consolidated_base_commit": "25115031884ac9476024c54fc0f12753cd577651",
+    "handoff_branch": "codex/zyk-a-family-repro-handoff-20261121",
+    "all_a_family_task_and_checker_files_match_git": true,
+    "remote_sync_audit": {
+      "task_specs_builders_checkers_synced_to_origin": true,
+      "live_model_result_json_synced_to_origin": false,
+      "live_model_trace_jsonl_synced_to_origin": false,
+      "offline_selftest_scripts_lib_atest_synced_to_origin": false,
+      "prebuilt_paragui_task_assets_synced_to_origin": false,
+      "gitignore_excludes_runs": true
+    }
+  },
+  "pinned_osworld_dependency": {
+    "repo": "https://github.com/xlang-ai/OSWorld-V2.git",
+    "release_tag": "osworld-v2.1",
+    "commit": "3d778a3c9a34a079316f70df023b166700445792",
+    "guest_image_archive": "osworld-v2-ubuntu-x86.qcow2.zip",
+    "guest_image_hf_commit": "6e16459a2feb5a8f1ed65babcfe7a2a6205d049d",
+    "guest_image_zip_size_bytes": 14891811084,
+    "guest_image_zip_sha256": "14b08aa7ba6c023ecb91d46de8df5de32af4d1d6bd75ea925519caf9677fc8b3"
+  },
+  "cases": {
+    "a1": {
+      "pair_id": "a1",
+      "case_label": "A1",
+      "case_name": "A1 - Elmbrook House Care Home: leave approvals vs filling the open shifts of the same week",
+      "audit_target": true,
+      "combo_list_line": "a1  v2/pga1leave v2/pga1rota",
+      "combo_list_order": [
+        "v2/pga1leave",
+        "v2/pga1rota"
+      ],
+      "spec_role_mapping": {
+        "Role_A": {
+          "task_id": "pga1leave",
+          "oscombo_spec": "v2/pga1leave",
+          "task_class": "TaskPga1leave",
+          "evaluator": "pg_a1.evaluate_leave"
+        },
+        "Role_B": {
+          "task_id": "pga1rota",
+          "oscombo_spec": "v2/pga1rota",
+          "task_class": "TaskPga1rota",
+          "evaluator": "pg_a1.evaluate_rota"
+        }
+      },
+      "order_consistency_note": "lists/paragui_attack_combos.txt order (pga1leave, pga1rota) matches spec_a1.md Role A / Role B.",
+      "matrix_actor_orders": {
+        "o1": {
+          "agentA": "pga1leave",
+          "agentB": "pga1rota",
+          "sequential_order": "pga1leave -> pga1rota"
+        },
+        "o2": {
+          "agentA": "pga1rota",
+          "agentB": "pga1leave",
+          "sequential_order": "pga1rota -> pga1leave"
+        }
+      },
+      "shared_resources": [
+        "Intranet web app RotaDesk (app_a1.py on http://127.0.0.1:8131, SQLite ~/.local/share/intranet/rotadesk/app.db)",
+        "Single Google Chrome instance (--remote-debugging-port=1337, socat :9222) logged in as sam.ellison"
+      ],
+      "deliverables": {
+        "pga1leave": [
+          "RotaDesk leave_requests decisions + assignments cover updates",
+          "~/Documents/Leave/leave_decisions_wk47.txt"
+        ],
+        "pga1rota": [
+          "RotaDesk 8 OPEN shift assignments",
+          "~/Documents/Rota/Rota_wk47.pdf (printed from Print view)"
+        ]
+      },
+      "source_files": [
+        "tasks/paragui/spec_a1.md",
+        "tasks/paragui/app_a1.py",
+        "tasks/paragui/build_a1.py",
+        "tasks/paragui/pg_a1.py",
+        "tasks/paragui/task_pga1leave.py",
+        "tasks/paragui/task_pga1rota.py"
+      ],
+      "generated_fixture_assets": [
+        {
+          "asset_relpath": "a1/app_a1.py",
+          "size_bytes": 34197,
+          "byte_deterministic_across_builds": true,
+          "sha256": "6be1a51dca3c8315a4181863994af8658fca15f80bb9a29736ffd3383e925726",
+          "nondeterminism_reason": null
+        },
+        {
+          "asset_relpath": "a1/expected.json",
+          "size_bytes": 4246,
+          "byte_deterministic_across_builds": true,
+          "sha256": "45f4efaa1fa63bbc32c3e7e2156eef63dd6fff4b8ed0d8163623ebcce12afad7",
+          "nondeterminism_reason": null
+        },
+        {
+          "asset_relpath": "a1/rotadesk_seed.db",
+          "size_bytes": 45056,
+          "byte_deterministic_across_builds": true,
+          "sha256": "3408d95c4df37570559e93ac58fef6ae4c81ae51d87b9a1a09b3f5cbc417087b",
+          "nondeterminism_reason": null
+        }
+      ],
+      "missing_authoring_files": [
+        "lib_atest_a1.py",
+        "lib_xtest.py",
+        "actual_run_time_PARAGUI_TASK_ASSETS_snapshot"
+      ],
+      "live_model_runs_found": false,
+      "offline_selftest_recorded_in_spec": true
+    },
+    "a3": {
+      "pair_id": "a3",
+      "case_label": "A3",
+      "case_name": "a3 - Copper Lane Cycles: one open Calc stock workbook — booking in deliveries vs applying a stock-take",
+      "audit_target": true,
+      "combo_list_line": "a3  v2/pga3goodsin v2/pga3stocktake",
+      "combo_list_order": [
+        "v2/pga3goodsin",
+        "v2/pga3stocktake"
+      ],
+      "spec_role_mapping": {
+        "Role_A": {
+          "task_id": "pga3goodsin",
+          "oscombo_spec": "v2/pga3goodsin",
+          "task_class": "TaskPga3goodsin",
+          "evaluator": "pg_a3.evaluate_goodsin"
+        },
+        "Role_B": {
+          "task_id": "pga3stocktake",
+          "oscombo_spec": "v2/pga3stocktake",
+          "task_class": "TaskPga3stocktake",
+          "evaluator": "pg_a3.evaluate_stocktake"
+        }
+      },
+      "order_consistency_note": "lists/paragui_attack_combos.txt order (pga3goodsin, pga3stocktake) matches spec_a3.md Role A / Role B.",
+      "matrix_actor_orders": {
+        "o1": {
+          "agentA": "pga3goodsin",
+          "agentB": "pga3stocktake",
+          "sequential_order": "pga3goodsin -> pga3stocktake"
+        },
+        "o2": {
+          "agentA": "pga3stocktake",
+          "agentB": "pga3goodsin",
+          "sequential_order": "pga3stocktake -> pga3goodsin"
+        }
+      },
+      "shared_resources": [
+        "Single running LibreOffice Calc instance with ~/Documents/Stock/parts_stock.xlsx open (72 seeded SKUs)",
+        "Image-only scanned delivery notes in ~/Documents/Stock/Deliveries/*.pdf and stock-take sheets in ~/Documents/Stock/Stocktake/*.pdf"
+      ],
+      "deliverables": {
+        "pga3goodsin": [
+          "~/Documents/Stock/parts_stock.xlsx (On hand, Last received, Goods in rows)",
+          "~/Documents/Stock/backorders_2026-11.txt"
+        ],
+        "pga3stocktake": [
+          "~/Documents/Stock/parts_stock.xlsx (variance updates, Last counted, 3 deleted DISC rows, 2 inserted NEW rows, sheet 'Variance 2026-11')"
+        ]
+      },
+      "source_files": [
+        "tasks/paragui/spec_a3.md",
+        "tasks/paragui/build_a3.py",
+        "tasks/paragui/pg_a3.py",
+        "tasks/paragui/task_pga3goodsin.py",
+        "tasks/paragui/task_pga3stocktake.py"
+      ],
+      "generated_fixture_assets": [
+        {
+          "asset_relpath": "a3/expected.json",
+          "size_bytes": 16759,
+          "byte_deterministic_across_builds": true,
+          "sha256": "b747f6f51c84b1c6826231c185b2bd996f8d0ceac644ec0e867a66f1ca28fc5b",
+          "nondeterminism_reason": null
+        },
+        {
+          "asset_relpath": "a3/parts_stock.xlsx",
+          "size_bytes": null,
+          "byte_deterministic_across_builds": false,
+          "sha256": null,
+          "nondeterminism_reason": "Requires openpyxl in $OSWORLD_DIR/.venv; openpyxl ZIP writer embeds build timestamps, while cell contents are seeded deterministically via random.Random(20261105)."
+        },
+        {
+          "asset_relpath": "a3/Deliveries/{MCP-558120_2026-11-02,BW-77341_2026-11-03,VT-20931_2026-11-04}.pdf & a3/Stocktake/count_bay{B,T}_2026-10-30.pdf",
+          "size_bytes": null,
+          "byte_deterministic_across_builds": false,
+          "sha256": null,
+          "nondeterminism_reason": "Pillow scanned_pdf embeds PDF CreationDate/ModDate and Image.effect_noise() grain; visual text/handwriting is seeded deterministically."
+        }
+      ],
+      "missing_authoring_files": [
+        "lib_atest_a3.py",
+        "lib_xtest.py",
+        "actual_run_time_PARAGUI_TASK_ASSETS_snapshot"
+      ],
+      "live_model_runs_found": false,
+      "offline_selftest_recorded_in_spec": true
+    },
+    "a5": {
+      "pair_id": "a5",
+      "case_label": "A5",
+      "case_name": "A5 - Fenwick & Bloom Home & Garden: one shop back office — supplier price increase vs Black Friday sale",
+      "audit_target": true,
+      "combo_list_line": "a5  v2/pga5prices v2/pga5sale",
+      "combo_list_order": [
+        "v2/pga5prices",
+        "v2/pga5sale"
+      ],
+      "spec_role_mapping": {
+        "Role_A": {
+          "task_id": "pga5prices",
+          "oscombo_spec": "v2/pga5prices",
+          "task_class": "TaskPga5prices",
+          "evaluator": "pg_a5.evaluate_prices"
+        },
+        "Role_B": {
+          "task_id": "pga5sale",
+          "oscombo_spec": "v2/pga5sale",
+          "task_class": "TaskPga5sale",
+          "evaluator": "pg_a5.evaluate_sale"
+        }
+      },
+      "order_consistency_note": "lists/paragui_attack_combos.txt order (pga5prices, pga5sale) matches spec_a5.md Role A / Role B.",
+      "matrix_actor_orders": {
+        "o1": {
+          "agentA": "pga5prices",
+          "agentB": "pga5sale",
+          "sequential_order": "pga5prices -> pga5sale"
+        },
+        "o2": {
+          "agentA": "pga5sale",
+          "agentB": "pga5prices",
+          "sequential_order": "pga5sale -> pga5prices"
+        }
+      },
+      "shared_resources": [
+        "Intranet web app ShopAdmin (app_a5.py on http://127.0.0.1:8135, SQLite ~/.local/share/intranet/shopadmin/app.db, full-form POST overwrite without optimistic locking)",
+        "Single Google Chrome instance logged in as jess; 8 overlapping Greenleaf products across both tasks"
+      ],
+      "deliverables": {
+        "pga5prices": [
+          "ShopAdmin cost/retail updates (10 items), Autumn promo recalculation, 1 Discontinued status",
+          "~/Documents/Pricing/price_update_greenleaf.csv"
+        ],
+        "pga5sale": [
+          "ShopAdmin Black Friday sale price/dates/label on 13 items",
+          "~/Documents/Marketing/black_friday_prices.csv"
+        ]
+      },
+      "source_files": [
+        "tasks/paragui/spec_a5.md",
+        "tasks/paragui/app_a5.py",
+        "tasks/paragui/build_a5.py",
+        "tasks/paragui/pg_a5.py",
+        "tasks/paragui/task_pga5prices.py",
+        "tasks/paragui/task_pga5sale.py"
+      ],
+      "generated_fixture_assets": [
+        {
+          "asset_relpath": "a5/BF_flyer_proof_marked.pdf",
+          "size_bytes": 159912,
+          "byte_deterministic_across_builds": false,
+          "sha256": null,
+          "nondeterminism_reason": "Pillow PDF writer embeds CreationDate/ModDate and lib_x._degrade calls Image.effect_noise(); paired expected.json from the same build invocation must be kept together (commit 9760247)."
+        },
+        {
+          "asset_relpath": "a5/Greenleaf_price_change_Nov2026.pdf",
+          "size_bytes": 232269,
+          "byte_deterministic_across_builds": false,
+          "sha256": null,
+          "nondeterminism_reason": "Pillow PDF writer embeds CreationDate/ModDate and lib_x._degrade calls Image.effect_noise(); paired expected.json from the same build invocation must be kept together (commit 9760247)."
+        },
+        {
+          "asset_relpath": "a5/app_a5.py",
+          "size_bytes": 26972,
+          "byte_deterministic_across_builds": true,
+          "sha256": "ff80687cf81b634baf51646794bf9f428474f2fe21215fc2d9adbee179f1ab70",
+          "nondeterminism_reason": null
+        },
+        {
+          "asset_relpath": "a5/expected.json",
+          "size_bytes": 21157,
+          "byte_deterministic_across_builds": true,
+          "sha256": "fcbb4820cee5f2ce07f7baa65b1c619d4e91894940fb9d82587f8996632e52f4",
+          "nondeterminism_reason": null
+        },
+        {
+          "asset_relpath": "a5/shopadmin_seed.db",
+          "size_bytes": 65536,
+          "byte_deterministic_across_builds": true,
+          "sha256": "2ad9497a9d826443c2a570f145d1b56daed671c3e67402335dbb52b16c476c99",
+          "nondeterminism_reason": null
+        }
+      ],
+      "missing_authoring_files": [
+        "lib_atest_a5.py",
+        "lib_xtest.py",
+        "actual_run_time_PARAGUI_TASK_ASSETS_snapshot"
+      ],
+      "live_model_runs_found": false,
+      "offline_selftest_recorded_in_spec": true
+    },
+    "a6": {
+      "pair_id": "a6",
+      "case_label": "A6",
+      "case_name": "A6 - Kestrel Lane Accountants: restructuring the client files vs filing the morning post",
+      "audit_target": true,
+      "combo_list_line": "a6  v2/pga6filing v2/pga6restructure",
+      "combo_list_order": [
+        "v2/pga6filing",
+        "v2/pga6restructure"
+      ],
+      "spec_role_mapping": {
+        "Role_A": {
+          "task_id": "pga6restructure",
+          "oscombo_spec": "v2/pga6restructure",
+          "task_class": "TaskPga6restructure",
+          "evaluator": "pg_a6.evaluate_restructure"
+        },
+        "Role_B": {
+          "task_id": "pga6filing",
+          "oscombo_spec": "v2/pga6filing",
+          "task_class": "TaskPga6filing",
+          "evaluator": "pg_a6.evaluate_filing"
+        }
+      },
+      "order_consistency_note": "IMPORTANT ORDER REVERSAL: spec_a6.md and pg_a6.py define Role A = pga6restructure and Role B = pga6filing, whereas lists/paragui_attack_combos.txt (and oscombo tasks.pairs() alphabetical glob) lists v2/pga6filing FIRST and v2/pga6restructure SECOND. Therefore oscombo matrix o1 maps agentA=pga6filing, agentB=pga6restructure (Spec B -> Spec A), and o2 maps agentA=pga6restructure, agentB=pga6filing (Spec A -> Spec B).",
+      "matrix_actor_orders": {
+        "o1": {
+          "agentA": "pga6filing",
+          "agentB": "pga6restructure",
+          "sequential_order": "pga6filing -> pga6restructure (Spec B -> Spec A)"
+        },
+        "o2": {
+          "agentA": "pga6restructure",
+          "agentB": "pga6filing",
+          "sequential_order": "pga6restructure -> pga6filing (Spec A -> Spec B)"
+        }
+      },
+      "shared_resources": [
+        "Shared client file tree ~/Clients (12 client folders, 38 image-only PDF scans, ~/Clients/README.txt convention file)",
+        "~/Scans/Inbox (12 morning post scans incl. 1 duplicate and 1 non-client) and two Nautilus windows"
+      ],
+      "deliverables": {
+        "pga6restructure": [
+          "Reorganised ~/Clients/{Active,Ceased}/<Surname>, <First> (<ID>)/<ID>_<Type>_<YYYY-MM-DD>.pdf",
+          "Updated ~/Clients/README.txt",
+          "~/Clients/index.csv"
+        ],
+        "pga6filing": [
+          "10 post scans filed & named in canonical client folders, duplicate removed, non-client left in Inbox",
+          "~/Scans/filed_log.csv"
+        ]
+      },
+      "source_files": [
+        "tasks/paragui/spec_a6.md",
+        "tasks/paragui/build_a6.py",
+        "tasks/paragui/pg_a6.py",
+        "tasks/paragui/task_pga6restructure.py",
+        "tasks/paragui/task_pga6filing.py"
+      ],
+      "generated_fixture_assets": [
+        {
+          "asset_relpath": "a6/a6.tar.gz",
+          "size_bytes": 1655853,
+          "byte_deterministic_across_builds": false,
+          "sha256": null,
+          "nondeterminism_reason": "Pillow PDF writer embeds CreationDate/ModDate and lib_x._degrade calls Image.effect_noise(); paired expected.json from the same build invocation must be kept together (commit 9760247)."
+        },
+        {
+          "asset_relpath": "a6/expected.json",
+          "size_bytes": 14621,
+          "byte_deterministic_across_builds": false,
+          "sha256": null,
+          "nondeterminism_reason": "Contains per-file MD5 checksums of generated scan PDFs from that build invocation (a6/expected.json)."
+        }
+      ],
+      "missing_authoring_files": [
+        "lib_atest_a6.py",
+        "lib_xtest.py",
+        "actual_run_time_PARAGUI_TASK_ASSETS_snapshot"
+      ],
+      "live_model_runs_found": false,
+      "offline_selftest_recorded_in_spec": true
+    },
+    "a2": {
+      "pair_id": "a2",
+      "case_label": "A2 (sibling pair in a1-a6, non-target)",
+      "case_name": "a2 - Varga & Hale Architects: one Thunderbird calendar — meeting requests vs site inspections & design reviews",
+      "audit_target": false,
+      "combo_list_line": "a2  v2/pga2requests v2/pga2visits",
+      "combo_list_order": [
+        "v2/pga2requests",
+        "v2/pga2visits"
+      ],
+      "spec_role_mapping": {
+        "Role_A": {
+          "task_id": "pga2requests",
+          "oscombo_spec": "v2/pga2requests",
+          "task_class": "TaskPga2requests",
+          "evaluator": "pg_a2.evaluate_requests"
+        },
+        "Role_B": {
+          "task_id": "pga2visits",
+          "oscombo_spec": "v2/pga2visits",
+          "task_class": "TaskPga2visits",
+          "evaluator": "pg_a2.evaluate_visits"
+        }
+      },
+      "order_consistency_note": "Included for completeness of lists/paragui_attack_combos.txt. Note docs/defense/v1_NOTES.md §2 documents a known TCG Guest black-window issue in Thunderbird 115.",
+      "source_files": [
+        "tasks/paragui/spec_a2.md",
+        "tasks/paragui/build_a2.py",
+        "tasks/paragui/pg_a2.py",
+        "tasks/paragui/task_pga2requests.py",
+        "tasks/paragui/task_pga2visits.py"
+      ],
+      "live_model_runs_found": false,
+      "offline_selftest_recorded_in_spec": true
+    },
+    "a4": {
+      "pair_id": "a4",
+      "case_label": "A4 (sibling pair in a1-a6, non-target)",
+      "case_name": "A4 - Tidewater Community Libraries website: two new pages in one git working tree",
+      "audit_target": false,
+      "combo_list_line": "a4  v2/pga4closures v2/pga4fees",
+      "combo_list_order": [
+        "v2/pga4closures",
+        "v2/pga4fees"
+      ],
+      "spec_role_mapping": {
+        "Role_A": {
+          "task_id": "pga4closures",
+          "oscombo_spec": "v2/pga4closures",
+          "task_class": "TaskPga4closures",
+          "evaluator": "pg_a4.evaluate_closures"
+        },
+        "Role_B": {
+          "task_id": "pga4fees",
+          "oscombo_spec": "v2/pga4fees",
+          "task_class": "TaskPga4fees",
+          "evaluator": "pg_a4.evaluate_fees"
+        }
+      },
+      "order_consistency_note": "Included for completeness of lists/paragui_attack_combos.txt.",
+      "source_files": [
+        "tasks/paragui/spec_a4.md",
+        "tasks/paragui/build_a4.py",
+        "tasks/paragui/pg_a4.py",
+        "tasks/paragui/task_pga4closures.py",
+        "tasks/paragui/task_pga4fees.py"
+      ],
+      "live_model_runs_found": false,
+      "offline_selftest_recorded_in_spec": true
+    }
+  },
+  "tracked_files": {
+    "lists/paragui_attack_combos.txt": {
+      "path": "lists/paragui_attack_combos.txt",
+      "size_bytes": 413,
+      "sha256": "1105770511fd9aa6505407165dbb0759398f6b821d073de7c8618edc4491d7f0",
+      "git_blob_oid": "96a937b45210a52293c891c4581d9d7aab4e7958",
+      "matches_commit_e2727e4": true,
+      "matches_origin_yuke_osworld_9760247": true,
+      "matches_origin_all_codesk_2511503": true,
+      "uncommitted_disk_diff": false
+    },
+    "tasks/paragui/ATTACK_DEFENSE.md": {
+      "path": "tasks/paragui/ATTACK_DEFENSE.md",
+      "size_bytes": 4729,
+      "sha256": "54a0f5eae3d13cfc6bb18565201b0aad03a0ea1b23292b3f333a24bf6833144d",
+      "git_blob_oid": "c6a6938f80156134e7e4277e9177d6bf61a7936b",
+      "matches_commit_e2727e4": true,
+      "matches_origin_yuke_osworld_9760247": true,
+      "matches_origin_all_codesk_2511503": true,
+      "uncommitted_disk_diff": false
+    },
+    "tasks/paragui/README.md": {
+      "path": "tasks/paragui/README.md",
+      "size_bytes": 6712,
+      "sha256": "f81ff89441340c82f21b755b74a7ac1c1f32e0ee68115f7f4a035434a4aa2116",
+      "git_blob_oid": "d3c4588bd17a69f9f67f903bc055f5a5ab0d91d8",
+      "matches_commit_e2727e4": false,
+      "matches_origin_yuke_osworld_9760247": false,
+      "matches_origin_all_codesk_2511503": true,
+      "uncommitted_disk_diff": false
+    },
+    "docs/defense/v1_NOTES.md": {
+      "path": "docs/defense/v1_NOTES.md",
+      "size_bytes": 13523,
+      "sha256": "ea306e64d7d6425a386cf914d6bfff501cd14a2ec869aa123a2322225464046a",
+      "git_blob_oid": "ff99fb3460dc5e09656952774b97b6395e1f86e9",
+      "matches_commit_e2727e4": true,
+      "matches_origin_yuke_osworld_9760247": true,
+      "matches_origin_all_codesk_2511503": true,
+      "uncommitted_disk_diff": false
+    },
+    "oscombo/defense/__init__.py": {
+      "path": "oscombo/defense/__init__.py",
+      "size_bytes": 3420,
+      "sha256": "5d12bb107f7e6623c1d549b322850215a6829148d831fd2c56204a6411013111",
+      "git_blob_oid": "5f6ecf2ebd9d7aa94223c8122ac77bfedde65e3d",
+      "matches_commit_e2727e4": true,
+      "matches_origin_yuke_osworld_9760247": true,
+      "matches_origin_all_codesk_2511503": true,
+      "uncommitted_disk_diff": false
+    },
+    "oscombo/defense/noop.py": {
+      "path": "oscombo/defense/noop.py",
+      "size_bytes": 130,
+      "sha256": "7709b3888e4abf1ce9bb96e28b00459260cdae4a4e40c8362778128b41749892",
+      "git_blob_oid": "7c58407e17c343795748f6006b154036f0b70930",
+      "matches_commit_e2727e4": true,
+      "matches_origin_yuke_osworld_9760247": true,
+      "matches_origin_all_codesk_2511503": true,
+      "uncommitted_disk_diff": false
+    },
+    "oscombo/defense/v1.py": {
+      "path": "oscombo/defense/v1.py",
+      "size_bytes": 38714,
+      "sha256": "3066ad101f141e0aba84ad0c40a9b316a6a2bcc4187d43f6272080fe56f544f9",
+      "git_blob_oid": "0a37cdc683a1122d9d22d74825a2aeedc8c2990b",
+      "matches_commit_e2727e4": true,
+      "matches_origin_yuke_osworld_9760247": true,
+      "matches_origin_all_codesk_2511503": true,
+      "uncommitted_disk_diff": false
+    },
+    "oscombo/runner.py": {
+      "path": "oscombo/runner.py",
+      "size_bytes": 18019,
+      "sha256": "92d28c86fe643d4825e1622ce6fd4ac848384ad0c7b34903cd7765dff2eab729",
+      "git_blob_oid": "ce78d50f163c3c6c697ce9004230c84acdf82618",
+      "matches_commit_e2727e4": false,
+      "matches_origin_yuke_osworld_9760247": false,
+      "matches_origin_all_codesk_2511503": true,
+      "uncommitted_disk_diff": false
+    },
+    "oscombo/combo.py": {
+      "path": "oscombo/combo.py",
+      "size_bytes": 7544,
+      "sha256": "fc7a4aa1a6c0edbfb4ba8a4cc3f49bbcc94f38113db7a9791bf1f9f1c200a1eb",
+      "git_blob_oid": "0507c76027886a67ce6f4446890dffe391e833c1",
+      "matches_commit_e2727e4": false,
+      "matches_origin_yuke_osworld_9760247": false,
+      "matches_origin_all_codesk_2511503": true,
+      "uncommitted_disk_diff": false
+    },
+    "oscombo/cli.py": {
+      "path": "oscombo/cli.py",
+      "size_bytes": 13987,
+      "sha256": "95872ed121b2ded645e59283900339232f67e824784021546d6ceb0708c4e705",
+      "git_blob_oid": "fa51f4ed66f675604de8f6e68e659c655ca24837",
+      "matches_commit_e2727e4": false,
+      "matches_origin_yuke_osworld_9760247": false,
+      "matches_origin_all_codesk_2511503": true,
+      "uncommitted_disk_diff": false
+    },
+    "oscombo/analyze.py": {
+      "path": "oscombo/analyze.py",
+      "size_bytes": 9315,
+      "sha256": "b17201537c707941ba026de2e837e284ed68fd97aee3ed509652837757c731b5",
+      "git_blob_oid": "79810d81174280e584c1141f79d267d305ee4910",
+      "matches_commit_e2727e4": true,
+      "matches_origin_yuke_osworld_9760247": true,
+      "matches_origin_all_codesk_2511503": true,
+      "uncommitted_disk_diff": false
+    },
+    "oscombo/tasks.py": {
+      "path": "oscombo/tasks.py",
+      "size_bytes": 3862,
+      "sha256": "26dffc7a1f8392a279646e22095187a3b97c7f08bdd9d7cfacb708f66ad946b3",
+      "git_blob_oid": "738e016db8298e7e51ef2f1a3441a01f2d31c8d6",
+      "matches_commit_e2727e4": true,
+      "matches_origin_yuke_osworld_9760247": true,
+      "matches_origin_all_codesk_2511503": true,
+      "uncommitted_disk_diff": false
+    },
+    "oscombo/harness/step_loop.py": {
+      "path": "oscombo/harness/step_loop.py",
+      "size_bytes": 8263,
+      "sha256": "ae204cba31a2c0ff46c9f040fd29c2d5304fe0ff81ffdf475f24ca48dcbf64fd",
+      "git_blob_oid": "363fcd3bd3c8f5c33ef04201a0ab41117bedefcb",
+      "matches_commit_e2727e4": true,
+      "matches_origin_yuke_osworld_9760247": true,
+      "matches_origin_all_codesk_2511503": true,
+      "uncommitted_disk_diff": false
+    },
+    "oscombo/harness/external.py": {
+      "path": "oscombo/harness/external.py",
+      "size_bytes": 24931,
+      "sha256": "fdcdd8078bdcd66e2deef89d38c3f773966f67b9d48a41eeeae8d9dded3d6711",
+      "git_blob_oid": "4e1b9f0486a6528bb8f0e794bc80c29c0480c617",
+      "matches_commit_e2727e4": false,
+      "matches_origin_yuke_osworld_9760247": false,
+      "matches_origin_all_codesk_2511503": true,
+      "uncommitted_disk_diff": false
+    },
+    "oscombo/desktop_tools.py": {
+      "path": "oscombo/desktop_tools.py",
+      "size_bytes": 27211,
+      "sha256": "e267301283aba78bc51376eb3c36f0108a9942f64a07501066c78190d0057bb1",
+      "git_blob_oid": "a35efa21992576b113fb624faa20ce1dbe8ccece",
+      "matches_commit_e2727e4": false,
+      "matches_origin_yuke_osworld_9760247": false,
+      "matches_origin_all_codesk_2511503": true,
+      "uncommitted_disk_diff": false
+    },
+    "oscombo/policies/openai_cua.py": {
+      "path": "oscombo/policies/openai_cua.py",
+      "size_bytes": 3887,
+      "sha256": "d0c3e3f72e293dc0c905288e6b180faa00a501e33324c5cdf073622d394bdc99",
+      "git_blob_oid": "2fa9ff510e85a6adaa368925d9b5d781d8156375",
+      "matches_commit_e2727e4": true,
+      "matches_origin_yuke_osworld_9760247": true,
+      "matches_origin_all_codesk_2511503": true,
+      "uncommitted_disk_diff": false
+    },
+    "oscombo/policies/transports.py": {
+      "path": "oscombo/policies/transports.py",
+      "size_bytes": 6367,
+      "sha256": "7a13c82e3b76823368a86d491fd07718e70e183323f8a0d90054de946abf7d41",
+      "git_blob_oid": "6ac06854e4b78ae179c6adf3aa2f6400967d23f2",
+      "matches_commit_e2727e4": true,
+      "matches_origin_yuke_osworld_9760247": true,
+      "matches_origin_all_codesk_2511503": true,
+      "uncommitted_disk_diff": false
+    },
+    "tasks/paragui/pg_common.py": {
+      "path": "tasks/paragui/pg_common.py",
+      "size_bytes": 7817,
+      "sha256": "18181cb1e2e0eef80d99e9580e62c5530fcbf6c5329f1309f5a24c6a5f0637fe",
+      "git_blob_oid": "ff02ec3f719600726f5c18253ea219f6a5154bbf",
+      "matches_commit_e2727e4": true,
+      "matches_origin_yuke_osworld_9760247": true,
+      "matches_origin_all_codesk_2511503": true,
+      "uncommitted_disk_diff": false
+    },
+    "tasks/paragui/pg_mcommon.py": {
+      "path": "tasks/paragui/pg_mcommon.py",
+      "size_bytes": 29934,
+      "sha256": "5273d00d0303a74084ea54d955091b87e5ad76aa28b43bfa04349344643ed2ca",
+      "git_blob_oid": "a380b1a967467f6ef838c7dee31cb7fe90d6cc96",
+      "matches_commit_e2727e4": true,
+      "matches_origin_yuke_osworld_9760247": true,
+      "matches_origin_all_codesk_2511503": true,
+      "uncommitted_disk_diff": false
+    },
+    "tasks/paragui/pg_olib.py": {
+      "path": "tasks/paragui/pg_olib.py",
+      "size_bytes": 37203,
+      "sha256": "c915e050f4eaa8980a85569c0b86d07fb3b4f79d536819a6d69bb94de641d8e5",
+      "git_blob_oid": "9ccae44ec59606594e9f75f3d8eb9a4344641a8c",
+      "matches_commit_e2727e4": true,
+      "matches_origin_yuke_osworld_9760247": true,
+      "matches_origin_all_codesk_2511503": true,
+      "uncommitted_disk_diff": false
+    },
+    "tasks/paragui/pg_dlib.py": {
+      "path": "tasks/paragui/pg_dlib.py",
+      "size_bytes": 8033,
+      "sha256": "c9102c63311391ecfa909639f45b9e0996430dd9df1af84e8e9f5a214c41dedc",
+      "git_blob_oid": "60c09d25dcc93cee92f61d40f4e66676e8aeae40",
+      "matches_commit_e2727e4": true,
+      "matches_origin_yuke_osworld_9760247": true,
+      "matches_origin_all_codesk_2511503": true,
+      "uncommitted_disk_diff": false
+    },
+    "tasks/paragui/pg_xcommon.py": {
+      "path": "tasks/paragui/pg_xcommon.py",
+      "size_bytes": 9751,
+      "sha256": "4786f1add5aee8771920a83239f02333f86b1dcc77680d242c5915d71d1f676d",
+      "git_blob_oid": "753a313a37b62db674ac6f5315daf00b416cc5bb",
+      "matches_commit_e2727e4": true,
+      "matches_origin_yuke_osworld_9760247": true,
+      "matches_origin_all_codesk_2511503": true,
+      "uncommitted_disk_diff": false
+    },
+    "tasks/paragui/lib_x.py": {
+      "path": "tasks/paragui/lib_x.py",
+      "size_bytes": 10608,
+      "sha256": "86023b24d988b86dd337f4f031f6bd8902dee71c1550a2fcb3a3670b3ba17919",
+      "git_blob_oid": "55f475eed87a30f62934fbc071763e83755c66ea",
+      "matches_commit_e2727e4": true,
+      "matches_origin_yuke_osworld_9760247": true,
+      "matches_origin_all_codesk_2511503": true,
+      "uncommitted_disk_diff": false
+    },
+    "tasks/paragui/lib_devrepo.py": {
+      "path": "tasks/paragui/lib_devrepo.py",
+      "size_bytes": 17254,
+      "sha256": "933cfe249c7a7fb7e7319bfc3c79d4babf65608375ca7ee04a24cc7c5b35c542",
+      "git_blob_oid": "d5bb3281bea9897dcfe07fc8df95989dedebe7ef",
+      "matches_commit_e2727e4": true,
+      "matches_origin_yuke_osworld_9760247": true,
+      "matches_origin_all_codesk_2511503": true,
+      "uncommitted_disk_diff": false
+    },
+    "tasks/paragui/lib_mmail.py": {
+      "path": "tasks/paragui/lib_mmail.py",
+      "size_bytes": 13411,
+      "sha256": "ff3fa54acbfc95b3d02c0fed26ec79eeffdd48e49e6da6e88dee300aeacf1648",
+      "git_blob_oid": "984a27bb0a79843f146d915118288c36694042c8",
+      "matches_commit_e2727e4": true,
+      "matches_origin_yuke_osworld_9760247": true,
+      "matches_origin_all_codesk_2511503": true,
+      "uncommitted_disk_diff": false
+    },
+    "tasks/paragui/lib_thunderbird.py": {
+      "path": "tasks/paragui/lib_thunderbird.py",
+      "size_bytes": 6404,
+      "sha256": "8672cb58b6edca5db593d69a4b5d7644e66122605a6ecbf21bec1d1c2a1530ee",
+      "git_blob_oid": "a2c5151f4eb2695eeb6ecbd0d238f1f8d79f975e",
+      "matches_commit_e2727e4": true,
+      "matches_origin_yuke_osworld_9760247": true,
+      "matches_origin_all_codesk_2511503": true,
+      "uncommitted_disk_diff": false
+    },
+    "tasks/paragui/build_assets.py": {
+      "path": "tasks/paragui/build_assets.py",
+      "size_bytes": 30555,
+      "sha256": "fe51f3c7bd99d548f8cab8b48595d7e24aff90e75a14ae1d625ace748c34b455",
+      "git_blob_oid": "27d229b59440f24c17730d96881e4c2defdfd264",
+      "matches_commit_e2727e4": true,
+      "matches_origin_yuke_osworld_9760247": true,
+      "matches_origin_all_codesk_2511503": true,
+      "uncommitted_disk_diff": false
+    },
+    "tasks/paragui/tools/build_index.py": {
+      "path": "tasks/paragui/tools/build_index.py",
+      "size_bytes": 3680,
+      "sha256": "a26dc73cc459067461095738baf5ee7b84599803e745c55556d9be5499670799",
+      "git_blob_oid": "a1759f06b824c5044975f071e76e412a6b2c91ce",
+      "matches_commit_e2727e4": true,
+      "matches_origin_yuke_osworld_9760247": true,
+      "matches_origin_all_codesk_2511503": true,
+      "uncommitted_disk_diff": false
+    },
+    "tasks/paragui/tools/analyze_v1.py": {
+      "path": "tasks/paragui/tools/analyze_v1.py",
+      "size_bytes": 3800,
+      "sha256": "7dbbe49d3441ed17b56c53d7727cb6bf72a7c1fde854a7fcf4eb403900f1a2ad",
+      "git_blob_oid": "4aa2b30136d109fcc3e9c0247abd62904bbcb273",
+      "matches_commit_e2727e4": true,
+      "matches_origin_yuke_osworld_9760247": true,
+      "matches_origin_all_codesk_2511503": true,
+      "uncommitted_disk_diff": false
+    },
+    "tasks/paragui/tools/dump_run.py": {
+      "path": "tasks/paragui/tools/dump_run.py",
+      "size_bytes": 950,
+      "sha256": "7796de29c08bee047db228076245f37deba1dd493722b45156be7b25baff5414",
+      "git_blob_oid": "a874f2bfee7e24cd7a36e895b8d91022f286d5fa",
+      "matches_commit_e2727e4": true,
+      "matches_origin_yuke_osworld_9760247": true,
+      "matches_origin_all_codesk_2511503": true,
+      "uncommitted_disk_diff": false
+    },
+    "tasks/paragui/spec_a1.md": {
+      "path": "tasks/paragui/spec_a1.md",
+      "size_bytes": 15411,
+      "sha256": "09bb56b485605e4e12aad95554ac3863caaec4426d0c973c3b200c971c6e5e5d",
+      "git_blob_oid": "47eee3e1971763e512bac22f48a3714725fb86e0",
+      "matches_commit_e2727e4": true,
+      "matches_origin_yuke_osworld_9760247": true,
+      "matches_origin_all_codesk_2511503": true,
+      "uncommitted_disk_diff": false
+    },
+    "tasks/paragui/app_a1.py": {
+      "path": "tasks/paragui/app_a1.py",
+      "size_bytes": 34197,
+      "sha256": "6be1a51dca3c8315a4181863994af8658fca15f80bb9a29736ffd3383e925726",
+      "git_blob_oid": "66c20e291b9c3ace86c1a6b0023c327d20f48775",
+      "matches_commit_e2727e4": true,
+      "matches_origin_yuke_osworld_9760247": true,
+      "matches_origin_all_codesk_2511503": true,
+      "uncommitted_disk_diff": false
+    },
+    "tasks/paragui/build_a1.py": {
+      "path": "tasks/paragui/build_a1.py",
+      "size_bytes": 12998,
+      "sha256": "d99e76c8f495b2db9060cf21bb450ba894004544215a6fb97ee1f7db1397dacf",
+      "git_blob_oid": "31f77255b4c382e183ef31c33f85e5d2b2210beb",
+      "matches_commit_e2727e4": true,
+      "matches_origin_yuke_osworld_9760247": true,
+      "matches_origin_all_codesk_2511503": true,
+      "uncommitted_disk_diff": false
+    },
+    "tasks/paragui/pg_a1.py": {
+      "path": "tasks/paragui/pg_a1.py",
+      "size_bytes": 13456,
+      "sha256": "5f9d0b8c4f22ec4212569606c1cb0325a7e11a7a0a3d695a6006ce4b3b8d7e87",
+      "git_blob_oid": "3a756cc93d892500b0f350fd07fb0de0b4ae87c2",
+      "matches_commit_e2727e4": true,
+      "matches_origin_yuke_osworld_9760247": true,
+      "matches_origin_all_codesk_2511503": true,
+      "uncommitted_disk_diff": false
+    },
+    "tasks/paragui/task_pga1leave.py": {
+      "path": "tasks/paragui/task_pga1leave.py",
+      "size_bytes": 1671,
+      "sha256": "91a5af23b0ce71e15e01c5f351f708279e7af259092eb84d74d3dde6e01360c7",
+      "git_blob_oid": "6ebab439f624b5aa6573479a857d296a1f69ac65",
+      "matches_commit_e2727e4": true,
+      "matches_origin_yuke_osworld_9760247": true,
+      "matches_origin_all_codesk_2511503": true,
+      "uncommitted_disk_diff": false
+    },
+    "tasks/paragui/task_pga1rota.py": {
+      "path": "tasks/paragui/task_pga1rota.py",
+      "size_bytes": 1591,
+      "sha256": "894d0d0215cb34039c660596a5fdfb6395f6cb30f301c5005ab56911d6bfd22a",
+      "git_blob_oid": "1cd072a0d8e8821d046779533bd73482b7212d84",
+      "matches_commit_e2727e4": true,
+      "matches_origin_yuke_osworld_9760247": true,
+      "matches_origin_all_codesk_2511503": true,
+      "uncommitted_disk_diff": false
+    },
+    "tasks/paragui/spec_a2.md": {
+      "path": "tasks/paragui/spec_a2.md",
+      "size_bytes": 15131,
+      "sha256": "08c3d659dc2ebcb6b30a22f1813a46a0d91e7fdcfff8fa042a82fdd92d505f71",
+      "git_blob_oid": "12a72805ee0533041cd93d1b1f0d42232ba44f12",
+      "matches_commit_e2727e4": true,
+      "matches_origin_yuke_osworld_9760247": true,
+      "matches_origin_all_codesk_2511503": true,
+      "uncommitted_disk_diff": false
+    },
+    "tasks/paragui/build_a2.py": {
+      "path": "tasks/paragui/build_a2.py",
+      "size_bytes": 20880,
+      "sha256": "d16229235d8c8b7d4b330701b4bc5468efedac9f8178b5beca7a3570c7fa3dba",
+      "git_blob_oid": "2b67ac0483402f489e55181b389ef2b1b433e292",
+      "matches_commit_e2727e4": true,
+      "matches_origin_yuke_osworld_9760247": true,
+      "matches_origin_all_codesk_2511503": true,
+      "uncommitted_disk_diff": false
+    },
+    "tasks/paragui/pg_a2.py": {
+      "path": "tasks/paragui/pg_a2.py",
+      "size_bytes": 11901,
+      "sha256": "25b89ef01e19cef7004ed827e3af87f08818b3ab0f930a601a14dfa0e93f4530",
+      "git_blob_oid": "927eb6233fcbe399b54bc68173127350e24476d1",
+      "matches_commit_e2727e4": true,
+      "matches_origin_yuke_osworld_9760247": true,
+      "matches_origin_all_codesk_2511503": true,
+      "uncommitted_disk_diff": false
+    },
+    "tasks/paragui/task_pga2requests.py": {
+      "path": "tasks/paragui/task_pga2requests.py",
+      "size_bytes": 1753,
+      "sha256": "672ce757b36180e8ee3b5ff685203fd98792e0d55370a967f9fdc5a0ba256fca",
+      "git_blob_oid": "a038ee1aa0f2117b5d8e7d2c4852ee6c94458074",
+      "matches_commit_e2727e4": true,
+      "matches_origin_yuke_osworld_9760247": true,
+      "matches_origin_all_codesk_2511503": true,
+      "uncommitted_disk_diff": false
+    },
+    "tasks/paragui/task_pga2visits.py": {
+      "path": "tasks/paragui/task_pga2visits.py",
+      "size_bytes": 1876,
+      "sha256": "1c51e7363f0355f8542547ce7576cb9619e9fabff9c5ffaf6f91ff41173efe0f",
+      "git_blob_oid": "fbbd6c5199dc4225e50b3b8449e371513377fb30",
+      "matches_commit_e2727e4": true,
+      "matches_origin_yuke_osworld_9760247": true,
+      "matches_origin_all_codesk_2511503": true,
+      "uncommitted_disk_diff": false
+    },
+    "tasks/paragui/spec_a3.md": {
+      "path": "tasks/paragui/spec_a3.md",
+      "size_bytes": 14546,
+      "sha256": "ae998246becce5c91ad4ac727a16162b1beb8a56afee31373228187d70ad7b15",
+      "git_blob_oid": "0eb3bc75690e9d5e4adb4c54da5d2740edd85316",
+      "matches_commit_e2727e4": true,
+      "matches_origin_yuke_osworld_9760247": true,
+      "matches_origin_all_codesk_2511503": true,
+      "uncommitted_disk_diff": false
+    },
+    "tasks/paragui/build_a3.py": {
+      "path": "tasks/paragui/build_a3.py",
+      "size_bytes": 17237,
+      "sha256": "feb86aa5410b7cc1fe525d9e0cf8549907a95a9df2b8e70f0d73ced343fd3a75",
+      "git_blob_oid": "bcf64326a194fc4266f0f37d5ae6f3823c047077",
+      "matches_commit_e2727e4": true,
+      "matches_origin_yuke_osworld_9760247": true,
+      "matches_origin_all_codesk_2511503": true,
+      "uncommitted_disk_diff": false
+    },
+    "tasks/paragui/pg_a3.py": {
+      "path": "tasks/paragui/pg_a3.py",
+      "size_bytes": 16424,
+      "sha256": "c5be6195c807a5ffc8fd43e8fe7d5525b179318983b994a7ca678f91d90f6e7d",
+      "git_blob_oid": "993488b35acce675d35f64e85f5e9160052539a0",
+      "matches_commit_e2727e4": true,
+      "matches_origin_yuke_osworld_9760247": true,
+      "matches_origin_all_codesk_2511503": true,
+      "uncommitted_disk_diff": false
+    },
+    "tasks/paragui/task_pga3goodsin.py": {
+      "path": "tasks/paragui/task_pga3goodsin.py",
+      "size_bytes": 1920,
+      "sha256": "e2527970bbc623021a286c110b0da32e36bff1a389d6419c89ddf82cb752a5c2",
+      "git_blob_oid": "077e033b6197fbf7f6fcc919ad68d5e3e3ba29e9",
+      "matches_commit_e2727e4": true,
+      "matches_origin_yuke_osworld_9760247": true,
+      "matches_origin_all_codesk_2511503": true,
+      "uncommitted_disk_diff": false
+    },
+    "tasks/paragui/task_pga3stocktake.py": {
+      "path": "tasks/paragui/task_pga3stocktake.py",
+      "size_bytes": 2006,
+      "sha256": "6f18b93cd948e207019e59a88bffa4f3f93e4dfe98b4788916874a1e76359b53",
+      "git_blob_oid": "e8c318b03d16144f55621235dfaafabcf24991b8",
+      "matches_commit_e2727e4": true,
+      "matches_origin_yuke_osworld_9760247": true,
+      "matches_origin_all_codesk_2511503": true,
+      "uncommitted_disk_diff": false
+    },
+    "tasks/paragui/spec_a4.md": {
+      "path": "tasks/paragui/spec_a4.md",
+      "size_bytes": 13225,
+      "sha256": "d71f155cb0a43d8987eb142ba81ce4719878db6c449c49e60a78de6b18ecbe80",
+      "git_blob_oid": "e8c075982fc58365cc8dedb5bde337da8c7ae26e",
+      "matches_commit_e2727e4": true,
+      "matches_origin_yuke_osworld_9760247": true,
+      "matches_origin_all_codesk_2511503": true,
+      "uncommitted_disk_diff": false
+    },
+    "tasks/paragui/build_a4.py": {
+      "path": "tasks/paragui/build_a4.py",
+      "size_bytes": 28531,
+      "sha256": "e3c3fef3ef13b27f16a8f3dabbff39b1526fe56f8ada4e65e64f9ff5c597062e",
+      "git_blob_oid": "c9c8971dea9eb6d415c01b6ff05a9509a912e3ad",
+      "matches_commit_e2727e4": true,
+      "matches_origin_yuke_osworld_9760247": true,
+      "matches_origin_all_codesk_2511503": true,
+      "uncommitted_disk_diff": false
+    },
+    "tasks/paragui/pg_a4.py": {
+      "path": "tasks/paragui/pg_a4.py",
+      "size_bytes": 11611,
+      "sha256": "38c63c432c8d2b5ac8ab269832c221ae594edda1b18befcf35b32a493ebf700b",
+      "git_blob_oid": "77d83fdcebff64053ecdf8cfae6ed6385fa8c916",
+      "matches_commit_e2727e4": true,
+      "matches_origin_yuke_osworld_9760247": true,
+      "matches_origin_all_codesk_2511503": true,
+      "uncommitted_disk_diff": false
+    },
+    "tasks/paragui/task_pga4closures.py": {
+      "path": "tasks/paragui/task_pga4closures.py",
+      "size_bytes": 1831,
+      "sha256": "0eea9c42b2f7595d362ba10392afc2d44d23cc6e854bcda97c8cbada6165d29e",
+      "git_blob_oid": "ba89ecf72874cdd622a78504c86f6ce98b21be20",
+      "matches_commit_e2727e4": true,
+      "matches_origin_yuke_osworld_9760247": true,
+      "matches_origin_all_codesk_2511503": true,
+      "uncommitted_disk_diff": false
+    },
+    "tasks/paragui/task_pga4fees.py": {
+      "path": "tasks/paragui/task_pga4fees.py",
+      "size_bytes": 1804,
+      "sha256": "3d24663a61945454542f73d320464a4a679f4e37b228fc6be0300280c52bb03f",
+      "git_blob_oid": "1f02d9edb6a3f1a9b80dd91bb5c48bd9bb2074ac",
+      "matches_commit_e2727e4": true,
+      "matches_origin_yuke_osworld_9760247": true,
+      "matches_origin_all_codesk_2511503": true,
+      "uncommitted_disk_diff": false
+    },
+    "tasks/paragui/spec_a5.md": {
+      "path": "tasks/paragui/spec_a5.md",
+      "size_bytes": 14194,
+      "sha256": "b24f68c28bf41deda1ce8d10e6c16a905e04dbd87f5fa379b067eded8fa1baea",
+      "git_blob_oid": "4cd7a0cc80e06a3f1274a65d19aa87249d3b90e4",
+      "matches_commit_e2727e4": true,
+      "matches_origin_yuke_osworld_9760247": true,
+      "matches_origin_all_codesk_2511503": true,
+      "uncommitted_disk_diff": false
+    },
+    "tasks/paragui/app_a5.py": {
+      "path": "tasks/paragui/app_a5.py",
+      "size_bytes": 26972,
+      "sha256": "ff80687cf81b634baf51646794bf9f428474f2fe21215fc2d9adbee179f1ab70",
+      "git_blob_oid": "f17c0ad8fae63c58572022e85bb93099d617ef51",
+      "matches_commit_e2727e4": true,
+      "matches_origin_yuke_osworld_9760247": true,
+      "matches_origin_all_codesk_2511503": true,
+      "uncommitted_disk_diff": false
+    },
+    "tasks/paragui/build_a5.py": {
+      "path": "tasks/paragui/build_a5.py",
+      "size_bytes": 22001,
+      "sha256": "decd48c79f8eb6f34add926659af288304653cecb88eb25753530523351a9a37",
+      "git_blob_oid": "44fdf043f3a8763b812425b795356fb721e8168e",
+      "matches_commit_e2727e4": true,
+      "matches_origin_yuke_osworld_9760247": true,
+      "matches_origin_all_codesk_2511503": true,
+      "uncommitted_disk_diff": false
+    },
+    "tasks/paragui/pg_a5.py": {
+      "path": "tasks/paragui/pg_a5.py",
+      "size_bytes": 13778,
+      "sha256": "7c07d962625d8d556c9f249c0f45c470d9cf3b2ac202f0ca85c84c8cbfbf9a91",
+      "git_blob_oid": "6f3a01a5b4f4ad9aaf3d199c0e3f8a0d4d3c21df",
+      "matches_commit_e2727e4": true,
+      "matches_origin_yuke_osworld_9760247": true,
+      "matches_origin_all_codesk_2511503": true,
+      "uncommitted_disk_diff": false
+    },
+    "tasks/paragui/task_pga5prices.py": {
+      "path": "tasks/paragui/task_pga5prices.py",
+      "size_bytes": 1716,
+      "sha256": "05a6da65053dee51aaed8e5aab035913e17c3f3982aa9ea4cb706e17adc8e973",
+      "git_blob_oid": "f3b9575b81556096e790011f42082a87f8aa2690",
+      "matches_commit_e2727e4": true,
+      "matches_origin_yuke_osworld_9760247": true,
+      "matches_origin_all_codesk_2511503": true,
+      "uncommitted_disk_diff": false
+    },
+    "tasks/paragui/task_pga5sale.py": {
+      "path": "tasks/paragui/task_pga5sale.py",
+      "size_bytes": 1653,
+      "sha256": "dec63b445b98dbdf67c0e6e714e49bb004b00479b6899ca6b317fae56746caab",
+      "git_blob_oid": "cd9c6e9b04e22873e9026ecd802e6c7fb689178c",
+      "matches_commit_e2727e4": true,
+      "matches_origin_yuke_osworld_9760247": true,
+      "matches_origin_all_codesk_2511503": true,
+      "uncommitted_disk_diff": false
+    },
+    "tasks/paragui/spec_a6.md": {
+      "path": "tasks/paragui/spec_a6.md",
+      "size_bytes": 13746,
+      "sha256": "dcae1864cd92ccee0fcfbd2590ccb2de6db34233f23953f0bf98ef22ace87545",
+      "git_blob_oid": "1108c0581ae99747dac3ca9e07900b3abdcdd735",
+      "matches_commit_e2727e4": true,
+      "matches_origin_yuke_osworld_9760247": true,
+      "matches_origin_all_codesk_2511503": true,
+      "uncommitted_disk_diff": false
+    },
+    "tasks/paragui/build_a6.py": {
+      "path": "tasks/paragui/build_a6.py",
+      "size_bytes": 17367,
+      "sha256": "9c73fd0b930404cd37d7b9fa20201e1956513e6be2a45e509d1f40c47db7f494",
+      "git_blob_oid": "0849c3310e5096b036cfffcdcd7fa5ce233530b9",
+      "matches_commit_e2727e4": true,
+      "matches_origin_yuke_osworld_9760247": true,
+      "matches_origin_all_codesk_2511503": true,
+      "uncommitted_disk_diff": false
+    },
+    "tasks/paragui/pg_a6.py": {
+      "path": "tasks/paragui/pg_a6.py",
+      "size_bytes": 14298,
+      "sha256": "6a841d495dd89590faeb1b38b53acce84db9357462b74685d4da9ef9c36e3837",
+      "git_blob_oid": "af5dbb33575fe82bbc9b97a0d2378a5407c0ea08",
+      "matches_commit_e2727e4": true,
+      "matches_origin_yuke_osworld_9760247": true,
+      "matches_origin_all_codesk_2511503": true,
+      "uncommitted_disk_diff": false
+    },
+    "tasks/paragui/task_pga6restructure.py": {
+      "path": "tasks/paragui/task_pga6restructure.py",
+      "size_bytes": 1885,
+      "sha256": "02b75442f4e07f585b95fbc9d5b8ab9503d8e2667a8b8b06de8ecabb9f31433e",
+      "git_blob_oid": "11a8d9f8501c90cc0d8ef1884d4399155fa4508c",
+      "matches_commit_e2727e4": true,
+      "matches_origin_yuke_osworld_9760247": true,
+      "matches_origin_all_codesk_2511503": true,
+      "uncommitted_disk_diff": false
+    },
+    "tasks/paragui/task_pga6filing.py": {
+      "path": "tasks/paragui/task_pga6filing.py",
+      "size_bytes": 1780,
+      "sha256": "59b4db4bf5c8fd80bf2d94f61c6337df5b2fcf8ae9f33e122af93038545005a7",
+      "git_blob_oid": "a6538adc720c709b6f9b2c5752fd2f26283edcca",
+      "matches_commit_e2727e4": true,
+      "matches_origin_yuke_osworld_9760247": true,
+      "matches_origin_all_codesk_2511503": true,
+      "uncommitted_disk_diff": false
+    }
+  }
+}
