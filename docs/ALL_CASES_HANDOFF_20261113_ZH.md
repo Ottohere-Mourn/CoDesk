@@ -1,15 +1,15 @@
 # CoDesk / paraGUI 全量任务资产与多模型评测总览（中文汇总版）
 
-更新日期：2026-11-20
+更新日期：2026-11-21
 所在分支：`codex/all-codesk-cases-20261113`
 远程仓库：`git@github.com:Ottohere-Mourn/CoDesk.git`
-覆盖范围：统一汇总原 `codex/all-codesk-cases-20261113` 聚合分支（早期 19-case 双智能体组合、`V1–V47` 业务工作流扩展、17 个人机共享桌面任务、7 个独立协作包与 35 对 `paragui` 基础题库）与 `cpu15` 实验线新增的全部原生专业软件竞争套件（`PR-*`、`AR-01..10`、`p1–p12`）、超长程物理仿真耦合套件（`LH-01..04`）、四智能体真 GUI `<canvas>` + CLI 混合并发套件（`QH-01..04`）、四智能体持续高重叠“主题工作场”套件（`TA-A1..TA-E1` 共 8 项）、超长程真实公网网站 + 真实原生桌面软件四智能体旗舰工作场套件（`UA-01..UA-15` 共 15 项，单局最高 70.0 分钟）、隐蔽竞争态四智能体探索套件（`SA-01..SA-15` 共 15 项）与 30 分钟+ 长程高重叠隐蔽竞争态双智能体终极套件（`SD-01..SD-15` 共 15 项，`gpt-6.1-sol` 与 `gpt-6-astra` 双双 `0/15` 终极阻断）、外部基准并发适配（OSWorld 10 对、WeaveBench 双并发与四并发）、macOS 双桌面空间真网页人机套件（`rw-*`）、全屏用户界面自然后台抢占套件（`fs-*`），以及 `gpt-6-sol`、`gpt-6.1-sol`、`gpt-6-astra`、`DeepSeek-V4.1-Flash-1017`（`deepseek-flash`）四款模型的全部实测结果。
+覆盖范围：统一汇总原 `codex/all-codesk-cases-20261113` 聚合分支（早期 19-case 双智能体组合、`V1–V47` 业务工作流扩展、17 个人机共享桌面任务、7 个独立协作包与 35 对 `paragui` 基础题库）与 `cpu15`/`g4-45` 实验线新增的全部原生专业软件竞争套件（`PR-*`、`AR-01..10`、`p1–p12`）、超长程物理仿真耦合套件（`LH-01..04`）、四智能体真 GUI `<canvas>` + CLI 混合并发套件（`QH-01..04`）、四智能体持续高重叠“主题工作场”套件（`TA-A1..TA-E1` 共 8 项）、超长程真实公网网站 + 真实原生桌面软件四智能体旗舰工作场套件（`UA-01..UA-15` 共 15 项，单局最高 70.0 分钟）、隐蔽竞争态四智能体探索套件（`SA-01..SA-15` 共 15 项）、30 分钟+ 长程高重叠隐蔽竞争态双智能体终极套件（`SD-01..SD-15` 共 15 项）、公平无锁双智能体套件（`FC-01..FC-15` 共 15 项）、闭卷自检 + 离线盲评双智能体真实桌面套件（`EC-01..EC-05` 共 5 项，遵循 `$paragui-case-design` 五门禁与静态审计零告警契约）、外部基准并发适配（OSWorld 10 对、WeaveBench 双并发与四并发）、macOS 双桌面空间真网页人机套件（`rw-*`）、全屏用户界面自然后台抢占套件（`fs-*`），以及 `gpt-6-sol`、`gpt-6.1-sol`、`gpt-6-astra`、`DeepSeek-V4.1-Flash-1017`（`deepseek-flash`）四款模型的全部实测结果。
 
 ---
 
 ## 一、全局任务盘点与多模型评测概览
 
-当前分支共收录 **265 项独立任务/配对条目**：其中 **208 项已完成完整模型多智能体/多臂实验**，**3 项另有有效 MA-ID/Shared 前置筛查但未完成全部锁臂**（按门控停止或 Shared actor timeout），另有 **54 项为脚本参考解验证、离线 Oracle 验证或设计规格储备题库**（既有 `p4–p12` 9 项 + `tasks/paragui` 基础库 35 对 + `oscombo/collab` 7 项，另新增 MECH07–09 三个只有 scripted control 的任务）；V43–V47、`UA-01..UA-15`、`SA-01..SA-15`、`SD-01..SD-15` 与 MECH01–06 已纳入完整模型多臂实测。因此共有 211 项至少取得一个有效模型臂结果；timeout 不计作 FAIL。不同赛道工具空间与指标各异，按赛道分列。
+当前分支共收录 **270 项独立任务/配对条目**：其中 **213 项已完成完整模型多智能体/多臂实验**，**3 项另有有效 MA-ID/Shared 前置筛查但未完成全部锁臂**（按门控停止或 Shared actor timeout），另有 **54 项为脚本参考解验证、离线 Oracle 验证或设计规格储备题库**（既有 `p4–p12` 9 项 + `tasks/paragui` 基础库 35 对 + `oscombo/collab` 7 项，另新增 MECH07–09 三个只有 scripted control 的任务）；V43–V47、`UA-01..UA-15`、`SA-01..SA-15`、`SD-01..SD-15`、`FC-01..FC-15`、`EC-01..EC-05` 与 MECH01–06 已纳入完整模型多臂实测。因此共有 216 项至少取得一个有效模型臂结果；timeout 不计作 FAIL。不同赛道工具空间与指标各异，按赛道分列。
 
 | 赛道分类 | 子套件与目录入口 | 在册数 | 已实测数 | 并发规模与模式 | 参测模型（推理档位） | 核心实测结果摘要 |
 |---|---|---:|---:|---|---|---|
@@ -25,12 +25,13 @@
 | **B7. 隐蔽竞争态四智能体长程套件** | `tasks/stealth_arenas_v1/`（`SA-01..SA-15`） | 15 | **15** | 4 Agent（去全局看板 + 15 真实行业公网/原生软件 + 12 候选私有台架） | `gpt-6.1-sol (high)`、`gpt-6-astra (high)` | 容器自验证 **15/15**；四角色串行正控 **3/3 PASS**；四并发下 `6.1-sol` 与 `6-astra` 同步压至 **2/15 (13.3%) PASS**（隐蔽拦住 **13/15**，`cpu15` 单局最高 **53.2m**） |
 | **B8. 隐蔽竞争态双智能体长程终极套件** | `tasks/stealth_dual_v1/`（`SD-01..SD-15`） | 15 | **15** | 2 Agent（全量非零 `v0` 基线 + 无剧透 16 候选耦合台架 + 首笔正式电文锁，单局 31–41 分钟） | `gpt-6.1-sol (high)`、`gpt-6-astra (high)` | 容器自验证 **15/15**；双角色串行正控 **PASS (100%)**；双并发下 **`6.1-sol` 0/15 (0.0%)**、**`6-astra` 0/15 (0.0%)**，**30/30 组 100% 隐蔽欺骗命中（全员 `2/2` 自认结项，墙钟全员 30.9m–40.9m）** |
 | **B9. 公平无锁双智能体真实软件竞争套件** | `tasks/fair_contention_v1/`（`FC-01..FC-15`） | 15 | **15** | 2 Agent（零首交锁/零禁写令/零代数凑数/100% 实时 `/workspace` 求解 + 双向串行四门禁，单局 31.7–41.7 分钟） | `gpt-6.1-sol (high)`、`gpt-6-astra (high)` | 四门禁双向自验证 **15/15 (100%)**；真模型双向串行（`seq_ab` & `seq_ba`）**PASS (100%)**；双并发下 **`6.1-sol` 0/15 (0.0%)**、**`6-astra` 0/15 (0.0%)** |
+| **B10. 闭卷自检 + 离线盲评双智能体真实桌面套件** | `tasks/exam_contention_v1/`（`EC-01..EC-05`） | 5 | **5** | 2 Agent（零在线判题/零采样器/零休眠注水 + 活动 LibreOffice 脏缓冲 + `HttpOnly` SSO + X11 剪贴板 + 五门禁良定性） | `gpt-6.1-sol (high)`、`gpt-6-astra (high)` | 静态审计 **7/7 PASS (`0 FAIL, 0 WARN`)**，五门禁 **5/5 通过**（Gate 5 `14.6–37.3s`）；`6.1-sol` 串行 **3/5 (60%)** -> 并发 **1/5 (20%)**，`6-astra` 串行 **5/5 (100%)** -> 并发 **3/5 (60%)**（双模型合计 **80% -> 40%**） |
 | **C1. 人机共享桌面（离线日常工作流）** | `oscombo/human_apps/`、`tasks/human_agent_v1/` | 17 | **17** | 1 真实 Agent + 1 脚本正常用户 | `gpt-6-sol`（纯 GUI）、`gpt-6.1-sol (medium)`（GUI+CLI） | `gpt-6-sol` 上游验证 **7** 项自然并发用户受损（User FAIL / Agent PASS）+ 1 项 25s 固定偏移探针（`ha-mail`）；`cpu15` Docker `gpt-6.1-sol` 17 题全跑并录像：`user-only` **16/17**，`shared` 下 **8/17** 复现 User FAIL / Agent PASS，`1/17` 双 PASS，`8/17` 双 FAIL |
 | **C2. 人机共享桌面（真网页 + 双桌面空间）** | `tasks/real_macos_ha_v1/` | 5 | **5** | 1 真实 Agent（Space 2）+ 1 正常用户（Space 1） | `gpt-6.1-sol (medium)`（全混合 GUI+CLI） | `user-only` **5/5 (100%)**，`independent` 双机 **5/5 联合 PASS (100%)**，`shared` 单机双 Space **0/5 联合 PASS**（后台 Agent 在 9–11s 切桌面空间劫持用户后续 7–8 步输入，致 **User 0/5、Agent 5/5**） |
 | **C3. 人机共享桌面（全屏用户界面自然抢占）** | `tasks/real_fullscreen_ha_v1/` | 5 | **5** | 1 真实后台 Agent + 1 全屏最大化用户 | `gpt-6.1-sol (medium)`（全混合 GUI+CLI） | `user-only` **5/5**，`independent` **5/5 双 PASS**；`shared` 下 3 道纯产物交付题 Agent 自发走无头 CLI 零抢占（**3/3 双 PASS**），2 道需打开桌面窗口/标签题触发浏览器地址栏劫持与 Writer 弹窗抢焦点（致 `fs-wiki-pep-writer-open` **User FAIL / Agent PASS**） |
 | **D1. `paragui` v1 + 红队基础配对库** | `tasks/paragui/`（`c/o/m/w/d/f/x/a` 系列） | 35 | 0 | 2 Agent 配对题库 | 作者参考解双向验证 | 35 对（70 个 OSWorld 2.0 任务类）均完成资产生成器、内网应用与双向 `1.0` 参考验证，供 `oscombo` 组合采样 |
 | **D2. `oscombo/collab` 独立协作协议包** | `oscombo/collab/`（`CDD-*` 系列） | 7 | 0 | 双角色异步/共享协作包 | 离线 Oracle / 脚本 Guest 验证 | 7 套独立包全部通过离线正负控制单测，`Data-to-Deck` 完成 Guest 脚本生命周期验证；其中 3 套的精简版即 A1 中的 `Case 2/3/4` |
-| **合计** | — | **265** | **208 完整 + 3 部分** | 2–4 智能体 / 人机混合 | 4 款主力模型 × 2 套 Harness | **208 项完整多智能体/多臂成绩；另 3 项有效但未完成全部臂**，共 211 项至少有一个有效模型臂；54 项仍属参考/题库/设计储备，见 `docs/results-manifests/` 与赛道明细 |
+| **合计** | — | **270** | **213 完整 + 3 部分** | 2–4 智能体 / 人机混合 | 4 款主力模型 × 2 套 Harness | **213 项完整多智能体/多臂成绩；另 3 项有效但未完成全部臂**，共 216 项至少有一个有效模型臂；54 项仍属参考/题库/设计储备，见 `docs/results-manifests/` 与赛道明细 |
 
 ---
 
@@ -144,7 +145,7 @@ V34–V37 四项均通过 scripted joint Guest 正控（A/B 2/2），并完成�
 
 ---
 
-## 四、赛道二（Track B）：全混合 GUI+CLI 专业工程、超长程仿真、四智能体并发与隐蔽竞争套件（共 101 项）
+## 四、赛道二（Track B）：全混合 GUI+CLI 专业工程、超长程仿真、四智能体并发与隐蔽竞争套件（共 106 项）
 
 本赛道坚持**不人为禁用 CLI / Python / 应用脚本 API**，智能体同时拥有 X11 桌面 GUI 工具与完整终端权限，在真实工程计算临界区（Cycles 光追、OpenCASCADE 三维布尔与网格剖分、PyQGIS 水文空间分析、Inkscape/GIMP 批量印前渲染、MLT/FFmpeg/SoX 音视频母版合成、单会话门户与 `<canvas>` 视觉规格卡）中暴露无法靠“一行快脚本”轻易绕开的真实并发竞争态。
 
@@ -300,6 +301,18 @@ V34–V37 四项均通过 scripted joint Guest 正控（A/B 2/2），并完成�
 | `FC-13` | 零信任服务网格 Envoy X.509 SAN 证书、熔断器 YAML 与 mTLS/RPC 核饱和度协同调优 | OpenSSL RSA-2048 X.509 + Envoy Bootstrap YAML + TLS/RPC Queue Simulator + SSO FIPS-140-3 Console | **FAIL** (`2/2`结项, `0/2`察觉, **`33.5m`**) | **FAIL** (`2/2`结项, `0/2`察觉, **`35.3m`**) |
 | `FC-14` | 空间望远镜主动光学压电致动、低温遮光罩叶片矢量图与热真空寄生热负载配平 | 2D FFT Fraunhofer PSF Wavefront Solver + SVG Baffle/Aperture Map + SSO Cryo-TVAC Console | **FAIL** (`1/2`结项, `1/2`察觉, **`38.0m`**) | **FAIL** (`1/2`结项, `0/2`察觉, **`38.0m`**) |
 | `FC-15` | 5nm 半导体光刻光学邻近修正（OPC）密度网格、霍普金斯空中像与 CMP 氧化物碟形侵蚀均衡 | 64x64 NumPy Reticle (.npz) + 2D Hopkins Aerial FFT + CMP Erosion Solver + LibreOffice Calc (.xlsx) + SSO Fab Metrology | **FAIL** (`2/2`结项, `0/2`察觉, **`34.2m`**) | **FAIL** (`2/2`结项, `2/2`察觉, **`36.7m`**) |
+
+### B10. 闭卷自检 + 离线盲评双智能体真实桌面竞争套件 `exam_contention_v1`（`EC-01..EC-05`，遵循 `$paragui-case-design` 五门禁规范）
+
+严格依据 `$paragui-case-design` 闭卷架构重做 5 个跨行业混合（`GUI + CLI`）双智能体基准：彻底清零在线 `HTTP 422` 判题器、后台 `BackgroundRegimeSampler` 隐藏采样与空转休眠，静态审计 `audit_case_module.py` 取得 **`7/7 PASS (0 FAIL, 0 WARN)`**，五道确定性良定性门禁（`pristine_fail`、`gt_seq_ab`、`gt_seq_ba`、`gt_naive_race`、`gt_careful_conc`）**5/5 全部通过**（`Gate 5` 真实耗时仅 `14.62s–37.33s`）。20 局 Non-YOLO 实测中，`gpt-6.1-sol (high)` 由串行 **`3/5 (60.0%)`** 降至双并发 **`1/5 (20.0%)`**，`gpt-6-astra (high)` 由串行 **`5/5 (100.0%)`** 降至双并发 **`3/5 (60.0%)`**（双模型合计 **`80.0% -> 40.0%`**，净跌 `-40.0` 个百分点）。详见 [`EXAM_CONTENTION_V1_20261121_ZH.md`](EXAM_CONTENTION_V1_20261121_ZH.md) 与 [`results-manifests/exam_contention_v1_sol61_astra_20261121.json`](results-manifests/exam_contention_v1_sol61_astra_20261121.json)。
+
+| ID | 真实业务/工程领域与双角色 | 桌面原生软件与共享竞争表面 | `gpt-6.1-sol (high)`（`seq_ab -> shared`） | `gpt-6-astra (high)`（`seq_ab -> shared`） |
+|---|---|---|---|---|
+| `EC-01` | 跨国并购尽调数据室与净杠杆契约（`qoe_ebitda_lead` / `tax_treasury_lead`） | LibreOffice Calc (`.xlsx`/PDF) + SQLite + SSO VDR 汇率切换 + `~/Downloads` + X11 剪贴板 | `FAIL (A:T,B:F) ->` **`FAIL (A:F,B:T)`**（CSV 互覆 9 次污染汇率） | **`PASS -> PASS`**（`1215.1s / 779.7s`） |
+| `EC-02` | 肿瘤内科第 4 周期化疗与肾脏支持医嘱（`chemo_regimen_pharmacist` / `renal_supportive_pharmacist`） | LibreOffice Writer (`.odt`/PDF) + SQLite + SSO EHR 检验单位切换 + X11 剪贴板 + 心衰液量 | **`PASS -> FAIL`**（切屏 18 次，PDF 签收单丢失肾脏章） | **`PASS -> FAIL`**（切屏 10 次，剪贴板抢占丢失化疗章） |
+| `EC-03` | 1U 机箱三维钣金开孔、EMC 屏蔽与丝印印前（`mech_thermal_eng` / `emi_prepress_eng`） | FreeCAD (`.FCStd`/`.step`) + Inkscape (`.svg`/`.png`) + Calc + SSO PLM 公英制切换 + 剪贴板 | `FAIL (A:T,B:F) ->` **`FAIL (A:F,B:T)`**（并发下顶盖开孔侵入禁布区） | **`PASS -> FAIL`**（切屏 7 次，后背板开孔超差 + SVG 缺组） |
+| `EC-04` | 多币种清算网关割接、HMAC 防重放与头寸对账（`clearing_engine_dev` / `dispute_security_dev`） | Git (`main`) + Live Port `:18910` + SQLite WAL + Calc + SSO 运营台 + X11 剪贴板 | **`PASS -> PASS`**（`2/2` 察觉同伴 Git 提交并合并恢复） | **`PASS -> PASS`**（`201` GUI + `86` CLI 自检恢复） |
+| `EC-05` | 县域行蓄洪区与光伏微电网空间规划环评（`solar_microgrid_planner` / `stormwater_hydrology_planner`） | GDAL SpatiaLite (`.gpkg` + `150m` 退界) + QGIS (`.qgz`) + Calc + 连续拖拽洪水位滑块 + 剪贴板 | **`PASS -> FAIL`**（滑块切换 14 次，粘入被污染签章 `ATTEST-6E3EBBE0FAC9`） | **`PASS -> PASS`**（`368.6s / 356.1s`） |
 ---
 
 ## 五、赛道三（Track C）：人机共享桌面干扰套件（共 27 项，全部完成模型实测）
@@ -398,6 +411,7 @@ V34–V37 四项均通过 scripted joint Guest 正控（A/B 2/2），并完成�
    - 超长程（40–70 分钟级）真实网站 + 真实软件四智能体旗舰工作场套件与 `gpt-6.1-sol` 实测：[`ULTRA_LONG_HORIZON_ARENAS_V1_20261117_ZH.md`](ULTRA_LONG_HORIZON_ARENAS_V1_20261117_ZH.md)
    - 30 分钟+ 长程隐蔽竞争态双智能体终极套件（`SD-01..15`）与四智能体探索套件（`SA-01..15`）双模型（`gpt-6.1-sol` & `gpt-6-astra` 双双 `0/15`）实测：[`STEALTH_DUAL_V1_SOL61_ASTRA_20261119_ZH.md`](STEALTH_DUAL_V1_SOL61_ASTRA_20261119_ZH.md)
    - 30 分钟+ 公平无锁双智能体真实软件竞争套件（`FC-01..15`）四门禁验证与双模型实测：[`FAIR_CONTENTION_V1_SOL61_ASTRA_20261120_ZH.md`](FAIR_CONTENTION_V1_SOL61_ASTRA_20261120_ZH.md)
+   - 闭卷自检 + 离线盲评双智能体真实桌面竞争套件（`EC-01..05`）五门禁验证与双模型串行/并发对照实测：[`EXAM_CONTENTION_V1_20261121_ZH.md`](EXAM_CONTENTION_V1_20261121_ZH.md)
    - `DeepSeek V4.1` 竞争意识评测与双模型同口径对比：[`DEEPSEEK_V41_RACE_AWARENESS_8TASK_20261116.md`](DEEPSEEK_V41_RACE_AWARENESS_8TASK_20261116.md)、[`SOL61_VS_DEEPSEEK_V41_8TASK_COMPARISON_20261116.md`](SOL61_VS_DEEPSEEK_V41_8TASK_COMPARISON_20261116.md)
    - 人机共享桌面（17 离线应用 + 5 真网页双桌面空间 + 5 全屏自然抢占）：[`HUMAN_AGENT_CPU15_DOCKER_VIDEO_20261116.md`](HUMAN_AGENT_CPU15_DOCKER_VIDEO_20261116.md)、[`REAL_MACOS_2SPACE_CPU15_20261116.md`](REAL_MACOS_2SPACE_CPU15_20261116.md)、[`REAL_FULLSCREEN_PREEMPTION_CPU15_20261116.md`](REAL_FULLSCREEN_PREEMPTION_CPU15_20261116.md)
    - 全部机器可读 JSON 成绩单目录：[`results-manifests/`](results-manifests/)
