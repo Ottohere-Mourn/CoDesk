@@ -313,6 +313,18 @@ V34–V37 四项均通过 scripted joint Guest 正控（A/B 2/2），并完成�
 | `EC-03` | 1U 机箱三维钣金开孔、EMC 屏蔽与丝印印前（`mech_thermal_eng` / `emi_prepress_eng`） | FreeCAD (`.FCStd`/`.step`) + Inkscape (`.svg`/`.png`) + Calc + SSO PLM 公英制切换 + 剪贴板 | `FAIL (A:T,B:F) ->` **`FAIL (A:F,B:T)`**（并发下顶盖开孔侵入禁布区） | **`PASS -> FAIL`**（切屏 7 次，后背板开孔超差 + SVG 缺组） |
 | `EC-04` | 多币种清算网关割接、HMAC 防重放与头寸对账（`clearing_engine_dev` / `dispute_security_dev`） | Git (`main`) + Live Port `:18910` + SQLite WAL + Calc + SSO 运营台 + X11 剪贴板 | **`PASS -> PASS`**（`2/2` 察觉同伴 Git 提交并合并恢复） | **`PASS -> PASS`**（`201` GUI + `86` CLI 自检恢复） |
 | `EC-05` | 县域行蓄洪区与光伏微电网空间规划环评（`solar_microgrid_planner` / `stormwater_hydrology_planner`） | GDAL SpatiaLite (`.gpkg` + `150m` 退界) + QGIS (`.qgz`) + Calc + 连续拖拽洪水位滑块 + 剪贴板 | **`PASS -> FAIL`**（滑块切换 14 次，粘入被污染签章 `ATTEST-6E3EBBE0FAC9`） | **`PASS -> PASS`**（`368.6s / 356.1s`） |
+
+### B11. 更新版 `$paragui-case-design` 9 候选广泛搜索与优选 5 项套件 `exam_contention_v2`（`EC2-C01, C03, C06, C07, C08`）
+
+严格对齐更新后的 `$paragui-case-design` 规范（`qwen-cua-driver 0.27.0` + `AT-SPI2` 与 `guest_bash` 全 CLI 100% 开放、驱动无关题面、同时覆盖 **Track 1 零共享文件纯屏幕/视口/拖拽竞争** 与 **Track 2 共享进程/会话/耦合制品竞争**、`[0.0, 1.0]` 连续部分得分 + Token/耗时/焦点翻转/误按键多维开销遥测），构建 `EC2-C01..EC2-C09` 共 9 个候选案例（静态审计 `11/11 PASS, 0 FAIL, 0 WARN`，五门禁 **`9/9 PASS`**）。经 `gpt-6.1-sol (high)` 全量 18 局筛选淘汰 4 个低对比度/倒挂候选（`EC2-C02, C04, C05, C09`），最终保留 **5 个优质 Case** 并完成 `gpt-6-astra (high)` 跨模型复验（累计 **56 次** Non-YOLO 容器运行审计 100% 通过）：`gpt-6.1-sol` 均分 `0.9850 -> 0.9510`（`joint_pass` `80% -> 40%`，Token **`1.79x`**，耗时 **`1.54x`**），`gpt-6-astra` 均分 `0.9850 -> 0.9565`（`joint_pass` `80% -> 60%`，Token **`1.49x`**，耗时 **`1.30x`**）。详见 [`EXAM_CONTENTION_V2_BROAD_SEARCH_TOP5_20261122_ZH.md`](EXAM_CONTENTION_V2_BROAD_SEARCH_TOP5_20261122_ZH.md)、[`results-manifests/exam_contention_v2_9cand_screening_20261122.json`](results-manifests/exam_contention_v2_9cand_screening_20261122.json) 与 [`results-manifests/exam_contention_v2_top5_sol61_astra_20261122.json`](results-manifests/exam_contention_v2_top5_sol61_astra_20261122.json)。
+
+| ID | 赛道与模式 | 真实领域与双角色 | 桌面原生软件与共享竞争表面 | `gpt-6.1-sol (high)`（`iso -> shared`） | `gpt-6-astra (high)`（`iso -> shared`） |
+|---|---|---|---|---|---|
+| `EC2-C01` | Track 1 (`isolated`) | 响应式 Web QA vs 全屏 6 幕动效录制（`responsive_qa_lead` / `motion_demo_producer`） | 单实例 `:9222` Chromium (`390x844` vs `1920x1080` F11 全屏) | `0.925 ->` **`0.875`**（Token **`1.71x`**，翻转 `3->7`） | `0.925 ->` **`0.840`**（Token **`1.37x`**，翻转 `3->10`） |
+| `EC2-C03` | Track 1 (`isolated`) | 钢桁架交互拖拽优化 vs 色度校样（`structural_sketch_eng` / `color_proof_specialist`） | PyQt5 `AeroTruss` 连续拖拽 vs 重叠 `SpectraProof` D50 窗口截图 | `1.000 -> 1.000`（耗时 **`1.32x`**，翻转 **`3->9`**） | `1.000 -> 1.000`（Token **`1.61x`**，翻转 **`3->10`**） |
+| `EC2-C06` | Track 2 (`shared`) | 偿付能力精算准备金 vs 8 页董事会报告（`reserving_actuary` / `investor_deck_lead`） | 单实例 `soffice.bin`（`Writer` `.odt` + `Calc` `.xlsx`）+ SSO + 剪贴板 | **`1.000 (T) -> 0.960 (F)`**（触发 `soffice.bin` 脏缓冲脑裂） | `1.000 (T) -> 1.000 (T)`（Token **`1.16x`** 刷盘自愈） |
+| `EC2-C07` | Track 2 (`shared`) | 24 例肿瘤化疗与肾脏支持医嘱（`chemo_regimen_pharmacist` / `renal_supportive_pharmacist`） | SQLite + 扫描列线图 + SSO EHR 单位切换 + 剪贴板 + 驻留 `Writer` | **`1.000 (T) -> 0.920 (F)`**（Token **`3.22x`**，耗时 **`2.50x`**） | `1.000 (T) -> 1.000 (T)`（误按键 `14` 次，Token **`1.59x`** 自愈） |
+| `EC2-C08` | Track 2 (`shared`) | 1U 机箱三维钣金开孔与 EMC 丝印印前（`mech_thermal_eng` / `emi_prepress_eng`） | `FreeCAD` (`.FCStd/.step`) + `Inkscape` + SSO PLM 公英制 + 驻留 `Calc` | `1.000 (T) -> 1.000 (T)`（Token **`1.74x`**，耗时 **`1.59x`**） | **`1.000 (T) -> 0.942 (F)`**（翻转 `14->29`，剪贴板污染 ECN 章） |
 ---
 
 ## 五、赛道三（Track C）：人机共享桌面干扰套件（共 27 项，全部完成模型实测）
@@ -412,6 +424,7 @@ V34–V37 四项均通过 scripted joint Guest 正控（A/B 2/2），并完成�
    - 30 分钟+ 长程隐蔽竞争态双智能体终极套件（`SD-01..15`）与四智能体探索套件（`SA-01..15`）双模型（`gpt-6.1-sol` & `gpt-6-astra` 双双 `0/15`）实测：[`STEALTH_DUAL_V1_SOL61_ASTRA_20261119_ZH.md`](STEALTH_DUAL_V1_SOL61_ASTRA_20261119_ZH.md)
    - 30 分钟+ 公平无锁双智能体真实软件竞争套件（`FC-01..15`）四门禁验证与双模型实测：[`FAIR_CONTENTION_V1_SOL61_ASTRA_20261120_ZH.md`](FAIR_CONTENTION_V1_SOL61_ASTRA_20261120_ZH.md)
    - 闭卷自检 + 离线盲评双智能体真实桌面竞争套件（`EC-01..05`）五门禁验证与双模型串行/并发对照实测：[`EXAM_CONTENTION_V1_20261121_ZH.md`](EXAM_CONTENTION_V1_20261121_ZH.md)
+   - 更新版 `$paragui-case-design` 9 候选广泛搜索与优选 5 项套件（`EC2-C01, C03, C06, C07, C08`）五门禁验证与双模型 `isolated/shared` 实测：[`EXAM_CONTENTION_V2_BROAD_SEARCH_TOP5_20261122_ZH.md`](EXAM_CONTENTION_V2_BROAD_SEARCH_TOP5_20261122_ZH.md)
    - `DeepSeek V4.1` 竞争意识评测与双模型同口径对比：[`DEEPSEEK_V41_RACE_AWARENESS_8TASK_20261116.md`](DEEPSEEK_V41_RACE_AWARENESS_8TASK_20261116.md)、[`SOL61_VS_DEEPSEEK_V41_8TASK_COMPARISON_20261116.md`](SOL61_VS_DEEPSEEK_V41_8TASK_COMPARISON_20261116.md)
    - 人机共享桌面（17 离线应用 + 5 真网页双桌面空间 + 5 全屏自然抢占）：[`HUMAN_AGENT_CPU15_DOCKER_VIDEO_20261116.md`](HUMAN_AGENT_CPU15_DOCKER_VIDEO_20261116.md)、[`REAL_MACOS_2SPACE_CPU15_20261116.md`](REAL_MACOS_2SPACE_CPU15_20261116.md)、[`REAL_FULLSCREEN_PREEMPTION_CPU15_20261116.md`](REAL_FULLSCREEN_PREEMPTION_CPU15_20261116.md)
    - 全部机器可读 JSON 成绩单目录：[`results-manifests/`](results-manifests/)
