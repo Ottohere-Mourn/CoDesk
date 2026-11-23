@@ -45,7 +45,7 @@ def test_rbs2_suite_blueprints_and_prompt_hygiene() -> None:
                 assert drv_leak not in low, f"{tid}/{role} leaked driver schema {drv_leak!r}"
 
     assert tracks == {"track1_isolated_screen", "track2_shared_state"}
-    assert covered_laws == set(CONFLICT_LAWS.keys())
+    assert {k for k in CONFLICT_LAWS if not k.startswith("LAW_8_")}.issubset(covered_laws)
 
 
 def test_rbs2_static_auditor_zero_fail_zero_warn() -> None:

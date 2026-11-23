@@ -84,6 +84,12 @@ CONFLICT_LAWS: dict[str, dict[str, Any]] = {
         "required_surfaces": ("atspi_opaque_visual_canvas", "multi_step_interactive_state_machine"),
         "weight": 20.0,
     },
+    "LAW_8_LIVE_STATE_INVALIDATION_AND_ZERO_SPOILER_COUPLING": {
+        "title": "Zero-Spoiler Multi-Surface Discovery + Mutable Session/Canvas Invalidation & Tight Coupled Envelope",
+        "empirical_anchor": "OSW2-P5 (:9222 live PNG/reel 0.939->0.000), RB-B3 KSudoku (-42.3% zero-spoiler), EC2-C06/C07/C08 (80%->40% pass)",
+        "required_surfaces": ("zero_spoiler_multi_surface_discovery", "live_pixel_or_mutable_session_invalidation"),
+        "weight": 24.0,
+    },
 }
 
 HORIZON_BANDS: dict[str, dict[str, Any]] = {
@@ -110,6 +116,12 @@ HORIZON_BANDS: dict[str, dict[str, Any]] = {
         "rec_conc_timeout_s": 1680,
         "min_subchecks_total": 36,
         "description": "AT-SPI-opaque visual canvas exploration + 36–40 interactive/visual partial-credit checks (8–16m).",
+    },
+    "non_saturated_coupled_contention": {
+        "target_iso_role_s": (420, 600),
+        "rec_conc_timeout_s": 1080,
+        "min_subchecks_total": 40,
+        "description": "Zero-spoiler 4-5 surface GUI + live mutable canvas/session invalidation + tight coupled envelope (40 checks, <=45 CUA cap).",
     },
 }
 
@@ -188,6 +200,9 @@ def score_role_pair(role_a: dict[str, Any], role_b: dict[str, Any]) -> dict[str,
     if "atspi_opaque_visual_canvas" in union_tr and "multi_step_interactive_state_machine" in union_tr:
         active_laws.append("LAW_7_VISUAL_CANVAS_OPAQUE_TO_ATSPI")
         law_points += 20.0
+    if "zero_spoiler_multi_surface_discovery" in union_tr and "live_pixel_or_mutable_session_invalidation" in union_tr:
+        active_laws.append("LAW_8_LIVE_STATE_INVALIDATION_AND_ZERO_SPOILER_COUPLING")
+        law_points += 24.0
 
     horizon_bonus = 18.0 if (300.0 <= lo <= 960.0 and symmetry >= 0.65) else (8.0 if lo >= 240.0 else 0.0)
     overlap_bonus = min(16.0, round(est_overlap_s / 30.0, 2))
