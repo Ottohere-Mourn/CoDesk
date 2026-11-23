@@ -78,6 +78,12 @@ CONFLICT_LAWS: dict[str, dict[str, Any]] = {
         "required_surfaces": ("single_instance_mdi_or_soffice", "shared_db_or_dirty_gui_buffer"),
         "weight": 18.0,
     },
+    "LAW_7_VISUAL_CANVAS_OPAQUE_TO_ATSPI": {
+        "title": "AT-SPI-Opaque Custom 2D/Canvas Visual Oracles Preventing 1-Call AX Text Shortcuts",
+        "empirical_anchor": "RB-B5 Pencil2D QPainter, RB-B6 wxPropertyGrid, OSW2-P10/P15 Shotcut & GeoGebra curve fitting",
+        "required_surfaces": ("atspi_opaque_visual_canvas", "multi_step_interactive_state_machine"),
+        "weight": 20.0,
+    },
 }
 
 HORIZON_BANDS: dict[str, dict[str, Any]] = {
@@ -98,6 +104,12 @@ HORIZON_BANDS: dict[str, dict[str, Any]] = {
         "rec_conc_timeout_s": 1800,
         "min_subchecks_total": 24,
         "description": "Multi-stage corpus/MDI/CAD/portal engineering with coupled invariants (7–16m).",
+    },
+    "high_granularity_visual_recreation": {
+        "target_iso_role_s": (480, 960),
+        "rec_conc_timeout_s": 1680,
+        "min_subchecks_total": 36,
+        "description": "AT-SPI-opaque visual canvas exploration + 36–40 interactive/visual partial-credit checks (8–16m).",
     },
 }
 
@@ -173,6 +185,9 @@ def score_role_pair(role_a: dict[str, Any], role_b: dict[str, Any]) -> dict[str,
     if "single_instance_mdi_or_soffice" in union_tr or "shared_db_or_dirty_gui_buffer" in union_tr:
         active_laws.append("LAW_6_SINGLE_INSTANCE_MDI_AND_PROFILE_SPLIT_BRAIN")
         law_points += 18.0
+    if "atspi_opaque_visual_canvas" in union_tr and "multi_step_interactive_state_machine" in union_tr:
+        active_laws.append("LAW_7_VISUAL_CANVAS_OPAQUE_TO_ATSPI")
+        law_points += 20.0
 
     horizon_bonus = 18.0 if (300.0 <= lo <= 960.0 and symmetry >= 0.65) else (8.0 if lo >= 240.0 else 0.0)
     overlap_bonus = min(16.0, round(est_overlap_s / 30.0, 2))
