@@ -325,6 +325,19 @@ V34–V37 四项均通过 scripted joint Guest 正控（A/B 2/2），并完成�
 | `EC2-C06` | Track 2 (`shared`) | 偿付能力精算准备金 vs 8 页董事会报告（`reserving_actuary` / `investor_deck_lead`） | 单实例 `soffice.bin`（`Writer` `.odt` + `Calc` `.xlsx`）+ SSO + 剪贴板 | **`1.000 (T) -> 0.960 (F)`**（触发 `soffice.bin` 脏缓冲脑裂） | `1.000 (T) -> 1.000 (T)`（Token **`1.16x`** 刷盘自愈） |
 | `EC2-C07` | Track 2 (`shared`) | 24 例肿瘤化疗与肾脏支持医嘱（`chemo_regimen_pharmacist` / `renal_supportive_pharmacist`） | SQLite + 扫描列线图 + SSO EHR 单位切换 + 剪贴板 + 驻留 `Writer` | **`1.000 (T) -> 0.920 (F)`**（Token **`3.22x`**，耗时 **`2.50x`**） | `1.000 (T) -> 1.000 (T)`（误按键 `14` 次，Token **`1.59x`** 自愈） |
 | `EC2-C08` | Track 2 (`shared`) | 1U 机箱三维钣金开孔与 EMC 丝印印前（`mech_thermal_eng` / `emi_prepress_eng`） | `FreeCAD` (`.FCStd/.step`) + `Inkscape` + SSO PLM 公英制 + 驻留 `Calc` | `1.000 (T) -> 1.000 (T)`（Token **`1.74x`**，耗时 **`1.59x`**） | **`1.000 (T) -> 0.942 (F)`**（翻转 `14->29`，剪贴板污染 ECN 章） |
+
+### B12. 融合 `RecreationBench` & `OSWorld-V2` 冲突定律与自然时长的造题工具及深度套件 `rb_osw2_synth_v1`（`RBS-01..RBS-06`）
+
+提炼 `RecreationBench`（7 批 14 应用）与 `OSWorld-V2`（`OSW2-P1..P5`）中的 **6 大 `GUI + CLI` 冲突规律（`LAW_1..LAW_6`）与对称长程重叠法则**，开发可复用造题与配对校准工具 [`tools/paragui_case_factory.py`](../tools/paragui_case_factory.py)（支持 `laws`、`mine-upstream`、`audit-suite`、`scaffold` 四大子命令，并从上游 50 款 Ubuntu 应用筛出 [`lists/recreationbench_mined_top15_v2.json`](../lists/recreationbench_mined_top15_v2.json)），据此制造 `RBS-01..RBS-06` 共 **6 项高密度双智能体任务（合计 176 个细粒度评分检查，含隔离 `Xvfb + AT-SPI2 + qwen-cua-driver` 实机拉起候选 GUI 验证）**。静态审计 `8/8 PASS (0 FAIL, 0 WARN)`、蓝图审计 `6/6` 全绿、确定性五门禁 `6/6` 全通过。在 **24 局（48 个 Non-YOLO 容器智能体）** 双模型实测中，平均并发重叠占比高达 **`75.6%`（`gpt-6.1-sol`，`250.6s`）** 与 **`83.6%`（`gpt-6-astra`，`341.2s`，最高 `513.1s`）**，跨角色切换 `364 / 408` 次，精准复现开放 CLI 下的高代价自愈膨胀（CLI 调用 **`1.85x / 1.62x`**，输入 Token **`1.43x / 1.25x`**，焦点翻转 `87->118` / `86->130`，误按键 `6 / 15` 次）。详见 [`RB_OSW2_SYNTH_TOOLKIT_AND_6CASES_20261123_ZH.md`](RB_OSW2_SYNTH_TOOLKIT_AND_6CASES_20261123_ZH.md) 与 [`results-manifests/rb_osw2_synth_v1_sol61_astra_20261123.json`](results-manifests/rb_osw2_synth_v1_sol61_astra_20261123.json)。
+
+| ID | 冲突定律与模式 | 真实领域与双角色 | 竞争表面与评分粒度 | `gpt-6.1-sol (high)`（并发重叠 / 开销特征） | `gpt-6-astra (high)`（并发重叠 / 开销特征） |
+|---|---|---|---|---|---|
+| `RBS-01` | `LAW_2 + LAW_3` (`isolated`) | 双同名 `Preferences` 归档检索 vs 数独工作台复刻 | GTK3 `VaultSearch` + Qt5 `LogicGrid` 零源码复刻（`28` 项 AT-SPI+视觉检查） | `1.000 -> 1.000`（重叠 **`445.7s / 92.1%`**，CLI **`1.51x`**） | `1.000 -> 1.000`（重叠 **`513.1s / 91.7%`**，Token **`1.15x`**） |
+| `RBS-02` | `LAW_1 + LAW_3` (`isolated`) | 失焦自隐 `F10` CSD 速读器 vs 十六进制编辑器复刻 | GTK HeaderBar 自隐 `Popover` + Qt5 多模态热键复刻（`28` 项检查） | `1.000 -> 1.000`（重叠 `276.6s`，焦点翻转 **`15->34`**） | `1.000 -> 1.000`（重叠 **`508.2s / 96.1%`**，翻转 **`15->47`**，Token **`1.22x`**） |
+| `RBS-03` | `LAW_5` (`isolated`) | 5 窗浮动面板凸轮画布拖拽 vs 热像靶标抓拍与复刻 | 4 浮动 `QDockWidget` 遮挡 `ThermalBoard` + 候选 GUI（`28` 项检查） | `0.860 -> 0.935`（Token **`1.63x`**，CLI **`2.18x`**，翻转 **`4->14`**） | `0.860 -> 0.860`（重叠 `236.6s`，Token **`1.65x`**，翻转 **`5->14`**） |
+| `RBS-04` | `LAW_4` (`isolated`) | 单实例 `:9222` `HttpOnly` 3 视口票务 QA vs 8 幕全屏录制 | 共享 `:9222` Chromium 视口缩放 vs `F11` 全屏动效（`32` 项检查） | `0.955 -> 0.955`（Token **`1.49x`**，耗时 **`1.48x`**，翻转 `1->3`） | `0.955 -> 0.955`（重叠 **`270.3s / 81.4%`**，切换 `53` 次） |
+| `RBS-05` | `LAW_6 + LAW_5` (`shared`) | 单窗口双标签 `DeckCraft MDI` 气泡拖拽 vs 拓扑吸管 | 单窗双标签共享活动画布、吸管寄存器与 `Ctrl+S`（`28` 项检查） | `1.000 -> 1.000`（Token **`2.35x`**，耗时 **`1.80x`**，误按键 **`5`**） | `1.000 -> 1.000`（Token **`1.52x`**，耗时 **`1.54x`**，误按键 **`7`**） |
+| `RBS-06` | `LAW_6 + LAW_2` (`shared`) | `CiteVault` 文献库 BibTeX 去重 vs 单进程 `soffice.bin` 荟萃分析 | SQLite + `HttpOnly` 撤稿库 + 剪贴板 + 驻留 `Writer+Calc`（`32` 项检查） | `0.952 -> 1.000`（重叠 **`303.7s / 84.9%`**，Token **`1.30x`**，CLI **`1.56x`**） | `0.952 -> 1.000`（重叠 **`343.6s / 70.8%`**，误按键 **`7`**，Token **`1.11x`**） |
 ---
 
 ## 五、赛道三（Track C）：人机共享桌面干扰套件（共 27 项，全部完成模型实测）
@@ -425,6 +438,7 @@ V34–V37 四项均通过 scripted joint Guest 正控（A/B 2/2），并完成�
    - 30 分钟+ 公平无锁双智能体真实软件竞争套件（`FC-01..15`）四门禁验证与双模型实测：[`FAIR_CONTENTION_V1_SOL61_ASTRA_20261120_ZH.md`](FAIR_CONTENTION_V1_SOL61_ASTRA_20261120_ZH.md)
    - 闭卷自检 + 离线盲评双智能体真实桌面竞争套件（`EC-01..05`）五门禁验证与双模型串行/并发对照实测：[`EXAM_CONTENTION_V1_20261121_ZH.md`](EXAM_CONTENTION_V1_20261121_ZH.md)
    - 更新版 `$paragui-case-design` 9 候选广泛搜索与优选 5 项套件（`EC2-C01, C03, C06, C07, C08`）五门禁验证与双模型 `isolated/shared` 实测：[`EXAM_CONTENTION_V2_BROAD_SEARCH_TOP5_20261122_ZH.md`](EXAM_CONTENTION_V2_BROAD_SEARCH_TOP5_20261122_ZH.md)
+   - 融合 `RecreationBench` & `OSWorld-V2` 冲突规律与任务长度的造题工具（`tools/paragui_case_factory.py`）及 6 项深度套件（`RBS-01..06`）双模型实测：[`RB_OSW2_SYNTH_TOOLKIT_AND_6CASES_20261123_ZH.md`](RB_OSW2_SYNTH_TOOLKIT_AND_6CASES_20261123_ZH.md)
    - `DeepSeek V4.1` 竞争意识评测与双模型同口径对比：[`DEEPSEEK_V41_RACE_AWARENESS_8TASK_20261116.md`](DEEPSEEK_V41_RACE_AWARENESS_8TASK_20261116.md)、[`SOL61_VS_DEEPSEEK_V41_8TASK_COMPARISON_20261116.md`](SOL61_VS_DEEPSEEK_V41_8TASK_COMPARISON_20261116.md)
    - 人机共享桌面（17 离线应用 + 5 真网页双桌面空间 + 5 全屏自然抢占）：[`HUMAN_AGENT_CPU15_DOCKER_VIDEO_20261116.md`](HUMAN_AGENT_CPU15_DOCKER_VIDEO_20261116.md)、[`REAL_MACOS_2SPACE_CPU15_20261116.md`](REAL_MACOS_2SPACE_CPU15_20261116.md)、[`REAL_FULLSCREEN_PREEMPTION_CPU15_20261116.md`](REAL_FULLSCREEN_PREEMPTION_CPU15_20261116.md)
    - 全部机器可读 JSON 成绩单目录：[`results-manifests/`](results-manifests/)

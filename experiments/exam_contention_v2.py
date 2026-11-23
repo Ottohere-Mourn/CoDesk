@@ -174,11 +174,16 @@ class ExamV2Desktop:
         code_root: Path,
         active_roles: tuple[str, ...] | None = None,
         record_video: bool = False,
+        registry_module: str = "tasks.exam_contention_v2.registry",
+        meta_map: dict[str, dict[str, Any]] | None = None,
+        extra_task_packages: tuple[str, ...] = (),
     ) -> None:
         self.cond_dir = cond_dir
         self.task_id = task_id
         self.code_root = code_root
-        self.meta = EC2_BY_ID[task_id]
+        self.registry_module = registry_module
+        self.extra_task_packages = extra_task_packages
+        self.meta = (meta_map or EC2_BY_ID)[task_id]
         self.all_roles: tuple[str, str] = tuple(self.meta["roles"])
         self.active_roles: tuple[str, ...] = active_roles or self.all_roles
         self.record_video = record_video
@@ -229,7 +234,7 @@ class ExamV2Desktop:
                 "-v", f"{self.ws_root}:/ws_root",
                 "-v", f"{self.tickets_root}:/tickets",
                 "-e", "PYTHONPATH=/code", "--entrypoint", "python3", DESKTOP_IMAGE,
-                "-m", "tasks.exam_contention_v2.registry", "build",
+                "-m", self.registry_module, "build",
                 "--task", self.task_id, "--workspace-root", "/ws_root", "--tickets-root", "/tickets",
             ],
             check=True, capture_output=True, text=True, timeout=240,
@@ -280,6 +285,8 @@ class ExamV2Desktop:
         )
         subprocess.run(["docker", "exec", self.container_name, "bash", "-lc", init_sh], check=True, capture_output=True, timeout=30)
         subprocess.run(["docker", "cp", str(self.code_root / "tasks/exam_contention_v2"), f"{self.container_name}:/opt/ec2_state/pkg/tasks/exam_contention_v2"], check=True, capture_output=True, timeout=20)
+        for pkg_rel in self.extra_task_packages:
+            subprocess.run(["docker", "cp", str(self.code_root / pkg_rel), f"{self.container_name}:/opt/ec2_state/pkg/{pkg_rel}"], check=True, capture_output=True, timeout=20)
         subprocess.run(["docker", "cp", str(self.code_root / "tasks/thematic_arenas_v1/xlsx_utils.py"), f"{self.container_name}:/opt/ec2_state/pkg/tasks/thematic_arenas_v1/xlsx_utils.py"], check=True, capture_output=True, timeout=20)
         subprocess.run(["docker", "exec", self.container_name, "bash", "-lc", "chown -R 0:0 /opt/ec2_state && chmod -R 700 /opt/ec2_state"], check=True, capture_output=True, timeout=15)
         subprocess.run(["docker", "exec", "-i", "--user", "1000:0", self.container_name, "bash", "-lc", "cat > /home/user/.config/openbox/rc.xml"], input=OPENBOX_RC_XML.encode("utf-8"), check=True, capture_output=True, timeout=10)
@@ -288,7 +295,7 @@ class ExamV2Desktop:
         subprocess.run(
             [
                 "docker", "exec", "-d", "-e", "PYTHONPATH=/opt/ec2_state/pkg",
-                self.container_name, "python3", "-m", "tasks.exam_contention_v2.registry", "serve",
+                self.container_name, "python3", "-m", self.registry_module, "serve",
                 "--task", self.task_id, "--port", str(pport),
                 "--workspace-root", "/ws_root", "--state-dir", "/opt/ec2_state", "--boot-file", "/opt/ec2_state/boot_url",
             ],
@@ -326,7 +333,7 @@ class ExamV2Desktop:
         subprocess.run(
             [
                 "docker", "exec", "-e", "PYTHONPATH=/opt/ec2_state/pkg",
-                self.container_name, "python3", "-m", "tasks.exam_contention_v2.registry", "boot_apps",
+                self.container_name, "python3", "-m", self.registry_module, "boot_apps",
                 "--task", self.task_id, "--workspace-root", "/ws_root", "--state-dir", "/opt/ec2_state",
             ],
             check=True, capture_output=True, text=True, timeout=60,
@@ -521,13 +528,13 @@ class ExamV2Desktop:
                 subprocess.run(
                     [
                         "docker", "exec", "-e", "PYTHONPATH=/opt/ec2_state/pkg",
-                        self.container_name, "python3", "-m", "tasks.exam_contention_v2.registry", "grade",
+                        self.container_name, "python3", "-m", self.registry_module, "grade",
                         "--task", self.task_id, "--workspace-root", "/ws_root",
                         "--state-file", "/opt/ec2_state/service_state.json",
                         "--wall-seconds", str(round(wall_override_s, 2)),
                         "--out", "/opt/ec2_state/grade.json",
                     ],
-                    check=True, capture_output=True, text=True, timeout=180,
+                    check=True, capture_output=True, text=True, timeout=240,
                 )
                 subprocess.run(["docker", "cp", f"{self.container_name}:/opt/ec2_state/grade.json", str(grade_out)], check=True, capture_output=True, timeout=20)
         finally:
@@ -807,6 +814,13 @@ def summarize_ec2_telemetry(timeline: list[dict[str, Any]], roles: tuple[str, st
     overlap_s = 0.0
     if b_a and b_b and b_a.first_call_wall and b_a.last_call_wall and b_b.first_call_wall and b_b.last_call_wall:
         overlap_s = max(0.0, min(b_a.last_call_wall, b_b.last_call_wall) - max(b_a.first_call_wall, b_b.first_call_wall))
+    elif len(roles) == 2:
+        ev_a = [e for e in ordered if e.get("role") == roles[0]]
+        ev_b = [e for e in ordered if e.get("role") == roles[1]]
+        if ev_a and ev_b:
+            a0, a1 = float(ev_a[0]["start_wall"]), float(ev_a[-1].get("end_wall", ev_a[-1]["start_wall"]))
+            b0, b1 = float(ev_b[0]["start_wall"]), float(ev_b[-1].get("end_wall", ev_b[-1]["start_wall"]))
+            overlap_s = max(0.0, min(a1, b1) - max(a0, b0))
 
     return {
         "total_events": len(ordered),
@@ -1010,7 +1024,7 @@ def run_ec2_actor(
 
 def _run_desk_reg(d: ExamV2Desktop, extra_args: list[str], timeout_s: int = 240) -> str:
     cp = subprocess.run(
-        ["docker", "exec", "-e", "PYTHONPATH=/opt/ec2_state/pkg", d.container_name, "python3", "-m", "tasks.exam_contention_v2.registry", *extra_args],
+        ["docker", "exec", "-e", "PYTHONPATH=/opt/ec2_state/pkg", d.container_name, "python3", "-m", d.registry_module, *extra_args],
         check=True, capture_output=True, text=True, timeout=timeout_s,
     )
     return cp.stdout
