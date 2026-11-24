@@ -159,7 +159,7 @@ class TreeStatWin(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("TreeStat Disk Analyzer")
-        self.setGeometry(50, 60, 840, 590)
+        self.resize(840, 590)
         cw = QWidget()
         lay = QVBoxLayout(cw)
         tbar = QHBoxLayout()
@@ -265,7 +265,7 @@ class VaultSafeWin(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("VaultSafe Hierarchy")
-        self.setGeometry(910, 60, 840, 590)
+        self.resize(840, 590)
         cw = QWidget()
         lay = QVBoxLayout(cw)
         tbar = QHBoxLayout()

@@ -133,7 +133,7 @@ class MasterQCWin(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("MasterQC Broadcast Scope")
-        self.setGeometry(240, 70, 980, 680)
+        self.resize(980, 680)
         self.mode = "DIALOGUE_ITU_BS1770"
         cw = QWidget()
         lay = QVBoxLayout(cw)

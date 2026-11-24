@@ -166,7 +166,7 @@ class SpadWin(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("SpectrumPad Studio")
-        self.setGeometry(40, 45, 860, 540)
+        self.resize(860, 540)
         self.mode_idx = 0
         self.last_act = "NONE"
         cw = QWidget(); v = QVBoxLayout(cw)
@@ -289,7 +289,7 @@ class PktfWin(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("PacketForge Analyzer")
-        self.setGeometry(490, 95, 860, 540)
+        self.resize(860, 540)
         self.mode_idx = 0
         self.last_act = "NONE"
         cw = QWidget(); v = QVBoxLayout(cw)

@@ -391,7 +391,7 @@ def run_portal_service(port: int, workspace_map: dict[str, Path], state_dir: Pat
 def boot_desktop_apps(workspace_map: dict[str, Path], state_dir: Path) -> None:
     del workspace_map
     cfg = read_json_safe(state_dir / "boot_url")
-    boot_singleton_cdp_chromium(list(cfg.get("urls") or []), window_pos=(20, 20), window_size=(1440, 900))
+    boot_singleton_cdp_chromium(list(cfg.get("urls") or []), window_size=(1440, 900))
 
 
 def _rgb_close(c1: tuple[int, int, int], c2: tuple[int, int, int], tol: int = 42) -> bool:

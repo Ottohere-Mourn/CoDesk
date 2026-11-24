@@ -332,7 +332,7 @@ class ExamContentionDesktop:
             "su -s /bin/bash studio_ui -c 'export DISPLAY=:99 HOME=/home/studio_ui XDG_RUNTIME_DIR=/tmp/runtime-studio; "
             "u=$(cat /home/studio_ui/boot_url); rm -f /home/studio_ui/boot_url; "
             "nohup chromium --no-sandbox --test-type --no-first-run --disable-gpu --disable-dev-shm-usage "
-            "--user-data-dir=/home/studio_ui/.config/chromium --window-position=0,0 --window-size=955,1050 \"$u\" >/tmp/studio_browser.log 2>&1 </dev/null &'"
+            "--user-data-dir=/home/studio_ui/.config/chromium --window-size=1240,860 \"$u\" >/tmp/studio_browser.log 2>&1 </dev/null &'"
         )
         subprocess.run(["docker", "exec", self.container_name, "bash", "-lc", launch_chr], check=True, capture_output=True, timeout=25)
 
@@ -363,8 +363,6 @@ class ExamContentionDesktop:
                 "sleep 4.8; "
                 f"wid=$(xdotool search --onlyvisible --name '{doc_name}' | tail -n 1); "
                 "if [ -n \"$wid\" ]; then "
-                "  wmctrl -i -r \"$wid\" -b remove,maximized_vert,maximized_horz 2>/dev/null || true; "
-                "  wmctrl -i -r \"$wid\" -e 0,960,0,958,1050 2>/dev/null || true; "
                 "  xdotool windowactivate --sync \"$wid\" 2>/dev/null || true; sleep 0.3; "
                 f"  {dirty_cmd}"
                 "fi"

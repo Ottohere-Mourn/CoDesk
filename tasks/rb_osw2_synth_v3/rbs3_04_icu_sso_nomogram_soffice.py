@@ -201,7 +201,7 @@ class BedWin(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("BedsideWave Monitor")
-        self.setGeometry(20, 520, 900, 530)
+        self.resize(920, 560)
         cw = QWidget(); v = QVBoxLayout(cw)
         lbl = QLabel("ICU 16-Bed Live Telemetry Strip (Red Sawtooth = VTACH_ALARM -> Hold Infusions)")
         lbl.setStyleSheet("padding:6px;background:#1e1b4b;color:#f8fafc;font-weight:bold;")
@@ -458,7 +458,7 @@ def boot_desktop_apps(workspace_map: dict[str, Path], state_dir: Path) -> None:
     del workspace_map
     stage_private_studio_script(state_dir, "bedside_ref.py", BEDSIDE_QT_SOURCE)
     boot_isolated_studio_scripts(state_dir, ["bedside_ref.py"], wait_s=1.8)
-    boot_studio_sso_chromium(state_dir, window_pos=(15, 20), window_size=(910, 490))
+    boot_studio_sso_chromium(state_dir)
 
 
 def grade(workspace_map: dict[str, Path], service_state: dict[str, Any], wall_seconds: float) -> dict[str, Any]:

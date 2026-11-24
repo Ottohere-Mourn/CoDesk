@@ -184,7 +184,7 @@ class CutForgeWin(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("CutForge NLE Studio")
-        self.setGeometry(40, 50, 840, 600)
+        self.resize(840, 600)
         cw = QWidget()
         lay = QVBoxLayout(cw)
         tbar = QHBoxLayout()
@@ -287,7 +287,7 @@ class ScoreCanvasWin(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("ScoreCanvas Studio")
-        self.setGeometry(900, 60, 860, 560)
+        self.resize(860, 560)
         cw = QWidget()
         lay = QVBoxLayout(cw)
         tbar = QHBoxLayout()

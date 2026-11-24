@@ -525,7 +525,7 @@ def boot_desktop_apps(workspace_map: dict[str, Path], state_dir: Path) -> None:
             "mkdir -p /tmp/rt-studio /home/studio_ui/.config/chromium && chown -R studio_ui:studio_ui /tmp/rt-studio /home/studio_ui && "
             f"su -s /bin/bash studio_ui -c 'export DISPLAY=:99 HOME=/home/studio_ui XDG_RUNTIME_DIR=/tmp/rt-studio; "
             f"nohup chromium --no-sandbox --test-type --no-first-run --disable-gpu --disable-dev-shm-usage "
-            f"--window-position=0,0 --window-size=940,1040 \"{u}\" >/tmp/studio_chr.log 2>&1 </dev/null &'; "
+            f"--window-size=1220,860 \"{u}\" >/tmp/studio_chr.log 2>&1 </dev/null &'; "
             "for _i in $(seq 1 20); do DISPLAY=:99 wmctrl -lx 2>/dev/null | grep -qi chromium && break; sleep 0.3; done; sleep 0.5"
         )
         subprocess.run(["bash", "-lc", cmd], check=True, capture_output=True, timeout=25)

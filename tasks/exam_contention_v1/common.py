@@ -243,22 +243,13 @@ def flush_open_libreoffice_to_disk(doc_path: Path) -> None:
 
 
 def reload_open_libreoffice_window(doc_path: Path) -> None:
-    """Reload doc_path cleanly into the right-half desktop LibreOffice window."""
+    """Reload doc_path cleanly in LibreOffice using natural window-manager placement."""
     q_doc = shlex.quote(str(doc_path))
     q_lock = shlex.quote(str(doc_path.parent / f".~lock.{doc_path.name}#"))
-    q_stem = shlex.quote(doc_path.stem)
     subprocess.run(["bash", "-lc", f"pkill -f 'soffice.bin' >/dev/null 2>&1 || true; sleep 0.6; rm -f {q_lock}"], capture_output=True, timeout=10)
     launch_sh = f"export DISPLAY=:99 HOME=/home/gui XDG_RUNTIME_DIR=/tmp/runtime-gui; nohup libreoffice --norestore --nologo --nofirststartwizard {q_doc} >/tmp/lo_reload.log 2>&1 &"
     subprocess.run(["su", "-s", "/bin/bash", "gui", "-c", launch_sh], capture_output=True, timeout=10)
     subprocess.run(["sleep", "3.2"], capture_output=True, timeout=10)
-    tile_sh = (
-        f"export DISPLAY=:99; wid=$(xdotool search --onlyvisible --name {q_stem} | tail -n 1); "
-        "if [ -n \"$wid\" ]; then "
-        "  wmctrl -i -r \"$wid\" -b remove,maximized_vert,maximized_horz 2>/dev/null || true; "
-        "  wmctrl -i -r \"$wid\" -e 0,960,0,958,1050 2>/dev/null || true; "
-        "fi"
-    )
-    subprocess.run(["su", "-s", "/bin/bash", "gui", "-c", tile_sh], capture_output=True, timeout=10)
 
 
 def _xml_esc(val: str) -> str:

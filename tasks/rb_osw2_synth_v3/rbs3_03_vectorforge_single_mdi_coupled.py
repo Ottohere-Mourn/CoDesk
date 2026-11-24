@@ -227,7 +227,7 @@ class VectorForgeWin(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("VectorForge MEP Studio")
-        self.setGeometry(60, 35, 980, 620)
+        self.resize(980, 620)
         self.unit_mode = "MM"
         cw = QWidget(); v = QVBoxLayout(cw)
         self.hdr = QLabel()

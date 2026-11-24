@@ -119,9 +119,14 @@ def boot_isolated_studio_scripts(state_dir: Path, script_names: list[str], wait_
     time.sleep(wait_s)
 
 
-def boot_singleton_cdp_chromium(urls: list[str], window_pos: tuple[int, int] = (40, 30), window_size: tuple[int, int] = (1360, 920)) -> None:
+def boot_singleton_cdp_chromium(
+    urls: list[str],
+    window_pos: tuple[int, int] | None = None,
+    window_size: tuple[int, int] = (1280, 860),
+) -> None:
     """Launch a single shared Chromium instance on :99 exposing --remote-debugging-port=9222."""
     u_args = " ".join(shlex.quote(u) for u in urls)
+    pos_flag = f"--window-position={window_pos[0]},{window_pos[1]} " if window_pos is not None else ""
     cmd = (
         "su -s /bin/bash user -c '"
         "AT_ADDR=$(cat /run/user/1000/atspi_addr 2>/dev/null || true); "
@@ -131,7 +136,7 @@ def boot_singleton_cdp_chromium(urls: list[str], window_pos: tuple[int, int] = (
         "nohup chromium --no-sandbox --test-type --no-first-run --disable-gpu --disable-dev-shm-usage "
         "--force-renderer-accessibility --remote-debugging-port=9222 --remote-allow-origins=* "
         "--user-data-dir=/home/user/.config/rbs_chr_profile "
-        f"--window-position={window_pos[0]},{window_pos[1]} --window-size={window_size[0]},{window_size[1]} "
+        f"{pos_flag}--window-size={window_size[0]},{window_size[1]} "
         f"{u_args} >/tmp/rbs_cdp_chr.log 2>&1 </dev/null &'; "
         "for _i in $(seq 1 30); do curl -fsS http://127.0.0.1:9222/json/version >/dev/null 2>&1 && break; sleep 0.3; done; sleep 0.6"
     )

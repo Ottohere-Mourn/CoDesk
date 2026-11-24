@@ -209,7 +209,7 @@ class MailDeskWin(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("MailDesk Client")
-        self.setGeometry(20, 25, 900, 610)
+        self.resize(960, 640)
         self.folder = "DEFENSE"
         cw = QWidget(); v = QVBoxLayout(cw)
         self.hdr = QLabel()
@@ -499,7 +499,7 @@ def boot_desktop_apps(workspace_map: dict[str, Path], state_dir: Path) -> None:
     stage_private_studio_script(state_dir, "maildesk_ref.py", MAILDESK_QT_SOURCE)
     boot_isolated_studio_scripts(state_dir, ["maildesk_ref.py"])
     boot_cfg = read_json_safe(state_dir / "boot_url")
-    boot_singleton_cdp_chromium(list(boot_cfg.get("urls") or []), window_pos=(25, 500), window_size=(900, 520))
+    boot_singleton_cdp_chromium(list(boot_cfg.get("urls") or []), window_size=(1180, 800))
 
 
 def _parse_ics_events(ics_text: str) -> list[dict[str, str]]:

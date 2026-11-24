@@ -197,7 +197,7 @@ class GeoCurveWin(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("GeoCurve Revolve Studio")
-        self.setGeometry(50, 60, 860, 600)
+        self.resize(860, 600)
         cw = QWidget(); lay = QVBoxLayout(cw)
         self.g_lbl = QLabel()
         self.g_lbl.setStyleSheet("font-family: monospace; padding: 6px; background: #1e293b; color: #f8fafc;")
@@ -365,7 +365,7 @@ def boot_desktop_apps(workspace_map: dict[str, Path], state_dir: Path) -> None:
     bf = state_dir / "boot_url"
     cfg = json.loads(bf.read_text(encoding="utf-8"))
     bf.unlink(missing_ok=True)
-    boot_singleton_cdp_chromium([cfg["url"]], window_pos=(460, 50), window_size=(1180, 820))
+    boot_singleton_cdp_chromium([cfg["url"]], window_size=(1180, 820))
     boot_isolated_studio_scripts(state_dir, ["geocurve_ref.py"], wait_s=2.2)
 
 

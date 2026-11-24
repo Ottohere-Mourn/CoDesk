@@ -44,6 +44,7 @@ OPENBOX_RC_XML = """<?xml version="1.0" encoding="UTF-8"?>
 <openbox_config xmlns="http://openbox.org/3.4/rc">
   <desktops><number>1</number><firstdesk>1</firstdesk></desktops>
   <margins><top>0</top><bottom>0</bottom><left>0</left><right>0</right></margins>
+  <placement><policy>UnderMouse</policy><center>yes</center></placement>
   <keyboard>
     <keybind key="A-Tab">
       <action name="NextWindow">
@@ -339,15 +340,23 @@ class ExamV2Desktop:
             check=True, capture_output=True, text=True, timeout=60,
         )
 
-        # Open any configured LibreOffice documents with optional unsaved dirty session tags
-        for idx, (doc_p, unsaved_tag, kind) in enumerate(self.meta.get("open_gui_docs") or ()):
+        # Open any configured LibreOffice documents using natural WM placement (optional 4th entry `custom_geom` only for special cases)
+        for idx, doc_entry in enumerate(self.meta.get("open_gui_docs") or ()):
+            doc_p, unsaved_tag, kind = doc_entry[0], doc_entry[1], doc_entry[2]
+            custom_geom = doc_entry[3] if len(doc_entry) > 3 else None
             stem = Path(doc_p).stem
-            x_pos = 955 if idx == 0 else 460
+            geom_cmd = (
+                f"wmctrl -i -r \"$wid\" -b remove,maximized_vert,maximized_horz 2>/dev/null || true; "
+                f"wmctrl -i -r \"$wid\" -e {shlex.quote(str(custom_geom))} 2>/dev/null || true; "
+                if custom_geom
+                else ""
+            )
             if unsaved_tag and kind == "writer":
                 q_txt = shlex.quote(f"[DESK_SESSION_TAG] {unsaved_tag}")
                 dirty = (
                     f"sleep 1.8; wmctrl -i -a \"$wid\" 2>/dev/null || true; xdotool windowactivate \"$wid\" 2>/dev/null || true; sleep 0.3; "
-                    f"xdotool mousemove $(( {x_pos} + 380 )) 360 click 1; sleep 0.3; "
+                    f"eval $(xdotool getwindowgeometry --shell \"$wid\" 2>/dev/null || true); "
+                    f"xdotool mousemove $(( ${{X:-300}} + ${{WIDTH:-800}} / 2 )) $(( ${{Y:-100}} + 320 )) click 1; sleep 0.3; "
                     f"xdotool key --clearmodifiers ctrl+Home; sleep 0.15; "
                     f"xdotool type --clearmodifiers --delay 18 -- {q_txt}; xdotool key --clearmodifiers Return;"
                 )
@@ -365,8 +374,7 @@ class ExamV2Desktop:
                 f"  wid=$(xdotool search --onlyvisible --name {shlex.quote(stem)} 2>/dev/null | tail -n 1 || true); "
                 "  [ -n \"$wid\" ] && break; sleep 0.4; done; sleep 0.8; "
                 "if [ -n \"$wid\" ]; then "
-                "  wmctrl -i -r \"$wid\" -b remove,maximized_vert,maximized_horz 2>/dev/null || true; "
-                f"  wmctrl -i -r \"$wid\" -e 0,{x_pos},20,955,1020 2>/dev/null || true; "
+                f"  {geom_cmd}"
                 "  wmctrl -i -a \"$wid\" 2>/dev/null || true; xdotool windowactivate \"$wid\" 2>/dev/null || true; sleep 0.35; "
                 f"  {dirty} "
                 "fi"

@@ -283,7 +283,7 @@ class AeroTrussWin(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("AeroTruss Sketcher")
-        self.setGeometry(140, 50, 940, 760)
+        self.resize(940, 760)
         cw = QWidget()
         lay = QVBoxLayout(cw)
         self.status_lbl = QLabel()
@@ -358,7 +358,7 @@ class SpectraWin(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("SpectraProof Studio")
-        self.setGeometry(660, 70, 980, 720)
+        self.resize(980, 720)
         cw = QWidget()
         lay = QVBoxLayout(cw)
         hdr = QHBoxLayout()

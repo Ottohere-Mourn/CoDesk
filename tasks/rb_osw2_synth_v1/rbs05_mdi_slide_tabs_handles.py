@@ -186,7 +186,7 @@ class DeckCraftMDI(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("DeckCraft Studio MDI")
-        self.setGeometry(180, 60, 960, 660)
+        self.resize(960, 660)
         # Single shared Eyedropper register across the entire MDI window!
         self.shared_eyedropper_hex = "#94A3B8"
 

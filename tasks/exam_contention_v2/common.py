@@ -349,23 +349,12 @@ def reload_open_libreoffice_docs(doc_paths: list[Path]) -> None:
     subprocess.run(["bash", "-lc", f"pkill -f 'soffice.bin' >/dev/null 2>&1 || true; sleep 0.6; rm -f {locks}"], capture_output=True, timeout=10)
     for idx, doc_path in enumerate(doc_paths):
         q_doc = shlex.quote(str(doc_path))
-        q_stem = shlex.quote(doc_path.stem)
         launch_sh = (
             "export DISPLAY=:99 HOME=/home/user XDG_RUNTIME_DIR=/run/user/1000 SAL_USE_VCLPLUGIN=gtk3; "
             f"nohup libreoffice --norestore --nologo --nofirststartwizard {q_doc} >/tmp/lo_reload_{idx}.log 2>&1 &"
         )
         subprocess.run(["su", "-s", "/bin/bash", "user", "-c", launch_sh], capture_output=True, timeout=10)
         subprocess.run(["sleep", "3.0"], capture_output=True, timeout=10)
-        x_pos = 960 if idx == 0 else 480
-        w_sz = 955 if idx == 0 else 960
-        tile_sh = (
-            f"export DISPLAY=:99; wid=$(xdotool search --onlyvisible --name {q_stem} | tail -n 1); "
-            "if [ -n \"$wid\" ]; then "
-            "  wmctrl -i -r \"$wid\" -b remove,maximized_vert,maximized_horz 2>/dev/null || true; "
-            f"  wmctrl -i -r \"$wid\" -e 0,{x_pos},20,{w_sz},1020 2>/dev/null || true; "
-            "fi"
-        )
-        subprocess.run(["su", "-s", "/bin/bash", "user", "-c", tile_sh], capture_output=True, timeout=10)
 
 
 def convert_doc_to_pdf_isolated(src_doc: Path, dst_pdf: Path) -> bool:

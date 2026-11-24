@@ -154,7 +154,7 @@ class FlowForgeWin(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("FlowForge BPMN Studio")
-        self.setGeometry(80, 55, 920, 590)
+        self.resize(920, 590)
         cw = QWidget(); lay = QVBoxLayout(cw)
         tbar = QHBoxLayout()
         b_sim = QPushButton("Token Reachability Simulator [F5]")
@@ -218,7 +218,7 @@ class QuickStampWin(QMainWindow):
         # Launches Always-on-Top directly occluding FlowForge BPMN Canvas at (380, 170)!
         super().__init__(None, Qt.WindowStaysOnTopHint)
         self.setWindowTitle("QuickStamp Topmost Palette")
-        self.setGeometry(380, 170, 470, 380)
+        self.resize(470, 380)
         cw = QWidget(); lay = QVBoxLayout(cw)
         hdr = QHBoxLayout()
         b_set = QPushButton("Sprint & Clipboard Settings [F10]")

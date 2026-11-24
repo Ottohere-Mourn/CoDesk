@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 import subprocess
 import sys
+import tempfile
 
 from tasks.rb_osw2_synth_v3.common import FORBIDDEN_EXAM_V2_PATTERNS, verify_prompt_hygiene
 from tasks.rb_osw2_synth_v3.registry import RBS3_BY_ID, RBS3_CATALOG, RBS3_MODULES
@@ -53,6 +54,23 @@ def test_rbs3_static_auditor_zero_fail_zero_warn() -> None:
         rep = json.loads(cp.stdout)
         for item in rep:
             assert item["status"] == "PASS" and item["fails"] == [] and item["warns"] == []
+
+
+def test_static_auditor_flags_rigid_split_screen_unless_opted_in() -> None:
+    if not AUDIT_SCRIPT.is_file():
+        return
+    with tempfile.TemporaryDirectory() as tmp:
+        bad_py = Path(tmp) / "split_bad.py"
+        bad_py.write_text('def boot():\n    self.setGeometry(920, 40, 860, 600)\n', encoding="utf-8")
+        cp1 = subprocess.run([sys.executable, str(AUDIT_SCRIPT), "--json", str(bad_py)], check=True, capture_output=True, text=True)
+        r1 = json.loads(cp1.stdout)[0]
+        assert r1["status"] == "WARN" and any("RIGID_SPLIT_SCREEN" in w for w in r1["warns"])
+
+        opt_py = Path(tmp) / "split_optin.py"
+        opt_py.write_text('ALLOW_CUSTOM_WINDOW_LAYOUT = True\ndef boot():\n    self.setGeometry(920, 40, 860, 600)\n', encoding="utf-8")
+        cp2 = subprocess.run([sys.executable, str(AUDIT_SCRIPT), "--json", str(opt_py)], check=True, capture_output=True, text=True)
+        r2 = json.loads(cp2.stdout)[0]
+        assert r2["status"] == "PASS" and r2["warns"] == []
 
 
 def test_rbs3_5gate_and_dual_model_manifests_when_present() -> None:

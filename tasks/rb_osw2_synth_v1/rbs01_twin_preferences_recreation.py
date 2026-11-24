@@ -125,7 +125,6 @@ class VaultSearchWin(Gtk.Window):
     def __init__(self):
         super().__init__(title="VaultSearch Studio")
         self.set_default_size(820, 620)
-        self.move(60, 60)
         vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
         vbox.set_margin_top(6); vbox.set_margin_bottom(6); vbox.set_margin_start(8); vbox.set_margin_end(8)
         self.add(vbox)
@@ -270,7 +269,7 @@ class LogicGridWin(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("LogicGrid Studio")
-        self.setGeometry(920, 60, 820, 640)
+        self.resize(820, 640)
         self.stack = QStackedWidget()
         self.setCentralWidget(self.stack)
 

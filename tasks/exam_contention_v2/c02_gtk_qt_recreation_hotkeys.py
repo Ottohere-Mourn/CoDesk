@@ -266,7 +266,6 @@ class VibraRefWin(Gtk.Window):
         dlg.destroy()
 
 win = VibraRefWin()
-win.move(20, 35)
 win.show_all()
 Gtk.main()
 """
@@ -280,7 +279,7 @@ class TelemetryRefWin(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("TelemetryHex Reference")
-        self.setGeometry(950, 35, 930, 760)
+        self.resize(930, 760)
         cw = QWidget()
         lay = QVBoxLayout(cw)
         hdr = QHBoxLayout()

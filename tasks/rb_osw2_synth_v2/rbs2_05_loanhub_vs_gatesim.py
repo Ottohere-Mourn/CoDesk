@@ -294,7 +294,7 @@ class GateSimWin(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("GateSim Digital Logic")
-        self.setGeometry(740, 60, 1120, 640)
+        self.resize(1120, 640)
         self.idx = 0
         self.visited = {{0}}
         self.sweeps = 0
@@ -733,7 +733,7 @@ def boot_desktop_apps(workspace_map: dict[str, Path], state_dir: Path) -> None:
     stage_private_studio_script(state_dir, "gatesim_ref.py", GATESIM_QT_SOURCE)
     boot_isolated_studio_scripts(state_dir, ["gatesim_ref.py"])
     boot_cfg = read_json_safe(state_dir / "boot_url")
-    boot_singleton_cdp_chromium(list(boot_cfg.get("urls") or []), window_pos=(30, 35), window_size=(1160, 860))
+    boot_singleton_cdp_chromium(list(boot_cfg.get("urls") or []), window_size=(1220, 860))
 
 
 def grade(workspace_map: dict[str, Path], service_state: dict[str, Any], wall_seconds: float) -> dict[str, Any]:

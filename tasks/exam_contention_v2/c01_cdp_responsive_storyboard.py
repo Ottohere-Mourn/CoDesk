@@ -476,7 +476,7 @@ def boot_desktop_apps(workspace_map: dict[str, Path], state_dir: Path) -> None:
         "DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus; "
         f"nohup chromium --no-sandbox --test-type --no-first-run --disable-gpu --disable-dev-shm-usage "
         f"--force-renderer-accessibility --remote-debugging-port={CDP_PORT} --remote-allow-origins=* "
-        f"--user-data-dir={prof_dir} --window-position=40,30 --window-size=1440,900 {urls} "
+        f"--user-data-dir={prof_dir} --window-size=1440,900 {urls} "
         ">/tmp/singleton_chr.log 2>&1 </dev/null &'"
     )
     subprocess.run(["bash", "-lc", cmd], check=True, capture_output=True, timeout=25)

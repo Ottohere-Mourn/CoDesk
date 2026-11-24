@@ -113,7 +113,6 @@ class CadenceReaderWin(Gtk.Window):
     def __init__(self):
         super().__init__(title="CadenceReader Studio")
         self.set_default_size(760, 520)
-        self.move(70, 80)
         self.idx = 0
 
         hb = Gtk.HeaderBar()
@@ -217,7 +216,7 @@ class HexPulseWin(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("HexPulse Editor")
-        self.setGeometry(880, 80, 860, 580)
+        self.resize(860, 580)
         self.mode = "HEX"
         cw = QWidget()
         lay = QVBoxLayout(cw)

@@ -211,7 +211,7 @@ class VectorDocksWin(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("VectorDocks2D Studio")
-        self.setGeometry(40, 50, 680, 580)
+        self.resize(720, 580)
         cw = QWidget()
         lay = QVBoxLayout(cw)
         self.gauge_lbl = QLabel()
@@ -298,7 +298,7 @@ class ThermalBoardWin(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("ThermalBoard Target")
-        self.setGeometry(580, 90, 900, 620)
+        self.resize(900, 620)
         cw = QWidget()
         lay = QVBoxLayout(cw)
         hdr = QHBoxLayout()

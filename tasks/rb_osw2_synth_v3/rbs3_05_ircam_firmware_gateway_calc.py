@@ -185,7 +185,7 @@ class IrWin(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("IRCam PCB Analyzer")
-        self.setGeometry(20, 520, 890, 510)
+        self.resize(920, 540)
         cw = QWidget(); v = QVBoxLayout(cw)
         lbl = QLabel("IRCam 8-Zone Radiometric PCB View (Press Ctrl+P for Thermal Derating Policy)")
         lbl.setStyleSheet("padding:6px;background:#0f172a;color:#f8fafc;font-weight:bold;")
@@ -482,7 +482,7 @@ def boot_desktop_apps(workspace_map: dict[str, Path], state_dir: Path) -> None:
     )
     stage_private_studio_script(state_dir, "ircam_ref.py", IRCAM_QT_SOURCE)
     boot_isolated_studio_scripts(state_dir, ["ircam_ref.py"], wait_s=1.8)
-    boot_studio_sso_chromium(state_dir, window_pos=(15, 20), window_size=(910, 490))
+    boot_studio_sso_chromium(state_dir)
 
 
 def _probe_gateway_live() -> dict[str, Any]:
