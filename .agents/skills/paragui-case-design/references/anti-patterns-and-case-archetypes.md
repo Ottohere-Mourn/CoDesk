@@ -1,39 +1,48 @@
-# Forensic Anti-Patterns & Validated Case Archetypes
+# Forensic Anti-Patterns & Empirical Lessons
 
-Consult this reference when auditing suspect benchmark suites or choosing concrete contention designs for new cases.
+Consult this reference when auditing benchmark suites or checking whether a proposed case avoids historical failure traps while staying realistic.
 
-## 1. Four Historical Failure Families to Reject on Sight
+## 1. Six Historical Failure Families to Reject on Sight
 
 ### Family A: Unobservable Future Upstream Mutation (`stealth_arenas_v1` / `stealth_dual_v1`)
-- **What happened**: `v0` in `/workspace` was engineered to look 100% self-consistent (all spreadsheets, CAD dimensions, and checksums matched `v0`). Role A (downstream) had only 6 dummy calibration steps, finished in ~18m, called `/api/ticket_close`, received `200 OK {"status": "CLOSED_LOCAL_VERIFIED"}`, and locked a hidden `official_wire_receipt`. Role B (upstream) was forced by `Do NOT modify production files in /workspace until all 16 stages are calibrated` to wait ~32m before overwriting `/workspace` with `v1` (e.g., expanding bore diameter or switching FX/routing), invalidating Role A's already-closed work.
-- **Why it is invalid**: Role A had zero observable signal in `/workspace` or UI that an upstream change existed, and `official_wire_receipt` silently ignored re-submissions even when an agent tried to recover. Sequential solvability only worked `B -> A`, failing `A -> B`.
-- **Fix**: Make `v0` visibly incomplete/unqualified for both roles, allow natural progressive writes, remove hidden first-submission locks, and require `seq_ab == True` AND `seq_ba == True`.
+- **What happened**: `v0` in `/workspace` was engineered to look 100% self-consistent. Role A finished early, called `/api/ticket_close`, received `200 OK {"status": "CLOSED_LOCAL_VERIFIED"}`, and locked a hidden `official_wire_receipt`. Role B was forced by `Do NOT modify production files in /workspace until all 16 stages are calibrated` to wait ~32m before overwriting `/workspace` with `v1`, invalidating Role A's already-closed work.
+- **Why it is invalid**: Role A had zero observable signal that an upstream change existed, and `official_wire_receipt` silently ignored re-submissions. Sequential solvability only worked `B -> A`, failing `A -> B`.
+- **Fix**: Make `v0` visibly incomplete/unqualified for both roles, allow natural progressive writes, remove hidden first-submission locks, and require both `seq_ab` and `seq_ba` solvability.
 
 ### Family B: Pigeonhole Timeout + Lying Lab Sampler (`fair_contention_v1` `v_final`)
-- **What happened**: Across `FC-01..15`, each role had to run 5 sequential `/api/bench/...` calls padded with `while time.monotonic() - t0 < 290.0` loops (~24.2m per role). During Stages 2..5 (`4 * 290s`), a hidden `BackgroundRegimeSampler` checked whether a single shared `<canvas>` SSO toggle stayed on Role A's vs. Role B's mutually exclusive value for `>= 90%` of each stage. `/api/bench` always returned `passed: true` and `/submit` returned `200 APPROVED` without checking `stage_purity`; offline `grade()` then failed 29/30 runs on `regime_purity < 0.90`. Worse, `8.2 * 290s = 39.6m > conc_role_timeout_s = 38.0m` made 13/15 tasks mathematically impossible in concurrent mode even for cooperating oracles, while `FAST_SELFVAL=1` (`0.25s`) hid the impossibility during `self_validate`.
-- **Why it is invalid**: In-environment lab instruments lied (`passed: true`), 75% of wall time was dummy busy-waiting, and concurrent solvability was mathematically zero.
-- **Fix**: Delete `BackgroundRegimeSampler` and wall-clock padding loops; keep tool execution times real; enforce `Gate 5 (careful_conc_pass)` within `<= 55%` of `conc_role_timeout_s`.
+- **What happened**: Each role had to run 5 sequential `/api/bench/...` calls padded with `while time.monotonic() - t0 < 290.0` loops (~24.2m per role) while a hidden `BackgroundRegimeSampler` checked a mutually exclusive toggle. `/api/bench` lied (`passed: true`), offline `grade()` failed 29/30 runs, and `8.2 * 290s = 39.6m > conc_role_timeout_s = 38.0m` made concurrent completion mathematically impossible while `FAST_SELFVAL=1` hid it.
+- **Why it is invalid**: In-environment lab instruments lied, 75% of wall time was dummy busy-waiting, and concurrent solvability was zero.
+- **Fix**: Delete `BackgroundRegimeSampler` and wall-clock padding loops; keep tool execution times real; enforce `Gate 5` within `<= 55%` of `conc_role_timeout_s`.
 
 ### Family C: Online-Judge Oracle Leakage (`fair_contention_v1` `v1`)
-- **What happened**: `/api/bench` and `/submit` ran full cross-role coupling verification and returned `HTTP 422` with exact error diagnostics across unlimited retries. Frontier models simply used `/submit` as a free unit-test oracle until `joint_pass == True` (>80% pass without genuine self-checking).
+- **What happened**: `/api/bench` and `/submit` ran full cross-role coupling verification and returned `HTTP 422` with exact error diagnostics across unlimited retries, letting models farm `/submit` as a free unit-test oracle.
 - **Why it is invalid**: Hands the hidden exam key to the test-taker during the exam.
-- **Fix**: Keep cross-role coupling and canary checks strictly inside offline `grade()`. Let agents write and run their own verification scripts using real workstation tools before a one-shot hand-in.
+- **Fix**: Keep cross-role coupling, reference test manifests, and canary checks strictly inside offline `grade()`.
 
 ### Family D: Puppet Keystrokes & Toy Micro-Probes (`mechanism_expansion_v1` `MECH01..09`)
-- **What happened**: 4-row spreadsheets / 4-line Writer files where Role B's prompt explicitly ordered: *"Type sentence X, press `Ctrl+Z` twice to undo, then type sentence Y"* solely to trigger LibreOffice global undo against Role A.
-- **Why it is invalid**: Real users do not follow puppet undo scripts, and 4-row toy files do not test realistic long-horizon workflows.
-- **Fix**: Keep prompts strictly goal-driven and GUI-driver agnostic (so coordinate drivers like `qwen-cua`/`weavebench-cua` and semantic drivers like `cua-driver`/`agent-desktop` can be cleanly ablated on the same case), and embed conflicts in realistic multi-document/multi-step workflows.
+- **What happened**: 4-row spreadsheets / 4-line Writer files where prompts explicitly ordered *"Type sentence X, press `Ctrl+Z` twice to undo, then type sentence Y"*.
+- **Why it is invalid**: Real users do not follow puppet undo scripts, and 4-row files do not represent authentic workflows.
+- **Fix**: Keep prompts strictly goal-driven and embed contention in realistic multi-step workflows on real software.
+
+### Family E: Harness PID Split, `isolated` Cross-Role Penalty & Post-Exit `Ctrl+S` (`EC-04`, `RBS-06`, `RBS3-04/05`)
+- **What happened**:
+  1. In `EC-04` and `RBS3-05`, a live Python daemon (`:18910` / `:19515`) was launched in `desk_container`, while role CLI containers only shared `--network container:<desk>` without `--pid`. Agents could not see or restart the daemon PID from CLI and spent 10+ minutes escaping the container via LibreOffice StarBasic/UNO shell execution; meanwhile world-writable `~/Downloads` became a plaintext coordination chatroom.
+  2. In `RBS-06` and `RBS3-04`, two dirty LibreOffice docs (`Calc` for Role A, `Writer` for Role B) were opened at boot even in single-agent `isolated` mode; `stop_and_grade()` injected `Ctrl+S` on both windows and penalized solo Role A for not saving absent Role B's `.odt` (`isolated = 0.949 FAIL` vs `shared = 1.000 PASS`).
+- **Why it is invalid**: Container topology bugs distort normal engineering tasks into sandbox-escape puzzles and corrupt the `isolated` control baseline.
+- **Fix**: Share `--pid` (or provide a clean service supervisor) whenever agents must restart a daemon; scope `isolated` boot/grading strictly to the active role; never inject `Ctrl+S` after agent exit; keep shared `~/Downloads` non-chatroom or audited.
+
+### Family F: Synthetic 100-Line PyQt/GTK Toy Mockups, Frankenstein Pairings & `1.0 -> 1.0` Saturation (`rb_osw2_synth_v1/v2`, `NF-20`)
+- **What happened**: Instead of running real open-source desktop apps (`MuseScore`, `Shotcut`, `FreeCAD`, `Inkscape`, `GIMP`, `QGIS`), tasks embedded ~100-line inline `PyQt5`/`GTK` scripts (`CutForge_QT_SOURCE`, `ScoreCanvas_QT_SOURCE`, `VectorForge_QT_SOURCE`, `SignalDesk`), paired unrelated jobs on one screen (mortgage officer + digital-logic TA; font designer + CPU pipeline engineer), spoon-fed JSON field checklists in `task.md`, exposed `:99` X11 sockets inside `guest_bash` alongside an artificial `max_cua_calls = 42` cap, and certified `1.000 -> 1.000` (93-180s) saturated tasks solely on token inflation.
+- **Why it is invalid**: Violates single-case authenticity, saturates single-agent baselines (`0.96-0.99`), and contaminates GUI-driver ablations via CLI `xdotool`/`xclip` bypasses.
+- **Fix**: Use real desktop/web software, plausible co-tenant roles, un-spoiled goal prompts, non-saturated `0.40-0.85` single-agent difficulty with real `Score_shared < Score_isolated` degradation, and clean X11/AT-SPI isolation between `guest_bash` and the tested GUI driver.
 
 ---
 
-## 2. Five Validated `GUI + CLI` Contention Archetypes (Positive Templates)
+## 2. Empirical Lessons from Real `OSWorld-V2` & `RecreationBench` Concurrency Runs
 
-Use and combine these five proven patterns (validated in `macos_primitives_v1` `MP-01..05` and realistic engineering workflows) to create long-horizon, high-discrimination cases:
+Keep these empirical system behaviors in mind as background knowledge (without turning them into rigid templates):
 
-| Archetype | Shared OS / App Resource | Why Pure CLI Cannot Trivially Bypass It | How a Careful Agent Self-Checks & Succeeds |
-|---|---|---|---|
-| **1. GUI Dirty Buffer vs. Disk CLI Split-Brain** | Live open `.xlsx` / `.docx` / `.xcf` / `.FCStd` in desktop GUI + same file on disk | Role A must inspect/resolve GUI-only state (visual layers, tracked comments, live viewport, embedded scans) in the running desktop window; Role B updates structured tables/sheets via CLI. Saving the stale GUI buffer clobbers Role B's disk write. | Inspect file `mtime`/`sha256` and open window state (`wmctrl`/`xdotool`/lockfiles `.~lock.*`) before saving; reload or merge disk changes before final save. |
-| **2. Cross-Step Clipboard Transaction** | X11 `CLIPBOARD` / macOS `NSPasteboard` single slot | Copying dynamic UI tokens/charts/signatures from a protected GUI app or browser canvas (`Ctrl+C` or UI Copy button), switching context to validate, and pasting into target dossier/form spans multiple steps. | Read back clipboard content (`xclip -o` / `pbpaste`) or verify pasted target content/hash immediately after pasting before final hand-in. |
-| **3. Single-Instance App Lock & Shared Profile** | LibreOffice single `soffice.bin` + `.~lock`, Chrome `SingletonLock`, `.git/index.lock`, fixed local port | Launching CLI `soffice --headless --convert-to pdf` without isolated `-env:UserInstallation` silently blocks/fails when GUI LibreOffice holds the default profile; launching `chromium URL` injects a tab and steals focus in the live window. | Detect running instances/lockfiles, pass isolated `-env:UserInstallation=file:///tmp/...` for headless conversions, or coordinate clean git branch/merge state before hand-in. |
-| **4. Shared Authenticated Browser Session & `~/Downloads`** | `HttpOnly` SSO session cookie + server-side session state (role/currency/filter) + `~/Downloads/<fixed_name>.csv` | Raw CLI `curl` lacks `HttpOnly` session cookies; clicking UI filters mutates shared server-side session state during multi-second exports and writes to the same default download filename. | Re-verify visible UI filter banner immediately after export completes, check CSV headers/timestamps/row invariants, and move verified exports to private scratch paths immediately. |
-| **5. Modal Grab / Continuous Drag + Coupled Engineering Artifacts** | Display server pointer/focus during `drag` or modal save dialogs + shared coupled CAD/PCB/GIS/ledger files | Physical drag operations (timeline trim, canvas crop, slider) break if another GUI window pops up or clicks mid-drag; meanwhile both roles' subsystem edits share a tight two-sided physical/financial envelope (e.g., thermal budget, clearance, DSCR, LUFS). | Verify visual drag outcome via post-action screenshot + local CLI geometry/physics script; re-read shared artifact right before finishing to confirm joint envelope invariants still hold. |
+1. **Both Shared-Artifact Workflows AND Isolated-Workspace Shared-Display Workflows Are Valid**: On real `OSWorld-V2` (`OSW2-P5` Chrome responsive QA vs fullscreen capture: `0.939 -> 0.000`) and real `RecreationBench` (`DB Browser` modal file chooser vs `KSudoku`: `51.6% -> 23.1%`), severe contention occurs even when file workspaces are isolated—because the live running application or live display viewport is indispensable.
+2. **Where Semantic Accessibility Drivers (`AT-SPI`) Still Collide**: Even when background element clicks avoid moving the cursor, display servers still share a single active keyboard focus (global shortcuts like `Ctrl+O`/`F10`/`Escape` and global XKB layouts hit the active window), modal dialogs (`Open File`, twin `Preferences`) and autohiding popovers preempt focus, and single-instance apps (`GIMP`, `WPS`, `LibreOffice`, `Chrome`) share internal active tabs/dialogs.
+3. **Pure-GUI Terminal Self-Bootstrapping**: When external `guest_bash` is disabled on a real Linux desktop (`OSW2-P1/P4/P5`), coding-capable agents launch `gnome-terminal` via GUI shortcuts and end up typing concurrently into the **same foreground PTY** (sending `Ctrl+C` / `Ctrl+U` to each other's commands).
+4. **Why Real Software Beats Toy Scripts**: Real open-source applications naturally yield non-saturated single-agent baselines (`32%-72%`) and realistic 10-30 minute trajectories without needing artificial sleep loops or arbitrary call caps.

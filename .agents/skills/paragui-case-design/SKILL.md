@@ -1,91 +1,87 @@
 ---
 name: paragui-case-design
-description: "Design, refactor, or audit multi-agent shared-desktop (GUI + CLI) benchmark cases in ParaGUI/CoDesk. Use when authoring new contention tasks, reviewing existing case suites, or fixing flawed conflict, timing, or grading mechanics. Skip for ordinary single-agent desktop automation unrelated to benchmark construction."
+description: "Design, refactor, or audit multi-agent shared-desktop (GUI + CLI) benchmark cases in ParaGUI/CoDesk. Use when authoring new contention tasks, reviewing existing case suites, or fixing flawed conflict, timing, harness, or grading mechanics. Skip for ordinary single-agent desktop automation unrelated to benchmark construction."
 ---
 
 # ParaGUI / CoDesk Benchmark Case Design & Audit
 
-Build and review multi-agent (or human-agent) shared-workstation benchmark cases where failures stem from **real OS/application state contention** rather than misleading prompts, lying tools, or unsolvable timeouts.
+Build and review multi-agent (or human-agent) shared-workstation benchmark cases where **single-case authenticity comes first** and contention arises naturally from **real desktop/web software and real OS/session state**, without misleading prompts, toy app mockups, broken harness isolation, lying tools, or unsolvable timeouts.
 
-## Core Design Contract: The "Exam" Architecture
+## Core Design Contract: Authenticity + The "Exam" Architecture
 
-Every benchmark case must follow an **Exam-Style Self-Check + Blind Final Grading** architecture:
+Every benchmark case must satisfy both **Single-Case Authenticity** and **Exam-Style Self-Check + Blind Final Grading**:
 
-1. **Full Self-Checking Inside the Environment**: Give each agent real software, compilers, CLI utilities, and GUI tools so a careful agent can inspect files, verify UI state, re-read exports, and run its own sanity checks before finishing.
-2. **Blind Offline Grading (`grade()`)**: Keep true target values (oracle canaries), cross-role physical/business coupling checks, and final consistency assertions strictly inside post-episode `grade()`. Never expose `grade()` as an interactive `HTTP 422` online judge that tells agents exact cross-role discrepancies across unlimited retries.
-3. **One-Shot Hand-In (No Post-Grading Revisions)**: Grade the final `/workspace` and live service state after agents finish their turns. If the workflow includes an explicit `/submit` endpoint, restrict it to basic schema/existence validation plus **one-shot hand-in locking** (recording the role's final signoff without revealing oracle errors or allowing score-farming retries).
-4. **Honest In-Environment Tools**: Any local tool, compiler, database, or lab service exposed to agents during the episode must behave truthfully. Never return `passed: true` or `qualified: true` from an in-environment test tool when environmental drift or lock contention invalidated the run.
+1. **Single-Case Authenticity First**: Viewed on its own, each role's task must be a realistic, complete professional workflow running on **real software**. Sharing a workstation between the two actors must also have a coherent real-world context.
+2. **Full Self-Checking Inside the Environment**: Keep both the GUI driver and workstation CLI (`guest_bash`) enabled so a careful agent can inspect windows, write calculation/test scripts, re-read files, and verify its own work before finishing.
+3. **Blind Offline Grading (`grade()`)**: Keep true target values (oracle canaries), reference test manifests, visual assertions, and cross-role coupling checks strictly inside post-episode `grade()`. Never expose `grade()` as an interactive `HTTP 422` online judge across unlimited retries, and support fine-grained **continuous partial-credit scoring (`[0.0, 1.0]`)** alongside binary `joint_pass`.
+4. **One-Shot Hand-In & Read-Only Post-Episode Grading**: Grade the final workspace(s) and live service state read-only after agents finish. Never mutate UI/files (such as injecting `Ctrl+S`) inside `stop_and_grade()`. If an explicit `/submit` endpoint is used, restrict it to basic schema checks plus one-shot hand-in locking.
+5. **Honest In-Environment Tools**: Any local tool, compiler, database, or service exposed to agents during the episode must behave truthfully—never return `passed: true` when state drift or contention invalidated the run.
 
 ## What Every Case MUST Do
 
-### 1. Ground Contention in Genuine `GUI + CLI` Shared Primitives
-Keep every case **GUI-driver agnostic** so the runner harness can swap different GUI drivers (`qwen-cua`, `cua-driver`, `agent-desktop`, `weavebench-cua`, `browser-use-cdp`, or raw `xdotool` MCP) for ablation studies:
+### 1. Use Authentic Real Software (No Inline Toy GUI Mockups)
+- **Run Real Desktop & Web Applications**: Whenever a workflow involves spreadsheets/documents, raster/vector graphics, 3D/CAD, audio/video editing, music notation, GIS, EDA, databases, IDEs, mail/calendars, or web portals, launch **real open-source/production applications** (e.g., `LibreOffice`, `GIMP`, `Blender`, `FreeCAD`, `Inkscape`, `QGIS`, `MuseScore`, `Shotcut`/`Kdenlive`, `KiCad`, `DB Browser`, `Thunderbird`, `VS Code`, real multi-route web apps, or pre-compiled real open-source binaries).
+- **Keep Contention Exploration Open-Ended**: Explore diverse OS, window-manager, browser-session, singleton-process, clipboard, input/focus, live-service, and shared-artifact contention organically within real software—do not force every case into a rigid formula template.
 
-- **Decouple Case Assets from Driver Tool Schemas**: Never hardcode MCP tool names (such as `desktop.click` or `click_and_type`) inside `task.md` or grading logic. Configure the desktop container with standard OS accessibility/automation surfaces (X11/WindowServer, `AT-SPI2` bus, and optional browser CDP when applicable) so both coordinate-based CUA drivers and semantic/accessibility drivers can operate the exact same case.
-- **Support Both Driver-Sensitive and Driver-Invariant Contention**: Across a suite, you may include focus/pointer collisions that semantic background drivers (e.g., AT-SPI `set_value`) can mitigate during driver ablations, while ensuring long-horizon hybrid (`GUI + CLI`) cases also anchor in deeper OS/session/process conflicts that pure CLI or single-action atomicity cannot trivially bypass:
-  - **In-Memory GUI Dirty Buffer vs. Disk CLI Split-Brain**: One role interacts with a live open desktop app (`LibreOffice`, `GIMP`, `FreeCAD`, `Inkscape`, `QGIS`) holding an in-memory document (e.g., to resolve embedded comments, visual layers, or live formatting) and saves, while the other role modifies the same file on disk via CLI (`openpyxl`, `python-docx`, Python scripts), causing a naive GUI `Ctrl+S` to overwrite disk changes.
-  - **Cross-Step System Clipboard (`CLIPBOARD` / `NSPasteboard`)**: Single-slot session register shared across GUI `Ctrl+C/V`, CLI `xclip`/`pbcopy`, and browser copy buttons (`write -> switch context/verify -> paste`).
-  - **Single-Instance Process, Profile & Port Locks**: Real desktop singletons such as Chrome `--user-data-dir` `SingletonLock`, LibreOffice `.~lock` / single `soffice.bin` instance blocking `--headless --convert-to`, `.git/index.lock`, or shared local daemon ports.
-  - **Shared Authenticated Browser Session & `~/Downloads`**: Business data or actions gated behind an already-signed-in browser session (`HttpOnly` SSO cookies, stateful server-side filter/currency/role context, shared active tab/viewport, or default same-name export paths like `~/Downloads/report.csv`).
-  - **Modal Grab, Continuous Drag & Workspace Focus Preemption**: Continuous drag trajectories, native modal dialogs/menus grabbing pointer/keyboard focus, or GUI window launches stealing active focus/Spaces.
-  - **Bidirectional Shared Artifact & Coupled Envelope**: Monolithic packages (`.FCStd`, multi-sheet `.xlsx`, `.gpkg`, `.kicad_pcb`, Git repo + live daemon telemetry) where both roles edit subsystems coupled by a joint physical/financial budget, and **`v0` visibly requires work from both roles**.
+### 2. Ensure Single-Role Workflow Realism & Shared-Workstation Plausibility
+- **Realistic Goal-Driven Prompts (No Spoon-Fed Checklists)**: Write each `task.md` like an authentic work order specifying business/engineering objectives, deliverable paths, and acceptance criteria. **Never spoon-feed** internal JSON key checklists to scrape from dialogs, hidden submenu paths, hotkey cheat-sheets, or ready-made formulas that the agent should discover from workspace specs, documents, databases, and live UIs.
+- **Plausible Co-Tenancy on One Workstation**: Pairing two roles on one shared desktop must make real-world sense—either **collaborators on the same project/lab/engineering/financial workstation** (e.g., M&A QoE + Tax leads, mechanical + EMC engineers, same-ward clinical specialists) or **a foreground user workflow paired with a concurrent background assistant task** on one personal desktop. Never pair unrelated professions that would never share a login session.
+- Do not mention a peer agent in `task.md` (unless explicitly benchmarking explicit coordination with `ALLOW_EXPLICIT_COORDINATION = True`).
 
-### 2. Build Authentic Long-Horizon Depth (15-35 Minutes)
-- **Make Base Tasks Genuinely Hard (Never Simplify for `100%` Sequential Model Pass)**: Do NOT spoon-feed formulas, exact CLI scripts, or step-by-step recipes in `task.md` just to make frontier LLMs pass `100%` sequentially. Agents must discover rules and edge cases from messy, realistic multi-file workspaces, multi-sheet workbooks, specs, databases, and live desktop/web UIs.
-- **Target Non-Saturated Sequential Difficulty (`Pass_seq > Pass_conc`, NOT `100% vs 0%`)**: Even in single-agent or sequential mode (`seq_ab` / `seq_ba`), frontier models should face real domain, GUI, and self-verification difficulty (e.g., `30%-75%` sequential pass rate rather than `100%` saturation). If a frontier model effortlessly scores `100%` sequentially, the base task is too easy or over-prompted—increase intrinsic task complexity rather than adding artificial concurrency locks.
-- **Derive Horizon from Multi-Stage Problem Solving**: Build 15-35 minute tasks from cross-referencing multiple real artifacts, cascading updates across code/CAD/spreadsheets/UI, and writing self-verification checks.
-- Keep individual tool/solver calls at their **natural execution speed** (seconds, not padded 5-minute sleeps).
-- Provide **at least `1.8x-2.0x` wall-clock slack** in `conc_role_timeout_s` relative to the time needed for two careful agents to complete and serialize around shared bottlenecks.
+### 3. Calibrate Non-Saturated Difficulty & Primary Contention Metrics
+- **Target Non-Saturated Single-Agent Baselines (`0.40-0.85` score or `35%-75%` pass rate)**: Frontier models should face genuine multi-step domain, GUI, and self-verification difficulty even in `isolated` / `seq` mode (typically `>= 6-10+` minutes of real work). If frontier models finish in `1.5-3` minutes at `0.98-1.00`, the base task is too shallow or over-prompted—deepen the workflow rather than adding concurrency locks.
+- **Accuracy Degradation Is Primary; Overhead Inflation Is Auxiliary**:
+  - **Primary signal**: Measurable partial-credit or pass-rate drop under concurrency (`Score_shared < Score_isolated` or `Pass_conc < Pass_seq`). Never certify a `1.000 -> 1.000` ceiling-saturated task as a benchmark case merely because token usage rose.
+  - **Auxiliary telemetry**: Always log input-token ratio, wall-clock ratio, window-focus flips, and misrouted keystrokes to quantify self-healing overhead alongside accuracy drops.
+- Keep tool/solver execution at **natural speed** (seconds, never multi-minute sleeps) and provide **`1.8x-2.0x` wall-clock slack** in `conc_role_timeout_s`.
 
-### 3. Write Natural, Self-Contained Role Prompts
-- Write each `task.md` as a realistic single-role engineering work order describing only that role's deliverables, constraints, and acceptance criteria.
-- Do not mention a peer agent (unless explicitly benchmarking explicit coordination), and never inject unnatural keystroke choreography.
-- Keep high model scores meaningful: if careful agents detect anomalous UI/file changes, re-read live state, and recover cleanly (`30%-60%` pass), preserve that signal—discrimination between careless and careful agents is the goal.
+### 4. Keep Clean GUI-Driver Ablation Boundaries & Non-YOLO Isolation
+- **Decouple Tasks & Graders from Specific GUI Drivers**: Never hardcode MCP tool names (`desktop.click`, `qwen_cua_driver`, `click_and_type`) in `task.md`, and never hardcode a specific CUA driver binary inside `grade()`. Expose standard OS surfaces (X11/WindowServer, `AT-SPI2` bus, and browser CDP only when CDP itself is part of the tested workflow).
+- **Prevent `guest_bash` from Bypassing the Tested GUI Driver**: Keep `guest_bash` scoped to filesystem, compilers, data tools, and service ports—**do not mount raw `:99` `/tmp/.X11-unix` or `AT-SPI` sockets or `DISPLAY=:99` into `guest_bash`** (otherwise agents run CLI `xdotool`/`wmctrl`/`xclip`/`import` and bypass `qwen-cua-driver`, `cua-driver`, `agent-desktop`, or coordinate drivers during driver ablations; if testing pure-GUI terminal self-bootstrapping, disable `guest_bash` cleanly).
+- **No Artificial Low CUA Call Caps**: Never set low GUI step guillotines (such as `max_cua_calls = 42`) that cut off the GUI driver mid-task; use generous loop-safety ceilings (`>= 120`) if needed.
+- **Enforce Non-YOLO & Secret Hygiene**: Run all containers without `--yolo` or host-root bypasses (`--security-opt no-new-privileges`, verified `sandbox_mode = "workspace-write"` or `"read-only"`), and never expose private API keys in logs, containers, or reports.
 
-### 4. Enforce Non-YOLO Isolation & Secret Hygiene
-- Run all desktop and agent containers without `--yolo` or host-root bypasses (`--security-opt no-new-privileges`, scoped workspace mounts).
-- Never print or copy raw API keys from private credential files into logs, containers, or reports.
+## What Every Case & Harness MUST Avoid (Hard Bans)
 
-## What Every Case MUST Avoid (Hard Bans)
+Read [references/anti-patterns-and-case-archetypes.md](references/anti-patterns-and-case-archetypes.md) when auditing suites or building new cases. Reject all eight failure patterns below:
 
-Read [references/anti-patterns-and-case-archetypes.md](references/anti-patterns-and-case-archetypes.md) when reviewing existing suites or designing new conflict mechanics. Never introduce any of the following five failure patterns:
+1. **Toy Synthetic GUI App Mockups (`*_QT_SOURCE` / `*_GTK_SOURCE` Trap)**
+   - **Ban**: Embedding ~80-150 line inline `PyQt`/`GTK`/`Tk` scripts (`CutForge`, `ScoreCanvas`, `VectorForge`, `SignalDesk`) or static `<canvas>` facades to impersonate real creative/engineering/office software. Only set `ALLOW_SYNTHETIC_TARGET_APP = True` when a task explicitly tests black-box reverse engineering of an unknown proprietary utility (`<= 15%` of any suite).
+2. **Frankenstein Role Pairings & Spoon-Fed Field Checklists**
+   - **Ban**: Pairing unrelated jobs on one desktop (e.g., mortgage officer + digital-logic TA; font designer + CPU pipeline engineer) or listing exact target JSON keys/submenu paths/formulas in `task.md`.
+3. **Harness Process-Namespace Traps, `isolated` Cross-Role Penalties & Post-Exit `Ctrl+S`**
+   - **Ban**: Running a target daemon (e.g., `:18910` / `:19515`) in a container whose PID namespace is invisible to the agent's CLI when the task requires restarting that daemon (forcing LibreOffice UNO/macro container escapes).
+   - **Ban**: Opening an absent peer role's dirty document during single-agent `isolated` baseline runs and penalizing the solo role for `split_brain` (`isolated < shared` inversion bug).
+   - **Ban**: Sending `xdotool key ctrl+s` + `Return` inside `stop_and_grade()` after agents have exited, or leaving shared `~/Downloads` world-writable as an unmonitored plaintext chatroom.
+4. **Unannounced Upstream Waiting + Locked Downstream Exit (`SA` / `SD` Trap)**
+   - **Ban**: Fake self-consistent `v0` baselines with zero pending indicators, prompt write-bans (`Do NOT modify /workspace until...`), asymmetric dummy stages, or silent first-write locks (`official_wire_receipt`, `amendment_eco_seal`, `CLOSED_LOCAL_VERIFIED`).
+5. **Pigeonhole Timeout Deadlocks + Lying Samplers (`FC v_final` Trap)**
+   - **Ban**: Exclusive state-holding windows whose combined minimum time crowds `conc_role_timeout_s`, or hidden `BackgroundRegimeSampler` / `stage_purity` penalties behind `passed: true` responses.
+6. **Busy-Wait / `sleep` Horizon Inflation & `FAST_SELFVAL` Masking**
+   - **Ban**: `while time.monotonic() - t0 < 290.0` dummy loops, multi-minute endpoint sleeps, or `FAST_SELFVAL=1` timing shortcuts.
+7. **Online-Judge Oracle Leakage**
+   - **Ban**: Returning `HTTP 422` with exact cross-role coupling discrepancies or canary answers across unlimited `/submit` retries.
+8. **Puppet Keystrokes & Rigid Boot-Time Split-Screen Tiling**
+   - **Ban**: Puppet instructions (`"press Ctrl+Z twice"`), 4-row micro-probes, or hardcoding left/right split-screen window coordinates at boot (`--window-position=0,0` + `wmctrl -e 0,960,...`) unless `ALLOW_CUSTOM_WINDOW_LAYOUT = True` is justified by a specific case.
 
-1. **Unannounced Upstream Waiting + Locked Downstream Exit (`SA` / `SD` Trap)**
-   - **Ban**: Presenting a self-consistent fake `v0` baseline with zero pending/dirty indicators so Role A finishes and closes early, while Role B mutates `/workspace` to `v1` 10-15 minutes later.
-   - **Ban**: Prompt write-bans (`Do NOT modify /workspace until all 16 stages...`), asymmetric dummy step counts (`6 vs 16` disconnected algebra stages), or silent first-write locks (`official_wire_receipt`, `amendment_eco_seal`, fake `CLOSED_LOCAL_VERIFIED`).
-2. **Pigeonhole Timeout Deadlocks + Lying Samplers (`FC v_final` Trap)**
-   - **Ban**: Requiring two roles to hold mutually exclusive states on a single global toggle across multi-minute windows whose combined minimum time exceeds or crowds `conc_role_timeout_s` (e.g., `8.2 * stage_s >= conc_role_timeout_s`).
-   - **Ban**: Recording hidden `BackgroundRegimeSampler` / `stage_purity` scores in the background while `/api/bench` returns `passed: true` and `grade()` fails both roles post-hoc.
-3. **Busy-Wait / `sleep` Horizon Inflation & `FAST_SELFVAL` Masking**
-   - **Ban**: `while time.monotonic() - t0 < 290.0` dummy loops or `time.sleep(...)` padding inside endpoints to fake 30-minute runs, especially when `FAST_SELFVAL=1` shrinks those loops to `0.25s` during validation.
-4. **Online-Judge Oracle Leakage**
-   - **Ban**: Turning `/submit` or `/bench` into an infinite-retry oracle grader that returns `HTTP 422` with exact cross-role coupling answers or canary values.
-5. **Puppet Prompts, Canvas Facades & Toy Micro-Probes (`MECH` / Facade Trap)**
-   - **Ban**: Commanding unnatural destructive actions in prompts (e.g., "type X, press `Ctrl+Z` twice, then retype Y").
-   - **Ban**: Replacing real desktop software (`LibreOffice`, `GIMP`, `FreeCAD`, real web apps) with a static custom `<canvas>` image and two HTML buttons while doing all real edits purely in CLI.
-   - **Ban**: 4-row/4-line toy files solvable in 5 clicks when claiming a realistic long-horizon workflow.
+## Mandatory 5-Gate Well-Posedness Check vs. Model Calibration
 
-## Mandatory 5-Gate Well-Posedness Check vs. Model Difficulty Calibration
+Keep **deterministic problem-validity checks** (author's privileged ground-truth check, zero LLM calls) strictly separate from **real LLM difficulty calibration**:
 
-Distinguish strictly between **deterministic problem-validity checks** (run with a privileged ground-truth reference script solely to prove the exam question has no broken math or hidden ordering trap) and **real LLM evaluation** (where models are expected to fail hard tasks even sequentially):
+### A. Deterministic 5-Gate Well-Posedness Check (Zero LLM Calls)
+1. **`Gate 1 — pristine_fail`**: Untouched initial state fails (`joint_pass == False`, partial-credit baseline `<= 0.20`).
+2. **`Gate 2 — gt_seq_ab_exists`**: Ground-truth solver achieves full credit (`1.0` / `joint_pass == True`) under `Role A -> Role B`.
+3. **`Gate 3 — gt_seq_ba_exists`**: Ground-truth solver also achieves full credit under `Role B -> Role A` (zero hidden ordering trap).
+4. **`Gate 4 — gt_naive_race_corrupts`**: Unguarded concurrent actions measurably corrupt target state or score (`joint_pass == False` or `Score_race < Score_isolated`).
+5. **`Gate 5 — gt_careful_conc_feasible`**: Under **real tool timing** (using genuine multithreaded concurrency rather than a single global mutex shortcut), careful concurrent execution achieves full credit within `<= 55%` of `conc_role_timeout_s`.
 
-### A. Deterministic Ground-Truth Well-Posedness Gates (Author's Answer-Key Check, Zero LLM Calls)
-Every case must include a deterministic ground-truth verification script proving the problem itself is mathematically well-posed across all 5 gates:
+### B. Real LLM Screening Bar
+- Require **non-saturated single-agent difficulty** (`isolated` / `seq` score in `0.40-0.85` or pass rate `35%-75%`) AND **measurable concurrent degradation** (`Score_shared < Score_isolated`), reporting token/latency/focus-flip overhead alongside accuracy.
 
-1. **`Gate 1 — pristine_fail`**: Grading the untouched `build_pristine()` workspace returns `joint_pass == False` (and `v0` visibly lacks required deliverables for both roles).
-2. **`Gate 2 — gt_seq_ab_exists`**: A ground-truth solution exists when `Role A` completes before `Role B` (`joint_pass == True`).
-3. **`Gate 3 — gt_seq_ba_exists`**: A ground-truth solution also exists when `Role B` completes before `Role A` (`joint_pass == True`), proving the task specification itself contains no unannounced upstream->downstream ordering trap.
-4. **`Gate 4 — gt_naive_race_corrupts`**: Overlapping unguarded actions on the shared resource trigger a real state collision (`joint_pass == False`), proving the contention surface is active.
-5. **`Gate 5 — gt_careful_conc_feasible`**: Under **real tool timing**, a valid concurrent execution schedule exists and achieves `joint_pass == True` within `<= 55%` of `conc_role_timeout_s`, proving the clock does not create a pigeonhole deadlock.
-
-### B. Real LLM Evaluation Expectations (Do NOT Require `100%` Sequential LLM Pass!)
-- **Never treat LLM `seq_ab` / `seq_ba == 100%` as a gate**: Real LLMs SHOULD struggle on hard single-agent GUI+CLI reasoning, multi-document reconciliation, and self-testing. Requiring LLMs to pass `100%` sequentially forces authors to dumb down tasks into spoon-fed checklists.
-- **Evaluate Relative Contention Gap (`Pass_seq > Pass_conc`)**: A strong benchmark suite exhibits non-saturated sequential model accuracy (e.g., `35%-75%`) alongside a clear, diagnosable drop under concurrency (`Pass_conc < Pass_seq`) driven by genuine shared-resource collisions.
-
-Before launching model runs, execute the bundled static & time-budget auditor on the task module or directory:
+Before running model evaluations, execute the static & harness auditor on both the task directory and its experiment runner:
 
 ```bash
-python3 .agents/skills/paragui-case-design/scripts/audit_case_module.py <path/to/task_file_or_dir>
+python3 ~/.codex/skills/paragui-case-design/scripts/audit_case_module.py <path/to/task_dir_or_runner.py>
 ```
 
-Resolve every `FAIL` finding and review any `WARN` findings before spending GPU/CPU evaluation budget.
+Resolve every `FAIL` finding and review any `WARN` findings before spending evaluation budget.

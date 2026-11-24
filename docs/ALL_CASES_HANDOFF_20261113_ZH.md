@@ -1,6 +1,8 @@
 # CoDesk / paraGUI 全量任务资产与多模型评测总览（中文汇总版）
 
-更新日期：2026-11-23
+更新日期：2026-11-24
+> **精选高质量双智能体套件入口（8 项优选）**：经人工逐题代码审计筛出的 8 项高质量任务（`RBS3-04, RBS3-05, RBS3-02, RBS2-06, RBS-06, RBS3-01, EC-01, EC-03`）已独立封装至统一注册表 `tasks/curated_8cases_v1/`、统一执行器 `experiments/curated_8cases_v1.py` 与清单 `lists/curated_high_quality_8cases_20261124.json`，详见 [`CURATED_8CASES_HANDOFF_20261124_ZH.md`](CURATED_8CASES_HANDOFF_20261124_ZH.md)。
+
 所在分支：`codex/all-codesk-cases-20261113`
 远程仓库：`git@github.com:Ottohere-Mourn/CoDesk.git`
 覆盖范围：统一汇总原 `codex/all-codesk-cases-20261113` 聚合分支（早期 19-case 双智能体组合、`V1–V47` 业务工作流扩展、17 个人机共享桌面任务、7 个独立协作包与 35 对 `paragui` 基础题库）与 `cpu15`/`g4-45` 实验线新增的全部原生专业软件竞争套件（`PR-*`、`AR-01..10`、`p1–p12`）、超长程物理仿真耦合套件（`LH-01..04`）、四智能体真 GUI `<canvas>` + CLI 混合并发套件（`QH-01..04`）、四智能体持续高重叠“主题工作场”套件（`TA-A1..TA-E1` 共 8 项）、超长程真实公网网站 + 真实原生桌面软件四智能体旗舰工作场套件（`UA-01..UA-15` 共 15 项，单局最高 70.0 分钟）、隐蔽竞争态四智能体探索套件（`SA-01..SA-15` 共 15 项）、30 分钟+ 长程高重叠隐蔽竞争态双智能体终极套件（`SD-01..SD-15` 共 15 项）、公平无锁双智能体套件（`FC-01..FC-15` 共 15 项）、闭卷自检 + 离线盲评双智能体真实桌面套件（`EC-01..EC-05` 共 5 项，遵循 `$paragui-case-design` 五门禁与静态审计零告警契约）、外部基准并发适配（OSWorld 10 对、WeaveBench 双并发与四并发）、macOS 双桌面空间真网页人机套件（`rw-*`）、全屏用户界面自然后台抢占套件（`fs-*`），以及 `gpt-6-sol`、`gpt-6.1-sol`、`gpt-6-astra`、`DeepSeek-V4.1-Flash-1017`（`deepseek-flash`）四款模型的全部实测结果。
