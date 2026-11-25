@@ -1,6 +1,6 @@
 # CoDesk / paraGUI 全量任务资产与多模型评测总览（中文汇总版）
 
-更新日期：2026-11-24
+更新日期：2026-11-25
 > **精选高质量双智能体套件入口（8 项优选）**：经人工逐题代码审计筛出的 8 项高质量任务（`RBS3-04, RBS3-05, RBS3-02, RBS2-06, RBS-06, RBS3-01, EC-01, EC-03`）已独立封装至统一注册表 `tasks/curated_8cases_v1/`、统一执行器 `experiments/curated_8cases_v1.py` 与清单 `lists/curated_high_quality_8cases_20261124.json`，详见 [`CURATED_8CASES_HANDOFF_20261124_ZH.md`](CURATED_8CASES_HANDOFF_20261124_ZH.md)。
 
 所在分支：`codex/all-codesk-cases-20261113`
@@ -11,7 +11,7 @@
 
 ## 一、全局任务盘点与多模型评测概览
 
-当前分支共收录 **296 项独立任务/配对条目**：其中 **239 项已完成完整模型多智能体/多臂实验**（含 `exam_contention_v2` 9 候选筛查与 Top-5 双模型实测、`rb_osw2_synth_v1` 6 项、`rb_osw2_synth_v2` 6 项、以及升级 `LAW_8` 零剧透多表面探索 + 无 CDP 互斥门户 + 窄耦合包络并成功复现双模型 `Shared` 显著掉分的第三批 `rb_osw2_synth_v3` 5 项双模型实测），**3 项另有有效 MA-ID/Shared 前置筛查但未完成全部锁臂**，另有 **54 项为脚本参考解验证、离线 Oracle 验证或设计规格储备题库**；因此共有 242 项至少取得一个有效模型臂结果；timeout 不计作 FAIL。不同赛道工具空间与指标各异，按赛道分列。
+当前分支共收录 **318 项独立任务/配对条目**：其中 **261 项已完成完整模型多智能体/多臂实验**（含 `exam_contention_v2` 9 候选筛查与 Top-5 双模型实测、`rb_osw2_synth_v1..v3` 17 项、以及基于新版 `$paragui-case-design` 100% 真实开源软件契约与 X11/UID 密封沙盒构建全测的 `authentic_workstation_v1` 22 候选筛查与优选 Top-5 双模型实测），**3 项另有有效 MA-ID/Shared 前置筛查但未完成全部锁臂**，另有 **54 项为脚本参考解验证、离线 Oracle 验证或设计规格储备题库**；因此共有 264 项至少取得一个有效模型臂结果；timeout 不计作 FAIL。不同赛道工具空间与指标各异，按赛道分列。
 
 | 赛道分类 | 子套件与目录入口 | 在册数 | 已实测数 | 并发规模与模式 | 参测模型（推理档位） | 核心实测结果摘要 |
 |---|---|---:|---:|---|---|---|
@@ -32,12 +32,13 @@
 | **B12. 融合 `RB & OSW2` 规律第一批 `rb_osw2_synth_v1`** | `tasks/rb_osw2_synth_v1/`（`RBS-01..06`）+ `tools/paragui_case_factory.py` | 6 | **6** | 2 Agent（`LAW_1..LAW_6` + 176 项细粒度检查） | `gpt-6.1-sol (high)`、`gpt-6-astra (high)` | 五门禁 **6/6 通过**；24 局双模实测平均重叠占比 **`75.6% / 83.6%`**，CLI 膨胀 **`1.85x / 1.62x`**，Token 膨胀 **`1.43x / 1.25x`**，误按键 `6 / 15` 次 |
 | **B13. 融合 `RB & OSW2` 规律第二批 `rb_osw2_synth_v2`** | `tasks/rb_osw2_synth_v2/`（`RBS2-01..06`） | 6 | **6** | 2 Agent（新增 `LAW_7` 纯视觉画布 + 234 项高粒度检查） | `gpt-6.1-sol (high)`、`gpt-6-astra (high)` | 五门禁 **6/6 通过**；平均 GUI 调用 **`68.0 / 61.8` 次**，平均并发重叠 **`456.0s`（活跃重叠率 `92.5%`）**，`Sol` 联合通过率 **`83.3% -> 66.7%`**，CLI 膨胀 **`1.52x / 1.35x`**，焦点翻转 `76->113` / `74->91`，误按键 `12 / 11` 次 |
 | **B14. 升级 `LAW_8` + 零分屏自然窗口叠放 `rb_osw2_synth_v3`** | `tasks/rb_osw2_synth_v3/`（`RBS3-01..05`） | 5 | **5** | 2 Agent（去分屏自然居中叠放 + `LAW_8` 零剧透 5 表面 + 无 CDP 互斥门户 + 双向窄耦合，`42` 步上限） | `gpt-6.1-sol (high)`、`gpt-6-astra (high)` | 五门禁 **5/5 通过**；清除硬编码分屏后双模型同步显著掉分（**`Sol` `0.9799 -> 0.9430` `Δ=-3.69%`**，`RBS3-01` **`-21.0%`**，墙钟 **`1.60x`**，CLI **`1.76x`**；**`Astra` `0.9849 -> 0.9530` `Δ=-3.19%`**，联合通过率 **`80% -> 60%`**，误按键 `12` 次） |
+| **B15. 100% 真实开源软件 + 密封 X11/UID 沙盒 `authentic_workstation_v1`** | `tasks/authentic_workstation_v1/`（`AW-01..22` 筛 Top-5） | 22 | **22（Top-5 密封双模）** | 2 Agent（零合成玩具 GUI + `Xvfb -auth` + `UID 2000` 防 `/proc` 穿透 + 只读盲评，`140` 步上限） | `gpt-6.1-sol (high)`、`gpt-6-astra (high)` | 24 文件审计 **`0 FAIL, 0 WARN`**，五门禁 **22/22（110 局）通过**；优选 Top-5（`AW-12, 14, 15, 19, 20`）`isolated` 单局均长 **`11.6–12.9m`**，并发显著掉分（**`Sol` `0.9099 -> 0.8431` `Δ=-6.68%`**，Token **`1.58x`**，耗时 **`1.51x`**；**`Astra` `0.9177 -> 0.7064` `Δ=-21.13%`**，联合通过率 **`60% -> 40%`**，误按键 **`55` 次**） |
 | **C1. 人机共享桌面（离线日常工作流）** | `oscombo/human_apps/`、`tasks/human_agent_v1/` | 17 | **17** | 1 真实 Agent + 1 脚本正常用户 | `gpt-6-sol`（纯 GUI）、`gpt-6.1-sol (medium)`（GUI+CLI） | `gpt-6-sol` 上游验证 **7** 项自然并发用户受损（User FAIL / Agent PASS）+ 1 项 25s 固定偏移探针（`ha-mail`）；`cpu15` Docker `gpt-6.1-sol` 17 题全跑并录像：`user-only` **16/17**，`shared` 下 **8/17** 复现 User FAIL / Agent PASS，`1/17` 双 PASS，`8/17` 双 FAIL |
 | **C2. 人机共享桌面（真网页 + 双桌面空间）** | `tasks/real_macos_ha_v1/` | 5 | **5** | 1 真实 Agent（Space 2）+ 1 正常用户（Space 1） | `gpt-6.1-sol (medium)`（全混合 GUI+CLI） | `user-only` **5/5 (100%)**，`independent` 双机 **5/5 联合 PASS (100%)**，`shared` 单机双 Space **0/5 联合 PASS**（后台 Agent 在 9–11s 切桌面空间劫持用户后续 7–8 步输入，致 **User 0/5、Agent 5/5**） |
 | **C3. 人机共享桌面（全屏用户界面自然抢占）** | `tasks/real_fullscreen_ha_v1/` | 5 | **5** | 1 真实后台 Agent + 1 全屏最大化用户 | `gpt-6.1-sol (medium)`（全混合 GUI+CLI） | `user-only` **5/5**，`independent` **5/5 双 PASS**；`shared` 下 3 道纯产物交付题 Agent 自发走无头 CLI 零抢占（**3/3 双 PASS**），2 道需打开桌面窗口/标签题触发浏览器地址栏劫持与 Writer 弹窗抢焦点（致 `fs-wiki-pep-writer-open` **User FAIL / Agent PASS**） |
 | **D1. `paragui` v1 + 红队基础配对库** | `tasks/paragui/`（`c/o/m/w/d/f/x/a` 系列） | 35 | 0 | 2 Agent 配对题库 | 作者参考解双向验证 | 35 对（70 个 OSWorld 2.0 任务类）均完成资产生成器、内网应用与双向 `1.0` 参考验证，供 `oscombo` 组合采样 |
 | **D2. `oscombo/collab` 独立协作协议包** | `oscombo/collab/`（`CDD-*` 系列） | 7 | 0 | 双角色异步/共享协作包 | 离线 Oracle / 脚本 Guest 验证 | 7 套独立包全部通过离线正负控制单测，`Data-to-Deck` 完成 Guest 脚本生命周期验证；其中 3 套的精简版即 A1 中的 `Case 2/3/4` |
-| **合计** | — | **296** | **239 完整 + 3 部分** | 2–4 智能体 / 人机混合 | 4 款主力模型 × 2 套 Harness | **239 项完整多智能体/多臂成绩；另 3 项有效但未完成全部臂**，共 242 项至少有一个有效模型臂；54 项仍属参考/题库/设计储备，见 `docs/results-manifests/` 与赛道明细 |
+| **合计** | — | **318** | **261 完整 + 3 部分** | 2–4 智能体 / 人机混合 | 4 款主力模型 × 2 套 Harness | **261 项完整多智能体/多臂成绩；另 3 项有效但未完成全部臂**，共 264 项至少有一个有效模型臂；54 项仍属参考/题库/设计储备，见 `docs/results-manifests/` 与赛道明细 |
 
 ---
 
@@ -151,7 +152,7 @@ V34–V37 四项均通过 scripted joint Guest 正控（A/B 2/2），并完成�
 
 ---
 
-## 四、赛道二（Track B）：全混合 GUI+CLI 专业工程、超长程仿真、四智能体并发与隐蔽竞争套件（共 132 项）
+## 四、赛道二（Track B）：全混合 GUI+CLI 专业工程、超长程仿真、四智能体并发与隐蔽竞争套件（共 154 项）
 
 本赛道坚持**不人为禁用 CLI / Python / 应用脚本 API**，智能体同时拥有 X11 桌面 GUI 工具与完整终端权限，在真实工程计算临界区（Cycles 光追、OpenCASCADE 三维布尔与网格剖分、PyQGIS 水文空间分析、Inkscape/GIMP 批量印前渲染、MLT/FFmpeg/SoX 音视频母版合成、单会话门户与 `<canvas>` 视觉规格卡）中暴露无法靠“一行快脚本”轻易绕开的真实并发竞争态。
 
@@ -369,6 +370,18 @@ V34–V37 四项均通过 scripted joint Guest 正控（A/B 2/2），并完成�
 | `RBS3-03` | `LAW_8 + LAW_6 + LAW_7` (`shared`) | 单实例可变画布 `VectorForge MEP` 双层拖拽与净空协调 | 同一窗口 `Alt+1/Alt+2` 画布拖拽 + `MM/IN` 切换 + `[636,644]mm` 双向净空耦合 | `1.000 -> 1.000`；CLI **`6 -> 17 (2.83x)`**，误按键 **`3`** | `1.000 -> 1.000`；CLI **`6 -> 20 (3.33x)`**，耗时 **`1.68x`**，误按键 **`10`** |
 | `RBS3-04` | `LAW_8 + LAW_6 + LAW_2` (`shared`) | 无 CDP `ICU` 互斥单位门户 + 16 床室速波形 + 全幅叠放 `Calc+Writer` | 全幅 `Calc/Writer (1920×1061)` 自然盖住 `Chromium` 与 `BedsideWave` + `[1900,1908]mL` 耦合 | `0.975 -> 1.000`；Token **`2.20x` (`4.22M`)**，耗时 **`2.10x`**，CLI **`2.10x`**，翻转 `18->28` | **`0.975 -> 0.890` (`Δ=-8.5%`，Role A `-17.0%`)**；Token **`1.34x`**，CLI **`1.48x`**，翻转 `27->30` |
 | `RBS3-05` | `LAW_8 + LAW_6 + LAW_7` (`shared`) | 无 CDP 硬件门户 + 8 区红外热像 + `:19515` 守护进程 + 全幅叠放 `Calc` | 全幅 `Calc` 叠放 + `VRM/CAN` 互覆 + `:19515` 重启 + `[190.0,190.8]W` 功耗耦合 | `1.000 -> 1.000`；Token **`1.92x`**，CLI **`1.75x`**，耗时 **`1.52x`**，翻转 `12->17` | `1.000 -> 1.000`；Token **`1.61x`**，CLI **`1.77x`**，耗时 **`1.46x`**，翻转 `14->24` |
+
+### B15. 新版 `$paragui-case-design` 真实开源软件与密封沙盒套件 `authentic_workstation_v1`（22 候选筛 Top-5：`AW-12, AW-14, AW-15, AW-19, AW-20`）
+
+严格遵循新版 `$paragui-case-design` 规范，彻底淘汰内联合成 `PyQt/GTK` 玩具脚本、启动硬编码分屏、退出后 `Ctrl+S` 注入与题面公式剧透，同时在 [`experiments/authentic_workstation_v1.py`](../experiments/authentic_workstation_v1.py) 中封堵了 `--network container:<desk>` 抽象 X11 套接字旁路（启用 `Xvfb -auth /tmp/x99.auth`）与 `--pid container:<desk>` 同 UID `/proc/<pid>/root` 穿透旁路（`guest_bash` 独立运行于 `UID 2000`），构建并全量双模型筛查了 **22 项真实开源软件任务（`AW-01..AW-22`，静态审计 `24/24 PASS`，五门禁 `110/110 PASS`，双模实测 `88` 局 `176/176` Non-YOLO 权限验证通过）**。优选保留的 **Top-5** 横跨 `Chromium`、`GIMP 2.10`、`Inkscape 1.2`、`Qt5 Designer & Linguist`、`LibreOffice Calc & Writer` 与 `FreeCAD 0.20`，在非饱和 `isolated` 基线（均长 `11.6–12.9m`）上实现了显著的双模型并发掉分（**`gpt-6.1-sol` `0.9099 -> 0.8431`，`Δ = -6.68%`；`gpt-6-astra` `0.9177 -> 0.7064`，`Δ = -21.13%`**）。详见 [`AUTHENTIC_WORKSTATION_V1_22TO5_20261124_ZH.md`](AUTHENTIC_WORKSTATION_V1_22TO5_20261124_ZH.md) 与 [`results-manifests/authentic_workstation_v1_top5_sol61_astra_20261124.json`](results-manifests/authentic_workstation_v1_top5_sol61_astra_20261124.json)。
+
+| ID | 真实软件栈与双角色 | 竞争表面与盲评机制 | `gpt-6.1-sol (high)`（`iso -> shr`） | `gpt-6-astra (high)`（`iso -> shr`） |
+|---|---|---|---|---|
+| `AW-12` | `Chromium` (`HttpOnly`) + `HTML5/CSS3/JS`（`orders_ui_eng` + `capacity_ui_eng`） | 零剧透 8 状态 `Chronos ERP` 路由/弹窗/滑出抽屉探索与像素级复刻 | **`0.8615 (T) -> 0.5942 (F)` (`Δ=-26.73%`)**；重叠 `381.4s` | `0.7308 (F) -> 1.0000 (T)`；重叠 **`723.5s`**，CLI **`2.91x`** |
+| `AW-14` | `GIMP 2.10` + `Inkscape 1.2` + `Chromium` + `SQLite`（显微与电泳分析师） | 单实例 `GIMP` 双 4 图层 `.xcf` 标签隐藏/缩放弹窗 + 共享学术海报 SVG | `0.9130 -> 0.9130`；Token **`3.04x` (`10.33M`)**，耗时 **`2.00x`**，翻转 **`56`** | **`0.9130 (F) -> 0.3098 (F)` (`Δ=-60.32%`)**；误按键 **`27`**，翻转 `43` |
+| `AW-15` | `Qt5 Designer` + `Qt5 Linguist` + `lrelease` + `Chromium`（血液透析 HMI 与本地化） | `Designer` 控件安全边界编辑 vs `Linguist` 8 条德语 `Ctrl+Return` 录入 | `0.8804 (F) -> 1.0000 (T)`；耗时 `1.23x`，误按键 `6`，重叠 `695.2s` | **`1.0000 (T) -> 0.5788 (F)` (`Δ=-42.12%`)**；耗时 **`1.79x`**，翻转 `10->15` |
+| `AW-19` | `LibreOffice Calc` + `LibreOffice Writer` + `Chromium` + `SQLite`（超算中心采购与法务） | 零剧透 32 格双栏公式 + `[0.115,0.126]` 储备金契约 + `Writer` 6 处红线替换 | **`0.8944 (F) -> 0.7084 (F)` (`Δ=-18.60%`)**；CLI **`5.67x`**，重叠 **`882.4s`** | **`0.9445 (T) -> 0.7084 (F)` (`Δ=-23.61%`)**；误按键 **`17`**，翻转 **`22->38`** |
+| `AW-20` | `FreeCAD 0.20` + `GIMP 2.10` + `LibreOffice Calc` + `Chromium`（医疗监护仪前框与后壳） | 共享 `.FCStd` 三维布尔切孔 + 视觉蓝图卡 + 单实例 `GIMP` + `[2200,2270]g` 配重 | `1.0000 -> 1.0000`；耗时 **`1.56x`**，CLI **`1.86x`**，误按键 **`14`** | **`1.0000 (T) -> 0.9352 (T)` (`Δ=-6.48%`)**；耗时 **`2.03x` (`23.5m`)**，翻转 **`37->55`** |
 ---
 
 ## 五、赛道三（Track C）：人机共享桌面干扰套件（共 27 项，全部完成模型实测）
@@ -472,6 +485,7 @@ V34–V37 四项均通过 scripted joint Guest 正控（A/B 2/2），并完成�
    - 融合 `RecreationBench` & `OSWorld-V2` 冲突规律与任务长度的造题工具（`tools/paragui_case_factory.py`）及 6 项深度套件（`RBS-01..06`）双模型实测：[`RB_OSW2_SYNTH_TOOLKIT_AND_6CASES_20261123_ZH.md`](RB_OSW2_SYNTH_TOOLKIT_AND_6CASES_20261123_ZH.md)
    - 升级 `LAW_7` 纯视觉画布与 234 项高粒度评分第二批套件（`RBS2-01..06`）五门禁校验及双模型 24 局实测：[`RB_OSW2_SYNTH_V2_BATCH2_20261123_ZH.md`](RB_OSW2_SYNTH_V2_BATCH2_20261123_ZH.md)
    - `v1/v2` 不掉分轨迹根因复盘、`LAW_8` 定律升级与第三批硬化套件（`RBS3-01..05`）双模型实测掉分验证：[`RB_OSW2_SYNTH_V3_LAW8_SCORE_DROP_20261123_ZH.md`](RB_OSW2_SYNTH_V3_LAW8_SCORE_DROP_20261123_ZH.md)
+   - 新版 `$paragui-case-design` 100% 真实开源软件 + X11/UID 密封沙盒 22 候选广泛搜索与优选 Top-5（`AW-12, AW-14, AW-15, AW-19, AW-20`）双模型实测：[`AUTHENTIC_WORKSTATION_V1_22TO5_20261124_ZH.md`](AUTHENTIC_WORKSTATION_V1_22TO5_20261124_ZH.md)
    - `DeepSeek V4.1` 竞争意识评测与双模型同口径对比：[`DEEPSEEK_V41_RACE_AWARENESS_8TASK_20261116.md`](DEEPSEEK_V41_RACE_AWARENESS_8TASK_20261116.md)、[`SOL61_VS_DEEPSEEK_V41_8TASK_COMPARISON_20261116.md`](SOL61_VS_DEEPSEEK_V41_8TASK_COMPARISON_20261116.md)
    - 人机共享桌面（17 离线应用 + 5 真网页双桌面空间 + 5 全屏自然抢占）：[`HUMAN_AGENT_CPU15_DOCKER_VIDEO_20261116.md`](HUMAN_AGENT_CPU15_DOCKER_VIDEO_20261116.md)、[`REAL_MACOS_2SPACE_CPU15_20261116.md`](REAL_MACOS_2SPACE_CPU15_20261116.md)、[`REAL_FULLSCREEN_PREEMPTION_CPU15_20261116.md`](REAL_FULLSCREEN_PREEMPTION_CPU15_20261116.md)
    - 全部机器可读 JSON 成绩单目录：[`results-manifests/`](results-manifests/)
