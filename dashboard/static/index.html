@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CoDesk 精选 23 题双智能体基准与轨迹中文看板</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand" id="brandHome" role="button" tabindex="0">
+        <div class="brand-mark">23</div>
+        <div>
+          <div class="brand-title">CoDesk 精选 23 题中文展示看板</div>
+          <div class="brand-sub">双智能体共享桌面基准 · 92 局评测 · 184 角色完整轨迹与任务上下文</div>
+        </div>
+      </div>
+      <nav class="topnav">
+        <button class="nav-btn active" data-view="overview">总览与分类看板</button>
+        <button class="nav-btn" data-view="matrix">双模型得分矩阵</button>
+        <button class="nav-btn" data-view="detail" id="navDetailBtn" disabled>单题轨迹工作台</button>
+      </nav>
+      <div class="topbar-right">
+        <span class="branch-pill" title="当前归档分支">codex/selected-23-cases</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="main-wrap">
+    <div id="loadingBanner" class="loading-banner">正在加载 23 道精选基准与 92 局评测总览数据…</div>
+
+    <!-- 视图 1：全局总览与分类探索 -->
+    <section id="view-overview" class="view-section hidden">
+      <div id="kpiGrid" class="kpi-grid"></div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <div>
+            <h2 class="panel-title">多维分类表现对比</h2>
+            <p class="panel-desc">按共享桌面竞争机制、基准来源批次或行业领域聚合双模型基线与共享并发均分；点击分类卡片可一键筛选下方题目。</p>
+          </div>
+          <div class="segmented" id="aggDimSwitch">
+            <button class="seg-btn active" data-dim="mechanisms">按竞争机制 (5 类)</button>
+            <button class="seg-btn" data-dim="batches">按基准批次 (4 类)</button>
+            <button class="seg-btn" data-dim="domains">按行业领域 (4 类)</button>
+          </div>
+        </div>
+        <div id="aggChartGrid" class="agg-grid"></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <div>
+            <h2 class="panel-title">精选 23 题分类浏览与检索</h2>
+            <p class="panel-desc">支持按竞争机制、批次、行业领域或共享敏感度分组浏览，点击任意卡片进入任务上下文、双角色交错时间线与完整轨迹回放。</p>
+          </div>
+          <div class="segmented" id="groupBySwitch">
+            <button class="seg-btn active" data-group="mechanism">按竞争机制分组</button>
+            <button class="seg-btn" data-group="batch">按批次分组</button>
+            <button class="seg-btn" data-group="domain_cat">按行业分组</button>
+            <button class="seg-btn" data-group="sensitivity_cat">按共享敏感度</button>
+            <button class="seg-btn" data-group="flat">紧凑总表</button>
+          </div>
+        </div>
+
+        <div class="filter-bar">
+          <input id="searchInput" class="search-input" type="search" placeholder="搜索题号、中英文标题、角色、软件栈（如 RBS3-04、Blender、Qt5、自由词）…" />
+          <select id="filterBatch" class="select-ctrl">
+            <option value="">全部批次 (23)</option>
+          </select>
+          <select id="filterMech" class="select-ctrl">
+            <option value="">全部竞争机制</option>
+          </select>
+          <select id="filterSoftware" class="select-ctrl">
+            <option value="">全部真实软件栈</option>
+          </select>
+          <select id="sortSelect" class="select-ctrl">
+            <option value="default">排序：清单默认顺序</option>
+            <option value="worst_drop">排序：共享掉分最大优先</option>
+            <option value="astra_shared">排序：Astra 共享得分升序（看难题）</option>
+            <option value="sol_shared">排序：Sol 共享得分升序（看难题）</option>
+            <option value="model_gap">排序：双模型共享分差最大</option>
+          </select>
+          <label class="check-pill">
+            <input type="checkbox" id="onlyDropCheck" />
+            <span>仅看显著掉分题 (Δ≤-5%)</span>
+          </label>
+          <button id="resetFiltersBtn" class="btn-ghost">重置筛选</button>
+        </div>
+
+        <div id="filterStatus" class="filter-status"></div>
+        <div id="caseContainer"></div>
+      </div>
+    </section>
+
+    <!-- 视图 2：23 题双模型得分与退化矩阵 -->
+    <section id="view-matrix" class="view-section hidden">
+      <div class="panel">
+        <div class="panel-head">
+          <div>
+            <h2 class="panel-title">23 题双模型 Baseline vs. Shared 成绩与退化矩阵</h2>
+            <p class="panel-desc">每行对应一道优选 Case，展示 GPT-6.1-Sol (high) 与 GPT-6-Astra (high) 在基线与共享模式下的得分、退化幅度（Δ）及共享焦点交错强度；点击任意得分格直达该局完整轨迹。</p>
+          </div>
+          <div class="matrix-legend">
+            <span class="leg-chip leg-perfect">1.00 满分</span>
+            <span class="leg-chip leg-high">0.85–0.99</span>
+            <span class="leg-chip leg-mid">0.65–0.84</span>
+            <span class="leg-chip leg-low">&lt;0.65</span>
+          </div>
+        </div>
+        <div class="table-scroll" id="matrixWrap"></div>
+      </div>
+    </section>
+
+    <!-- 视图 3：单题深度工作台（上下文 / 时间线 / 完整轨迹） -->
+    <section id="view-detail" class="view-section hidden">
+      <div class="detail-topbar">
+        <button id="backOverviewBtn" class="btn-ghost">← 返回总览看板</button>
+        <div class="detail-switcher">
+          <label for="caseQuickSelect" class="muted-label">快速切题：</label>
+          <select id="caseQuickSelect" class="select-ctrl"></select>
+        </div>
+      </div>
+
+      <div id="caseHeaderCard" class="panel detail-hero"></div>
+
+      <div class="episode-strip" id="episodeStrip"></div>
+
+      <div class="detail-tabs" id="detailTabs">
+        <button class="dtab active" data-tab="summary">总览与判分明细</button>
+        <button class="dtab" data-tab="context">模型任务上下文 (Context)</button>
+        <button class="dtab" data-tab="timeline">双角色共享时间线</button>
+        <button class="dtab" data-tab="trajectory">完整角色轨迹回放</button>
+      </div>
+
+      <div id="detailTabContent" class="panel detail-body"></div>
+    </section>
+  </main>
+
+  <div id="toast" class="toast hidden"></div>
+  <script type="module" src="/js/main.js"></script>
+</body>
+</html>
