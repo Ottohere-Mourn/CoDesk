@@ -1,0 +1,10 @@
+# Work Order — Datacenter Capex Controller (`dc_capex_controller`)
+
+Finalize the FY26 hardware Capex valuation from the 32-line PO ledger in `/workspace/dc_deal`, complete the `Hardware_Capex` and `Deal_Rollup` schedules in the open **LibreOffice Calc** workbook (`/srv/studio_project/Global_Capex_Model.xlsx`, mounted read-only in your terminal for post-save verification), and execute all 5 Section 4 contract redlines in the open **LibreOffice Writer** agreement (`/srv/studio_project/Master_Services_Agreement.odt`):
+
+1. Review `/workspace/dc_deal/specs/DC_Procurement_Policy.pdf`, query `/workspace/dc_deal/procurement.sqlite` (`capex_po_lines`), and inspect the **Procurement & Treasury Portal** open in Chromium (`http://127.0.0.1:19619`, `Overview` and `FX & Customs Tariff` views).
+2. Aggregating `APPROVED` PO lines per package and applying the OEM rebate threshold, CIF freight/insurance basis, and HS tariff rules from the policy and portal, compute 3-decimal MUSD `cif_musd` and `landed_musd` for `PKG-GPU-01`..`PKG-FIRE-08`, and write `/workspace/dc_deal/capex_audit.json` (`deal_stamp`, `cif_musd`, `landed_musd`, `total_cif_musd`, `total_landed_musd`, `mean_landed_musd`, `largest_landed_pkg_id`, `selected_capex_buffer_musd`).
+3. In the open **LibreOffice Calc** window (`Global_Capex_Model.xlsx`):
+   - On `Hardware_Capex`, enter `cif_musd` in `B2:B9` and `landed_musd` in `C2:C9`, enter `=SUM(...)` formulas in `B10` and `C10`, and enter `=AVERAGE(C2:C9)` in `C11`.
+   - On `Deal_Rollup`, enter `total_landed_musd` in `B2`, select the approved Capex Contingency Buffer tier in `B4` so `Reserve_Coverage_Ratio` (`B6`) satisfies the portal's Treasury Reserve Covenant window, and save (`Ctrl+S`).
+4. In the open **LibreOffice Writer** window (`Master_Services_Agreement.odt`), replace all 5 Section 4 placeholders (`[REDLINE_S4_STAMP]`, `[REDLINE_TOTAL_CIF_MUSD]`, `[REDLINE_CAPEX_CEILING_MUSD]`, `[REDLINE_OEM_WARRANTY_MOS]`, `[REDLINE_LARGEST_CAPEX_PKG]`) with the verified closing values, and save (`Ctrl+S`).

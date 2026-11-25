@@ -5,7 +5,8 @@ Covers the 8 reviewed high-quality cases:
   - EC-01, EC-03 (ec_v1_astra_desktop)
 
 Key harness properties:
-  - Raises GUI driver loop-safety ceiling to >= 150 calls (no artificial 42/65-step truncation).
+  - Unlimited GUI/CLI steps (max_cua_calls = None) with a >= 7200s (2h+) outer anti-deadlock timeout.
+  - Standardized default reasoning effort = 'high' across all evaluated models.
   - Read-only stop_and_grade() (never injects post-exit save keystrokes into open windows).
   - Supports strict CLI-from-X11 isolation (--isolate-cli-from-x11) for clean GUI-driver ablations.
   - Shares --pid container:<desk> when required by live local service tasks (e.g. RBS3-05 :19515).
@@ -19,6 +20,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import json
 from pathlib import Path
 import subprocess
+import sys
 import threading
 import time
 from typing import Any
@@ -26,7 +28,6 @@ from typing import Any
 from experiments.deepseek_v41_eval import analyze_race_awareness
 from experiments.exam_contention_v1 import (
     ExamContentionDesktop,
-    build_exam_agent_prompt,
     run_exam_actor,
 )
 from experiments.exam_contention_v2 import (
@@ -34,7 +35,6 @@ from experiments.exam_contention_v2 import (
     ExamV2Desktop,
     RoleMcpBridge,
     _run_desk_reg,
-    build_ec2_agent_prompt,
     run_ec2_actor,
     summarize_ec2_telemetry,
 )
@@ -75,6 +75,18 @@ try:
 except Exception:
     out_flag.write_text("0")
 """.strip()
+
+
+def build_curated_agent_prompt(ticket_md: str) -> str:
+    """Minimal neutral wrapper: states workspace & available tool servers with zero step caps or countdown pressure."""
+    b = "`"
+    return (
+        f"Workstation environment (1920x1080 Linux desktop, workspace {b}/workspace{b}):\n"
+        "- Use the Desktop GUI MCP tools to inspect and interact with live desktop windows.\n"
+        f"- Use {b}guest_bash{b} to run shell commands, scripts, compilers, and local tools in {b}/workspace{b}.\n"
+        "- Save any edits made inside open desktop applications before finishing.\n\n"
+        f"{ticket_md}\n"
+    )
 
 
 class CuratedV2Desktop(ExamV2Desktop):
@@ -391,7 +403,7 @@ def run_curated_episode(
     meta = CURATED_8_BY_ID[task_id]
     ra, rb = meta["roles"]
     timeout_s = int(meta["iso_role_timeout_s"] if mode in ("isolated", "seq_ab") else meta["conc_role_timeout_s"])
-    max_cua = int(meta["max_cua_calls"])
+    unbounded_cua = int(meta["max_cua_calls"]) if meta.get("max_cua_calls") else sys.maxsize
     cond_dir = out_dir / f"{task_id}_{model_name}_{gui_driver}_{mode}"
     cond_dir.mkdir(parents=True, exist_ok=True)
 
@@ -407,7 +419,7 @@ def run_curated_episode(
                 t0 = time.monotonic()
                 desk.start()
                 t_md = (desk.tickets_root / r / "task.md").read_text(encoding="utf-8")
-                prompt = build_exam_agent_prompt(t_md, timeout_s)
+                prompt = build_curated_agent_prompt(t_md)
                 role_runs[r] = run_exam_actor(r, prompt, desk, model_name, effort, api_cfg, codex_bin, r_dir / "actors" / r, timeout_s)
                 subprocess.run(
                     [
@@ -442,7 +454,7 @@ def run_curated_episode(
         desk.build_pristine()
         t0 = time.monotonic()
         desk.start()
-        prompts = {r: build_exam_agent_prompt((desk.tickets_root / r / "task.md").read_text(encoding="utf-8"), timeout_s) for r in (ra, rb)}
+        prompts = {r: build_curated_agent_prompt((desk.tickets_root / r / "task.md").read_text(encoding="utf-8")) for r in (ra, rb)}
         role_runs = {}
         if mode == "seq_ab":
             for r in (ra, rb):
@@ -487,9 +499,9 @@ def run_curated_episode(
             try:
                 desk_v2.start()
                 t_md = (desk_v2.tickets_root / r / "task.md").read_text(encoding="utf-8")
-                prompt = build_ec2_agent_prompt(t_md, timeout_s)
+                prompt = build_curated_agent_prompt(t_md)
                 tl: list[dict[str, Any]] = []
-                br = RoleMcpBridge(desk_v2, r, gui_driver, max_cua, tl, threading.Lock(), t0)
+                br = RoleMcpBridge(desk_v2, r, gui_driver, unbounded_cua, tl, threading.Lock(), t0)
                 role_runs_v2[r] = run_ec2_actor(r, prompt, br, model_name, effort, api_cfg, codex_bin, r_dir / "actors" / r, timeout_s)
                 if meta.get("absent_peer_reference_fill_in_isolated"):
                     _run_desk_reg(desk_v2, ["solve_role", "--task", task_id, "--role", peer, "--workspace-root", "/ws_root"])
@@ -522,16 +534,16 @@ def run_curated_episode(
     role_runs_sh: dict[str, Any] = {}
     try:
         desk_sh.start()
-        prompts_sh = {r: build_ec2_agent_prompt((desk_sh.tickets_root / r / "task.md").read_text(encoding="utf-8"), timeout_s) for r in (ra, rb)}
+        prompts_sh = {r: build_curated_agent_prompt((desk_sh.tickets_root / r / "task.md").read_text(encoding="utf-8")) for r in (ra, rb)}
         if mode == "seq_ab":
             for r in (ra, rb):
-                br = RoleMcpBridge(desk_sh, r, gui_driver, max_cua, tl_sh, tl_lock, t0)
+                br = RoleMcpBridge(desk_sh, r, gui_driver, unbounded_cua, tl_sh, tl_lock, t0)
                 role_runs_sh[r] = run_ec2_actor(r, prompts_sh[r], br, model_name, effort, api_cfg, codex_bin, cond_dir / "actors" / r, timeout_s)
         else:
             bar = threading.Barrier(2)
 
             def _go_v2(r: str) -> tuple[str, dict[str, Any]]:
-                br = RoleMcpBridge(desk_sh, r, gui_driver, max_cua, tl_sh, tl_lock, t0)
+                br = RoleMcpBridge(desk_sh, r, gui_driver, unbounded_cua, tl_sh, tl_lock, t0)
                 try:
                     bar.wait(timeout=45)
                 except threading.BrokenBarrierError:

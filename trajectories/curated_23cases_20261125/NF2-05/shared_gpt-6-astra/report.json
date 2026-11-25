@@ -1,0 +1,157 @@
+{
+  "task_id": "NF2-05",
+  "title": "Native `Qt5 Assistant` (`.qhc`) Multi-Manual Filter Contention & Live Calc: ARINC-429 Bus Decoding vs. Flight Gain Margins",
+  "domain": "DO-254 Avionics ARINC-429 Bus Telemetry & Flight-Control Gain-Margin Verification (Qt5 Assistant + LibreOffice Calc)",
+  "track": "track1_isolated_screen",
+  "workspace_mode": "isolated",
+  "mode": "shared",
+  "gui_driver": "qwen_cua",
+  "model": "gpt-6-astra",
+  "effort": "high",
+  "wall_seconds": 1169.48,
+  "role_wall_seconds": {
+    "arinc429_bus_engineer": 1067.16,
+    "flight_gain_analyst": 1169.33
+  },
+  "score_a": 0.88,
+  "score_b": 0.6,
+  "mean_score": 0.74,
+  "pass_a": true,
+  "pass_b": false,
+  "joint_pass": false,
+  "gui_action_calls": 93,
+  "gui_observation_calls": 82,
+  "cli_calls": 17,
+  "input_tokens_total": 5537435,
+  "output_tokens_total": 13511,
+  "contention_telemetry": {
+    "total_events": 192,
+    "interleaving_role_switches": 146,
+    "overlap_seconds": 1048.82,
+    "focus_flips": 11,
+    "xkb_layout_flips": 0,
+    "misrouted_keystrokes": 19,
+    "pointer_moves": 29,
+    "clipboard_changes": 0,
+    "roles": [
+      "arinc429_bus_engineer",
+      "flight_gain_analyst"
+    ]
+  },
+  "explicit_race_aware_roles_count": 0,
+  "race_awareness": {
+    "spontaneous_ipc_or_locking": false,
+    "spontaneous_wait_polling": false,
+    "explicit_contention_verbalized": false,
+    "autonomous_race_aware": false,
+    "roles": {
+      "arinc429_bus_engineer": {
+        "command_signals": {
+          "process_or_peer_probe": 1,
+          "lock_or_handoff_ipc": 0,
+          "polling_wait_loop": 0,
+          "hash_or_mtime_recheck": 0
+        },
+        "explicit_race_mentions": 0,
+        "evidence_samples": []
+      },
+      "flight_gain_analyst": {
+        "command_signals": {
+          "process_or_peer_probe": 0,
+          "lock_or_handoff_ipc": 0,
+          "polling_wait_loop": 0,
+          "hash_or_mtime_recheck": 0
+        },
+        "explicit_race_mentions": 0,
+        "evidence_samples": []
+      }
+    }
+  },
+  "actors": {
+    "arinc429_bus_engineer": {
+      "role": "arinc429_bus_engineer",
+      "status": "done",
+      "returncode": 0,
+      "wall_seconds": 1067.16,
+      "permission_audit_ok": true,
+      "gui_driver": "qwen_cua",
+      "gui_action_calls": 41,
+      "gui_observation_calls": 42,
+      "cli_calls": 7,
+      "usage": {
+        "available": true,
+        "turns": 1,
+        "input_tokens": 2474196,
+        "cached_input_tokens": 0,
+        "output_tokens": 6425,
+        "reasoning_output_tokens": 956
+      }
+    },
+    "flight_gain_analyst": {
+      "role": "flight_gain_analyst",
+      "status": "done",
+      "returncode": 0,
+      "wall_seconds": 1169.33,
+      "permission_audit_ok": true,
+      "gui_driver": "qwen_cua",
+      "gui_action_calls": 52,
+      "gui_observation_calls": 40,
+      "cli_calls": 10,
+      "usage": {
+        "available": true,
+        "turns": 1,
+        "input_tokens": 3063239,
+        "cached_input_tokens": 0,
+        "output_tokens": 7086,
+        "reasoning_output_tokens": 1164
+      }
+    }
+  },
+  "grade": {
+    "task_id": "NF2-05",
+    "score_a": 0.88,
+    "score_b": 0.6,
+    "mean_score": 0.74,
+    "pass_a": true,
+    "pass_b": false,
+    "joint_pass": false,
+    "subchecks_a": {
+      "a_json": true,
+      "a_par_cnt": true,
+      "a_ssm_pitot_cnt": true,
+      "a_alt_tas": true,
+      "a_code": true,
+      "a_xlsx_sync": false,
+      "a_fine_boresight_pitch": true
+    },
+    "subchecks_b": {
+      "b_json": true,
+      "b_gm": true,
+      "b_pm_coarse": true,
+      "b_code": false,
+      "b_xlsx_min_f": true,
+      "b_ctrl_kept": true,
+      "b_uno_sync": false,
+      "b_fine_zoh_servo_pm": true,
+      "b_fine_cat2_noncomp": false
+    },
+    "subchecks_joint": {},
+    "errors_a": [
+      "ARINC429_Channel_Summary.xlsx out-of-sync in open Calc or Control!B2 lost"
+    ],
+    "errors_b": [
+      "Wrong fcs_manual_code (Qt Assistant left on REV_A_PROTOTYPE?)",
+      "Open Calc window out-of-sync with disk .xlsx",
+      "noncompliant_loops != ['AUTOLAND_GS', 'ROLL_SAS', 'YAW_DAMP'] (check Category-II AUTOLAND_GS GM>=8 dB / PM>=50 deg)"
+    ],
+    "errors_joint": [],
+    "wall_seconds": 1169.48,
+    "prompt_hygiene": {
+      "ok": true,
+      "forbidden_hits": []
+    },
+    "telemetry": {
+      "task_id": "NF2-05"
+    }
+  }
+}

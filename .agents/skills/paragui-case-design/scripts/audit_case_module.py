@@ -122,12 +122,34 @@ def audit_python_file(path: Path) -> dict:
             warns.append("[CANVAS_FACADE] Uses custom PORTAL_HTML <canvas> with no detected real desktop/browser app reference")
 
     # 6. Artificial low max_cua_calls guillotine
-    m_cua = re.search(r'"max_cua_calls"\s*:\s*(\d+)', src)
-    if m_cua and int(m_cua.group(1)) < 90:
+    m_cua = re.search(r'"max_cua_calls"\s*:\s*([1-9]\d*)', src)
+    if m_cua:
         fails.append(
-            f"[LOW_CUA_CALL_CAP] max_cua_calls={m_cua.group(1)} < 90 artificially cuts off the GUI driver mid-task; "
-            "remove low call caps or use a generous loop-safety ceiling (>= 120)"
+            f"[STEP_LIMIT_BANNED] max_cua_calls={m_cua.group(1)} imposes an artificial step cap; "
+            "step limits are banned during experiments—set max_cua_calls to None (unlimited) and rely on >= 7200s timeout"
         )
+    if re.search(r"(loop-safety ceiling|safety ceiling)\s*:\s*\{", src, flags=re.I):
+        fails.append(
+            "[PROMPT_STEP_LIMIT] Wrapper prompt injects a call/step ceiling notice; remove all step-limit text from agent prompts"
+        )
+    for tkey in ("conc_role_timeout_s", "iso_role_timeout_s"):
+        for mt in re.finditer(rf'"{tkey}"\s*:\s*(\d+)', src):
+            if int(mt.group(1)) < 7200:
+                fails.append(
+                    f"[LOW_TIMEOUT_BUDGET] {tkey}={mt.group(1)}s < 7200s (2h); "
+                    "set anti-deadlock wall-clock timeout to >= 7200s so agents are never cut off prematurely"
+                )
+    if re.search(r"time budget\s*:\s*\{", src, flags=re.I):
+        warns.append(
+            "[PROMPT_TIME_PRESSURE] Wrapper prompt injects 'time budget: ...s' countdown text; keep >= 7200s timeout as a silent outer anti-deadlock guard"
+        )
+    m_eff = re.search(r'add_argument\(\s*"--effort"[^)]*default\s*=\s*"([^"]+)"', src)
+    if m_eff and m_eff.group(1) != "high":
+        fails.append(f"[NON_HIGH_DEFAULT_EFFORT] --effort defaults to '{m_eff.group(1)}'; standardize default reasoning effort to 'high'")
+    if re.search(r"\bj_mult\s*=\s*\(\s*0\.75", src):
+        fails.append("[ASYMMETRIC_SHARED_MULTIPLIER] Asymmetric shared-only j_mult=0.75 distorts isolated vs shared score comparison")
+    if "Xvfb :99" in src and " -ac " in src and "container:" in src:
+        warns.append("[XVFB_NO_AUTH_BYPASS] Xvfb launched with -ac while sharing container network; use 'Xvfb :99 -auth /tmp/x99.auth' + separate CLI UID")
 
     # 7. Harness checks: post-exit Ctrl+S, guest_bash X11 leak, cross-container PID split, driver-coupled grader
     stop_idx = src.find("def stop_and_grade")

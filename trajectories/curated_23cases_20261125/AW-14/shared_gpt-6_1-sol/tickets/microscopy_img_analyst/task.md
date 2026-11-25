@@ -1,0 +1,7 @@
+# Work Order — Fluorescence Microscopy Imaging Analyst (`microscopy_img_analyst`)
+
+Process the multi-layer microscopy capture inside **GIMP**, update Panel A in the shared **Inkscape** poster (`/workspace/assay/poster_layout.svg`), and compute Beer-Lambert concentration metrics from the 48-well micro-plate dataset in `/workspace/assay`:
+
+1. In the open **GIMP** window on the desktop, select the `fluorescence_a.xcf` (`900x600`) image tab, hide **both** non-production FPO/calibration layers while keeping `DAPI_Nuclei_Bg` and `GFP_Signal_Core` visible, scale the image canvas to exact **`600x400`** (`Image -> Scale Image...`), and export via `File -> Export As...` to `/srv/studio_project/exports/fluorescence_600x400.png` (`/srv/studio_project` is mounted read-only in your terminal for post-export verification).
+2. Read `/workspace/assay/specs/Assay_Imaging_Protocol.pdf`, query `/workspace/assay/plate_readings.sqlite` (`cuvette_od`), and inspect the **BioPhoton Portal** in Chromium (`http://127.0.0.1:19614`, `Fluorophore Extinction` tab) to compute QC-filtered `mean_blank_corrected_od` (3 decimals), `sample_conc_um` (2 decimals), and `gfp_core_hex`, writing `/workspace/assay/microscopy_metrics.json` (`symposium_id`, `valid_sample_well_count`, `gfp_core_hex`, `mean_blank_corrected_od`, `sample_conc_um`).
+3. Update `<g id="panel_a">` in `/workspace/assay/poster_layout.svg` (preserving `<g id="panel_b">`!) so the Panel A caption includes `SYMPOSIUM_ID` and `sample_conc_um`.

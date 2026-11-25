@@ -1,0 +1,184 @@
+{
+  "task_id": "NF-05",
+  "title": "Same-Origin BroadcastChannel & Responsive Viewport Contention: 420-Fill Execution Microstructure QA vs. 18-Node Market-Data DAG Replay",
+  "domain": "Quantitative Execution Microstructure & Real-Time Market-Data Pipeline SRE (Chromium Web Workbench)",
+  "track": "track1_isolated_screen",
+  "workspace_mode": "isolated",
+  "mode": "shared",
+  "gui_driver": "qwen_cua",
+  "model": "gpt-6.1-sol",
+  "effort": "high",
+  "wall_seconds": 1060.55,
+  "role_wall_seconds": {
+    "execution_quant_researcher": 1060.4,
+    "market_data_lineage_sre": 400.24
+  },
+  "score_a": 1.0,
+  "score_b": 0.8273,
+  "mean_score": 0.9137,
+  "pass_a": true,
+  "pass_b": true,
+  "joint_pass": true,
+  "gui_action_calls": 72,
+  "gui_observation_calls": 65,
+  "cli_calls": 57,
+  "input_tokens_total": 10043204,
+  "output_tokens_total": 15818,
+  "contention_telemetry": {
+    "total_events": 194,
+    "interleaving_role_switches": 97,
+    "overlap_seconds": 382.03,
+    "focus_flips": 19,
+    "xkb_layout_flips": 0,
+    "misrouted_keystrokes": 0,
+    "pointer_moves": 37,
+    "clipboard_changes": 0,
+    "roles": [
+      "execution_quant_researcher",
+      "market_data_lineage_sre"
+    ]
+  },
+  "explicit_race_aware_roles_count": 0,
+  "race_awareness": {
+    "spontaneous_ipc_or_locking": true,
+    "spontaneous_wait_polling": false,
+    "explicit_contention_verbalized": false,
+    "autonomous_race_aware": true,
+    "roles": {
+      "execution_quant_researcher": {
+        "command_signals": {
+          "process_or_peer_probe": 0,
+          "lock_or_handoff_ipc": 0,
+          "polling_wait_loop": 0,
+          "hash_or_mtime_recheck": 0
+        },
+        "explicit_race_mentions": 0,
+        "evidence_samples": []
+      },
+      "market_data_lineage_sre": {
+        "command_signals": {
+          "process_or_peer_probe": 0,
+          "lock_or_handoff_ipc": 1,
+          "polling_wait_loop": 0,
+          "hash_or_mtime_recheck": 0
+        },
+        "explicit_race_mentions": 0,
+        "evidence_samples": [
+          "cat > /tmp/build_lineage_audit.py <<'PY'\nimport json\nfrom decimal import Decimal as D\nfrom collections import Counter\n\nlatest={}\nwith open('"
+        ]
+      }
+    }
+  },
+  "actors": {
+    "market_data_lineage_sre": {
+      "role": "market_data_lineage_sre",
+      "status": "done",
+      "returncode": 0,
+      "wall_seconds": 400.24,
+      "permission_audit_ok": true,
+      "gui_driver": "qwen_cua",
+      "gui_action_calls": 23,
+      "gui_observation_calls": 19,
+      "cli_calls": 14,
+      "usage": {
+        "available": true,
+        "turns": 1,
+        "input_tokens": 1883333,
+        "cached_input_tokens": 0,
+        "output_tokens": 6017,
+        "reasoning_output_tokens": 1279
+      }
+    },
+    "execution_quant_researcher": {
+      "role": "execution_quant_researcher",
+      "status": "done",
+      "returncode": 0,
+      "wall_seconds": 1060.4,
+      "permission_audit_ok": true,
+      "gui_driver": "qwen_cua",
+      "gui_action_calls": 49,
+      "gui_observation_calls": 46,
+      "cli_calls": 43,
+      "usage": {
+        "available": true,
+        "turns": 1,
+        "input_tokens": 8159871,
+        "cached_input_tokens": 0,
+        "output_tokens": 9801,
+        "reasoning_output_tokens": 2085
+      }
+    }
+  },
+  "grade": {
+    "task_id": "NF-05",
+    "score_a": 1.0,
+    "score_b": 0.8273,
+    "mean_score": 0.9137,
+    "pass_a": true,
+    "pass_b": true,
+    "joint_pass": true,
+    "subchecks_a": {
+      "a_json": true,
+      "a_cnt": true,
+      "a_lim_breach": true,
+      "a_net_is_rough": true,
+      "a_net_is_exact": true,
+      "a_v_4plus": true,
+      "a_v_all6": true,
+      "a_low_v": true,
+      "a_high_v": true,
+      "a_tox_30s": true,
+      "a_reg_day": true,
+      "a_mob_ov_id": true,
+      "a_mob_btn_id": true,
+      "a_esc_trap": true,
+      "a_live_snaps": true,
+      "a_tok": true,
+      "a_not_stress": true,
+      "a_csv_intact": true,
+      "a_v_keys": true
+    },
+    "subchecks_b": {
+      "b_json": true,
+      "b_dedup_cnt": true,
+      "b_not_tomb_included": true,
+      "b_dlq_cnt": true,
+      "b_skew_cnt": true,
+      "b_sla_2000": true,
+      "b_bot_node": true,
+      "b_base_cp_rough": true,
+      "b_base_cp_exact": false,
+      "b_salt_cp_exact": false,
+      "b_ds_4plus": true,
+      "b_ds_exact": true,
+      "b_no_self_ds": true,
+      "b_no_sym_ds": true,
+      "b_tok": true,
+      "b_live_snap": true,
+      "b_salt_lt_base": true,
+      "b_jsonl_intact": true
+    },
+    "subchecks_joint": {},
+    "errors_a": [],
+    "errors_b": [
+      "baseline_critical_path_sec != 285.4 (check /api/desk/slot_pools Stage-4 queue penalty)",
+      "salted_critical_path_sec != 220.6 (check +7.5s Stage-4 slot pool & +6.5s repartition shuffle)"
+    ],
+    "errors_joint": [],
+    "wall_seconds": 1060.55,
+    "prompt_hygiene": {
+      "ok": true,
+      "forbidden_hits": []
+    },
+    "telemetry": {
+      "task_id": "NF-05",
+      "env": "PROD_CONSOLIDATED",
+      "wb_env": "PROD_CONSOLIDATED",
+      "dag_env": "BACKFILL_STRESS_REPLAY",
+      "env_flips": 1,
+      "qa_mobile_ok": true,
+      "qa_prod_ok": true,
+      "lineage_snap_ok": true
+    }
+  }
+}

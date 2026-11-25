@@ -1,0 +1,197 @@
+{
+  "task_id": "NF-14",
+  "title": "Live Blender 3.4 Surgical Workcell GUI & Open Writer DHF: 13-Mesh Organ-Clearance Kinematics vs. Cycles Camera Occlusion & IEC Thermal Cap",
+  "domain": "Surgical Robotics 3D CAD/Kinematics (Blender 3.4 GUI) & Medical Endoscope Optical/Thermal Engineering",
+  "track": "track2_shared_state",
+  "workspace_mode": "shared",
+  "mode": "shared",
+  "gui_driver": "qwen_cua",
+  "model": "gpt-6-astra",
+  "effort": "high",
+  "wall_seconds": 1081.44,
+  "role_wall_seconds": {
+    "robotics_kinematics_eng": 1081.32,
+    "endoscope_optics_eng": 1081.33
+  },
+  "score_a": 1.0,
+  "score_b": 0.896,
+  "mean_score": 0.948,
+  "pass_a": true,
+  "pass_b": true,
+  "joint_pass": true,
+  "gui_action_calls": 98,
+  "gui_observation_calls": 74,
+  "cli_calls": 262,
+  "input_tokens_total": 7404763,
+  "output_tokens_total": 27687,
+  "contention_telemetry": {
+    "total_events": 434,
+    "interleaving_role_switches": 172,
+    "overlap_seconds": 1073.47,
+    "focus_flips": 20,
+    "xkb_layout_flips": 0,
+    "misrouted_keystrokes": 33,
+    "pointer_moves": 18,
+    "clipboard_changes": 0,
+    "roles": [
+      "robotics_kinematics_eng",
+      "endoscope_optics_eng"
+    ]
+  },
+  "explicit_race_aware_roles_count": 0,
+  "race_awareness": {
+    "spontaneous_ipc_or_locking": true,
+    "spontaneous_wait_polling": false,
+    "explicit_contention_verbalized": false,
+    "autonomous_race_aware": true,
+    "roles": {
+      "robotics_kinematics_eng": {
+        "command_signals": {
+          "process_or_peer_probe": 1,
+          "lock_or_handoff_ipc": 0,
+          "polling_wait_loop": 0,
+          "hash_or_mtime_recheck": 1
+        },
+        "explicit_race_mentions": 0,
+        "evidence_samples": []
+      },
+      "endoscope_optics_eng": {
+        "command_signals": {
+          "process_or_peer_probe": 0,
+          "lock_or_handoff_ipc": 3,
+          "polling_wait_loop": 0,
+          "hash_or_mtime_recheck": 4
+        },
+        "explicit_race_mentions": 0,
+        "evidence_samples": [
+          "mkdir -p /workspace/verification; cp /workspace/shared_docs/laparoscopic_workcell.blend /workspace/verification/original_workcell.blend; cp ",
+          "sed -i \"/ assert ok and not blocked/i\\ print('CHECK',o.name,report[o.name],flush=True)\" /workspace/calibrate_optics.py\nblender -b /workspace",
+          "cat > /workspace/search_pose.py <<'PY'\nimport bpy, math, json\nfrom mathutils import Vector\ns=bpy.context.scene;deps=bpy.context.evaluated_de"
+        ]
+      }
+    }
+  },
+  "actors": {
+    "endoscope_optics_eng": {
+      "role": "endoscope_optics_eng",
+      "status": "timeout",
+      "returncode": -1,
+      "wall_seconds": 1081.33,
+      "permission_audit_ok": true,
+      "gui_driver": "qwen_cua",
+      "gui_action_calls": 39,
+      "gui_observation_calls": 29,
+      "cli_calls": 247,
+      "usage": {
+        "available": true,
+        "turns": 1,
+        "input_tokens": 3664239,
+        "cached_input_tokens": 0,
+        "output_tokens": 14538,
+        "reasoning_output_tokens": 4079
+      }
+    },
+    "robotics_kinematics_eng": {
+      "role": "robotics_kinematics_eng",
+      "status": "timeout",
+      "returncode": -1,
+      "wall_seconds": 1081.32,
+      "permission_audit_ok": true,
+      "gui_driver": "qwen_cua",
+      "gui_action_calls": 59,
+      "gui_observation_calls": 45,
+      "cli_calls": 15,
+      "usage": {
+        "available": true,
+        "turns": 1,
+        "input_tokens": 3740524,
+        "cached_input_tokens": 0,
+        "output_tokens": 13149,
+        "reasoning_output_tokens": 4102
+      }
+    }
+  },
+  "grade": {
+    "task_id": "NF-14",
+    "score_a": 1.0,
+    "score_b": 0.896,
+    "mean_score": 0.948,
+    "pass_a": true,
+    "pass_b": true,
+    "joint_pass": true,
+    "subchecks_a": {
+      "a_json": true,
+      "a_objs_kept": true,
+      "a_organ_clr_6plus": true,
+      "a_organ_clr_8mm": true,
+      "a_inter_arm": true,
+      "a_left_reach": true,
+      "a_right_reach": true,
+      "a_rcm_fulcrum": true,
+      "a_cannula_stop": true,
+      "a_fine_bip_freq": true,
+      "a_json_clr_match": true,
+      "a_json_arm_match": true,
+      "a_bip_range": true,
+      "a_bip_committed": true,
+      "a_bip_json": true,
+      "a_code": true,
+      "a_dhf_code": true,
+      "a_no_swap": true,
+      "a_blender_gui_synced": true,
+      "j_iec_thermal_cap": true,
+      "j_blend_dual_valid": true,
+      "j_blender_gui_synced": true,
+      "j_uno_dhf_synced": true,
+      "j_dhf_dual_signoff": true
+    },
+    "subchecks_b": {
+      "b_json": true,
+      "b_objs_kept": true,
+      "b_standoff": true,
+      "b_optic_rcm_horizon": true,
+      "b_json_standoff": true,
+      "b_framed_2plus": true,
+      "b_framed_all3": true,
+      "b_ray_unoccluded": true,
+      "b_png_dim": true,
+      "b_png_colors": true,
+      "b_spot_coaxial_aim": true,
+      "b_fine_cam_dof": false,
+      "b_fine_cam_fstop": false,
+      "b_led_range": true,
+      "b_led_committed": true,
+      "b_led_json": true,
+      "b_code": true,
+      "b_dhf_code": true,
+      "b_blender_gui_synced": true,
+      "j_iec_thermal_cap": true,
+      "j_blend_dual_valid": true,
+      "j_blender_gui_synced": true,
+      "j_uno_dhf_synced": true,
+      "j_dhf_dual_signoff": true
+    },
+    "subchecks_joint": {
+      "j_iec_thermal_cap": true,
+      "j_blend_dual_valid": true,
+      "j_blender_gui_synced": true,
+      "j_uno_dhf_synced": true,
+      "j_dhf_dual_signoff": true
+    },
+    "errors_a": [],
+    "errors_b": [
+      "Camera DOF not enabled or focus_distance != lesion standoff per Endoscope_CamData custom properties",
+      "Camera DOF aperture_fstop != 4.0 per Endoscope_CamData custom properties"
+    ],
+    "errors_joint": [],
+    "wall_seconds": 1081.44,
+    "prompt_hygiene": {
+      "ok": true,
+      "forbidden_hits": []
+    },
+    "telemetry": {
+      "task_id": "NF-14",
+      "uno_port": 2002
+    }
+  }
+}

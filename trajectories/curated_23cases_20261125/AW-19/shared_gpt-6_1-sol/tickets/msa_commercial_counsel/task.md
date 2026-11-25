@@ -1,0 +1,10 @@
+# Work Order — MSA Commercial & Colocation Lease Counsel (`msa_commercial_counsel`)
+
+Finalize the Year-2 colocation lease & SLA exposure schedule from the 24-tranche lease ledger in `/workspace/dc_deal`, complete the `Colocation_Leases` and `Deal_Rollup` schedules in the open **LibreOffice Calc** workbook (`/srv/studio_project/Global_Capex_Model.xlsx`, mounted read-only in your terminal for post-save verification), and execute all 5 Section 9 contract redlines in the open **LibreOffice Writer** agreement (`/srv/studio_project/Master_Services_Agreement.odt`):
+
+1. Review `/workspace/dc_deal/specs/DC_Procurement_Policy.pdf`, query `/workspace/dc_deal/procurement.sqlite` (`colocation_tranches`), and inspect the **Procurement & Treasury Portal** open in Chromium (`http://127.0.0.1:19619`, `Overview` and `MSA Escalation & SLA` views).
+2. Aggregating `ACTIVE_EXECUTED` tranches per site and applying the CPI escalator collar, hyperscale MW anchor discount, and SLA tier exposure caps from the policy and portal, compute 3-decimal MUSD `yr2_rent_musd` and `sla_reserve_musd` for `SITE-FRA1`..`SITE-OSA8`, and write `/workspace/dc_deal/lease_msa_audit.json` (`deal_stamp`, `yr2_rent_musd`, `sla_reserve_musd`, `total_yr2_lease_musd`, `mean_yr2_lease_musd`, `total_sla_reserve_musd`, `largest_yr2_site_id`, `selected_lease_escrow_musd`).
+3. In the open **LibreOffice Calc** window (`Global_Capex_Model.xlsx`):
+   - On `Colocation_Leases`, enter `yr2_rent_musd` in `B2:B9` and `sla_reserve_musd` in `C2:C9`, enter `=SUM(...)` formulas in `B10` and `C10`, and enter `=AVERAGE(B2:B9)` in `B11`.
+   - On `Deal_Rollup`, enter `total_yr2_lease_musd` in `B3`, select the approved Colocation Security Escrow tier in `B5` so `Reserve_Coverage_Ratio` (`B6`) satisfies the portal's Treasury Reserve Covenant window, and save (`Ctrl+S`).
+4. In the open **LibreOffice Writer** window (`Master_Services_Agreement.odt`), replace all 5 Section 9 placeholders (`[REDLINE_S9_STAMP]`, `[REDLINE_YR2_LEASE_MUSD]`, `[REDLINE_TOTAL_SLA_RESERVE_MUSD]`, `[REDLINE_SUPERCAP_MULT]`, `[REDLINE_LARGEST_LEASE_SITE]`) with the verified closing values, and save (`Ctrl+S`).

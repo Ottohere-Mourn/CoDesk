@@ -77,7 +77,7 @@ _ZH_TITLES: dict[str, str] = {
     "EC-03": "1U 机箱三维钣金开孔、EMC 屏蔽与丝印制版耦合",
 }
 
-DEFAULT_LOOP_SAFETY_CUA_CEILING = 150
+DEFAULT_ANTI_DEADLOCK_TIMEOUT_S = 7200
 
 
 def _normalize_curated_meta(task_id: str) -> dict[str, Any]:
@@ -89,7 +89,9 @@ def _normalize_curated_meta(task_id: str) -> dict[str, Any]:
     meta["source_file"] = _SOURCE_PATHS[task_id]
     meta["runner_family"] = "ec_v1_astra_desktop" if is_ec1 else "ec_v2_multi_driver_desktop"
     meta["workspace_mode"] = str(meta.get("workspace_mode") or "shared")
-    meta["max_cua_calls"] = max(DEFAULT_LOOP_SAFETY_CUA_CEILING, int(meta.get("max_cua_calls") or 0))
+    meta["max_cua_calls"] = None
+    meta["iso_role_timeout_s"] = max(DEFAULT_ANTI_DEADLOCK_TIMEOUT_S, int(meta.get("iso_role_timeout_s") or 0))
+    meta["conc_role_timeout_s"] = max(DEFAULT_ANTI_DEADLOCK_TIMEOUT_S, int(meta.get("conc_role_timeout_s") or 0))
     meta["share_desk_pid"] = bool(task_id == "RBS3-05")
     meta["absent_peer_reference_fill_in_isolated"] = bool(meta["workspace_mode"] == "shared")
     if is_ec1 and "open_gui_docs" not in meta:

@@ -33,12 +33,15 @@ Every benchmark case must satisfy both **Single-Case Authenticity** and **Exam-S
 - **Accuracy Degradation Is Primary; Overhead Inflation Is Auxiliary**:
   - **Primary signal**: Measurable partial-credit or pass-rate drop under concurrency (`Score_shared < Score_isolated` or `Pass_conc < Pass_seq`). Never certify a `1.000 -> 1.000` ceiling-saturated task as a benchmark case merely because token usage rose.
   - **Auxiliary telemetry**: Always log input-token ratio, wall-clock ratio, window-focus flips, and misrouted keystrokes to quantify self-healing overhead alongside accuracy drops.
-- Keep tool/solver execution at **natural speed** (seconds, never multi-minute sleeps) and provide **`1.8x-2.0x` wall-clock slack** in `conc_role_timeout_s`.
+- Keep tool/solver execution at **natural speed** (seconds, never multi-minute sleeps). Keep `isolated` and `shared` per-role scoring denominators **100% identical**—never apply a `shared`-only global multiplier (`j_mult`) that double-penalizes single-role misses.
 
-### 4. Keep Clean GUI-Driver Ablation Boundaries & Non-YOLO Isolation
+### 4. Standardized Evaluation Runtime Protocol & Clean GUI-Driver Isolation
+- **Zero Step / Tool-Call Limits (严禁步数上限)**: **Never** impose `max_cua_calls`, `max_steps`, or per-role GUI/CLI tool-call caps in task metadata or MCP bridges, and **never** mention a call/step ceiling in the agent prompt. Let agents take as many GUI and CLI actions as needed to inspect, recover, and verify.
+- **Anti-Deadlock Wall-Clock Guard Only (`>= 7200s` / `2h+`)**: Set outer role timeouts (`iso_role_timeout_s`, `conc_role_timeout_s`) to **at least `7200` seconds (`2 hours` or more)** solely to prevent infinite hangs. Never use tight 15-30 minute timeouts (`1080s`-`1800s`) that cut off long-horizon contention recovery, and **do not** inject countdown `time budget: ...s` pressure into the agent's prompt.
+- **Fixed Reasoning Effort = `high`**: Standardize `model_reasoning_effort = "high"` (`--effort high`) across all evaluated models (`gpt-6.1-sol`, `gpt-6-astra`, etc.) unless the user explicitly asks for a reasoning-effort ablation. Ensure `models-catalog.json` includes all supported tiers.
+- **Neutral Runtime Wrapper Prompt**: Keep the runner's wrapper around `task.md` minimal and neutral—only state factual workspace paths (e.g. `/workspace`) and available MCP servers, with **zero** step limits, countdown timers, artificial prohibitions, or peer-agent hints.
 - **Decouple Tasks & Graders from Specific GUI Drivers**: Never hardcode MCP tool names (`desktop.click`, `qwen_cua_driver`, `click_and_type`) in `task.md`, and never hardcode a specific CUA driver binary inside `grade()`. Expose standard OS surfaces (X11/WindowServer, `AT-SPI2` bus, and browser CDP only when CDP itself is part of the tested workflow).
-- **Prevent `guest_bash` from Bypassing the Tested GUI Driver**: Keep `guest_bash` scoped to filesystem, compilers, data tools, and service ports—**do not mount raw `:99` `/tmp/.X11-unix` or `AT-SPI` sockets or `DISPLAY=:99` into `guest_bash`** (otherwise agents run CLI `xdotool`/`wmctrl`/`xclip`/`import` and bypass `qwen-cua-driver`, `cua-driver`, `agent-desktop`, or coordinate drivers during driver ablations; if testing pure-GUI terminal self-bootstrapping, disable `guest_bash` cleanly).
-- **No Artificial Low CUA Call Caps**: Never set low GUI step guillotines (such as `max_cua_calls = 42`) that cut off the GUI driver mid-task; use generous loop-safety ceilings (`>= 120`) if needed.
+- **Prevent `guest_bash` from Bypassing the Tested GUI Driver**: Keep `guest_bash` scoped to filesystem, compilers, data tools, and service ports—**do not mount raw `:99` `/tmp/.X11-unix` or `AT-SPI` sockets or `DISPLAY=:99` into `guest_bash`**, enforce `Xvfb :99 -auth` (never `-ac` when sharing `--network container:<desk>` abstract sockets), and run `guest_bash` under a separate UID (e.g. `UID 2000`) when sharing `--pid` so `/proc/<pid>/root` cannot bypass GUI-only files.
 - **Enforce Non-YOLO & Secret Hygiene**: Run all containers without `--yolo` or host-root bypasses (`--security-opt no-new-privileges`, verified `sandbox_mode = "workspace-write"` or `"read-only"`), and never expose private API keys in logs, containers, or reports.
 
 ## What Every Case & Harness MUST Avoid (Hard Bans)
@@ -73,7 +76,7 @@ Keep **deterministic problem-validity checks** (author's privileged ground-truth
 2. **`Gate 2 — gt_seq_ab_exists`**: Ground-truth solver achieves full credit (`1.0` / `joint_pass == True`) under `Role A -> Role B`.
 3. **`Gate 3 — gt_seq_ba_exists`**: Ground-truth solver also achieves full credit under `Role B -> Role A` (zero hidden ordering trap).
 4. **`Gate 4 — gt_naive_race_corrupts`**: Unguarded concurrent actions measurably corrupt target state or score (`joint_pass == False` or `Score_race < Score_isolated`).
-5. **`Gate 5 — gt_careful_conc_feasible`**: Under **real tool timing** (using genuine multithreaded concurrency rather than a single global mutex shortcut), careful concurrent execution achieves full credit within `<= 55%` of `conc_role_timeout_s`.
+5. **`Gate 5 — gt_careful_conc_feasible`**: Under **real tool timing** (using genuine multithreaded concurrency rather than a single global mutex shortcut), careful concurrent execution achieves full credit cleanly in real seconds (well below the `>= 7200s` anti-deadlock guard).
 
 ### B. Real LLM Screening Bar
 - Require **non-saturated single-agent difficulty** (`isolated` / `seq` score in `0.40-0.85` or pass rate `35%-75%`) AND **measurable concurrent degradation** (`Score_shared < Score_isolated`), reporting token/latency/focus-flip overhead alongside accuracy.

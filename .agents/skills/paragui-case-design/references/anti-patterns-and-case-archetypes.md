@@ -32,9 +32,15 @@ Consult this reference when auditing benchmark suites or checking whether a prop
 - **Fix**: Share `--pid` (or provide a clean service supervisor) whenever agents must restart a daemon; scope `isolated` boot/grading strictly to the active role; never inject `Ctrl+S` after agent exit; keep shared `~/Downloads` non-chatroom or audited.
 
 ### Family F: Synthetic 100-Line PyQt/GTK Toy Mockups, Frankenstein Pairings & `1.0 -> 1.0` Saturation (`rb_osw2_synth_v1/v2`, `NF-20`)
-- **What happened**: Instead of running real open-source desktop apps (`MuseScore`, `Shotcut`, `FreeCAD`, `Inkscape`, `GIMP`, `QGIS`), tasks embedded ~100-line inline `PyQt5`/`GTK` scripts (`CutForge_QT_SOURCE`, `ScoreCanvas_QT_SOURCE`, `VectorForge_QT_SOURCE`, `SignalDesk`), paired unrelated jobs on one screen (mortgage officer + digital-logic TA; font designer + CPU pipeline engineer), spoon-fed JSON field checklists in `task.md`, exposed `:99` X11 sockets inside `guest_bash` alongside an artificial `max_cua_calls = 42` cap, and certified `1.000 -> 1.000` (93-180s) saturated tasks solely on token inflation.
+- **What happened**: Instead of running real open-source desktop apps (`MuseScore`, `Shotcut`, `FreeCAD`, `Inkscape`, `GIMP`, `QGIS`), tasks embedded ~100-line inline `PyQt5`/`GTK` scripts (`CutForge_QT_SOURCE`, `ScoreCanvas_QT_SOURCE`, `VectorForge_QT_SOURCE`, `SignalDesk`), paired unrelated jobs on one screen (mortgage officer + digital-logic TA; font designer + CPU pipeline engineer), spoon-fed JSON field checklists in `task.md`, exposed `:99` X11 sockets inside `guest_bash` alongside artificial `max_cua_calls` caps (`42`–`180`) and 18-25m timeouts (`1080s`–`1500s`), and certified `1.000 -> 1.000` (93-180s) saturated tasks solely on token inflation.
 - **Why it is invalid**: Violates single-case authenticity, saturates single-agent baselines (`0.96-0.99`), and contaminates GUI-driver ablations via CLI `xdotool`/`xclip` bypasses.
-- **Fix**: Use real desktop/web software, plausible co-tenant roles, un-spoiled goal prompts, non-saturated `0.40-0.85` single-agent difficulty with real `Score_shared < Score_isolated` degradation, and clean X11/AT-SPI isolation between `guest_bash` and the tested GUI driver.
+- **Fix**: Use real desktop/web software, plausible co-tenant roles, un-spoiled goal prompts, unlimited GUI/CLI steps with `>= 7200s` (`2h+`) anti-deadlock timeouts, `model_reasoning_effort = "high"`, non-saturated `0.40-0.85` single-agent difficulty with real `Score_shared < Score_isolated` degradation, and `Xvfb -auth` + separate-UID CLI isolation.
+
+### Family G: Asymmetric `shared`-Only Score Multipliers & Brittle Non-GUI XML Parsers (`AW-19` `v1`, `NF2-15`)
+- **What happened**:
+  1. `build_aw_grade_payload` set `j_mult = 1.0` in `isolated` and `j_mult = 0.75` in `shared` while repeating single-role checks inside `checks_joint`, fabricating a `-23.6%` concurrent drop when `0` subchecks actually degraded.
+  2. `NF2-15` parsed `.ui` files via raw `ElementTree` looking only for `<property name="minimumWidth">`, whereas saving in real `Qt5 Designer` serializes `<property name="minimumSize"><size><width>...`, turning GUI saves into `0 -> 9999+9999` failures.
+- **Fix**: Keep per-role weights/denominators identical across `isolated` and `shared` (no `j_mult`), and load native app formats via real toolchains (`PyQt5.uic.loadUi`, headless `LibreOffice`, `FreeCAD`, `QGIS`, `Blender`) rather than brittle regex/tag assumptions.
 
 ---
 

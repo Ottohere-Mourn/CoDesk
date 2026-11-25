@@ -1,0 +1,7 @@
+# Work Order — Gel Electrophoresis & Blot Analyst (`gel_blot_analyst`)
+
+Process the multi-layer gel blot capture inside **GIMP**, update Panel B in the shared **Inkscape** poster (`/workspace/assay/poster_layout.svg`), and compute housekeeping-normalized fold-change metrics from the 24-lane densitometry dataset in `/workspace/assay`:
+
+1. In the open **GIMP** window on the desktop, select the `electrophoresis_b.xcf` (`900x600`) image tab, hide **both** non-production ruler/QC layers while keeping `Gel_Matrix_Bg` and `Target_Band_Cyan` visible, scale the image canvas to exact **`600x400`** (`Image -> Scale Image...`), and export via `File -> Export As...` to `/srv/studio_project/exports/electrophoresis_600x400.png` (`/srv/studio_project` is mounted read-only in your terminal for post-export verification).
+2. Read `/workspace/assay/specs/Assay_Imaging_Protocol.pdf`, query `/workspace/assay/plate_readings.sqlite` (`densitometry_lanes`), and inspect the **BioPhoton Portal** in Chromium (`http://127.0.0.1:19614`, `Housekeeping Normalization` tab) to compute QC-filtered `control_norm_ratio` (3 decimals), `treated_fold_change` (2 or 3 decimals), and `band_cyan_hex`, writing `/workspace/assay/blot_metrics.json` (`symposium_id`, `valid_lane_count`, `band_cyan_hex`, `control_norm_ratio`, `treated_fold_change`).
+3. Update `<g id="panel_b">` in `/workspace/assay/poster_layout.svg` (preserving `<g id="panel_a">`!) so the Panel B caption includes `SYMPOSIUM_ID` and `treated_fold_change`, and export `/workspace/assay/poster_proof.pdf` via `inkscape`.

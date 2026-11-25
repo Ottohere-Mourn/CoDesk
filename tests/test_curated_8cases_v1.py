@@ -12,7 +12,7 @@ from tasks.curated_8cases_v1.registry import (
     CURATED_8_CATALOG,
     CURATED_8_IDS,
     CURATED_8_MODULES,
-    DEFAULT_LOOP_SAFETY_CUA_CEILING,
+    DEFAULT_ANTI_DEADLOCK_TIMEOUT_S,
     resolve_workspace_map,
     verify_svg_group_layers_non_empty,
 )
@@ -39,7 +39,9 @@ def test_curated_8cases_exact_ids_and_hardened_metadata() -> None:
         meta = CURATED_8_BY_ID[tid]
         assert (CODESK_ROOT / meta["source_file"]).is_file(), tid
         assert len(meta["roles"]) == 2
-        assert meta["max_cua_calls"] >= DEFAULT_LOOP_SAFETY_CUA_CEILING
+        assert meta["max_cua_calls"] is None
+        assert meta["iso_role_timeout_s"] >= DEFAULT_ANTI_DEADLOCK_TIMEOUT_S
+        assert meta["conc_role_timeout_s"] >= DEFAULT_ANTI_DEADLOCK_TIMEOUT_S
         assert meta["workspace_mode"] in ("isolated", "shared")
         if meta["workspace_mode"] == "shared":
             assert meta["absent_peer_reference_fill_in_isolated"] is True

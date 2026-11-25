@@ -1,7 +1,7 @@
 # CoDesk / paraGUI 全量任务资产与多模型评测总览（中文汇总版）
 
 更新日期：2026-11-25
-> **精选高质量双智能体套件入口（8 项优选）**：经人工逐题代码审计筛出的 8 项高质量任务（`RBS3-04, RBS3-05, RBS3-02, RBS2-06, RBS-06, RBS3-01, EC-01, EC-03`）已独立封装至统一注册表 `tasks/curated_8cases_v1/`、统一执行器 `experiments/curated_8cases_v1.py` 与清单 `lists/curated_high_quality_8cases_20261124.json`，详见 [`CURATED_8CASES_HANDOFF_20261124_ZH.md`](CURATED_8CASES_HANDOFF_20261124_ZH.md)。
+> **精选 23 项高质量双智能体套件 + 184 条全量轨迹入口（2026-11-25 更新）**：经逐题审计与 `2h` 零步数上限复验沉淀的 **23 项优选任务**（`Curated-8` + `AW-v1` 5 项 + `NF-v1` 真软件重构 5 项 + `NF2` 5 项）及双模型 **92 局 / 184 角色全量轨迹**已汇总至 `trajectories/curated_23cases_20261125/` 与 `lists/curated_23cases_and_trajectories_20261125.json`，详见 [`CURATED_23CASES_AND_TRAJECTORIES_20261125_ZH.md`](CURATED_23CASES_AND_TRAJECTORIES_20261125_ZH.md)。
 
 所在分支：`codex/all-codesk-cases-20261113`
 远程仓库：`git@github.com:Ottohere-Mourn/CoDesk.git`
