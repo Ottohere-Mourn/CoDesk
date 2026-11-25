@@ -43,6 +43,7 @@ TASK_META: dict[str, Any] = {
     "iso_role_timeout_s": 1200,
     "conc_role_timeout_s": 1500,
     "max_cua_calls": 140,
+    "mount_studio_ro": True,
 }
 
 DHR_LOT = "ISO13485-MON-772"
@@ -320,7 +321,7 @@ def boot_apps(workspace_root: Path, state_dir: Path, active_roles: tuple[str, ..
             "-lc",
             f"id -u studio_ui >/dev/null 2>&1 || useradd -m -s /bin/bash studio_ui; "
             f"mkdir -p /srv/studio_project/exports && cp '{seed / 'ISO13485_DHR_Checklist.xlsx'}' /srv/studio_project/ISO13485_DHR_Checklist.xlsx && "
-            f"chown -R studio_ui:studio_ui /opt/aw20_masters /srv/studio_project && chmod 700 /opt/aw20_masters /srv/studio_project",
+            f"chown -R studio_ui:studio_ui /opt/aw20_masters /srv/studio_project && chmod 700 /opt/aw20_masters && chmod -R 755 /srv/studio_project",
         ],
         check=True,
         capture_output=True,
@@ -586,10 +587,9 @@ print("AW20_CAD:" + json.dumps(d))
             "j_fcstd_gimp_and_coupled_arm_balance",
             _close(cad.get("fc_f"), ora["bezel_volume_mm3"], 450.0)
             and _close(cad.get("fc_r"), ora["rear_volume_mm3"], 450.0)
-            and sz_a and ly_a and sz_b and ly_b
             and arm_ok,
             2.5,
-            f"Shared monitor_housing.FCStd, GIMP tabs, or Arm_Counterbalance!B5 ({head_mass}) collided",
+            f"Shared monitor_housing.FCStd lost one solid or Arm_Counterbalance!B5 ({head_mass}) exited [2200.0, 2270.0] g",
         ),
     ]
 

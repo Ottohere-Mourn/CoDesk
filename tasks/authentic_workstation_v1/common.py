@@ -109,25 +109,25 @@ def build_aw_grade_payload(
     active_mode: str = "shared",
     pass_threshold: float = 0.85,
 ) -> dict[str, Any]:
-    """Build continuous + binary grade with identical per-role denominators in `isolated` and `shared`."""
+    """Build continuous + binary grade with 100% identical un-multiplied per-role scores in `isolated` and `shared`."""
     sc_a_own, ok_a_raw, errs_a, sub_a = score_rubric(checks_a, pass_threshold=pass_threshold)
     sc_b_own, ok_b_raw, errs_b, sub_b = score_rubric(checks_b, pass_threshold=pass_threshold)
     j_checks = (checks_joint or []) if active_mode != "isolated" else []
     sc_j, ok_j, errs_j, sub_j = score_rubric(j_checks, pass_threshold=0.999) if j_checks else (1.0, True, [], {})
-    j_mult = (0.75 + 0.25 * sc_j) if j_checks else 1.0
-    sc_a = round(sc_a_own * j_mult, 4)
-    sc_b = round(sc_b_own * j_mult, 4)
-    pass_a = bool(ok_a_raw and ok_j)
-    pass_b = bool(ok_b_raw and ok_j)
+    sc_a = sc_a_own
+    sc_b = sc_b_own
+    pass_a = bool(ok_a_raw)
+    pass_b = bool(ok_b_raw)
     return {
         "task_id": task_id,
         "active_mode": active_mode,
         "score_a": sc_a,
         "score_b": sc_b,
+        "score_joint": sc_j,
         "mean_score": round(0.5 * (sc_a + sc_b), 4),
         "pass_a": pass_a,
         "pass_b": pass_b,
-        "joint_pass": bool(pass_a and pass_b),
+        "joint_pass": bool(pass_a and pass_b and ok_j),
         "subchecks_a": sub_a,
         "subchecks_b": sub_b,
         "subchecks_joint": sub_j,

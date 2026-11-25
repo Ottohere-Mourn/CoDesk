@@ -96,8 +96,12 @@ def test_isolated_mode_skips_joint_coupling_penalties() -> None:
         wall_seconds=12.0,
         active_mode="shared",
     )
+    # Un-multiplied apple-to-apple role scores: failing checks_joint gates joint_pass without shrinking score_a/score_b by 0.75
+    assert sh["score_a"] == 1.0
+    assert sh["score_b"] == 1.0
+    assert sh["mean_score"] == 1.0
+    assert sh["score_joint"] == 0.0
     assert sh["joint_pass"] is False
-    assert sh["score_a"] < 1.0
 
 
 def test_domain_oracles_invariants() -> None:

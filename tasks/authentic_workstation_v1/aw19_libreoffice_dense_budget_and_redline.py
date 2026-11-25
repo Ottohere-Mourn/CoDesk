@@ -1,13 +1,17 @@
-"""AW-19: Zero-Spoiler Datacenter Capex & Colocation MSA Closing in Live LibreOffice Calc & Writer."""
+"""AW-19: Zero-Spoiler Datacenter Capex & Colocation MSA Closing in Live LibreOffice Calc & Writer (56-Row SQLite)."""
 from __future__ import annotations
 
+import base64
 from concurrent.futures import ThreadPoolExecutor
 from http.cookies import SimpleCookie
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+import io
 from pathlib import Path
+import re
 import secrets
 import shutil
 import sqlite3
+import subprocess
 import threading
 from typing import Any
 from urllib.parse import parse_qs, urlparse
@@ -34,7 +38,7 @@ TASK_META: dict[str, Any] = {
     "id": "AW-19",
     "slug": "libreoffice_dense_budget_and_redline",
     "title": "Hyperscale Datacenter Capex & Colocation MSA Closing in Live LibreOffice Calc & Writer",
-    "domain": "Enterprise Procurement & Legal Redlining (LibreOffice Calc + LibreOffice Writer + Chromium + SQLite)",
+    "domain": "Enterprise Procurement & Legal Redlining (LibreOffice Calc + LibreOffice Writer + Chromium + 56-Row SQLite)",
     "track": "track2_shared_ws",
     "workspace_mode": "shared",
     "portal_port": 19619,
@@ -42,6 +46,7 @@ TASK_META: dict[str, Any] = {
     "iso_role_timeout_s": 1200,
     "conc_role_timeout_s": 1500,
     "max_cua_calls": 140,
+    "mount_studio_ro": True,
 }
 
 DEAL_STAMP = "MSA-DC2026-940"
@@ -49,7 +54,7 @@ FX_DC = {"USD": 1.0, "EUR": 1.08, "SEK": 0.095, "JPY": 0.0068}
 HS_DUTY_PCT = {"IT_ITA_EXEMPT": 0.0, "CRAC_THERMAL": 4.5, "MV_SWITCHGEAR": 3.2}
 SLA_TIER_CAP_PCT = {"TIER_III": 9.0, "TIER_IV": 6.0}
 OEM_WARRANTY_MONTHS = 42
-SUPERCAP_MULTIPLE = "2.75x"
+SUPERCAP_VAL = "2.75"
 CAPEX_BUF_LOW = 1.300
 CAPEX_BUF_HIGH = 2.050
 LEASE_ESC_LOW = 1.150
@@ -81,25 +86,41 @@ LEASE_SITES = [
 
 TICKET_A = (
     "# Work Order — Datacenter Capex Controller (`dc_capex_controller`)\n\n"
-    "Finalize the FY26 hardware Capex valuation in `/workspace/dc_deal`, complete the `Hardware_Capex` and `Deal_Rollup` schedules in the open **LibreOffice Calc** workbook (`Global_Capex_Model.xlsx`), and execute Section 4 contract redlines in the open **LibreOffice Writer** agreement (`Master_Services_Agreement.odt`):\n\n"
-    "1. Review `/workspace/dc_deal/specs/DC_Procurement_Policy.pdf`, query `/workspace/dc_deal/procurement.sqlite` (`capex_packages`), and inspect the **Procurement & Treasury Portal** open in Chromium (`http://127.0.0.1:19619`, `Overview` and `FX & Customs Tariff` views).\n"
-    "2. Applying the OEM rebate threshold, CIF freight/insurance basis, and HS tariff rules from the policy and portal, compute 3-decimal MUSD `cif_musd` and `landed_musd` for `PKG-GPU-01`..`PKG-FIRE-08`, and write `/workspace/dc_deal/capex_audit.json` (`deal_stamp`, `cif_musd`, `landed_musd`, `total_cif_musd`, `total_landed_musd`, `mean_landed_musd`, `selected_capex_buffer_musd`).\n"
+    "Finalize the FY26 hardware Capex valuation from the 32-line PO ledger in `/workspace/dc_deal`, complete the `Hardware_Capex` and `Deal_Rollup` schedules in the open **LibreOffice Calc** workbook (`/srv/studio_project/Global_Capex_Model.xlsx`, mounted read-only in your terminal for post-save verification), and execute all 5 Section 4 contract redlines in the open **LibreOffice Writer** agreement (`/srv/studio_project/Master_Services_Agreement.odt`):\n\n"
+    "1. Review `/workspace/dc_deal/specs/DC_Procurement_Policy.pdf`, query `/workspace/dc_deal/procurement.sqlite` (`capex_po_lines`), and inspect the **Procurement & Treasury Portal** open in Chromium (`http://127.0.0.1:19619`, `Overview` and `FX & Customs Tariff` views).\n"
+    "2. Aggregating `APPROVED` PO lines per package and applying the OEM rebate threshold, CIF freight/insurance basis, and HS tariff rules from the policy and portal, compute 3-decimal MUSD `cif_musd` and `landed_musd` for `PKG-GPU-01`..`PKG-FIRE-08`, and write `/workspace/dc_deal/capex_audit.json` (`deal_stamp`, `cif_musd`, `landed_musd`, `total_cif_musd`, `total_landed_musd`, `mean_landed_musd`, `largest_landed_pkg_id`, `selected_capex_buffer_musd`).\n"
     "3. In the open **LibreOffice Calc** window (`Global_Capex_Model.xlsx`):\n"
     "   - On `Hardware_Capex`, enter `cif_musd` in `B2:B9` and `landed_musd` in `C2:C9`, enter `=SUM(...)` formulas in `B10` and `C10`, and enter `=AVERAGE(C2:C9)` in `C11`.\n"
     "   - On `Deal_Rollup`, enter `total_landed_musd` in `B2`, select the approved Capex Contingency Buffer tier in `B4` so `Reserve_Coverage_Ratio` (`B6`) satisfies the portal's Treasury Reserve Covenant window, and save (`Ctrl+S`).\n"
-    "4. In the open **LibreOffice Writer** window (`Master_Services_Agreement.odt`), replace `[REDLINE_S4_STAMP]`, `[REDLINE_CAPEX_CEILING_MUSD]` (3 decimals), and `[REDLINE_OEM_WARRANTY_MOS]` with the verified closing values, and save (`Ctrl+S`).\n"
+    "4. In the open **LibreOffice Writer** window (`Master_Services_Agreement.odt`), replace all 5 Section 4 placeholders (`[REDLINE_S4_STAMP]`, `[REDLINE_TOTAL_CIF_MUSD]`, `[REDLINE_CAPEX_CEILING_MUSD]`, `[REDLINE_OEM_WARRANTY_MOS]`, `[REDLINE_LARGEST_CAPEX_PKG]`) with the verified closing values, and save (`Ctrl+S`).\n"
 )
 
 TICKET_B = (
     "# Work Order — MSA Commercial & Colocation Lease Counsel (`msa_commercial_counsel`)\n\n"
-    "Finalize the Year-2 colocation lease commitment & SLA exposure schedule in `/workspace/dc_deal`, complete the `Colocation_Leases` and `Deal_Rollup` schedules in the open **LibreOffice Calc** workbook (`Global_Capex_Model.xlsx`), and execute Section 9 contract redlines in the open **LibreOffice Writer** agreement (`Master_Services_Agreement.odt`):\n\n"
-    "1. Review `/workspace/dc_deal/specs/DC_Procurement_Policy.pdf`, query `/workspace/dc_deal/procurement.sqlite` (`colocation_leases`), and inspect the **Procurement & Treasury Portal** open in Chromium (`http://127.0.0.1:19619`, `Overview` and `MSA Escalation & SLA` views).\n"
-    "2. Applying the CPI escalator collar, hyperscale MW anchor discount, and SLA tier exposure caps from the policy and portal, compute 3-decimal MUSD `yr2_rent_musd` and `sla_reserve_musd` for `SITE-FRA1`..`SITE-OSA8`, and write `/workspace/dc_deal/lease_msa_audit.json` (`deal_stamp`, `yr2_rent_musd`, `sla_reserve_musd`, `total_yr2_lease_musd`, `mean_yr2_lease_musd`, `total_sla_reserve_musd`, `selected_lease_escrow_musd`).\n"
+    "Finalize the Year-2 colocation lease & SLA exposure schedule from the 24-tranche lease ledger in `/workspace/dc_deal`, complete the `Colocation_Leases` and `Deal_Rollup` schedules in the open **LibreOffice Calc** workbook (`/srv/studio_project/Global_Capex_Model.xlsx`, mounted read-only in your terminal for post-save verification), and execute all 5 Section 9 contract redlines in the open **LibreOffice Writer** agreement (`/srv/studio_project/Master_Services_Agreement.odt`):\n\n"
+    "1. Review `/workspace/dc_deal/specs/DC_Procurement_Policy.pdf`, query `/workspace/dc_deal/procurement.sqlite` (`colocation_tranches`), and inspect the **Procurement & Treasury Portal** open in Chromium (`http://127.0.0.1:19619`, `Overview` and `MSA Escalation & SLA` views).\n"
+    "2. Aggregating `ACTIVE_EXECUTED` tranches per site and applying the CPI escalator collar, hyperscale MW anchor discount, and SLA tier exposure caps from the policy and portal, compute 3-decimal MUSD `yr2_rent_musd` and `sla_reserve_musd` for `SITE-FRA1`..`SITE-OSA8`, and write `/workspace/dc_deal/lease_msa_audit.json` (`deal_stamp`, `yr2_rent_musd`, `sla_reserve_musd`, `total_yr2_lease_musd`, `mean_yr2_lease_musd`, `total_sla_reserve_musd`, `largest_yr2_site_id`, `selected_lease_escrow_musd`).\n"
     "3. In the open **LibreOffice Calc** window (`Global_Capex_Model.xlsx`):\n"
     "   - On `Colocation_Leases`, enter `yr2_rent_musd` in `B2:B9` and `sla_reserve_musd` in `C2:C9`, enter `=SUM(...)` formulas in `B10` and `C10`, and enter `=AVERAGE(B2:B9)` in `B11`.\n"
     "   - On `Deal_Rollup`, enter `total_yr2_lease_musd` in `B3`, select the approved Colocation Security Escrow tier in `B5` so `Reserve_Coverage_Ratio` (`B6`) satisfies the portal's Treasury Reserve Covenant window, and save (`Ctrl+S`).\n"
-    "4. In the open **LibreOffice Writer** window (`Master_Services_Agreement.odt`), replace `[REDLINE_S9_STAMP]`, `[REDLINE_YR2_LEASE_MUSD]` (3 decimals), and `[REDLINE_SUPERCAP_MULT]` with the verified closing values, and save (`Ctrl+S`).\n"
+    "4. In the open **LibreOffice Writer** window (`Master_Services_Agreement.odt`), replace all 5 Section 9 placeholders (`[REDLINE_S9_STAMP]`, `[REDLINE_YR2_LEASE_MUSD]`, `[REDLINE_TOTAL_SLA_RESERVE_MUSD]`, `[REDLINE_SUPERCAP_MULT]`, `[REDLINE_LARGEST_LEASE_SITE]`) with the verified closing values, and save (`Ctrl+S`).\n"
 )
+
+
+def _build_56row_tables() -> tuple[list[tuple[Any, ...]], list[tuple[Any, ...]]]:
+    po_rows: list[tuple[Any, ...]] = []
+    for pid, curr, hs, base_q, reb, fr_pct in CAPEX_PKGS:
+        po_rows.append((f"{pid}-L1", pid, "APPROVED", curr, hs, round(0.45 * base_q, 2), round(0.50 * reb, 2), fr_pct))
+        po_rows.append((f"{pid}-L2", pid, "APPROVED", curr, hs, round(0.35 * base_q, 2), round(0.30 * reb, 2), fr_pct))
+        po_rows.append((f"{pid}-L3", pid, "APPROVED", curr, hs, round(0.20 * base_q, 2), round(0.20 * reb, 2), fr_pct))
+        po_rows.append((f"{pid}-VOID", pid, "CANCELLED_VOID", curr, hs, round(0.25 * base_q, 2), 0.0, fr_pct))
+
+    tr_rows: list[tuple[Any, ...]] = []
+    for sid, curr, abase, rcpi, mw, tier in LEASE_SITES:
+        tr_rows.append((f"{sid}-T1", sid, "ACTIVE_EXECUTED", curr, round(0.60 * abase, 2), rcpi, round(0.60 * mw, 2), tier))
+        tr_rows.append((f"{sid}-T2", sid, "ACTIVE_EXECUTED", curr, round(0.40 * abase, 2), rcpi, round(0.40 * mw, 2), tier))
+        tr_rows.append((f"{sid}-DRAFT", sid, "DRAFT_UNEXECUTED", curr, round(0.30 * abase, 2), rcpi, 3.0, tier))
+    return po_rows, tr_rows
 
 
 def compute_aw19_oracle() -> dict[str, Any]:
@@ -114,6 +135,7 @@ def compute_aw19_oracle() -> dict[str, Any]:
     tot_cif = round(sum(cif_m.values()), 3)
     tot_lnd = round(sum(lnd_m.values()), 3)
     mean_lnd = round(tot_lnd / len(CAPEX_PKGS), 3)
+    max_pkg = max(lnd_m.items(), key=lambda kv: kv[1])[0]
 
     yr2_m: dict[str, float] = {}
     sla_m: dict[str, float] = {}
@@ -125,6 +147,7 @@ def compute_aw19_oracle() -> dict[str, Any]:
         sla_m[sid] = round(y2_r * (SLA_TIER_CAP_PCT[tier] / 100.0), 3)
     tot_lease = round(sum(yr2_m.values()), 3)
     tot_sla = round(sum(sla_m.values()), 3)
+    max_site = max(yr2_m.items(), key=lambda kv: kv[1])[0]
     return {
         "deal_stamp": DEAL_STAMP,
         "cif_musd": cif_m,
@@ -132,12 +155,36 @@ def compute_aw19_oracle() -> dict[str, Any]:
         "total_cif_musd": tot_cif,
         "total_landed_musd": tot_lnd,
         "mean_landed_musd": mean_lnd,
+        "largest_landed_pkg_id": max_pkg,
         "yr2_rent_musd": yr2_m,
         "sla_reserve_musd": sla_m,
         "total_yr2_lease_musd": tot_lease,
         "mean_yr2_lease_musd": round(tot_lease / len(LEASE_SITES), 3),
         "total_sla_reserve_musd": tot_sla,
+        "largest_yr2_site_id": max_site,
     }
+
+
+def _rate_card_b64(title: str, lines: list[str]) -> str:
+    from PIL import Image, ImageDraw, ImageFont
+
+    im = Image.new("RGB", (900, 280), (15, 23, 42))
+    dr = ImageDraw.Draw(im)
+    try:
+        fh = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 20)
+        fb = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf", 15)
+    except Exception:
+        fh = ImageFont.load_default()
+        fb = fh
+    dr.rectangle((12, 12, 888, 268), outline=(56, 189, 248), width=2)
+    dr.text((28, 24), title, fill=(125, 211, 252), font=fh)
+    y = 68
+    for ln in lines:
+        dr.text((28, y), ln, fill=(241, 245, 249), font=fb)
+        y += 34
+    buf = io.BytesIO()
+    im.save(buf, format="PNG")
+    return base64.b64encode(buf.getvalue()).decode("ascii")
 
 
 def build(workspace_root: Path, tickets_root: Path) -> None:
@@ -146,17 +193,18 @@ def build(workspace_root: Path, tickets_root: Path) -> None:
     seed = workspace_root / "_desk_seed"
     seed.mkdir(parents=True, exist_ok=True)
 
+    po_rows, tr_rows = _build_56row_tables()
     db_p = dd / "procurement.sqlite"
     db_p.unlink(missing_ok=True)
     con = sqlite3.connect(db_p)
     con.execute(
-        "CREATE TABLE capex_packages (pkg_id TEXT PRIMARY KEY, currency TEXT, hs_class TEXT, base_quote_local REAL, oem_rebate_local REAL, freight_ins_pct REAL)"
+        "CREATE TABLE capex_po_lines (line_id TEXT PRIMARY KEY, pkg_id TEXT, line_status TEXT, currency TEXT, hs_class TEXT, quote_amount_local REAL, oem_rebate_local REAL, freight_ins_pct REAL)"
     )
-    con.executemany("INSERT INTO capex_packages VALUES (?,?,?,?,?,?)", CAPEX_PKGS)
+    con.executemany("INSERT INTO capex_po_lines VALUES (?,?,?,?,?,?,?,?)", po_rows)
     con.execute(
-        "CREATE TABLE colocation_leases (site_id TEXT PRIMARY KEY, currency TEXT, annual_base_local REAL, raw_cpi_pct REAL, power_mw REAL, sla_tier TEXT)"
+        "CREATE TABLE colocation_tranches (tranche_id TEXT PRIMARY KEY, site_id TEXT, tranche_status TEXT, currency TEXT, annual_base_local REAL, raw_cpi_pct REAL, power_mw REAL, sla_tier TEXT)"
     )
-    con.executemany("INSERT INTO colocation_leases VALUES (?,?,?,?,?,?)", LEASE_SITES)
+    con.executemany("INSERT INTO colocation_tranches VALUES (?,?,?,?,?,?,?,?)", tr_rows)
     con.commit()
     con.close()
 
@@ -203,8 +251,10 @@ def build(workspace_root: Path, tickets_root: Path) -> None:
                 "Section 4 — Hardware Capex & Warranty Schedule",
                 [
                     "Section 4 Closing Stamp: [REDLINE_S4_STAMP]",
+                    "Approved Total CIF Hardware Valuation ($M): [REDLINE_TOTAL_CIF_MUSD]",
                     "Approved Landed Hardware Capex Ceiling ($M): [REDLINE_CAPEX_CEILING_MUSD]",
                     "OEM Hardware Replacement Warranty (Months): [REDLINE_OEM_WARRANTY_MOS]",
+                    "Largest Single Hardware Package ID: [REDLINE_LARGEST_CAPEX_PKG]",
                 ],
             ),
             (
@@ -212,7 +262,9 @@ def build(workspace_root: Path, tickets_root: Path) -> None:
                 [
                     "Section 9 Closing Stamp: [REDLINE_S9_STAMP]",
                     "Approved Year-2 Escalated Colocation Rent ($M): [REDLINE_YR2_LEASE_MUSD]",
+                    "Approved Total Annual SLA Credit Reserve ($M): [REDLINE_TOTAL_SLA_RESERVE_MUSD]",
                     "Data-Breach & Outage Super-Cap Multiple: [REDLINE_SUPERCAP_MULT]",
+                    "Largest Year-2 Colocation Site ID: [REDLINE_LARGEST_LEASE_SITE]",
                 ],
             ),
         ],
@@ -223,25 +275,25 @@ def build(workspace_root: Path, tickets_root: Path) -> None:
         "Datacenter Capex & Colocation MSA Closing Policy",
         [
             (
-                "1. Hardware Capex Rebate Eligibility, CIF & HS Customs Duty",
+                "1. Hardware Capex PO Aggregation, Rebate Threshold, CIF & HS Duty",
                 [
-                    "Convert base_quote_local to gross USD using the Portal spot FX table. OEM rebates (oem_rebate_local) are eligible ONLY when gross USD quote >= $1,200,000; packages below $1.20M receive zero rebate.",
-                    "Unrounded CIF USD ($M) = ((base_quote_local - eligible_rebate_local) * (1 + freight_ins_pct / 100)) * fx / 1e6. Report cif_musd rounded to 3 decimals.",
-                    "Apply the Portal HS tariff rate (hs_class) to unrounded CIF USD ($M): landed_musd = round(cif_unrounded_musd * (1 + hs_duty_pct / 100), 3). Total CIF and Total Landed equal the sum of the 8 rounded 3-decimal package rows.",
+                    "Filter capex_po_lines to line_status = 'APPROVED' (exclude CANCELLED_VOID) and sum quote_amount_local and oem_rebate_local per pkg_id.",
+                    "Convert package gross quote to USD using the Portal spot FX schedule. OEM rebates apply ONLY when package gross USD quote >= $1,200,000; packages below $1.20M receive zero rebate.",
+                    "Unrounded CIF USD ($M) = ((pkg_quote_local - eligible_rebate_local) * (1 + freight_ins_pct / 100)) * fx / 1e6. Report cif_musd rounded to 3 decimals, and landed_musd = round(cif_unrounded_musd * (1 + hs_duty_pct / 100), 3).",
                 ],
             ),
             (
-                "2. Colocation Year-2 Escalator Collar, Anchor Discount & SLA Reserve",
+                "2. Colocation Tranche Aggregation, CPI Collar, Anchor Discount & SLA Reserve",
                 [
-                    "Clamp raw_cpi_pct to the Portal CPI Escalator Collar [min_cpi_pct, max_cpi_pct]. Sites with power_mw >= 8.0 MW earn a 4.0% hyperscale anchor discount (multiply by 0.96).",
-                    "yr2_rent_musd = round(annual_base_local * (1 + clamped_cpi_pct / 100) * anchor_mult * fx / 1e6, 3).",
-                    "Each site's sla_reserve_musd = round(yr2_rent_musd * (portal_sla_tier_cap_pct / 100), 3). Total Year-2 Lease and Total SLA Reserve equal the sum of the 8 rounded rows.",
+                    "Filter colocation_tranches to tranche_status = 'ACTIVE_EXECUTED' (exclude DRAFT_UNEXECUTED) and sum annual_base_local and power_mw per site_id.",
+                    "Clamp raw_cpi_pct to the Portal CPI Escalator Collar [min_cpi_pct, max_cpi_pct]. Sites with total active power_mw >= 8.0 MW earn a 4.0% hyperscale anchor discount (multiply by 0.96).",
+                    "yr2_rent_musd = round(site_annual_base_local * (1 + clamped_cpi_pct / 100) * anchor_mult * fx / 1e6, 3); sla_reserve_musd = round(yr2_rent_musd * (portal_sla_tier_cap_pct / 100), 3).",
                 ],
             ),
             (
                 "3. Coupled Treasury Reserve Covenant on Deal_Rollup",
                 [
-                    "Deal_Rollup!B6 computes Reserve_Coverage_Ratio = ROUND((B4 + B5) / (B2 + B3), 4). At closing, Reserve_Coverage_Ratio MUST lie strictly inside the Portal's Treasury Covenant Window [0.1150, 0.1260] (below 0.1150 under-reserves counterparty risk; above 0.1260 traps excess treasury cash).",
+                    "Deal_Rollup!B6 computes Reserve_Coverage_Ratio = ROUND((B4 + B5) / (B2 + B3), 4). At closing, Reserve_Coverage_Ratio MUST lie strictly inside [0.1150, 0.1260].",
                 ],
             ),
         ],
@@ -259,6 +311,25 @@ def serve(port: int, workspace_root: Path, state_dir: Path, boot_file: Path) -> 
     state: dict[str, Any] = {"active_tab": "overview", "switches": 0}
     write_json(state_file, state)
     write_json(boot_file, {"url": f"http://127.0.0.1:{port}/auth?token={tok}"})
+
+    card_capex = _rate_card_b64(
+        f"CAPEX FX, HS TARIFF & WARRANTY SCHEDULE (deal_stamp = {DEAL_STAMP})",
+        [
+            "Spot FX: USD = 1.00 | EUR = 1.08 | SEK = 0.095 | JPY = 0.0068",
+            "HS Duty: IT_ITA_EXEMPT = 0.0% | CRAC_THERMAL = 4.5% | MV_SWITCHGEAR = 3.2%",
+            f"Capex Buffer Tiers (Deal_Rollup!B4): {CAPEX_BUF_LOW:.3f} MUSD or {CAPEX_BUF_HIGH:.3f} MUSD",
+            f"Approved OEM Hardware Warranty Period: {OEM_WARRANTY_MONTHS} months",
+        ],
+    )
+    card_msa = _rate_card_b64(
+        f"COLOCATION CPI COLLAR, SLA & LIABILITY SCHEDULE (deal_stamp = {DEAL_STAMP})",
+        [
+            "Spot FX: USD = 1.00 | EUR = 1.08 | SEK = 0.095 | JPY = 0.0068",
+            "CPI Collar: [2.0%, 3.2%] | >= 8.0 MW Anchor Discount: 4.0% | TIER_III=9.0%, TIER_IV=6.0%",
+            f"Lease Escrow Tiers (Deal_Rollup!B5): {LEASE_ESC_LOW:.3f} MUSD or {LEASE_ESC_HIGH:.3f} MUSD",
+            f"Approved Section 9 Super-Cap Liability Multiple: {SUPERCAP_VAL}x",
+        ],
+    )
 
     class Handler(BaseHTTPRequestHandler):
         def log_message(self, fmt: str, *args: Any) -> None:
@@ -306,25 +377,14 @@ def serve(port: int, workspace_root: Path, state_dir: Path, boot_file: Path) -> 
             if cur == "overview":
                 body = (
                     f"<h2>Closing Control Overview</h2>"
-                    f"<p>Active Deal Stamp: <code>{DEAL_STAMP}</code></p>"
+                    f"<p>Active Closing Deal Stamp (`deal_stamp`): <code>{DEAL_STAMP}</code></p>"
                     f"<p>Treasury Spot FX Schedule: <code>USD = 1.00, EUR = 1.08, SEK = 0.095, JPY = 0.0068</code></p>"
                     f"<p>Mandatory <code>Deal_Rollup!B6</code> Reserve Coverage Covenant Window: <code>[0.1150, 0.1260]</code></p>"
                 )
             elif cur == "capex":
-                body = (
-                    f"<h2>FX &amp; Customs Tariff Schedule (<code>{DEAL_STAMP}</code>)</h2>"
-                    f"<p>HS Tariff Rates: <code>IT_ITA_EXEMPT = 0.0%</code> | <code>CRAC_THERMAL = 4.5%</code> | <code>MV_SWITCHGEAR = 3.2%</code></p>"
-                    f"<p>Approved Capex Buffer Tiers (<code>Deal_Rollup!B4</code>): <code>1.300</code> MUSD (Standard) or <code>2.050</code> MUSD (Accelerated)</p>"
-                    f"<p>Approved Section 4 OEM Hardware Replacement Warranty: <code>{OEM_WARRANTY_MONTHS}</code> months</p>"
-                )
+                body = f"<h2>FX &amp; Customs Tariff Schedule (<code>deal_stamp = {DEAL_STAMP}</code>)</h2><img src='data:image/png;base64,{card_capex}' alt='Capex Rate Card'/>"
             else:
-                body = (
-                    f"<h2>MSA Escalation &amp; SLA Terms (<code>{DEAL_STAMP}</code>)</h2>"
-                    f"<p>Year-2 CPI Escalator Collar: <code>min = 2.0%, max = 3.2%</code> | Anchor Threshold: <code>&gt;= 8.0 MW -&gt; 4.0% discount</code></p>"
-                    f"<p>SLA Credit Exposure Caps: <code>TIER_III = 9.0%</code> | <code>TIER_IV = 6.0%</code></p>"
-                    f"<p>Approved Colocation Escrow Tiers (<code>Deal_Rollup!B5</code>): <code>1.150</code> MUSD (1-Mo) or <code>1.900</code> MUSD (2-Mo)</p>"
-                    f"<p>Approved Section 9 Super-Cap Liability Multiple: <code>{SUPERCAP_MULTIPLE}</code></p>"
-                )
+                body = f"<h2>MSA Escalation &amp; SLA Terms (<code>deal_stamp = {DEAL_STAMP}</code>)</h2><img src='data:image/png;base64,{card_msa}' alt='MSA Rate Card'/>"
             html = f"""<!doctype html><html><head><meta charset="utf-8"/><title>Procurement Portal</title>
             <style>body{{font-family:DejaVu Sans,sans-serif;padding:22px;background:#f8fafc;}}
             .nav a{{display:inline-block;padding:10px 15px;margin-right:10px;background:#0f172a;color:#fff;text-decoration:none;border-radius:6px;font-weight:700;}}
@@ -344,6 +404,7 @@ def boot_apps(workspace_root: Path, state_dir: Path, active_roles: tuple[str, ..
     sp.mkdir(parents=True, exist_ok=True)
     shutil.copy2(seed / "Global_Capex_Model.xlsx", sp / "Global_Capex_Model.xlsx")
     shutil.copy2(seed / "Master_Services_Agreement.odt", sp / "Master_Services_Agreement.odt")
+    subprocess.run(["chmod", "-R", "a+rX", str(sp)], check=True, capture_output=True, timeout=10)
     launch_studio_app(
         "nohup libreoffice --norestore --nologo --nofirststartwizard "
         "'/srv/studio_project/Global_Capex_Model.xlsx' '/srv/studio_project/Master_Services_Agreement.odt' "
@@ -386,10 +447,12 @@ def solve_role(role: str, workspace_root: Path, cooperative: bool = True) -> Non
                     ],
                 )
                 cur_t = read_odt_text(odt_p)
-                s9 = [ln for ln in cur_t.splitlines() if SUPERCAP_MULTIPLE in ln or f"{ora['total_yr2_lease_musd']:.3f}" in ln] or [
+                s9 = [ln for ln in cur_t.splitlines() if SUPERCAP_VAL in ln or ora["largest_yr2_site_id"] in ln or f"{ora['total_yr2_lease_musd']:.3f}" in ln] or [
                     "Section 9 Closing Stamp: [REDLINE_S9_STAMP]",
                     "Approved Year-2 Escalated Colocation Rent ($M): [REDLINE_YR2_LEASE_MUSD]",
+                    "Approved Total Annual SLA Credit Reserve ($M): [REDLINE_TOTAL_SLA_RESERVE_MUSD]",
                     "Data-Breach & Outage Super-Cap Multiple: [REDLINE_SUPERCAP_MULT]",
+                    "Largest Year-2 Colocation Site ID: [REDLINE_LARGEST_LEASE_SITE]",
                 ]
                 write_odt_document(
                     odt_p,
@@ -399,8 +462,10 @@ def solve_role(role: str, workspace_root: Path, cooperative: bool = True) -> Non
                             "Section 4 — Hardware Capex & Warranty Schedule",
                             [
                                 f"Section 4 Closing Stamp: {DEAL_STAMP}",
+                                f"Approved Total CIF Hardware Valuation ($M): {ora['total_cif_musd']:.3f}",
                                 f"Approved Landed Hardware Capex Ceiling ($M): {ora['total_landed_musd']:.3f}",
                                 f"OEM Hardware Replacement Warranty (Months): {OEM_WARRANTY_MONTHS}",
+                                f"Largest Single Hardware Package ID: {ora['largest_landed_pkg_id']}",
                             ],
                         ),
                         ("Section 9 — Colocation Lease Commitment & Super-Cap Liability", s9),
@@ -418,6 +483,7 @@ def solve_role(role: str, workspace_root: Path, cooperative: bool = True) -> Non
                 "total_cif_musd": ora["total_cif_musd"],
                 "total_landed_musd": ora["total_landed_musd"],
                 "mean_landed_musd": ora["mean_landed_musd"],
+                "largest_landed_pkg_id": ora["largest_landed_pkg_id"],
                 "selected_capex_buffer_musd": cb_sel,
             },
         )
@@ -449,10 +515,12 @@ def solve_role(role: str, workspace_root: Path, cooperative: bool = True) -> Non
                     ],
                 )
                 cur_t = read_odt_text(odt_p)
-                s4 = [ln for ln in cur_t.splitlines() if f" {OEM_WARRANTY_MONTHS}" in ln or f"{ora['total_landed_musd']:.3f}" in ln] or [
+                s4 = [ln for ln in cur_t.splitlines() if f" {OEM_WARRANTY_MONTHS}" in ln or ora["largest_landed_pkg_id"] in ln or f"{ora['total_landed_musd']:.3f}" in ln] or [
                     "Section 4 Closing Stamp: [REDLINE_S4_STAMP]",
+                    "Approved Total CIF Hardware Valuation ($M): [REDLINE_TOTAL_CIF_MUSD]",
                     "Approved Landed Hardware Capex Ceiling ($M): [REDLINE_CAPEX_CEILING_MUSD]",
                     "OEM Hardware Replacement Warranty (Months): [REDLINE_OEM_WARRANTY_MOS]",
+                    "Largest Single Hardware Package ID: [REDLINE_LARGEST_CAPEX_PKG]",
                 ]
                 write_odt_document(
                     odt_p,
@@ -464,7 +532,9 @@ def solve_role(role: str, workspace_root: Path, cooperative: bool = True) -> Non
                             [
                                 f"Section 9 Closing Stamp: {DEAL_STAMP}",
                                 f"Approved Year-2 Escalated Colocation Rent ($M): {ora['total_yr2_lease_musd']:.3f}",
-                                f"Data-Breach & Outage Super-Cap Multiple: {SUPERCAP_MULTIPLE}",
+                                f"Approved Total Annual SLA Credit Reserve ($M): {ora['total_sla_reserve_musd']:.3f}",
+                                f"Data-Breach & Outage Super-Cap Multiple: {SUPERCAP_VAL}x",
+                                f"Largest Year-2 Colocation Site ID: {ora['largest_yr2_site_id']}",
                             ],
                         ),
                     ],
@@ -481,6 +551,7 @@ def solve_role(role: str, workspace_root: Path, cooperative: bool = True) -> Non
                 "total_yr2_lease_musd": ora["total_yr2_lease_musd"],
                 "mean_yr2_lease_musd": ora["mean_yr2_lease_musd"],
                 "total_sla_reserve_musd": ora["total_sla_reserve_musd"],
+                "largest_yr2_site_id": ora["largest_yr2_site_id"],
                 "selected_lease_escrow_musd": le_sel,
             },
         )
@@ -519,39 +590,40 @@ def grade(
 
     b6_cov = cell_float(book, "Deal_Rollup", "B6")
     cov_ok = (b6_cov is not None) and (0.1150 <= float(b6_cov) <= 0.1260)
+    s4_clean = all(ph not in odt_txt for ph in ("[REDLINE_S4_STAMP]", "[REDLINE_TOTAL_CIF_MUSD]", "[REDLINE_CAPEX_CEILING_MUSD]", "[REDLINE_OEM_WARRANTY_MOS]", "[REDLINE_LARGEST_CAPEX_PKG]"))
+    s9_clean = all(ph not in odt_txt for ph in ("[REDLINE_S9_STAMP]", "[REDLINE_YR2_LEASE_MUSD]", "[REDLINE_TOTAL_SLA_RESERVE_MUSD]", "[REDLINE_SUPERCAP_MULT]", "[REDLINE_LARGEST_LEASE_SITE]"))
+    has_supercap = bool(re.search(r"\b2\.75x?\b", odt_txt))
 
     checks_a: list[tuple[str, bool, float, str]] = [
-        ("a_json", _close(ja.get("total_landed_musd"), ora["total_landed_musd"]) and _close(ja.get("total_cif_musd"), ora["total_cif_musd"]) and ja.get("deal_stamp") == DEAL_STAMP, 1.8, f"capex_audit.json mismatch (expected landed={ora['total_landed_musd']}, cif={ora['total_cif_musd']})"),
+        ("a_json", _close(ja.get("total_landed_musd"), ora["total_landed_musd"]) and _close(ja.get("total_cif_musd"), ora["total_cif_musd"]) and ja.get("deal_stamp") == DEAL_STAMP and ja.get("largest_landed_pkg_id") == ora["largest_landed_pkg_id"], 1.8, f"capex_audit.json mismatch (expected landed={ora['total_landed_musd']}, cif={ora['total_cif_musd']})"),
         *[(f"a_cif_{i}", _close(cell_float(book, "Hardware_Capex", f"B{i}"), ora["cif_musd"][p[0]]), 0.5, f"Hardware_Capex!B{i} CIF mismatch") for i, p in enumerate(CAPEX_PKGS, start=2)],
         *[(f"a_lnd_{i}", _close(cell_float(book, "Hardware_Capex", f"C{i}"), ora["landed_musd"][p[0]]), 0.7, f"Hardware_Capex!C{i} Landed mismatch") for i, p in enumerate(CAPEX_PKGS, start=2)],
         ("a_sum_bc10", "SUM" in cell_formula(f_book, "Hardware_Capex", "B10").upper() and "SUM" in cell_formula(f_book, "Hardware_Capex", "C10").upper() and _close(cell_float(book, "Hardware_Capex", "C10"), ora["total_landed_musd"], 0.04), 1.5, "Hardware_Capex!B10:C10 missing =SUM or wrong total"),
         ("a_avg_c11", "AVERAGE" in cell_formula(f_book, "Hardware_Capex", "C11").upper() and _close(cell_float(book, "Hardware_Capex", "C11"), ora["mean_landed_musd"], 0.02), 1.3, "Hardware_Capex!C11 missing =AVERAGE formula"),
         ("a_rollup_cov", _close(cell_float(book, "Deal_Rollup", "B2"), ora["total_landed_musd"], 0.04) and cov_ok, 1.8, f"Deal_Rollup!B2 or Reserve_Coverage_Ratio ({b6_cov}) outside [0.1150, 0.1260]"),
-        ("a_writer_s4", "[REDLINE_S4_STAMP]" not in odt_txt and "[REDLINE_CAPEX_CEILING_MUSD]" not in odt_txt and "[REDLINE_OEM_WARRANTY_MOS]" not in odt_txt and f"{ora['total_landed_musd']:.3f}"[:5] in odt_txt and str(OEM_WARRANTY_MONTHS) in odt_txt, 2.0, "Writer MSA Section 4 missing Capex/42-mo warranty redlines"),
+        ("a_writer_s4", s4_clean and f"{ora['total_landed_musd']:.3f}"[:5] in odt_txt and str(OEM_WARRANTY_MONTHS) in odt_txt and ora["largest_landed_pkg_id"] in odt_txt, 2.0, "Writer MSA Section 4 missing Capex/42-mo/largest-pkg redlines"),
     ]
 
     checks_b: list[tuple[str, bool, float, str]] = [
-        ("b_json", _close(jb.get("total_yr2_lease_musd"), ora["total_yr2_lease_musd"]) and _close(jb.get("total_sla_reserve_musd"), ora["total_sla_reserve_musd"]) and jb.get("deal_stamp") == DEAL_STAMP, 1.8, f"lease_msa_audit.json mismatch (expected yr2={ora['total_yr2_lease_musd']}, sla={ora['total_sla_reserve_musd']})"),
+        ("b_json", _close(jb.get("total_yr2_lease_musd"), ora["total_yr2_lease_musd"]) and _close(jb.get("total_sla_reserve_musd"), ora["total_sla_reserve_musd"]) and jb.get("deal_stamp") == DEAL_STAMP and jb.get("largest_yr2_site_id") == ora["largest_yr2_site_id"], 1.8, f"lease_msa_audit.json mismatch (expected yr2={ora['total_yr2_lease_musd']}, sla={ora['total_sla_reserve_musd']})"),
         *[(f"b_yr2_{i}", _close(cell_float(book, "Colocation_Leases", f"B{i}"), ora["yr2_rent_musd"][s[0]]), 0.7, f"Colocation_Leases!B{i} Yr2 mismatch") for i, s in enumerate(LEASE_SITES, start=2)],
         *[(f"b_sla_{i}", _close(cell_float(book, "Colocation_Leases", f"C{i}"), ora["sla_reserve_musd"][s[0]], 0.015), 0.5, f"Colocation_Leases!C{i} SLA reserve mismatch") for i, s in enumerate(LEASE_SITES, start=2)],
         ("b_sum_bc10", "SUM" in cell_formula(f_book, "Colocation_Leases", "B10").upper() and "SUM" in cell_formula(f_book, "Colocation_Leases", "C10").upper() and _close(cell_float(book, "Colocation_Leases", "B10"), ora["total_yr2_lease_musd"], 0.04), 1.5, "Colocation_Leases!B10:C10 missing =SUM or wrong total"),
         ("b_avg_b11", "AVERAGE" in cell_formula(f_book, "Colocation_Leases", "B11").upper() and _close(cell_float(book, "Colocation_Leases", "B11"), ora["mean_yr2_lease_musd"], 0.02), 1.3, "Colocation_Leases!B11 missing =AVERAGE formula"),
         ("b_rollup_cov", _close(cell_float(book, "Deal_Rollup", "B3"), ora["total_yr2_lease_musd"], 0.04) and cov_ok, 1.8, f"Deal_Rollup!B3 or Reserve_Coverage_Ratio ({b6_cov}) outside [0.1150, 0.1260]"),
-        ("b_writer_s9", "[REDLINE_S9_STAMP]" not in odt_txt and "[REDLINE_YR2_LEASE_MUSD]" not in odt_txt and "[REDLINE_SUPERCAP_MULT]" not in odt_txt and f"{ora['total_yr2_lease_musd']:.3f}"[:5] in odt_txt and SUPERCAP_MULTIPLE in odt_txt, 2.0, "Writer MSA Section 9 missing Lease/2.75x supercap redlines"),
+        ("b_writer_s9", s9_clean and f"{ora['total_yr2_lease_musd']:.3f}"[:5] in odt_txt and has_supercap and ora["largest_yr2_site_id"] in odt_txt, 2.0, "Writer MSA Section 9 missing Lease/2.75/largest-site redlines"),
     ]
 
     checks_joint: list[tuple[str, bool, float, str]] = [
         (
-            "j_coupled_reserve_covenant_and_dual_redlines",
+            "j_coupled_reserve_covenant_and_shared_sheets_intact",
             cov_ok
             and _close(cell_float(book, "Deal_Rollup", "B2"), ora["total_landed_musd"], 0.04)
             and _close(cell_float(book, "Deal_Rollup", "B3"), ora["total_yr2_lease_musd"], 0.04)
-            and "[REDLINE_CAPEX_CEILING_MUSD]" not in odt_txt
-            and "[REDLINE_YR2_LEASE_MUSD]" not in odt_txt
-            and SUPERCAP_MULTIPLE in odt_txt
-            and str(OEM_WARRANTY_MONTHS) in odt_txt,
+            and s4_clean
+            and s9_clean,
             2.5,
-            f"Uncoordinated buffer/escrow selection pushed Reserve_Coverage_Ratio ({b6_cov}) outside [0.1150, 0.1260] or Writer/Calc lost peer redlines",
+            f"Uncoordinated buffer/escrow selection pushed Reserve_Coverage_Ratio ({b6_cov}) outside [0.1150, 0.1260] or concurrent Writer/Calc save lost peer section",
         ),
     ]
 

@@ -1,17 +1,17 @@
-"""AW-14: Pure-GUI Single-Instance GIMP Multi-Layer Hide + Image Scale & Shared Inkscape Scientific Poster."""
+"""AW-14: Single-Instance GIMP Multi-Layer Hide + Image Scale & Shared Inkscape Scientific Poster."""
 from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor
 from http.cookies import SimpleCookie
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+import re
 import secrets
 import sqlite3
 import subprocess
 import threading
 from typing import Any
 from urllib.parse import parse_qs, urlparse
-import xml.etree.ElementTree as ET
 
 from tasks.authentic_workstation_v1.common import (
     boot_studio_browser,
@@ -27,7 +27,7 @@ TASK_META: dict[str, Any] = {
     "id": "AW-14",
     "slug": "gimp_crop_layers_inkscape_poster",
     "title": "Single-Instance GIMP 4-Layer Hide & 600x400 Scale + Live Inkscape Symposium Poster",
-    "domain": "Scientific Imaging & Vector Poster Production (GIMP 2.10 + Inkscape 1.2 + Chromium + SQLite)",
+    "domain": "Scientific Imaging & Vector Poster Production (GIMP 2.10 + Inkscape 1.2 + Chromium + 72-Row SQLite)",
     "track": "track2_shared_ws",
     "workspace_mode": "shared",
     "portal_port": 19614,
@@ -35,24 +35,25 @@ TASK_META: dict[str, Any] = {
     "iso_role_timeout_s": 1200,
     "conc_role_timeout_s": 1500,
     "max_cua_calls": 140,
+    "mount_studio_ro": True,
 }
 
 SYMPOSIUM_ID = "BIOPHOTON-2026-P18"
 
 TICKET_A = (
     "# Work Order — Fluorescence Microscopy Imaging Analyst (`microscopy_img_analyst`)\n\n"
-    "Process the multi-layer microscopy capture inside **GIMP**, update the Panel A caption in **Inkscape**, and compute Beer-Lambert concentration metrics in `/workspace/assay`:\n\n"
-    "1. In the open **GIMP** window on the desktop, select the `fluorescence_a.xcf` (`900x600`) image tab, hide **both** `DRAFT_STAMP_MAGENTA` and `CALIBRATION_CROSSHAIR_YELLOW` layers while keeping `DAPI_Nuclei_Bg` and `GFP_Signal_Core` visible, scale the image canvas to exact **`600x400`** (`Image -> Scale Image...`), and export via `File -> Export As...` to `/srv/studio_project/exports/fluorescence_600x400.png`.\n"
-    "2. Read `/workspace/assay/specs/Assay_Imaging_Protocol.pdf`, query `/workspace/assay/plate_readings.sqlite` (`cuvette_od`), and check the **BioPhoton Portal** in Chromium (`http://127.0.0.1:19614`, `Fluorophore Extinction` tab) to compute `mean_blank_corrected_od`, `sample_conc_um` (`OD / (epsilon_mM_cm * path_cm) * 1000`, 2 decimals), and `gfp_core_hex`, writing `/workspace/assay/microscopy_metrics.json` (`symposium_id`, `gfp_core_hex`, `mean_blank_corrected_od`, `sample_conc_um`).\n"
-    "3. In the open **Inkscape** window (`/srv/studio_project/symposium_poster.svg`) OR `/workspace/assay/poster_layout.svg`, set the Panel A text/caption to include `SYMPOSIUM_ID` and `sample_conc_um` (and save).\n"
+    "Process the multi-layer microscopy capture inside **GIMP**, update Panel A in the shared **Inkscape** poster (`/workspace/assay/poster_layout.svg`), and compute Beer-Lambert concentration metrics from the 48-well micro-plate dataset in `/workspace/assay`:\n\n"
+    "1. In the open **GIMP** window on the desktop, select the `fluorescence_a.xcf` (`900x600`) image tab, hide **both** non-production FPO/calibration layers while keeping `DAPI_Nuclei_Bg` and `GFP_Signal_Core` visible, scale the image canvas to exact **`600x400`** (`Image -> Scale Image...`), and export via `File -> Export As...` to `/srv/studio_project/exports/fluorescence_600x400.png` (`/srv/studio_project` is mounted read-only in your terminal for post-export verification).\n"
+    "2. Read `/workspace/assay/specs/Assay_Imaging_Protocol.pdf`, query `/workspace/assay/plate_readings.sqlite` (`cuvette_od`), and inspect the **BioPhoton Portal** in Chromium (`http://127.0.0.1:19614`, `Fluorophore Extinction` tab) to compute QC-filtered `mean_blank_corrected_od` (3 decimals), `sample_conc_um` (2 decimals), and `gfp_core_hex`, writing `/workspace/assay/microscopy_metrics.json` (`symposium_id`, `valid_sample_well_count`, `gfp_core_hex`, `mean_blank_corrected_od`, `sample_conc_um`).\n"
+    "3. Update `<g id=\"panel_a\">` in `/workspace/assay/poster_layout.svg` (preserving `<g id=\"panel_b\">`!) so the Panel A caption includes `SYMPOSIUM_ID` and `sample_conc_um`.\n"
 )
 
 TICKET_B = (
     "# Work Order — Gel Electrophoresis & Blot Analyst (`gel_blot_analyst`)\n\n"
-    "Process the multi-layer gel blot capture inside **GIMP**, update the Panel B caption in **Inkscape**, and compute normalized fold-change metrics in `/workspace/assay`:\n\n"
-    "1. In the open **GIMP** window on the desktop, select the `electrophoresis_b.xcf` (`900x600`) image tab, hide **both** `LANE_RULER_RED` and `QC_BANNER_ORANGE` layers while keeping `Gel_Matrix_Bg` and `Target_Band_Cyan` visible, scale the image canvas to exact **`600x400`** (`Image -> Scale Image...`), and export via `File -> Export As...` to `/srv/studio_project/exports/electrophoresis_600x400.png`.\n"
-    "2. Read `/workspace/assay/specs/Assay_Imaging_Protocol.pdf`, query `/workspace/assay/plate_readings.sqlite` (`densitometry_lanes`), and check the **BioPhoton Portal** in Chromium (`http://127.0.0.1:19614`, `Housekeeping Normalization` tab) to compute background-subtracted housekeeping-normalized fold-change (`treated_fold_change`, 2 decimals) and `band_cyan_hex`, writing `/workspace/assay/blot_metrics.json` (`symposium_id`, `band_cyan_hex`, `control_norm_ratio`, `treated_fold_change`).\n"
-    "3. Update `/workspace/assay/poster_layout.svg` so Panel B includes `SYMPOSIUM_ID` and `treated_fold_change`, and export `/workspace/assay/poster_proof.pdf` via `inkscape`.\n"
+    "Process the multi-layer gel blot capture inside **GIMP**, update Panel B in the shared **Inkscape** poster (`/workspace/assay/poster_layout.svg`), and compute housekeeping-normalized fold-change metrics from the 24-lane densitometry dataset in `/workspace/assay`:\n\n"
+    "1. In the open **GIMP** window on the desktop, select the `electrophoresis_b.xcf` (`900x600`) image tab, hide **both** non-production ruler/QC layers while keeping `Gel_Matrix_Bg` and `Target_Band_Cyan` visible, scale the image canvas to exact **`600x400`** (`Image -> Scale Image...`), and export via `File -> Export As...` to `/srv/studio_project/exports/electrophoresis_600x400.png` (`/srv/studio_project` is mounted read-only in your terminal for post-export verification).\n"
+    "2. Read `/workspace/assay/specs/Assay_Imaging_Protocol.pdf`, query `/workspace/assay/plate_readings.sqlite` (`densitometry_lanes`), and inspect the **BioPhoton Portal** in Chromium (`http://127.0.0.1:19614`, `Housekeeping Normalization` tab) to compute QC-filtered `control_norm_ratio` (3 decimals), `treated_fold_change` (2 or 3 decimals), and `band_cyan_hex`, writing `/workspace/assay/blot_metrics.json` (`symposium_id`, `valid_lane_count`, `band_cyan_hex`, `control_norm_ratio`, `treated_fold_change`).\n"
+    "3. Update `<g id=\"panel_b\">` in `/workspace/assay/poster_layout.svg` (preserving `<g id=\"panel_a\">`!) so the Panel B caption includes `SYMPOSIUM_ID` and `treated_fold_change`, and export `/workspace/assay/poster_proof.pdf` via `inkscape`.\n"
 )
 
 INIT_POSTER_SVG = """<?xml version="1.0" encoding="UTF-8"?>
@@ -64,23 +65,44 @@ INIT_POSTER_SVG = """<?xml version="1.0" encoding="UTF-8"?>
 """
 
 
+def _build_plate_rows() -> tuple[list[tuple[str, str, str, float]], list[tuple[str, str, str, float, float]]]:
+    cuv_rows: list[tuple[str, str, str, float]] = []
+    blanks = [0.042, 0.048, 0.044, 0.046, 0.043, 0.047, 0.045, 0.045]
+    for idx, od in enumerate(blanks, start=1):
+        cuv_rows.append((f"W-B{idx:02d}", "blank", "VALID", od))
+    base_samp = [0.680, 0.710, 0.690, 0.700] * 8
+    for idx, od in enumerate(base_samp, start=1):
+        cuv_rows.append((f"W-S{idx:02d}", "sample", "VALID", od))
+    for idx in range(1, 5):
+        cuv_rows.append((f"W-X{idx:02d}", "sample", "BUBBLE_ARTIFACT", 1.420 + 0.03 * idx))
+    for idx in range(5, 9):
+        cuv_rows.append((f"W-X{idx:02d}", "sample", "SATURATED_OVERFLOW", 3.950))
+
+    lane_rows: list[tuple[str, str, str, float, float]] = []
+    scales_c = [0.95, 1.05, 0.98, 1.02, 0.96, 1.04, 0.99, 1.01]
+    for idx, s in enumerate(scales_c, start=1):
+        lane_rows.append((f"LN-C{idx:02d}", "Control", "VALID", round(120.0 + 800.0 * s, 2), round(120.0 + 1000.0 * s, 2)))
+    scales_t = [0.94, 1.06, 0.97, 1.03, 0.95, 1.05, 0.98, 1.02, 0.96, 1.04, 0.99, 1.01]
+    for idx, s in enumerate(scales_t, start=1):
+        lane_rows.append((f"LN-T{idx:02d}", "Treated_24h", "VALID", round(120.0 + 1840.0 * s, 2), round(120.0 + 800.0 * s, 2)))
+    for idx in range(1, 5):
+        lane_rows.append((f"LN-X{idx:02d}", "Treated_24h", "HEMOLYZED_EXCLUDE", 3100.0, 410.0))
+    return cuv_rows, lane_rows
+
+
 def compute_aw14_oracle() -> dict[str, Any]:
-    # Blank OD = 0.045; sample replicates = [0.685, 0.705, 0.695] -> mean = 0.695 -> blank-corrected = 0.650
-    # epsilon = 25.0 mM^-1 cm^-1, path = 0.50 cm -> conc_mM = 0.650 / (25.0 * 0.50) = 0.052 mM = 52.0 uM!
-    od_corr = round(0.695 - 0.045, 3)
-    conc_um = round((od_corr / (25.0 * 0.50)) * 1000.0, 2)
-    # Densitometry bg = 120; ctrl=(920-120)/(1120-120)=800/1000=0.80; treated=(1960-120)/(920-120)=1840/800=2.30 -> fold = 2.30 / 0.80 = 2.88!
-    ctrl_r = round((920.0 - 120.0) / (1120.0 - 120.0), 3)
-    trt_r = (1960.0 - 120.0) / (920.0 - 120.0)
-    fold = round(trt_r / ctrl_r, 2)
+    od_corr = 0.650
+    conc_um = 52.00
     return {
         "symposium_id": SYMPOSIUM_ID,
+        "valid_sample_well_count": 32,
         "gfp_core_hex": "#22C55E",
         "mean_blank_corrected_od": od_corr,
         "sample_conc_um": conc_um,
+        "valid_lane_count": 20,
         "band_cyan_hex": "#06B6D4",
-        "control_norm_ratio": ctrl_r,
-        "treated_fold_change": fold,
+        "control_norm_ratio": 0.800,
+        "treated_fold_change_exact": 2.875,
     }
 
 
@@ -89,13 +111,14 @@ def build(workspace_root: Path, tickets_root: Path) -> None:
     (ad / "specs").mkdir(parents=True, exist_ok=True)
     (ad / "poster_layout.svg").write_text(INIT_POSTER_SVG, encoding="utf-8")
 
+    cuv_rows, lane_rows = _build_plate_rows()
     db_p = ad / "plate_readings.sqlite"
     db_p.unlink(missing_ok=True)
     con = sqlite3.connect(db_p)
-    con.execute("CREATE TABLE cuvette_od (well_id TEXT PRIMARY KEY, kind TEXT, od_488nm REAL)")
-    con.executemany("INSERT INTO cuvette_od VALUES (?,?,?)", [("W1", "blank", 0.045), ("W2", "sample", 0.685), ("W3", "sample", 0.705), ("W4", "sample", 0.695)])
-    con.execute("CREATE TABLE densitometry_lanes (lane TEXT PRIMARY KEY, target_raw REAL, actin_housekeeping_raw REAL)")
-    con.executemany("INSERT INTO densitometry_lanes VALUES (?,?,?)", [("Control", 920.0, 1120.0), ("Treated_24h", 1960.0, 920.0)])
+    con.execute("CREATE TABLE cuvette_od (well_id TEXT PRIMARY KEY, kind TEXT, qc_flag TEXT, od_488nm REAL)")
+    con.executemany("INSERT INTO cuvette_od VALUES (?,?,?,?)", cuv_rows)
+    con.execute("CREATE TABLE densitometry_lanes (lane_id TEXT PRIMARY KEY, cohort TEXT, qc_flag TEXT, target_raw REAL, actin_housekeeping_raw REAL)")
+    con.executemany("INSERT INTO densitometry_lanes VALUES (?,?,?,?,?)", lane_rows)
     con.commit()
     con.close()
 
@@ -103,9 +126,26 @@ def build(workspace_root: Path, tickets_root: Path) -> None:
         ad / "specs" / "Assay_Imaging_Protocol.pdf",
         "Symposium Optical Assay & Multi-Layer GIMP Protocol",
         [
-            ("1. Beer-Lambert Micro-Cuvette Concentration", ["Subtract blank well OD from mean sample OD, then divide by (epsilon_mM_cm * optical_path_cm) from the BioPhoton Portal and multiply by 1000 to report micromolar (uM)."]),
-            ("2. Housekeeping-Normalized Western Blot Fold-Change", ["Subtract membrane_bg_intensity (from BioPhoton Portal) from BOTH target_raw and actin_housekeeping_raw before taking target/actin ratios, then divide Treated ratio by Control ratio."]),
-            ("3. GIMP 4-Layer Cleanup & 600x400 Scaling", ["Hide both top artifact layers in your assigned 900x600 XCF tab in GIMP, scale image dimensions to 600x400, and export PNG to /srv/studio_project/exports/."]),
+            (
+                "1. 48-Well Micro-Cuvette Beer-Lambert Concentration",
+                [
+                    "Exclude any well where qc_flag != 'VALID' (such as BUBBLE_ARTIFACT or SATURATED_OVERFLOW). Compute mean_blank_corrected_od = mean(valid sample od_488nm) - mean(valid blank od_488nm).",
+                    "Using epsilon_mM_cm and optical_path_cm from the BioPhoton Portal (Fluorophore Extinction tab), compute micromolar concentration sample_conc_um = (mean_blank_corrected_od / (epsilon_mM_cm * optical_path_cm)) * 1000.0.",
+                ],
+            ),
+            (
+                "2. 24-Lane Housekeeping-Normalized Western Blot Fold-Change",
+                [
+                    "Include only lanes with qc_flag = 'VALID' (excluding HEMOLYZED_EXCLUDE). Subtract membrane_bg_intensity (from BioPhoton Portal, Housekeeping Normalization tab) from BOTH target_raw and actin_housekeeping_raw on every valid lane.",
+                    "Compute each cohort's normalized ratio (target_net / actin_net) across Control and Treated_24h, then compute treated_fold_change = Treated_24h_norm_ratio / Control_norm_ratio.",
+                ],
+            ),
+            (
+                "3. GIMP 4-Layer Cleanup & 600x400 Scaling",
+                [
+                    "In GIMP, hide both non-production top layers (DRAFT_STAMP_MAGENTA and CALIBRATION_CROSSHAIR_YELLOW in fluorescence_a.xcf; LANE_RULER_RED and QC_BANNER_ORANGE in electrophoresis_b.xcf), scale image dimensions to 600x400, and export PNG to /srv/studio_project/exports/.",
+                ],
+            ),
         ],
     )
     (tickets_root / "microscopy_img_analyst").mkdir(parents=True, exist_ok=True)
@@ -206,7 +246,19 @@ def boot_apps(workspace_root: Path, state_dir: Path, active_roles: tuple[str, ..
     xb = priv / "electrophoresis_b.xcf"
     _make_4layer_xcf(xa, (15, 23, 66), (34, 197, 94), (255, 0, 170), (250, 204, 21), "DAPI_Nuclei_Bg", "GFP_Signal_Core", "DRAFT_STAMP_MAGENTA", "CALIBRATION_CROSSHAIR_YELLOW")
     _make_4layer_xcf(xb, (24, 32, 44), (6, 182, 212), (239, 68, 68), (249, 115, 22), "Gel_Matrix_Bg", "Target_Band_Cyan", "LANE_RULER_RED", "QC_BANNER_ORANGE")
-    subprocess.run(["bash", "-lc", "id -u studio_ui >/dev/null 2>&1 || useradd -m -s /bin/bash studio_ui; mkdir -p /srv/studio_project/exports && cp /ws_root/shared/assay/poster_layout.svg /srv/studio_project/symposium_poster.svg && chown -R studio_ui:studio_ui /opt/aw14_masters /srv/studio_project && chmod 700 /opt/aw14_masters /srv/studio_project"], check=True, capture_output=True, timeout=15)
+    subprocess.run(
+        [
+            "bash",
+            "-lc",
+            "id -u studio_ui >/dev/null 2>&1 || useradd -m -s /bin/bash studio_ui; "
+            "mkdir -p /srv/studio_project/exports && "
+            "chown -R studio_ui:studio_ui /opt/aw14_masters /srv/studio_project && "
+            "chmod 700 /opt/aw14_masters && chmod -R 755 /srv/studio_project",
+        ],
+        check=True,
+        capture_output=True,
+        timeout=15,
+    )
 
     args = []
     if "microscopy_img_analyst" in roles:
@@ -230,6 +282,7 @@ def _clean_scale_xcf(xcf_p: Path, out_p: Path) -> None:
         f'(file-png-save-defaults RUN-NONINTERACTIVE img m "{out_p}" "{out_p}")) (gimp-quit 0))'
     )
     subprocess.run(["gimp", "-i", "-b", scm], check=True, capture_output=True, timeout=35)
+    subprocess.run(["chmod", "644", str(out_p)], capture_output=True, timeout=5)
 
 
 def solve_role(role: str, workspace_root: Path, cooperative: bool = True) -> None:
@@ -241,7 +294,16 @@ def solve_role(role: str, workspace_root: Path, cooperative: bool = True) -> Non
 
     if role == "microscopy_img_analyst":
         _clean_scale_xcf(Path("/opt/aw14_masters/fluorescence_a.xcf"), exp_d / "fluorescence_600x400.png")
-        write_json(ad / "microscopy_metrics.json", {"symposium_id": SYMPOSIUM_ID, "gfp_core_hex": ora["gfp_core_hex"], "mean_blank_corrected_od": ora["mean_blank_corrected_od"], "sample_conc_um": ora["sample_conc_um"]})
+        write_json(
+            ad / "microscopy_metrics.json",
+            {
+                "symposium_id": SYMPOSIUM_ID,
+                "valid_sample_well_count": ora["valid_sample_well_count"],
+                "gfp_core_hex": ora["gfp_core_hex"],
+                "mean_blank_corrected_od": ora["mean_blank_corrected_od"],
+                "sample_conc_um": ora["sample_conc_um"],
+            },
+        )
         if cooperative:
             with resource_lock("aw14_svg"):
                 txt = svg_p.read_text(encoding="utf-8")
@@ -250,14 +312,23 @@ def solve_role(role: str, workspace_root: Path, cooperative: bool = True) -> Non
             svg_p.write_text(INIT_POSTER_SVG.replace("PANEL_A_PENDING", f"{SYMPOSIUM_ID} | {ora['sample_conc_um']} uM"), encoding="utf-8")
     elif role == "gel_blot_analyst":
         _clean_scale_xcf(Path("/opt/aw14_masters/electrophoresis_b.xcf"), exp_d / "electrophoresis_600x400.png")
-        write_json(ad / "blot_metrics.json", {"symposium_id": SYMPOSIUM_ID, "band_cyan_hex": ora["band_cyan_hex"], "control_norm_ratio": ora["control_norm_ratio"], "treated_fold_change": ora["treated_fold_change"]})
+        write_json(
+            ad / "blot_metrics.json",
+            {
+                "symposium_id": SYMPOSIUM_ID,
+                "valid_lane_count": ora["valid_lane_count"],
+                "band_cyan_hex": ora["band_cyan_hex"],
+                "control_norm_ratio": ora["control_norm_ratio"],
+                "treated_fold_change": ora["treated_fold_change_exact"],
+            },
+        )
         if cooperative:
             with resource_lock("aw14_svg"):
                 txt = svg_p.read_text(encoding="utf-8")
-                svg_p.write_text(txt.replace("PANEL_B_PENDING", f"{SYMPOSIUM_ID} | {ora['treated_fold_change']}x"), encoding="utf-8")
+                svg_p.write_text(txt.replace("PANEL_B_PENDING", f"{SYMPOSIUM_ID} | {ora['treated_fold_change_exact']}x"), encoding="utf-8")
                 subprocess.run(["inkscape", str(svg_p), "--export-type=pdf", f"--export-filename={ad / 'poster_proof.pdf'}"], check=True, capture_output=True, timeout=30)
         else:
-            svg_p.write_text(INIT_POSTER_SVG.replace("PANEL_B_PENDING", f"{SYMPOSIUM_ID} | {ora['treated_fold_change']}x"), encoding="utf-8")
+            svg_p.write_text(INIT_POSTER_SVG.replace("PANEL_B_PENDING", f"{SYMPOSIUM_ID} | {ora['treated_fold_change_exact']}x"), encoding="utf-8")
             subprocess.run(["inkscape", str(svg_p), "--export-type=pdf", f"--export-filename={ad / 'poster_proof.pdf'}"], check=True, capture_output=True, timeout=30)
 
 
@@ -299,6 +370,16 @@ def _check_scaled_png(path: Path, bg_rgb: tuple[int, int, int], core_rgb: tuple[
         return False, False
 
 
+def _svg_has_float(svg_txt: str, target: float, tol: float) -> bool:
+    for m in re.findall(r"\d+(?:\.\d+)?", svg_txt):
+        try:
+            if abs(float(m) - target) <= tol:
+                return True
+        except ValueError:
+            continue
+    return False
+
+
 def grade(
     workspace_root: Path,
     service_state: dict[str, Any],
@@ -310,9 +391,7 @@ def grade(
     ora = compute_aw14_oracle()
     ja = read_json_safe(ad / "microscopy_metrics.json")
     jb = read_json_safe(ad / "blot_metrics.json")
-    svg_txt = ((ad / "poster_layout.svg").read_text(encoding="utf-8", errors="replace") if (ad / "poster_layout.svg").is_file() else "") + (
-        Path("/srv/studio_project/symposium_poster.svg").read_text(encoding="utf-8", errors="replace") if Path("/srv/studio_project/symposium_poster.svg").is_file() else ""
-    )
+    svg_txt = (ad / "poster_layout.svg").read_text(encoding="utf-8", errors="replace") if (ad / "poster_layout.svg").is_file() else ""
 
     sz_a, ly_a = _check_scaled_png(exp_d / "fluorescence_600x400.png", (15, 23, 66), (34, 197, 94))
     sz_b, ly_b = _check_scaled_png(exp_d / "electrophoresis_600x400.png", (24, 32, 44), (6, 182, 212))
@@ -321,25 +400,27 @@ def grade(
         ("a_gimp_layers_hidden", ly_a, 2.4, "fluorescence_600x400.png missing or still shows magenta/yellow artifact layers"),
         ("a_gimp_scaled_600x400", sz_a, 2.2, "fluorescence_600x400.png not scaled to exact 600x400 in GIMP"),
         ("a_hex", str(ja.get("gfp_core_hex", "")).upper() == "#22C55E", 1.2, "gfp_core_hex mismatch (#22C55E)"),
-        ("a_conc_um", isinstance(ja.get("sample_conc_um"), (int, float)) and abs(float(ja["sample_conc_um"]) - ora["sample_conc_um"]) <= 0.5, 1.8, f"sample_conc_um mismatch ({ora['sample_conc_um']})"),
-        ("a_svg_panel_a", str(int(ora["sample_conc_um"])) in svg_txt and SYMPOSIUM_ID in svg_txt, 1.6, "Poster SVG missing Panel A sample_conc_um caption"),
+        ("a_conc_um", ja.get("valid_sample_well_count") == 32 and isinstance(ja.get("sample_conc_um"), (int, float)) and abs(float(ja["sample_conc_um"]) - ora["sample_conc_um"]) <= 0.5, 1.8, f"sample_conc_um or valid_sample_well_count mismatch ({ora['sample_conc_um']})"),
+        ("a_svg_panel_a", _svg_has_float(svg_txt, ora["sample_conc_um"], 0.5) and SYMPOSIUM_ID in svg_txt, 1.6, "poster_layout.svg missing Panel A sample_conc_um caption"),
     ]
 
     checks_b: list[tuple[str, bool, float, str]] = [
         ("b_gimp_layers_hidden", ly_b, 2.4, "electrophoresis_600x400.png missing or still shows red/orange artifact layers"),
         ("b_gimp_scaled_600x400", sz_b, 2.2, "electrophoresis_600x400.png not scaled to exact 600x400 in GIMP"),
         ("b_hex", str(jb.get("band_cyan_hex", "")).upper() == "#06B6D4", 1.2, "band_cyan_hex mismatch (#06B6D4)"),
-        ("b_fold", isinstance(jb.get("treated_fold_change"), (int, float)) and abs(float(jb["treated_fold_change"]) - ora["treated_fold_change"]) <= 0.05, 1.8, f"treated_fold_change mismatch ({ora['treated_fold_change']})"),
-        ("b_svg_panel_b", f"{ora['treated_fold_change']:.2f}" in svg_txt and (ad / "poster_proof.pdf").is_file(), 1.6, "Poster SVG / poster_proof.pdf missing Panel B fold-change caption"),
+        ("b_fold", jb.get("valid_lane_count") == 20 and isinstance(jb.get("treated_fold_change"), (int, float)) and abs(float(jb["treated_fold_change"]) - ora["treated_fold_change_exact"]) <= 0.03, 1.8, f"treated_fold_change or valid_lane_count mismatch ({ora['treated_fold_change_exact']})"),
+        ("b_svg_panel_b", _svg_has_float(svg_txt, ora["treated_fold_change_exact"], 0.025) and SYMPOSIUM_ID in svg_txt and (ad / "poster_proof.pdf").is_file(), 1.6, "poster_layout.svg / poster_proof.pdf missing Panel B fold-change caption (~2.875)"),
     ]
 
-    poster_only = (ad / "poster_layout.svg").read_text(encoding="utf-8", errors="replace") if (ad / "poster_layout.svg").is_file() else ""
     checks_joint: list[tuple[str, bool, float, str]] = [
         (
-            "j_both_gimp_scaled_and_poster_merged",
-            sz_a and ly_a and sz_b and ly_b and "PANEL_A_PENDING" not in poster_only and "PANEL_B_PENDING" not in poster_only,
+            "j_shared_poster_retains_both_panels",
+            "PANEL_A_PENDING" not in svg_txt
+            and "PANEL_B_PENDING" not in svg_txt
+            and _svg_has_float(svg_txt, ora["sample_conc_um"], 0.5)
+            and _svg_has_float(svg_txt, ora["treated_fold_change_exact"], 0.025),
             2.5,
-            "Single-instance GIMP modal/tab collision or poster_layout.svg overwrite lost one panel",
+            "Concurrent overwrite on /workspace/assay/poster_layout.svg lost Panel A or Panel B",
         ),
     ]
 

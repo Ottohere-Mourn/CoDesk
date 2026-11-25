@@ -1,4 +1,4 @@
-"""AW-15: Pure-GUI Qt5 Designer Dialysis Console + Qt5 Linguist 8-String Localization (No CLI Studio Mount)."""
+"""AW-15: Pure-GUI Qt5 Designer Dialysis Console & Qt5 Linguist 8-String ICU Localization (48-Row SQLite)."""
 from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor
@@ -28,7 +28,7 @@ TASK_META: dict[str, Any] = {
     "id": "AW-15",
     "slug": "qt_designer_2tab_linguist_10str",
     "title": "Pure-GUI Qt5 Designer Dialysis Console & Qt5 Linguist 8-String ICU Localization",
-    "domain": "Medical Device Qt5 GUI Authoring & Localization (Qt5 Designer + Qt5 Linguist + Chromium + SQLite)",
+    "domain": "Medical Device Qt5 GUI Authoring & Localization (Qt5 Designer + Qt5 Linguist + lrelease + Chromium + 48-Row SQLite)",
     "track": "track2_shared_ws",
     "workspace_mode": "shared",
     "portal_port": 19615,
@@ -36,39 +36,38 @@ TASK_META: dict[str, Any] = {
     "iso_role_timeout_s": 1200,
     "conc_role_timeout_s": 1500,
     "max_cua_calls": 140,
+    "mount_studio_ro": True,
 }
 
 DIALYSIS_CERT = "IEC60601-HD-2026"
-DIAL_STRINGS = [
+ONCOTIC_OFFSET = 24.0
+TMP_ALARM_LIMIT = 300.0
+
+DIAL_STRINGS: list[tuple[str, str, str]] = [
+    ("DialysisPanel", "Acute Hemodialysis Console", "Akute Hämodialyse-Konsole"),
     ("DialysisPanel", "Blood Flow Rate (mL/min)", "Blutflussrate (mL/min)"),
     ("DialysisPanel", "Ultrafiltration Goal (mL)", "Ultrafiltrationsziel (mL)"),
     ("DialysisPanel", "Heparin Bolus (IU)", "Heparin-Bolus (IE)"),
     ("DialysisPanel", "Start Hemodialysis", "Hämodialyse starten"),
-    ("DialysisPanel", "Clamp Venous Line", "Venöse Linie abklemmen"),
-    ("DialysisPanel", "Bypass Dialysate", "Dialysat-Bypass aktivieren"),
-    ("DialysisPanel", "ALARM: Transmembrane Pressure (%1 mmHg)", "ALARM: Transmembrandruck (%1 mmHg)"),
-    ("DialysisPanel", "Air Detector Armed", "Luftdetektor scharfgeschaltet"),
+    ("DialysisPanel", "Clamp Venous Line", "Venöse Leitung abklemmen"),
+    ("DialysisPanel", "Transmembrane Pressure High", "Transmembrandruck zu hoch"),
+    ("DialysisPanel", "Air Detector Interlock Armed", "Luftdetektor-Verriegelung aktiv"),
 ]
 
 TICKET_A = (
-    "# Work Order — Hemodialysis Qt5 UI & Safety Engineer (`dialysis_ui_eng`)\n\n"
-    "Configure the live **Qt5 Designer** form (`dialysis_panel.ui` open on the desktop) and compute the Daugirdas `Kt/V` clearance audit in `/workspace/dialysis_safety`:\n\n"
-    "1. Read `/workspace/dialysis_safety/specs/IEC60601_Dialysis_Spec.pdf`, query `/workspace/dialysis_safety/patient_runs.sqlite`, and inspect the **IEC 60601-2-16 Dialysis Portal** in Chromium (`http://127.0.0.1:19615`, `Acute ICU Hemodialysis` tab — ignore the Home Peritoneal distractor tab!).\n"
-    "2. In the open **Qt5 Designer** window (`dialysis_panel.ui`), configure:\n"
-    "   - `bloodFlowSpin`: `minimum = 50`, `maximum = 500`, `singleStep = 10`\n"
-    "   - `ufGoalSpin`: `minimum = 100`, `maximum = 4000`, `singleStep = 50`\n"
-    "   - `heparinSpin`: `minimum = 0`, `maximum = 5000`, `singleStep = 250`\n"
-    "   - `startHdBtn` and `clampVenousBtn`: `minimumSize` width `>= 250`, height `>= 48`\n"
-    "   and save (`Ctrl+S`) in Qt5 Designer.\n"
-    "3. Compute mean single-pool Daugirdas `sp_ktv` (3 decimals) across the 3 ICU treatment runs in `patient_runs.sqlite`, write `/workspace/dialysis_safety/ui_ktv_audit.json` (`cert_id`, `mean_sp_ktv`, `adequate_run_ids`), and set `\"ui_cert\": \"IEC60601-HD-2026\"` in `/workspace/dialysis_safety/release_gate.json`.\n"
+    "# Work Order — Hemodialysis Qt5 HMI Safety Engineer (`dialysis_ui_eng`)\n\n"
+    "Enforce IEC 60601-2-16 spin-box & emergency-touch safety bounds inside the live **Qt5 Designer** window (`dialysis_panel.ui` open on the desktop) and complete the 48-session `spKt/V` adequacy audit in `/workspace/dialysis_safety`:\n\n"
+    "1. Read `/workspace/dialysis_safety/specs/IEC60601_Dialysis_Spec.pdf`, query `/workspace/dialysis_safety/patient_runs.sqlite` (`hd_runs`), and inspect the **IEC 60601-2-16 Dialysis Portal** in Chromium (`http://127.0.0.1:19615`, `Overview` and `Acute ICU Hemodialysis` views).\n"
+    "2. In the open **Qt5 Designer** window (`/srv/studio_project/dialysis_panel.ui`, mounted read-only in your terminal for post-save verification), update `bloodFlowSpin`, `ufGoalSpin`, `heparinSpin`, `startHdBtn`, and `clampVenousBtn` to satisfy every widget safety range, step size, and minimum touch target specified in Section 1 of `IEC60601_Dialysis_Spec.pdf`, then save (`Ctrl+S`).\n"
+    "3. Filtering `hd_runs` to completed acute ICU hemodialysis sessions per specification, compute 3-decimal `mean_sp_ktv` and `adequate_run_ids` (sorted list), write `/workspace/dialysis_safety/ui_ktv_audit.json` (`cert_id`, `evaluated_run_count`, `mean_sp_ktv`, `adequate_run_ids`), and record `\"ui_cert\"` in `/workspace/dialysis_safety/release_gate.json` (preserving any sibling keys!).\n"
 )
 
 TICKET_B = (
     "# Work Order — Hemodialysis Clinical Localization & TMP Engineer (`dialysis_l10n_eng`)\n\n"
-    "Complete all 8 German (`de_DE`) translations in the live **Qt5 Linguist** window (`dialysis_de.ts` open on the desktop) and compute the transmembrane pressure (`TMP`) safety audit in `/workspace/dialysis_safety`:\n\n"
-    "1. Read `/workspace/dialysis_safety/specs/IEC60601_Dialysis_Spec.pdf`, query `/workspace/dialysis_safety/patient_runs.sqlite`, and inspect the **IEC 60601-2-16 Dialysis Portal** in Chromium (`http://127.0.0.1:19615`, `Approved de_DE Dialysis Glossary` tab).\n"
-    "2. In the open **Qt5 Linguist** window (`dialysis_de.ts`), enter the exact approved German string for all 8 `DialysisPanel` entries, mark each translation Done (`Ctrl+Return`), and save (`Ctrl+S`).\n"
-    "3. Compute transmembrane pressure `tmp_mmhg = (p_art + p_ven)/2 - p_dial - oncotic_offset_mmhg` (1 decimal) for each run in `patient_runs.sqlite`, write `/workspace/dialysis_safety/tmp_l10n_audit.json` (`cert_id`, `max_tmp_mmhg`, `alarm_triggered_runs`), and set `\"l10n_cert\": \"IEC60601-HD-2026\"` in `/workspace/dialysis_safety/release_gate.json`.\n"
+    "Complete all 8 German (`de_DE`) translations in the live **Qt5 Linguist** window (`dialysis_de.ts` open on the desktop) and complete the 48-session transmembrane pressure (`TMP`) safety audit in `/workspace/dialysis_safety`:\n\n"
+    "1. Read `/workspace/dialysis_safety/specs/IEC60601_Dialysis_Spec.pdf`, query `/workspace/dialysis_safety/patient_runs.sqlite` (`hd_runs`), and inspect the **IEC 60601-2-16 Dialysis Portal** in Chromium (`http://127.0.0.1:19615`, `Overview`, `Acute ICU Hemodialysis`, and `Approved de_DE Dialysis Glossary` views).\n"
+    "2. In the open **Qt5 Linguist** window (`/srv/studio_project/dialysis_de.ts`, mounted read-only in your terminal so you can verify with `lrelease` after saving), enter the exact approved German translation for all 8 `DialysisPanel` entries, mark each translation Done (`Ctrl+Return`), and save (`Ctrl+S`).\n"
+    "3. Filtering `hd_runs` to completed acute ICU hemodialysis sessions per specification, compute oncotic-adjusted transmembrane pressure (`tmp_mmhg`, 1 decimal) for each eligible session, write `/workspace/dialysis_safety/tmp_l10n_audit.json` (`cert_id`, `evaluated_run_count`, `max_tmp_mmhg`, `alarm_triggered_runs`), and record `\"l10n_cert\"` in `/workspace/dialysis_safety/release_gate.json` (preserving any sibling keys!).\n"
 )
 
 INIT_DIAL_UI = """<?xml version="1.0" encoding="UTF-8"?>
@@ -109,22 +108,36 @@ def _init_dial_ts() -> str:
     return "\n".join(lines)
 
 
-PATIENT_RUNS = [
-    ("HD-01", 68.0, 22.0, 4.0, 2.4, 72.0, 195.0, 165.0, -90.0),
-    ("HD-02", 74.0, 19.0, 3.5, 1.8, 78.0, 220.0, 190.0, -145.0),
-    ("HD-03", 62.0, 28.0, 4.0, 2.8, 66.0, 180.0, 150.0, -70.0),
-]
-ONCOTIC_OFFSET = 24.0
-TMP_ALARM_LIMIT = 300.0
+def _build_patient_runs() -> list[tuple[str, str, str, float, float, float, float, float, float, float, float]]:
+    rows: list[tuple[str, str, str, float, float, float, float, float, float, float, float]] = []
+    for idx in range(36):
+        rid = f"HD-{idx + 1:03d}"
+        pre_bun = 64.0 + (idx % 6) * 3.5
+        post_bun = 18.0 + (idx % 5) * 2.4
+        t_hr = 3.5 + (idx % 3) * 0.5
+        uf_l = 1.6 + (idx % 4) * 0.4
+        w_kg = 65.0 + (idx % 7) * 3.0
+        p_art = 175.0 + (idx % 6) * 10.0
+        p_ven = 145.0 + (idx % 6) * 9.0
+        p_dial = -65.0 - (idx % 6) * 18.0
+        rows.append((rid, "ACUTE_ICU_HD", "COMPLETED", pre_bun, post_bun, t_hr, uf_l, w_kg, p_art, p_ven, p_dial))
+    for idx in range(8):
+        rid = f"CRRT-{idx + 1:02d}"
+        rows.append((rid, "CRRT_CVVHDF", "COMPLETED", 55.0, 29.0, 24.0, 3.8, 74.0, 140.0, 120.0, -40.0))
+    for idx in range(4):
+        rid = f"HD-CLOT-{idx + 1:02d}"
+        rows.append((rid, "ACUTE_ICU_HD", "ABORTED_CLOT", 78.0, 61.0, 0.8, 0.3, 71.0, 260.0, 245.0, -195.0))
+    return rows
 
 
 def compute_aw15_oracle() -> dict[str, Any]:
-    # Daugirdas 2nd gen spKt/V = -ln(R - 0.008*t) + (4 - 3.5*R) * (UF_L / W_post_kg), R = post_bun / pre_bun
-    ktvs = []
-    adeq = []
-    tmps = []
-    alm = []
-    for rid, pre_bun, post_bun, t_hr, uf_l, w_kg, p_art, p_ven, p_dial in PATIENT_RUNS:
+    ktvs: list[float] = []
+    adeq: list[str] = []
+    tmps: list[float] = []
+    alm: list[str] = []
+    for rid, mod_t, st_t, pre_bun, post_bun, t_hr, uf_l, w_kg, p_art, p_ven, p_dial in _build_patient_runs():
+        if mod_t != "ACUTE_ICU_HD" or st_t != "COMPLETED":
+            continue
         r = post_bun / pre_bun
         ktv = -math.log(r - 0.008 * t_hr) + (4.0 - 3.5 * r) * (uf_l / w_kg)
         ktvs.append(ktv)
@@ -136,6 +149,7 @@ def compute_aw15_oracle() -> dict[str, Any]:
             alm.append(rid)
     return {
         "cert_id": DIALYSIS_CERT,
+        "evaluated_run_count": len(ktvs),
         "mean_sp_ktv": round(sum(ktvs) / len(ktvs), 3),
         "adequate_run_ids": sorted(adeq),
         "max_tmp_mmhg": max(tmps),
@@ -155,17 +169,34 @@ def build(workspace_root: Path, tickets_root: Path) -> None:
     db_p = ds / "patient_runs.sqlite"
     db_p.unlink(missing_ok=True)
     con = sqlite3.connect(db_p)
-    con.execute("CREATE TABLE hd_runs (run_id TEXT PRIMARY KEY, pre_bun_mg_dl REAL, post_bun_mg_dl REAL, session_hours REAL, uf_volume_liters REAL, post_weight_kg REAL, p_arterial_pos_mmhg REAL, p_venous_mmhg REAL, p_dialysate_mmhg REAL)")
-    con.executemany("INSERT INTO hd_runs VALUES (?,?,?,?,?,?,?,?,?)", PATIENT_RUNS)
+    con.execute(
+        "CREATE TABLE hd_runs (run_id TEXT PRIMARY KEY, modality TEXT, run_status TEXT, pre_bun_mg_dl REAL, post_bun_mg_dl REAL, session_hours REAL, uf_volume_liters REAL, post_weight_kg REAL, p_arterial_pos_mmhg REAL, p_venous_mmhg REAL, p_dialysate_mmhg REAL)"
+    )
+    con.executemany("INSERT INTO hd_runs VALUES (?,?,?,?,?,?,?,?,?,?,?)", _build_patient_runs())
     con.commit()
     con.close()
 
     write_pdf_manual(
         ds / "specs" / "IEC60601_Dialysis_Spec.pdf",
-        "IEC 60601-2-16 Hemodialysis Console & Safety Equations",
+        "IEC 60601-2-16 Hemodialysis Console HMI & Clinical Safety Specification",
         [
-            ("1. Daugirdas spKt/V Adequacy", ["R = post_bun / pre_bun; spKt/V = -ln(R - 0.008*session_hours) + (4 - 3.5*R)*(uf_volume_liters / post_weight_kg). Runs with spKt/V >= 1.20 are adequate."]),
-            ("2. Effective Transmembrane Pressure (TMP)", ["TMP = (p_arterial_pos_mmhg + p_venous_mmhg)/2 - p_dialysate_mmhg - oncotic_offset_mmhg (retrieve oncotic_offset_mmhg and TMP alarm ceiling from the Dialysis Portal)."]),
+            (
+                "1. Qt5 Designer HMI Safety Bounds (dialysis_panel.ui)",
+                [
+                    "bloodFlowSpin: minimum = 50, maximum = 500, singleStep = 10.",
+                    "ufGoalSpin: minimum = 100, maximum = 4000, singleStep = 50.",
+                    "heparinSpin: minimum = 0, maximum = 5000, singleStep = 250.",
+                    "Emergency touch buttons startHdBtn and clampVenousBtn: minimumSize width >= 250 px and height >= 48 px.",
+                ],
+            ),
+            (
+                "2. Session Cohort Filter, Daugirdas spKt/V & Oncotic TMP",
+                [
+                    "Evaluate ONLY rows where modality = 'ACUTE_ICU_HD' AND run_status = 'COMPLETED' (exclude CRRT_CVVHDF and ABORTED_CLOT).",
+                    "Daugirdas 2nd-generation single-pool adequacy: R = post_bun_mg_dl / pre_bun_mg_dl; spKt/V = -ln(R - 0.008 * session_hours) + (4.0 - 3.5 * R) * (uf_volume_liters / post_weight_kg). Runs with spKt/V >= 1.20 are adequate.",
+                    "Effective transmembrane pressure: tmp_mmhg = round((p_arterial_pos_mmhg + p_venous_mmhg) / 2.0 - p_dialysate_mmhg - oncotic_offset_mmhg, 1). Runs strictly exceeding TMP_alarm_limit (from Acute ICU Hemodialysis Portal view) belong to alarm_triggered_runs.",
+                ],
+            ),
         ],
     )
     (tickets_root / "dialysis_ui_eng").mkdir(parents=True, exist_ok=True)
@@ -178,7 +209,7 @@ def serve(port: int, workspace_root: Path, state_dir: Path, boot_file: Path) -> 
     tok = secrets.token_hex(16)
     state_file = state_dir / "service_state.json"
     lock = threading.Lock()
-    state: dict[str, Any] = {"active_tab": "home_pd", "switches": 0}
+    state: dict[str, Any] = {"active_tab": "overview", "switches": 0}
     write_json(state_file, state)
     write_json(boot_file, {"url": f"http://127.0.0.1:{port}/auth?token={tok}"})
 
@@ -215,9 +246,9 @@ def serve(port: int, workspace_root: Path, state_dir: Path, boot_file: Path) -> 
                 self._send(401, b"<h3>401 Dialysis Portal Session Required</h3>")
                 return
             if parsed.path == "/tab":
-                t = (qs.get("id") or ["home_pd"])[0]
+                t = (qs.get("id") or ["overview"])[0]
                 with lock:
-                    if t in ("home_pd", "icu_hd", "glossary") and t != state["active_tab"]:
+                    if t in ("overview", "home_pd", "icu_hd", "glossary") and t != state["active_tab"]:
                         state["active_tab"] = t
                         state["switches"] = int(state["switches"]) + 1
                         write_json(state_file, state)
@@ -225,8 +256,10 @@ def serve(port: int, workspace_root: Path, state_dir: Path, boot_file: Path) -> 
                 return
             with lock:
                 cur = state["active_tab"]
-            if cur == "home_pd":
-                body = "<h2>Home Peritoneal Dialysis (DO NOT USE FOR ACUTE ICU HD)</h2><p>Dwell: 1500..2500 mL</p>"
+            if cur == "overview":
+                body = f"<h2>IEC 60601-2-16 Release Control</h2><p>Active Release Certificate (`cert_id` / `ui_cert` / `l10n_cert`): <code>{DIALYSIS_CERT}</code></p>"
+            elif cur == "home_pd":
+                body = "<h2>Home Peritoneal Dialysis (EXCLUDED FROM ACUTE ICU HD AUDIT)</h2><p>Dwell: 1500..2500 mL</p>"
             elif cur == "icu_hd":
                 body = f"<h2>Acute ICU Hemodialysis ({DIALYSIS_CERT})</h2><p><code>oncotic_offset_mmhg = 24.0</code> | <code>TMP_alarm_limit = 300.0 mmHg</code></p>"
             else:
@@ -237,7 +270,7 @@ def serve(port: int, workspace_root: Path, state_dir: Path, boot_file: Path) -> 
             .nav a{{display:inline-block;padding:10px 15px;margin-right:10px;background:#0f172a;color:#fff;text-decoration:none;border-radius:6px;font-weight:700;}}
             .card{{margin-top:16px;padding:20px;background:#fff;border:1px solid #cbd5e1;border-radius:10px;}}</style></head>
             <body><h1>IEC 60601-2-16 Dialysis Portal ({cur.upper()})</h1>
-            <div class="nav"><a href="/tab?id=home_pd">Home Peritoneal</a><a href="/tab?id=icu_hd">Acute ICU Hemodialysis</a><a href="/tab?id=glossary">Approved de_DE Dialysis Glossary</a></div>
+            <div class="nav"><a href="/tab?id=overview">Overview</a><a href="/tab?id=home_pd">Home Peritoneal</a><a href="/tab?id=icu_hd">Acute ICU Hemodialysis</a><a href="/tab?id=glossary">Approved de_DE Dialysis Glossary</a></div>
             <div class="card">{body}</div></body></html>"""
             self._send(200, html.encode("utf-8"))
 
@@ -252,6 +285,7 @@ def boot_apps(workspace_root: Path, state_dir: Path, active_roles: tuple[str, ..
     sp.mkdir(parents=True, exist_ok=True)
     shutil.copy2(seed / "dialysis_panel.ui", sp / "dialysis_panel.ui")
     shutil.copy2(seed / "dialysis_de.ts", sp / "dialysis_de.ts")
+    subprocess.run(["chmod", "-R", "a+rX", str(sp)], check=True, capture_output=True, timeout=10)
     if "dialysis_ui_eng" in roles:
         launch_studio_app("nohup designer '/srv/studio_project/dialysis_panel.ui' >/tmp/aw15_des.log 2>&1 </dev/null &", wait_s=2.4)
     if "dialysis_l10n_eng" in roles:
@@ -275,7 +309,15 @@ def solve_role(role: str, workspace_root: Path, cooperative: bool = True) -> Non
             .replace("<width>90</width><height>28</height>", "<width>256</width><height>50</height>")
         )
         (sp / "dialysis_panel.ui").write_text(ui_clean, encoding="utf-8")
-        write_json(ds / "ui_ktv_audit.json", {"cert_id": DIALYSIS_CERT, "mean_sp_ktv": ora["mean_sp_ktv"], "adequate_run_ids": ora["adequate_run_ids"]})
+        write_json(
+            ds / "ui_ktv_audit.json",
+            {
+                "cert_id": DIALYSIS_CERT,
+                "evaluated_run_count": ora["evaluated_run_count"],
+                "mean_sp_ktv": ora["mean_sp_ktv"],
+                "adequate_run_ids": ora["adequate_run_ids"],
+            },
+        )
         if cooperative:
             with resource_lock("aw15_gate"):
                 rg = read_json_safe(ds / "release_gate.json")
@@ -289,7 +331,15 @@ def solve_role(role: str, workspace_root: Path, cooperative: bool = True) -> Non
             lines.append(f"<message><source>{s}</source><translation>{d}</translation></message>")
         lines.append("</context></TS>\n")
         (sp / "dialysis_de.ts").write_text("\n".join(lines), encoding="utf-8")
-        write_json(ds / "tmp_l10n_audit.json", {"cert_id": DIALYSIS_CERT, "max_tmp_mmhg": ora["max_tmp_mmhg"], "alarm_triggered_runs": ora["alarm_triggered_runs"]})
+        write_json(
+            ds / "tmp_l10n_audit.json",
+            {
+                "cert_id": DIALYSIS_CERT,
+                "evaluated_run_count": ora["evaluated_run_count"],
+                "max_tmp_mmhg": ora["max_tmp_mmhg"],
+                "alarm_triggered_runs": ora["alarm_triggered_runs"],
+            },
+        )
         if cooperative:
             with resource_lock("aw15_gate"):
                 rg = read_json_safe(ds / "release_gate.json")
@@ -312,6 +362,20 @@ def careful_conc(workspace_root: Path) -> None:
         fb.result()
 
 
+def _norm_id_list(val: Any) -> list[str]:
+    if not isinstance(val, list):
+        return []
+    out: list[str] = []
+    for item in val:
+        if isinstance(item, dict):
+            rid = item.get("run_id") or item.get("id") or ""
+            if rid:
+                out.append(str(rid))
+        elif isinstance(item, (str, int, float)):
+            out.append(str(item))
+    return sorted(out)
+
+
 def grade(
     workspace_root: Path,
     service_state: dict[str, Any],
@@ -328,7 +392,7 @@ def grade(
     rg = read_json_safe(ds / "release_gate.json")
 
     probe = f"""
-import json, os, sys, tempfile, subprocess
+import json, os, sys, subprocess
 os.environ["QT_QPA_PLATFORM"] = "offscreen"
 from PyQt5 import QtCore, QtWidgets, uic
 app = QtWidgets.QApplication(sys.argv)
@@ -336,13 +400,16 @@ out = {{}}
 uip = {str(sp / 'dialysis_panel.ui')!r}
 tsp = {str(sp / 'dialysis_de.ts')!r}
 if os.path.isfile(uip):
-    w = uic.loadUi(uip)
-    for k in ("bloodFlowSpin", "ufGoalSpin", "heparinSpin"):
-        sb = w.findChild(QtWidgets.QSpinBox, k)
-        if sb: out[k] = [sb.minimum(), sb.maximum(), sb.singleStep()]
-    b1 = w.findChild(QtWidgets.QPushButton, "startHdBtn")
-    b2 = w.findChild(QtWidgets.QPushButton, "clampVenousBtn")
-    if b1 and b2: out["btns"] = [[b1.minimumWidth(), b1.minimumHeight()], [b2.minimumWidth(), b2.minimumHeight()]]
+    try:
+        w = uic.loadUi(uip)
+        for k in ("bloodFlowSpin", "ufGoalSpin", "heparinSpin"):
+            sb = w.findChild(QtWidgets.QSpinBox, k)
+            if sb: out[k] = [sb.minimum(), sb.maximum(), sb.singleStep()]
+        b1 = w.findChild(QtWidgets.QPushButton, "startHdBtn")
+        b2 = w.findChild(QtWidgets.QPushButton, "clampVenousBtn")
+        if b1 and b2: out["btns"] = [[b1.minimumWidth(), b1.minimumHeight()], [b2.minimumWidth(), b2.minimumHeight()]]
+    except Exception:
+        pass
 if os.path.isfile(tsp):
     qmp = "/tmp/aw15_eval.qm"
     subprocess.run(["lrelease", tsp, "-qm", qmp], capture_output=True, timeout=15)
@@ -364,7 +431,7 @@ print("AW15_OUT:" + json.dumps(out, ensure_ascii=False))
     tr_count = sum(1 for _c, s, d in DIAL_STRINGS if tr_map.get(s) == d)
 
     checks_a: list[tuple[str, bool, float, str]] = [
-        ("a_ktv", isinstance(ja.get("mean_sp_ktv"), (int, float)) and abs(float(ja["mean_sp_ktv"]) - ora["mean_sp_ktv"]) <= 0.02 and sorted(ja.get("adequate_run_ids") or []) == ora["adequate_run_ids"], 2.0, f"mean_sp_ktv mismatch ({ora['mean_sp_ktv']})"),
+        ("a_ktv", ja.get("evaluated_run_count") == 36 and isinstance(ja.get("mean_sp_ktv"), (int, float)) and abs(float(ja["mean_sp_ktv"]) - ora["mean_sp_ktv"]) <= 0.02 and _norm_id_list(ja.get("adequate_run_ids")) == ora["adequate_run_ids"], 2.0, f"mean_sp_ktv / 36-run cohort mismatch ({ora['mean_sp_ktv']})"),
         ("a_gui_bf", rt.get("bloodFlowSpin") == [50, 500, 10], 1.8, f"Designer bloodFlowSpin mismatch ({rt.get('bloodFlowSpin')})"),
         ("a_gui_uf", rt.get("ufGoalSpin") == [100, 4000, 50], 1.8, f"Designer ufGoalSpin mismatch ({rt.get('ufGoalSpin')})"),
         ("a_gui_hep", rt.get("heparinSpin") == [0, 5000, 250], 1.8, f"Designer heparinSpin mismatch ({rt.get('heparinSpin')})"),
@@ -373,7 +440,7 @@ print("AW15_OUT:" + json.dumps(out, ensure_ascii=False))
     ]
 
     checks_b: list[tuple[str, bool, float, str]] = [
-        ("b_tmp", isinstance(jb.get("max_tmp_mmhg"), (int, float)) and abs(float(jb["max_tmp_mmhg"]) - ora["max_tmp_mmhg"]) <= 0.5 and sorted(jb.get("alarm_triggered_runs") or []) == ora["alarm_triggered_runs"], 2.0, f"max_tmp_mmhg mismatch ({ora['max_tmp_mmhg']})"),
+        ("b_tmp", jb.get("evaluated_run_count") == 36 and isinstance(jb.get("max_tmp_mmhg"), (int, float)) and abs(float(jb["max_tmp_mmhg"]) - ora["max_tmp_mmhg"]) <= 0.5 and _norm_id_list(jb.get("alarm_triggered_runs")) == ora["alarm_triggered_runs"], 2.0, f"max_tmp_mmhg / 36-run cohort mismatch ({ora['max_tmp_mmhg']})"),
         ("b_tr_6plus", tr_count >= 6, 2.0, f"Fewer than 6/8 strings translated accurately in Linguist ({tr_count}/8)"),
         ("b_tr_all8", tr_count == 8, 2.2, f"Not all 8/8 strings translated accurately in Linguist ({tr_count}/8)"),
         ("b_no_unfin", 'type="unfinished"' not in ts_raw, 1.8, "dialysis_de.ts still has unfinished entries in Linguist"),
@@ -382,10 +449,10 @@ print("AW15_OUT:" + json.dumps(out, ensure_ascii=False))
 
     checks_joint: list[tuple[str, bool, float, str]] = [
         (
-            "j_both_designer_linguist_and_gate_clean",
-            btns_ok and rt.get("heparinSpin") == [0, 5000, 250] and tr_count == 8 and rg.get("ui_cert") == DIALYSIS_CERT and rg.get("l10n_cert") == DIALYSIS_CERT,
+            "j_shared_release_gate_retains_both_certs",
+            rg.get("ui_cert") == DIALYSIS_CERT and rg.get("l10n_cert") == DIALYSIS_CERT,
             2.5,
-            "Shared Designer/Linguist focus collision or release_gate.json overwrite broke combined ICU dialysis release",
+            "Concurrent overwrite on /workspace/dialysis_safety/release_gate.json clobbered peer certification key",
         ),
     ]
 
