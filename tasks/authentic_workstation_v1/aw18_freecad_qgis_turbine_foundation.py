@@ -38,9 +38,8 @@ TASK_META: dict[str, Any] = {
     "workspace_mode": "shared",
     "portal_port": 19618,
     "roles": ("geotech_gis_eng", "foundation_cad_eng"),
-    "iso_role_timeout_s": 1200,
-    "conc_role_timeout_s": 1500,
-    "max_cua_calls": 140,
+    "iso_role_timeout_s": 7200,
+    "conc_role_timeout_s": 7200,
 }
 
 TURBINE_CERT = "IEC61400-FDN-309"

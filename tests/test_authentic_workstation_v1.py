@@ -50,9 +50,9 @@ def test_catalog_and_retained_top5_metadata() -> None:
     assert RETAINED_TOP5_IDS == ("AW-12", "AW-14", "AW-15", "AW-19", "AW-20")
     assert set(RETAINED_TOP5_IDS).issubset(set(AW_BY_ID))
     for meta in AW_CATALOG:
-        assert int(meta["max_cua_calls"]) >= 120
-        assert int(meta["iso_role_timeout_s"]) >= 1200
-        assert int(meta["conc_role_timeout_s"]) >= 1500
+        assert "max_cua_calls" not in meta
+        assert int(meta["iso_role_timeout_s"]) == 7200
+        assert int(meta["conc_role_timeout_s"]) == 7200
         assert len(meta["roles"]) == 2
 
 
@@ -61,10 +61,12 @@ def test_all_tickets_pass_prompt_hygiene_and_agent_prompt_honesty() -> None:
         ra, rb = mod.TASK_META["roles"]
         hyg = verify_prompt_hygiene({ra: mod.TICKET_A, rb: mod.TICKET_B})
         assert hyg["ok"], f"{tid} failed prompt hygiene: {hyg}"
-        wrapped = build_aw_agent_prompt(mod.TICKET_A, ra, 1200, "qwen_cua", 140)
+        wrapped = build_aw_agent_prompt(mod.TICKET_A, ra, 7200, "qwen_cua")
         assert "qwen_cua_driver" in wrapped
         assert "guest_bash" in wrapped
         assert "read-only" in wrapped
+        assert "loop-safety ceiling" not in wrapped
+        assert "time budget" not in wrapped
 
 
 def test_isolated_mode_skips_joint_coupling_penalties() -> None:

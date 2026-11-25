@@ -39,9 +39,8 @@ TASK_META: dict[str, Any] = {
     "workspace_mode": "shared",
     "portal_port": 19608,
     "roles": ("rev_recognition_analyst", "opex_covenant_controller"),
-    "iso_role_timeout_s": 1200,
-    "conc_role_timeout_s": 1500,
-    "max_cua_calls": 140,
+    "iso_role_timeout_s": 7200,
+    "conc_role_timeout_s": 7200,
     "mount_studio_ro": True,
 }
 

@@ -30,9 +30,8 @@ TASK_META: dict[str, Any] = {
     "workspace_mode": "shared",
     "portal_port": 19607,
     "roles": ("incident_shell_frontend_eng", "finops_drawer_frontend_eng"),
-    "iso_role_timeout_s": 1200,
-    "conc_role_timeout_s": 1500,
-    "max_cua_calls": 140,
+    "iso_role_timeout_s": 7200,
+    "conc_role_timeout_s": 7200,
 }
 
 TICKET_A = (

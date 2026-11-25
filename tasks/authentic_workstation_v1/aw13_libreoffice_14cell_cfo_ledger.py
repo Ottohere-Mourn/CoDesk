@@ -39,9 +39,8 @@ TASK_META: dict[str, Any] = {
     "workspace_mode": "shared",
     "portal_port": 19613,
     "roles": ("saas_rev_lead", "cogs_opex_lead"),
-    "iso_role_timeout_s": 1200,
-    "conc_role_timeout_s": 1500,
-    "max_cua_calls": 140,
+    "iso_role_timeout_s": 7200,
+    "conc_role_timeout_s": 7200,
 }
 
 FX_RATES = {"USD": 1.0, "EUR": 1.08, "GBP": 1.26, "CAD": 0.74}

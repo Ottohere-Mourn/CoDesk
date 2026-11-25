@@ -33,9 +33,8 @@ TASK_META: dict[str, Any] = {
     "workspace_mode": "shared",
     "portal_port": 19610,
     "roles": ("hmi_designer_ergonomics_eng", "clinical_linguist_release_eng"),
-    "iso_role_timeout_s": 1200,
-    "conc_role_timeout_s": 1500,
-    "max_cua_calls": 140,
+    "iso_role_timeout_s": 7200,
+    "conc_role_timeout_s": 7200,
     "mount_studio_ro": True,
 }
 

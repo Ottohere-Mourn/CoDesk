@@ -38,9 +38,8 @@ TASK_META: dict[str, Any] = {
     "workspace_mode": "shared",
     "portal_port": 19605,
     "roles": ("mech_chassis_eng", "emc_bezel_eng"),
-    "iso_role_timeout_s": 1200,
-    "conc_role_timeout_s": 1500,
-    "max_cua_calls": 140,
+    "iso_role_timeout_s": 7200,
+    "conc_role_timeout_s": 7200,
 }
 
 ECN_CONTROL_CODE = "ECN-204-REV-C-26G"

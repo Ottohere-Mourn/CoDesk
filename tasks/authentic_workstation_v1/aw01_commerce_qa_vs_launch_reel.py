@@ -41,9 +41,8 @@ TASK_META: dict[str, Any] = {
     "workspace_mode": "isolated",
     "portal_port": 19601,
     "roles": ("storefront_qa_eng", "launch_reel_producer"),
-    "iso_role_timeout_s": 1200,
-    "conc_role_timeout_s": 1500,
-    "max_cua_calls": 140,
+    "iso_role_timeout_s": 7200,
+    "conc_role_timeout_s": 7200,
 }
 
 SKUS_DATA: list[tuple[str, str, float, str, float, int]] = [

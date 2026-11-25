@@ -35,9 +35,8 @@ TASK_META: dict[str, Any] = {
     "workspace_mode": "isolated",
     "portal_port": 19621,
     "roles": ("design_qa_lead", "finops_demo_producer"),
-    "iso_role_timeout_s": 1200,
-    "conc_role_timeout_s": 1500,
-    "max_cua_calls": 140,
+    "iso_role_timeout_s": 7200,
+    "conc_role_timeout_s": 7200,
 }
 
 FX_SF = {"USD": 1.0, "EUR": 1.08, "GBP": 1.26, "JPY": 0.0068}

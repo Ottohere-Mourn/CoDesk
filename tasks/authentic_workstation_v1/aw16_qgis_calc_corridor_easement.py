@@ -40,9 +40,8 @@ TASK_META: dict[str, Any] = {
     "workspace_mode": "shared",
     "portal_port": 19616,
     "roles": ("easement_gis_specialist", "culvert_crossing_eng"),
-    "iso_role_timeout_s": 1200,
-    "conc_role_timeout_s": 1500,
-    "max_cua_calls": 140,
+    "iso_role_timeout_s": 7200,
+    "conc_role_timeout_s": 7200,
 }
 
 DOCKET_NO = "PUC-2026-ROW-519"

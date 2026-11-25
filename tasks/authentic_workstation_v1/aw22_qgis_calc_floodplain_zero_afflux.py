@@ -42,9 +42,8 @@ TASK_META: dict[str, Any] = {
     "workspace_mode": "shared",
     "portal_port": 19622,
     "roles": ("floodplain_gis_analyst", "detention_weir_eng"),
-    "iso_role_timeout_s": 1200,
-    "conc_role_timeout_s": 1500,
-    "max_cua_calls": 140,
+    "iso_role_timeout_s": 7200,
+    "conc_role_timeout_s": 7200,
 }
 
 FEMA_CASE_NO = "FEMA-CLOMR-2026-618"

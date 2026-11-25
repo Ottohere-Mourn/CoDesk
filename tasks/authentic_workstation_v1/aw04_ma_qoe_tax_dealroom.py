@@ -39,9 +39,8 @@ TASK_META: dict[str, Any] = {
     "workspace_mode": "shared",
     "portal_port": 19604,
     "roles": ("qoe_ebitda_lead", "tax_nwc_structuring_lead"),
-    "iso_role_timeout_s": 1200,
-    "conc_role_timeout_s": 1500,
-    "max_cua_calls": 140,
+    "iso_role_timeout_s": 7200,
+    "conc_role_timeout_s": 7200,
 }
 
 AVG_FX_2025: dict[str, float] = {"USD": 1.0, "EUR": 1.075, "GBP": 1.255}

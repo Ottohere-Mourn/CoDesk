@@ -33,9 +33,8 @@ TASK_META: dict[str, Any] = {
     "workspace_mode": "shared",
     "portal_port": 19609,
     "roles": ("packshot_retouch_designer", "banner_layout_designer"),
-    "iso_role_timeout_s": 1200,
-    "conc_role_timeout_s": 1500,
-    "max_cua_calls": 140,
+    "iso_role_timeout_s": 7200,
+    "conc_role_timeout_s": 7200,
     "mount_studio_ro": True,
 }
 

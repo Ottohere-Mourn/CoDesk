@@ -46,18 +46,19 @@ from tasks.authentic_workstation_v1.registry import AW_BY_ID, AW_CATALOG, RETAIN
 AW_REGISTRY_MOD = "tasks.authentic_workstation_v1.registry"
 
 
-def build_aw_agent_prompt(ticket_md: str, role: str, timeout_s: int, gui_driver: str, max_cua_calls: int) -> str:
+def build_aw_agent_prompt(ticket_md: str, role: str, timeout_s: int, gui_driver: str) -> str:
+    _ = timeout_s
     b = chr(96)
     sess_id = f"s_{role[:10]}"
     if gui_driver == "qwen_cua":
         drv_line = (
-            f"- Desktop GUI MCP server: {b}qwen_cua_driver{b} (loop-safety ceiling: {max_cua_calls} calls; pass {b}session={json.dumps(sess_id)}{b} where supported). "
+            f"- Desktop GUI MCP server: {b}qwen_cua_driver{b} (pass {b}session={json.dumps(sess_id)}{b} where supported). "
             f"Use {b}get_state{b} to list open desktop windows, {b}get_ax_state_and_screenshot{b} / {b}get_screenshot{b} to inspect live applications on the 1920x1080 display, and act via {b}click{b}, {b}drag{b}, {b}type_text{b}, {b}press_key{b}, {b}hotkey{b}, etc.\n"
         )
     else:
         drv_line = f"- Desktop GUI MCP server: {b}desktop{b} (1280x720 normalized screen coordinates).\n"
     return (
-        f"Workstation runtime notes (Linux 1920x1080 desktop + CLI workspace {b}/workspace{b}, time budget: {timeout_s}s):\n"
+        f"Workstation runtime notes (Linux 1920x1080 desktop + CLI workspace {b}/workspace{b}):\n"
         f"{drv_line}"
         f"- Workstation shell MCP tool: {b}guest_bash{b} (executes Linux CLI commands, Python, SQLite, GDAL/OGR, FreeCADCmd, Inkscape CLI, LibreOffice headless, lrelease, ffmpeg, git, and localhost HTTP calls in {b}/workspace{b}; {b}/home/user/Downloads{b} is mounted read-only; interact with and verify live desktop GUI windows via the Desktop GUI MCP server).\n\n"
         f"{ticket_md}\n"
@@ -398,7 +399,6 @@ class AwRoleMcpBridge:
         desk: AuthenticWorkstationDesktop,
         role: str,
         gui_driver: str,
-        max_cua_calls: int,
         action_log: Path,
         shared_timeline: list[dict[str, Any]],
         timeline_lock: threading.Lock,
@@ -407,7 +407,6 @@ class AwRoleMcpBridge:
         self.desk = desk
         self.role = role
         self.gui_driver = gui_driver
-        self.max_cua_calls = max_cua_calls
         self.action_log = action_log
         self.shared_timeline = shared_timeline
         self.timeline_lock = timeline_lock
@@ -545,8 +544,6 @@ class AwRoleMcpBridge:
 
             def call_qwen(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
                 self._sync_once()
-                if (self.cua_act_calls + self.cua_obs_calls) >= self.max_cua_calls:
-                    return {"content": [{"type": "text", "text": f"CUA budget ({self.max_cua_calls}) reached; finish verification via guest_bash."}], "isError": True}
                 if name in mut_set:
                     self.cua_act_calls += 1
                 else:
@@ -633,7 +630,6 @@ def run_aw_actor(
     codex_bin: Path,
     timeout_s: int,
     gui_driver: str,
-    max_cua_calls: int,
     shared_timeline: list[dict[str, Any]],
     timeline_lock: threading.Lock,
     barrier: threading.Barrier | None,
@@ -712,7 +708,6 @@ def run_aw_actor(
         desk=desk,
         role=role,
         gui_driver=gui_driver,
-        max_cua_calls=max_cua_calls,
         action_log=action_log,
         shared_timeline=shared_timeline,
         timeline_lock=timeline_lock,
@@ -936,7 +931,6 @@ def run_aw_case(
     m_slug = str(api_cfg.get("model", "model")).replace(".", "_")
     cond_dir = out_dir / task_id / f"{mode}_{m_slug}"
     cond_dir.mkdir(parents=True, exist_ok=True)
-    max_cua = int(meta.get("max_cua_calls", 140))
 
     existing_grade = cond_dir / "grade.json"
     existing_actors = {r: cond_dir / f"actor_{r}" / "actor_summary.json" for r in (ra, rb)}
@@ -981,12 +975,11 @@ def run_aw_case(
                     desk=desk_r,
                     role=role,
                     actor_dir=cond_dir / f"actor_{role}",
-                    prompt_text=build_aw_agent_prompt(t_md, role, lim, gui_driver, max_cua),
+                    prompt_text=build_aw_agent_prompt(t_md, role, lim, gui_driver),
                     api_cfg=api_cfg,
                     codex_bin=codex_bin,
                     timeout_s=lim,
                     gui_driver=gui_driver,
-                    max_cua_calls=max_cua,
                     shared_timeline=tl_r,
                     timeline_lock=lk_r,
                     barrier=None,
@@ -1053,12 +1046,11 @@ def run_aw_case(
                             desk=desk,
                             role=r,
                             actor_dir=cond_dir / f"actor_{r}",
-                            prompt_text=build_aw_agent_prompt(tickets[r], r, lim, gui_driver, max_cua),
+                            prompt_text=build_aw_agent_prompt(tickets[r], r, lim, gui_driver),
                             api_cfg=api_cfg,
                             codex_bin=codex_bin,
                             timeout_s=lim,
                             gui_driver=gui_driver,
-                            max_cua_calls=max_cua,
                             shared_timeline=shared_tl,
                             timeline_lock=tl_lock,
                             barrier=bar,
@@ -1075,12 +1067,11 @@ def run_aw_case(
                         desk=desk,
                         role=rk,
                         actor_dir=cond_dir / f"actor_{rk}",
-                        prompt_text=build_aw_agent_prompt(tickets[rk], rk, lim, gui_driver, max_cua),
+                        prompt_text=build_aw_agent_prompt(tickets[rk], rk, lim, gui_driver),
                         api_cfg=api_cfg,
                         codex_bin=codex_bin,
                         timeout_s=lim,
                         gui_driver=gui_driver,
-                        max_cua_calls=max_cua,
                         shared_timeline=shared_tl,
                         timeline_lock=tl_lock,
                         barrier=None,

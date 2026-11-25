@@ -39,9 +39,8 @@ TASK_META: dict[str, Any] = {
     "workspace_mode": "shared",
     "portal_port": 19603,
     "roles": ("gis_landuse_analyst", "hydraulic_basin_eng"),
-    "iso_role_timeout_s": 1200,
-    "conc_role_timeout_s": 1500,
-    "max_cua_calls": 140,
+    "iso_role_timeout_s": 7200,
+    "conc_role_timeout_s": 7200,
 }
 
 # (id, lon_min, lat_min, lon_max, lat_max, land_use, native_hsg, compacted_fill, underdrain_present, imp_pct, disconn_roof_pct, flow_len_m, elev_drop_m, pipe_slope, pipe_len_m, invert_depth_m)

@@ -43,9 +43,8 @@ TASK_META: dict[str, Any] = {
     "workspace_mode": "shared",
     "portal_port": 19619,
     "roles": ("dc_capex_controller", "msa_commercial_counsel"),
-    "iso_role_timeout_s": 1200,
-    "conc_role_timeout_s": 1500,
-    "max_cua_calls": 140,
+    "iso_role_timeout_s": 7200,
+    "conc_role_timeout_s": 7200,
     "mount_studio_ro": True,
 }
 

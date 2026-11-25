@@ -35,9 +35,8 @@ TASK_META: dict[str, Any] = {
     "workspace_mode": "shared",
     "portal_port": 19602,
     "roles": ("retouch_color_artist", "prepress_dieline_eng"),
-    "iso_role_timeout_s": 1200,
-    "conc_role_timeout_s": 1500,
-    "max_cua_calls": 140,
+    "iso_role_timeout_s": 7200,
+    "conc_role_timeout_s": 7200,
 }
 
 SWATCHES_RAW: list[tuple[str, float, float, float, float, float, str]] = [

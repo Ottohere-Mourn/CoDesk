@@ -34,9 +34,8 @@ TASK_META: dict[str, Any] = {
     "workspace_mode": "shared",
     "portal_port": 19606,
     "roles": ("qt_ui_ergonomics_eng", "clinical_l10n_eng"),
-    "iso_role_timeout_s": 1200,
-    "conc_role_timeout_s": 1500,
-    "max_cua_calls": 140,
+    "iso_role_timeout_s": 7200,
+    "conc_role_timeout_s": 7200,
 }
 
 REGULATORY_SIGNOFF_ID = "IEC62366-ICU32-2026"

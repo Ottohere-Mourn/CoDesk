@@ -37,9 +37,8 @@ TASK_META: dict[str, Any] = {
     "workspace_mode": "shared",
     "portal_port": 19617,
     "roles": ("cash_sweep_modeler", "debt_sculpting_lead"),
-    "iso_role_timeout_s": 1200,
-    "conc_role_timeout_s": 1500,
-    "max_cua_calls": 140,
+    "iso_role_timeout_s": 7200,
+    "conc_role_timeout_s": 7200,
 }
 
 TERM_CODE = "SOLAR-PF-2026-808"
