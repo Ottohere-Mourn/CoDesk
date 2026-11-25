@@ -9,11 +9,6 @@ import time
 from typing import Any
 
 from tasks.rb_osw2_synth_v1 import (
-    rbs01_twin_preferences_recreation,
-    rbs02_csd_popover_hex_hotkeys,
-    rbs03_docks_canvas_screencap,
-    rbs04_cdp_qa30_vs_walkthrough8,
-    rbs05_mdi_slide_tabs_handles,
     rbs06_citevault_bibtex_soffice,
 )
 from tasks.rb_osw2_synth_v1.common import read_json_safe, write_json
@@ -21,12 +16,7 @@ from tasks.rb_osw2_synth_v1.common import read_json_safe, write_json
 RBS_MODULES = {
     m.TASK_ID: m
     for m in (
-        rbs01_twin_preferences_recreation,
-        rbs02_csd_popover_hex_hotkeys,
-        rbs03_docks_canvas_screencap,
-        rbs04_cdp_qa30_vs_walkthrough8,
-        rbs05_mdi_slide_tabs_handles,
-        rbs06_citevault_bibtex_soffice,
+                            rbs06_citevault_bibtex_soffice,
     )
 }
 

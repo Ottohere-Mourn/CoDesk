@@ -7,54 +7,20 @@ from pathlib import Path
 from typing import Any
 
 from tasks.authentic_workstation_v1 import (
-    aw01_commerce_qa_vs_launch_reel,
-    aw02_gimp_inkscape_packaging,
-    aw03_qgis_stormwater_watershed,
-    aw04_ma_qoe_tax_dealroom,
-    aw05_freecad_2u_blade_cad,
-    aw06_qt_designer_linguist_l10n,
-    aw07_chromium_pulseops_ui_recreation,
-    aw08_libreoffice_calc_writer_cfo_close,
-    aw09_gimp_inkscape_brand_launch_kit,
-    aw10_qt_designer_linguist_medical_hmi,
-    aw11_qgis_calc_watershed_studio,
     aw12_chromium_zerospoiler_suite_recreation,
-    aw13_libreoffice_14cell_cfo_ledger,
     aw14_gimp_crop_layers_inkscape_poster,
     aw15_qt_designer_2tab_linguist_10str,
-    aw16_qgis_calc_corridor_easement,
-    aw17_libreoffice_coupled_dscr_dealroom,
-    aw18_freecad_qgis_turbine_foundation,
     aw19_libreoffice_dense_budget_and_redline,
     aw20_inkscape_gimp_freecad_meddevice_enclosure,
-    aw21_isolated_chromium_finops_vs_reel,
-    aw22_qgis_calc_floodplain_zero_afflux,
 )
 from tasks.authentic_workstation_v1.common import read_json_safe, write_json
 
 _ALL_MODS = (
-    aw01_commerce_qa_vs_launch_reel,
-    aw02_gimp_inkscape_packaging,
-    aw03_qgis_stormwater_watershed,
-    aw04_ma_qoe_tax_dealroom,
-    aw05_freecad_2u_blade_cad,
-    aw06_qt_designer_linguist_l10n,
-    aw07_chromium_pulseops_ui_recreation,
-    aw08_libreoffice_calc_writer_cfo_close,
-    aw09_gimp_inkscape_brand_launch_kit,
-    aw10_qt_designer_linguist_medical_hmi,
-    aw11_qgis_calc_watershed_studio,
     aw12_chromium_zerospoiler_suite_recreation,
-    aw13_libreoffice_14cell_cfo_ledger,
     aw14_gimp_crop_layers_inkscape_poster,
     aw15_qt_designer_2tab_linguist_10str,
-    aw16_qgis_calc_corridor_easement,
-    aw17_libreoffice_coupled_dscr_dealroom,
-    aw18_freecad_qgis_turbine_foundation,
     aw19_libreoffice_dense_budget_and_redline,
     aw20_inkscape_gimp_freecad_meddevice_enclosure,
-    aw21_isolated_chromium_finops_vs_reel,
-    aw22_qgis_calc_floodplain_zero_afflux,
 )
 
 AW_MODULES: dict[str, Any] = {m.TASK_META["id"]: m for m in _ALL_MODS}

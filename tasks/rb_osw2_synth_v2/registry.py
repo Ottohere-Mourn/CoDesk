@@ -9,11 +9,6 @@ import time
 from typing import Any
 
 from tasks.rb_osw2_synth_v2 import (
-    rbs2_01_nle_video_vs_musescore,
-    rbs2_02_treemap_modal_vs_vaultsafe,
-    rbs2_03_geocurve_vs_blog_theme,
-    rbs2_04_bpmn_vs_topmost_palette,
-    rbs2_05_loanhub_vs_gatesim,
     rbs2_06_maildesk_ics_vs_calc_contracts,
 )
 from tasks.rb_osw2_synth_v2.common import read_json_safe, write_json
@@ -21,12 +16,7 @@ from tasks.rb_osw2_synth_v2.common import read_json_safe, write_json
 RBS2_MODULES = {
     m.TASK_ID: m
     for m in (
-        rbs2_01_nle_video_vs_musescore,
-        rbs2_02_treemap_modal_vs_vaultsafe,
-        rbs2_03_geocurve_vs_blog_theme,
-        rbs2_04_bpmn_vs_topmost_palette,
-        rbs2_05_loanhub_vs_gatesim,
-        rbs2_06_maildesk_ics_vs_calc_contracts,
+                            rbs2_06_maildesk_ics_vs_calc_contracts,
     )
 }
 

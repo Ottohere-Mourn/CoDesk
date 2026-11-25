@@ -11,7 +11,6 @@ from typing import Any
 from tasks.rb_osw2_synth_v3 import (
     rbs3_01_zerospoiler_popovers_recreation,
     rbs3_02_cdp_live_frames_vs_8scene_sweep,
-    rbs3_03_vectorforge_single_mdi_coupled,
     rbs3_04_icu_sso_nomogram_soffice,
     rbs3_05_ircam_firmware_gateway_calc,
 )
@@ -22,8 +21,7 @@ RBS3_MODULES = {
     for m in (
         rbs3_01_zerospoiler_popovers_recreation,
         rbs3_02_cdp_live_frames_vs_8scene_sweep,
-        rbs3_03_vectorforge_single_mdi_coupled,
-        rbs3_04_icu_sso_nomogram_soffice,
+            rbs3_04_icu_sso_nomogram_soffice,
         rbs3_05_ircam_firmware_gateway_calc,
     )
 }

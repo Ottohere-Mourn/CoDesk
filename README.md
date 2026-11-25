@@ -1,237 +1,25 @@
-# oscombo — composite OSWorld tasks on one shared desktop
+# CoDesk / ParaGUI — Selected 23 High-Quality Multi-Agent Desktop (GUI + CLI) Cases
 
-Current execution host (2026-11-13): **`cpu15`**, project data at **`~/data/paraGUI`**.
-See [server plan](docs/SERVER_PLAN.md) and [session recovery / saved-task audit](docs/RECOVERY_20261113.md).
+本分支（`codex/selected-23-cases`）是 **纯粹只保留 23 道入选高质量双智能体（`GUI + CLI` 混合）基准任务与全量 184 条实测轨迹** 的精选独立分支，已彻底剔除历史探索中的废案、淘汰候选与旧版遗留目录。
 
-Run several **official OSWorld tasks in one Ubuntu Guest at the same time**, each driven by its own agent that
-only sees its own instruction, and score every task with **its own official evaluator**. The question this
-answers: what happens to GUI agents when they share one desktop (focus theft, keystrokes landing in the other
-agent's window, one task's setup/evaluation disturbing the other), compared with running the same tasks alone.
+- **中文总览与逐题成绩表**：[`docs/CURATED_23CASES_AND_TRAJECTORIES_20261125_ZH.md`](docs/CURATED_23CASES_AND_TRAJECTORIES_20261125_ZH.md)
+- **机器可读 23 题主清单**：[`lists/curated_23cases_and_trajectories_20261125.json`](lists/curated_23cases_and_trajectories_20261125.json)
+- **统一 Python 注册表**：[`tasks/curated_23cases_v1/registry.py`](tasks/curated_23cases_v1/registry.py)（`SELECTED_23_IDS` 共 23 题）
+- **92 局 / 184 角色完整双模轨迹**：[`trajectories/curated_23cases_20261125/`](trajectories/curated_23cases_20261125/README.md)
+- **造题与审计 Skills**：[`.agents/skills/paragui-case-design/`](.agents/skills/paragui-case-design/SKILL.md)（盲并发共居）与 [`.agents/skills/paragui-collab-case-design/`](.agents/skills/paragui-collab-case-design/SKILL.md)（明示同伴双向协作）
 
-Models and agent harnesses are pluggable: anything that implements OSWorld's `predict(instruction, obs)` agent
-interface plugs into the built-in step loop, and whole external agent programs (the codex and pi CLIs, or any
-other program) drive the Guest through the same set of desktop tools.
+## 入选 23 题组成与双模型（`effort = high`）整体表现
 
-## Run modes
+| 子套件 | 题数 | 入选题号 | `gpt-6.1-sol` (`Isolated -> Shared`) | `gpt-6-astra` (`Isolated -> Shared`) | 执行器入口 |
+|---|---:|---|---|---|---|
+| `Curated-8` | 8 | `EC-01, EC-03, RBS-06, RBS2-06, RBS3-01, RBS3-02, RBS3-04, RBS3-05` | `0.8533 (37.5%) -> 0.8394 (62.5%)` | `0.9846 (75.0%) -> 0.9081 (62.5%)` | `experiments/curated_8cases_v1.py` |
+| `AW-v1 (2h)` | 5 | `AW-12, AW-14, AW-15, AW-19, AW-20` | `1.0000 (100%) -> 0.9321 (80.0%)` | `0.9778 (100%) -> 0.9639 (80.0%)` | `experiments/authentic_workstation_v1.py` |
+| `NF-v1` | 5 | `NF-01, NF-05, NF-11, NF-13, NF-14` | `0.8835 (40.0%) -> 0.8339 (0.0%)` | `0.9276 (60.0%) -> 0.9017 (60.0%)` | `experiments/novel_frontier_v1.py` |
+| `NF2 (2h)` | 5 | `NF2-05, NF2-11, NF2-12, NF2-13, NF2-15` | `0.9891 (100%) -> 0.9327 (80.0%)` | `0.9274 (60.0%) -> 0.9000 (60.0%)` | `experiments/novel_frontier_v2.py` |
+| **23 题总计** | **23** | — | **`0.9213 (65.2%) -> 0.8786 (56.5%)`** | **`0.9583 (73.9%) -> 0.9171 (65.2%)`** | — |
 
-| mode | Guests | what runs |
-|---|---|---|
-| `solo` | 1 | one task alone (baseline) |
-| `sequential` | 1 | all task setups in one Guest; agent A runs to completion, then B, ... |
-| `parallel` | 1 | all task setups in one Guest; all agents start together (one barrier) and act concurrently |
-| `isolated` | N | control: agents run concurrently through the same code path, each task in its own Guest |
-| `shadow` | 1 | control: all setups in one Guest; agent A acts, the others only poll the Guest like an agent would |
-
-Tasks: `<domain>/<uuid>` (classic OSWorld examples), `v2/<NNN>` (OSWorld 2.0 task classes), or a task file path.
-Combos can hold more than two tasks; agents are named `agentA`, `agentB`, ... in task order.
-
-How tasks share one Guest (`oscombo/combo.py`): the first task goes through the official `DesktopEnv.reset`,
-the others run their setup steps through the same setup controller, and identical setup steps run once.
-Evaluation is decoupled: every task's non-restarting postconfig steps (activate window, save) run first, then
-the restarting ones (deduplicated), then each task's metric — evaluating tasks one after another with full
-postconfig lets one task's app restart steal focus from the other's save and silently drop its edits.
-
-## Layout
-
-```
-oscombo/
-  osworld.py        locate the OSWorld checkout (OSWORLD_DIR), load task specs, normalize scores
-  guest.py          the shared Guest: screenshots with patience, focused-window probe, pyautogui execution
-  combo.py          boot, multi-task setup, decoupled multi-task evaluation
-  runner.py         run modes, agent threads, result.json / trace.jsonl
-  harness/          HOW an agent drives the Guest
-    base.py           Harness interface (prepare / run -> AgentResult)
-    step_loop.py      "step": screenshot -> policy.predict -> execute pyautogui (official OSWorld loop)
-    external.py       "command": any program; "codex": codex CLI + MCP tools; "pi": pi agent + same tools
-    pi_desktop.ts     pi extension exposing the desktop tools
-  policies/         WHICH model decides the next action inside the step loop
-    base.py           Policy interface (= OSWorld mm_agents interface), action normalization
-    openai_cua.py     "openai-cua": official GPTResponseAPIAgent (native computer tool), hardened transport
-    osworld_agents.py "chat-pyautogui" / "responses-pyautogui" / "osworld-agent" (any mm_agents class)
-    transports.py     OpenAI-compatible /chat/completions and /responses transports (replace call_llm)
-    scripted.py       "scripted": fixed actions, no model (smoke tests)
-  desktop_tools.py  desktop tools over the Guest HTTP API: MCP server (codex) or one call per process (pi)
-  mediation.py      optional harness-level fixes for shared desktops: input broker, window ownership, self-guard
-  defense/          per-harness defense plugins (DefenseBase hooks; noop control; v1) for attack/defense rounds
-  tasks.py          paraGUI task pairs: list, install into the OSWorld checkout, build assets
-  analyze.py        success by condition/position, partial credit, joint outcomes, cross-window interference
-  cli.py            python -m oscombo {run, matrix, queue, analyze, cleanup}
-infra/
-  setup_osworld.sh  clone OSWorld-V2 (pinned osworld-v2.1), download + verify the Guest image, venv, patch
-  patch_osworld.py  docker provider patch: runtime image / overlay dir / Guest size / timeouts / labels via env
-  qemu-runtime/     QEMU container image with a TCG fallback for hosts without /dev/kvm
-  build_runtime.sh  build it
-  make_pngfast_image.sh  derive a Guest image with fast (non-optimized) PNG screenshots, for TCG hosts
-configs/env.example.sh   every environment variable in one place (copy to env.sh, git-ignored)
-configs/env.vm10.example.sh  VM10 paths and conservative Guest / queue settings
-tasks/paragui/      paraGUI task pairs: two tasks sharing one live app/session (35 pairs, specs, builders, checkers)
-lists/              combo definitions (OSWorld 1, OSWorld 2.0, paraGUI v1, attack round 1) and a smoke list
-docs/SERVER_PLAN.md VM10 deployment, resource budget, storage and result backup (Chinese)
-docs/NOTES.md       operational notes and pitfalls found while running this at scale
-tests/              unit tests with an in-memory DesktopEnv (no Guest needed)
-```
-
-## Setup
-
-For our VM10 CPU server, follow [the server plan](docs/SERVER_PLAN.md) and use
-[`configs/env.vm10.example.sh`](configs/env.vm10.example.sh). It covers the jump-host connection, local `/data`
-storage, container KVM verification, and a one-run queue to start on this shared 32-logical-CPU host.
-
-Requirements on the machine that runs the Guests: Linux x86-64, docker (rootless works), `git`, `uv`, `curl`,
-`unzip`, ~20 GB disk for the image plus a few GB per concurrent Guest. `/dev/kvm` is strongly recommended;
-without it see "No KVM" below.
+## 快速校验
 
 ```bash
-export OSWORLD_DIR=/path/to/OSWorld-V2 OSWORLD_IMAGE_DIR=/path/to/images
-bash infra/setup_osworld.sh            # --with-mcp: external (MCP) harnesses; --with-v2-tasks: OSWorld 2.0
-                                       # task classes (gated, needs HF_TOKEN)
-cp configs/env.example.sh env.sh       # fill in paths and the model endpoint, then:
-source env.sh
-python -m pytest -q                    # unit tests (no Guest)
+PYTHONPATH=. pytest -q tests/
 ```
-
-**No KVM** (e.g. inside a container): build the TCG runtime and a fast-screenshot Guest image once.
-
-```bash
-bash infra/build_runtime.sh                                   # -> oscombo/qemu-runtime:local
-export OSCOMBO_RUNTIME_IMAGE=oscombo/qemu-runtime:local
-bash infra/make_pngfast_image.sh "$OSWORLD_IMAGE_DIR/osworld-v2-ubuntu-x86.qcow2" \
-                                 "$OSWORLD_IMAGE_DIR/osworld-v2-ubuntu-x86.pngfast.qcow2"
-export OSCOMBO_GUEST_IMAGE=$OSWORLD_IMAGE_DIR/osworld-v2-ubuntu-x86.pngfast.qcow2
-```
-
-## Running
-
-```bash
-# pipeline smoke test, no model: two tasks in one Guest, scripted agents that just say DONE
-python -m oscombo run --mode parallel --policy scripted --out runs/smoke \
-    --tasks chrome/bb5e4c0d-f964-439c-97b6-bdb9747de3f4 libreoffice_calc/42e0a640-4f19-4b28-973d-729602b5a4a7
-
-# one real run: OpenAI computer-use model (endpoint from OPENAI_BASE_URL / OPENAI_API_KEY)
-python -m oscombo run --mode parallel --policy openai-cua --model <model> --max-steps 48 --out runs/p1 \
-    --tasks chrome/bb5e4c0d-f964-439c-97b6-bdb9747de3f4 libreoffice_calc/42e0a640-4f19-4b28-973d-729602b5a4a7
-
-# an experiment on a host sized for 4 concurrent runs (VM10: start with --lanes 1; see docs/SERVER_PLAN.md)
-python -m oscombo matrix lists/osworld1_combos.txt --prefix e1 --mode parallel:2 --mode sequential:1 > runs_e1.txt
-nohup python -m oscombo queue runs_e1.txt --out-root runs --lanes 4 --run-timeout 7200 --archive /durable/dir \
-    -- --policy openai-cua --model <model> --max-steps 48 > queue.out 2>&1 &
-python -m oscombo analyze runs --prefix e1-
-```
-
-`queue` skips runs that already have a `result.json`, gives every run its own task cache, retries runs that
-failed for infrastructure reasons once (the failed attempt is kept under `runs/_infra/`), and logs one line per
-run to `runs/queue_<list>.log`. A killed run's Guest containers can be removed with
-`python -m oscombo cleanup <run name>`.
-
-Output per run (`runs/<name>/`): `result.json` (mode, tasks, task ids, scores, per-agent status/steps/errors,
-timings, agent specs, code versions), `trace.jsonl` (one record per agent step with the focused window before
-each action), `start.png`, `end.png`, per-step screenshots, and `driver.log` when run through `queue`.
-
-## Models (policies, for the `step` harness)
-
-| `--policy` | model side | notes |
-|---|---|---|
-| `openai-cua` | Responses API with the native `computer` tool | official `GPTResponseAPIAgent`; endpoint from `OPENAI_BASE_URL` (Azure `.../openai/v1` works) |
-| `chat-pyautogui` | any OpenAI-compatible `/chat/completions` VLM (vLLM, SGLang, ...) | official `PromptAgent`, screenshot in, pyautogui code out; `--base-url` |
-| `responses-pyautogui` | `/responses`-only models without the computer tool | official `O3Agent` planner |
-| `osworld-agent` | any `mm_agents` class | `--opt agent_class=mm_agents.uitars_agent:UITARSAgent --opt agent_kwargs='{...}'`, optional `--opt transport=chat` |
-| `scripted` | none | `--opt actions='["pyautogui.click(10, 10)"]'` or `--opt file=actions.json` |
-| `pkg.module:factory` | yours | `factory(env, spec)` returns an object with `reset()` and `predict(instruction, obs)` |
-
-A policy is the OSWorld agent interface: `predict(instruction, {"screenshot": png_bytes, ...})` returns
-`(raw_response, actions)` where actions are pyautogui code strings or `DONE` / `FAIL` / `WAIT` (strings or
-OSWorld action dicts). Set `needs_a11y = True` on the policy to also receive `accessibility_tree`.
-
-## Harnesses
-
-| `--harness` | what drives the Guest |
-|---|---|
-| `step` (default) | the step loop around a policy (above) |
-| `codex` | unmodified codex CLI with only the desktop tools over MCP (no shell, read-only sandbox); `--model`, `--effort`, `--opt base_url=...`, `--opt node_bin=...` |
-| `pi` | unmodified pi agent with only the desktop tools as an extension (no built-in tools); same options |
-| `command` | any program: `--opt command='["my-agent", "--url", "{guest_url}", "--task", "{instruction_file}"]'` |
-| `pkg.module:Class` | a `oscombo.harness.Harness` subclass: `prepare(ctx)`, `run(ctx) -> AgentResult` |
-
-External programs get `OSCOMBO_GUEST_URL`, `OSCOMBO_INSTRUCTION`, `OSCOMBO_INSTRUCTION_FILE`,
-`OSCOMBO_AGENT_DIR`, `OSCOMBO_ACTION_LOG`, `OSCOMBO_MAX_STEPS`, `OSCOMBO_MODEL`, `OSCOMBO_PASSWORD`. They can
-use `python -m oscombo.desktop_tools --mcp` (stdio MCP) or `python -m oscombo.desktop_tools <tool> '<json>'`
-(screenshot, click, drag, move, type_text, key, scroll, wait, declare_infeasible): every call returns a 1280x720
-screenshot, counts against the budget (`--max-steps`, screenshots included) and is written to the action log the
-run trace is built from. Exit code 0 = done, budget used up = max_steps, `<agent_dir>/INFEASIBLE` = the agent
-declared the task infeasible.
-
-Note: these desktop tools are ordinary function tools; `openai-cua` uses the model's native `computer` tool on
-the full 1920x1080 screen, so step-harness and external-harness results are not directly comparable.
-
-Different agents in one run can use different models and harnesses:
-
-```bash
-python -m oscombo run --mode parallel --out runs/mixed --tasks chrome/<id> libreoffice_calc/<id> \
-    --agents '[{"policy": "openai-cua", "model": "model-a"}, {"harness": "codex", "model": "model-b"}]'
-```
-
-## Harness-level mitigations and prompt ablations
-
-`--mediation` (parallel mode, `step` harness) adds what a product runtime could do about input/focus contention:
-`broker1` (one agent at a time observes / acts, each on its own window), `broker2` (+ keyboard input into another
-agent's window is refused and the agent told), `selfguard` (each agent refocuses only its own windows). Window
-ownership comes from the windows each task's setup opened (`setup_windows` in result.json). `--coagent-hint`
-appends "this computer may be shared ..." to every instruction. Both are recorded as `variant` and reported as
-separate conditions by `analyze` (e.g. `parallel[broker2]-1`).
-
-## paraGUI task pairs
-
-`tasks/paragui/` holds pairs of long-horizon tasks built so that the two tasks naturally share one *live*
-application instance or session (one Thunderbird, one Chrome window + intranet web-app session, one open
-LibreOffice document, one VS Code + repo + dev server, ...), with deterministic asset builders and partial-credit
-checkers (`eval_checks` in result.json). `python -m oscombo tasks install` copies the task classes into the OSWorld
-checkout and builds their assets; specs are `v2/pg<pair><name>` (`python -m oscombo tasks list`). See
-`tasks/paragui/README.md`.
-
-## Per-harness defenses (attack / defense rounds)
-
-`--defense NAME` loads `oscombo/defense/NAME.py` (`class Defense(DefenseBase)`) into every `step`-harness agent in
-solo, sequential, parallel and shadow runs. Hooks: `start(setup_windows)`, `instruction`, `before_observe`,
-`observe`, `transform_action`, `after_action`, `notice`. A defense lives inside one harness: no shared state with
-the other agent, never tells the model about anyone else (instruction addenda and notices matching
-`defense.FORBIDDEN` are dropped and counted), the same code for every task. `noop` is the control, `v1` the first
-defender version ("own view, own input, own browser profile, own terminal"; design notes in
-`docs/defense/v1_NOTES.md`). Rules and scoring of the rounds: `tasks/paragui/ATTACK_DEFENSE.md`.
-
-## Long runs
-
-The step harness restarts the model conversation every `chain_steps` predictions (default 40) with a carry-over
-note of the agent's own recent steps, so tasks can run past the 50-image limit of some computer-use endpoints;
-`wall_s` (default 7200) caps an agent's wall clock. Both are agent options (`--opt chain_steps=60`).
-
-## Tests
-
-The professional-software pilot has [recorded GUI trajectories and collection
-instructions](docs/PROFESSIONAL_TRAJECTORIES.md) for Blender, FreeCAD and QGIS.
-These are separate Docker desktop trials using the synthetic authoring package.
-The [shared-desktop follow-up](experiments/PROFESSIONAL_SHARED.md) runs independent
-A/B agents on one application and project, with parallel or sequential scheduling
-and a globally ordered action trace. The earlier solo archive remains unchanged.
-
-The native Codex/Freehand runner (`experiments/PROFESSIONAL_NATIVE.md`) defaults
-to hybrid GUI+CLI/code for new runs. GUI-only is an explicit ablation; programming
-is not prohibited by the benchmark. The six new professional task candidates
-and their readiness are documented in `tasks/professional_v2/README.md`.
-
-`python -m pytest -q` runs the pipeline (all modes, setup dedup, decoupled evaluation, infra handling,
-harnesses, transports, analysis) against an in-memory DesktopEnv.
-
-## Collaborative cases
-
-Seven standalone collaborative GUI cases are maintained under [`oscombo/collab/`](oscombo/collab/CASE_REGISTRY.md):
-Data-to-Deck, Ticket-to-Resolution, Build-and-Verify, Timeline-and-Assets, Model-and-Review,
-Spreadsheet Handoff, and Workspace Assembly. The registry lists each case's commands, dependencies,
-evidence level, and remaining Guest/agent validation. These cases reuse shared protocol libraries but are
-separate from the official OSWorld Combo task definitions and runner semantics.
-
-
-## Human-Agent normal-user extension
-
-The Human-Agent scripted-user + real Codex GUI case suite is kept alongside, not substituted for, the dual-agent benchmark. Start with [`docs/HUMAN_AGENT_4_CASES_HANDOFF_20261111_ZH.md`](docs/HUMAN_AGENT_4_CASES_HANDOFF_20261111_ZH.md), [`docs/HUMAN_AGENT_NEXT5_VALIDATION_20261112_ZH.md`](docs/HUMAN_AGENT_NEXT5_VALIDATION_20261112_ZH.md), and [`docs/HUMAN_AGENT_3_NEW_CASES_HANDOFF_20261111_ZH.md`](docs/HUMAN_AGENT_3_NEW_CASES_HANDOFF_20261111_ZH.md). Entry scripts are under `infra/run_human_agent_*.sh`; provide `OSWORLD_DIR`, `OSWORLD_PYTHON`, `SWCUB_SAFETY_ROOT`, image/runtime and RAID output paths for the host in use. These scripts preserve per-case evidence and do not run a large experiment by default.
-
-For the consolidated cross-branch inventory, counts, provenance and run entry points, see [`docs/ALL_CASES_HANDOFF_20261113_ZH.md`](docs/ALL_CASES_HANDOFF_20261113_ZH.md).

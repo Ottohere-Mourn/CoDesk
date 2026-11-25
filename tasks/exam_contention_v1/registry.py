@@ -9,19 +9,13 @@ import time
 
 from tasks.exam_contention_v1 import (
     ec01_ma_dataroom_calc,
-    ec02_oncology_ehr_clipboard,
     ec03_enclosure_cad_emi,
-    ec04_fintech_cutover_port,
-    ec05_watershed_microgrid_gis,
 )
 from tasks.exam_contention_v1.common import write_json
 
 CASE_MODULES = {
     ec01_ma_dataroom_calc.TASK_ID: ec01_ma_dataroom_calc,
-    ec02_oncology_ehr_clipboard.TASK_ID: ec02_oncology_ehr_clipboard,
     ec03_enclosure_cad_emi.TASK_ID: ec03_enclosure_cad_emi,
-    ec04_fintech_cutover_port.TASK_ID: ec04_fintech_cutover_port,
-    ec05_watershed_microgrid_gis.TASK_ID: ec05_watershed_microgrid_gis,
 }
 
 EXAM_CONTENTION_CATALOG = [mod.META for mod in CASE_MODULES.values()]

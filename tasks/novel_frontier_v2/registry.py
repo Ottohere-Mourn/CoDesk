@@ -9,50 +9,20 @@ import time
 from typing import Any
 
 from tasks.novel_frontier_v2 import (
-    nf2_01_azerty_horology_patent_vibrometry,
-    nf2_02_serviceworker_cache_finops_chaos,
-    nf2_03_indexeddb_versionchange_clinical_adam,
-    nf2_04_sharedworker_lng_charter_euets,
     nf2_05_qtassistant_arinc429_flight_calc,
-    nf2_06_gimp_singleton_conservation_multispectral,
-    nf2_07_inkscape_singleton_opc_microfluidics,
-    nf2_08_x11_clipboard_pki_ceremony_sbom,
-    nf2_09_print_modal_acoustics_sox_writer,
-    nf2_10_qgis_live_bathymetry_cathodic_calc,
     nf2_11_blender_vse_broadcast_nle_ebur128,
     nf2_12_freecad_cubesat_mass_cg_coupled,
     nf2_13_qgis_spatialite_feeder_hosting_coupled,
-    nf2_14_git_barerepo_frtb_cva_coupled,
     nf2_15_qtdesigner_linguist_etcs_rail_coupled,
-    nf2_16_sqlite_wal_trigger_tpn_pharmacy,
-    nf2_17_inkscape_pid_hydrogen_psv_coupled,
-    nf2_18_gimp_shared_xcf_gmp_blister_coupled,
-    nf2_19_graphviz_fab_upw_turnaround_coupled,
-    nf2_20_blender_3d_gantry_mezzanine_coupled,
 )
 from tasks.novel_frontier_v2.common import read_json_safe, write_json
 
 ALL_20_MODULES = (
-    nf2_01_azerty_horology_patent_vibrometry,
-    nf2_02_serviceworker_cache_finops_chaos,
-    nf2_03_indexeddb_versionchange_clinical_adam,
-    nf2_04_sharedworker_lng_charter_euets,
     nf2_05_qtassistant_arinc429_flight_calc,
-    nf2_06_gimp_singleton_conservation_multispectral,
-    nf2_07_inkscape_singleton_opc_microfluidics,
-    nf2_08_x11_clipboard_pki_ceremony_sbom,
-    nf2_09_print_modal_acoustics_sox_writer,
-    nf2_10_qgis_live_bathymetry_cathodic_calc,
     nf2_11_blender_vse_broadcast_nle_ebur128,
     nf2_12_freecad_cubesat_mass_cg_coupled,
     nf2_13_qgis_spatialite_feeder_hosting_coupled,
-    nf2_14_git_barerepo_frtb_cva_coupled,
     nf2_15_qtdesigner_linguist_etcs_rail_coupled,
-    nf2_16_sqlite_wal_trigger_tpn_pharmacy,
-    nf2_17_inkscape_pid_hydrogen_psv_coupled,
-    nf2_18_gimp_shared_xcf_gmp_blister_coupled,
-    nf2_19_graphviz_fab_upw_turnaround_coupled,
-    nf2_20_blender_3d_gantry_mezzanine_coupled,
 )
 
 CANDIDATE_MODULES: dict[str, Any] = {m.TASK_ID: m for m in ALL_20_MODULES}

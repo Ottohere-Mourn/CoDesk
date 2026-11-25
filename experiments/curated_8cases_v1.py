@@ -559,11 +559,7 @@ def run_curated_episode(
         grade_sh = desk_sh.stop_and_grade(wall_override_s=round(time.monotonic() - t0, 2))
 
     tel = summarize_ec2_telemetry(tl_sh, (ra, rb))
-    aware = {
-        r: analyze_race_awareness((cond_dir / "actors" / r / "codex_events.jsonl").read_text(encoding="utf-8", errors="replace"))
-        for r in (ra, rb)
-        if (cond_dir / "actors" / r / "codex_events.jsonl").is_file()
-    }
+    aware = analyze_race_awareness(cond_dir, (ra, rb))
     res_out = {
         "task_id": task_id,
         "model": model_name,
