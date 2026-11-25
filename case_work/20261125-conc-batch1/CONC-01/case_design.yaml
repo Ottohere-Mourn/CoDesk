@@ -1,0 +1,29 @@
+﻿case_id: CONC-01
+case_title: Northstar Checkout and Operations Telemetry
+mode: independent_concurrent
+runtime_language: en
+primary_app: Google Chrome
+desktop: Ubuntu 22.04, GNOME X11
+actor_model: gpt-6-sol
+guest_runs:
+  requested: 1
+  mode: shared
+  actors: [A, B]
+  isolated_baselines: false
+conc_role_timeout_s: 3600
+score:
+  type: deterministic
+  checkpoints: 28
+  llm_judge: false
+outputs:
+  actor_a: /home/user/workspace/out_a/
+  actor_b: /home/user/workspace/out_b/
+contention_surfaces:
+  - Shared Chrome active window dimensions and focus.
+  - Actor A requires three viewport classes; Actor B requires a wide, full-screen dashboard.
+  - Actor B data requests are rejected unless the actual browser outer window is wide enough.
+known_validation:
+  offline_tests: pass
+  static_audit: pass
+  deterministic_gates_1_to_4: pass
+  gate_5_real_guest_tool_timing: pending

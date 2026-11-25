@@ -1,0 +1,31 @@
+case_id: CONC-03
+case_title: ProcureHub Receipt Review and Safety Brief
+mode: independent_concurrent
+runtime_language: en
+primary_apps:
+  - Google Chrome
+  - LibreOffice Impress
+desktop: Ubuntu 22.04, GNOME X11
+actor_model: gpt-6-sol
+guest_runs:
+  requested: 1
+  mode: shared
+  actors: [A, B]
+  isolated_baselines: false
+conc_role_timeout_s: 3600
+score:
+  type: deterministic
+  checkpoints: 20
+  llm_judge: false
+outputs:
+  actor_a: /home/user/workspace/out_a/
+  actor_b: /home/user/workspace/out_b/
+contention_surfaces:
+  - Shared desktop focus between the browser and Impress.
+  - Native file chooser focus dismissal of the expense action menu.
+  - Shared menu state while claim decisions and slide edits progress concurrently.
+known_validation:
+  offline_tests: pending
+  static_audit: pending
+  deterministic_gates_1_to_4: pending
+  gate_5_real_guest_tool_timing: pending

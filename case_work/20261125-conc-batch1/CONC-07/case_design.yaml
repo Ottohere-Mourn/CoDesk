@@ -1,0 +1,29 @@
+case_id: CONC-07
+title: Shared SQLite Close and Concurrent Seven-Slide Operating Reviews
+mode: independent_concurrent
+runtime_language: en-US
+actors:
+  - id: A
+    task: integration/task_conc07a.py
+    outputs: [/home/user/workspace/out_a/settlement_audit.json, /home/user/workspace/out_a/Q4_Supplier_Review.pptx, /home/user/workspace/out_a/Q4_Supplier_Review.pdf]
+  - id: B
+    task: integration/task_conc07b.py
+    outputs: [/home/user/workspace/out_b/campaign_summary.json, /home/user/workspace/out_b/Promo_Postmortem.pptx, /home/user/workspace/out_b/Promo_Postmortem.pdf]
+runtime:
+  apps: [Google Chrome, LibreOffice Impress, SQLite3, Python 3.10.12, GNOME X11, pdftoppm]
+  shared_browser_window: true
+  shared_sqlite_database: /home/user/workspace/shared/enterprise_ops.db
+  sqlite_journal_mode: DELETE
+  step_limit: null
+  wall_clock_limit_seconds: 7200
+  packages: no-network-install
+deterministic_oracle:
+  checkpoints: 44
+  implementation: private/grade.py
+  private_answer_key: task-assets/CONC-07/private/expected.json
+  score: passed_checkpoints / 44
+evidence:
+  events: row submissions, attachment hashes, dynamic close tokens, viewport checks, SQLite busy count
+  screenshots: full_run_screenshots_archived_by_runner; rendered_pdf_pages_saved_by_grader
+gates:
+  gate5_real_guest_timing: pending

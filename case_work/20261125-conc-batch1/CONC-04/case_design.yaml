@@ -1,0 +1,28 @@
+case_id: CONC-04
+title: 2D Canvas Dragging and Z-Order Occlusion Conflicts
+mode: independent_concurrent
+language:
+  specification: zh-CN
+  runtime: en-US
+actors:
+  - id: A
+    task: integration/task_conc04a.py
+    outputs: [/home/user/workspace/out_a/arch_flow.json, /home/user/workspace/out_a/arch_flow.png]
+  - id: B
+    task: integration/task_conc04b.py
+    outputs: [/home/user/workspace/out_b/anomaly_labels.json, /home/user/workspace/out_b/chart_1.png, /home/user/workspace/out_b/chart_2.png, /home/user/workspace/out_b/chart_3.png, /home/user/workspace/out_b/chart_4.png]
+runtime:
+  apps: [Google Chrome, Python 3.10.12, GNOME X11]
+  step_limit: null
+  wall_clock_limit_seconds: 7200
+  packages: no-network-install
+deterministic_oracle:
+  checkpoints: 24
+  implementation: private/grade.py
+  ground_truth_exposure: host-side-grader-only
+  score: passed_checkpoints / 24
+evidence:
+  events: true_pointer_drags_and_keyboard_classification
+  screenshots: full_run_screenshots_archived_by_runner; final_case_images_in_actor_outputs
+gates:
+  gate5_real_guest_timing: pending

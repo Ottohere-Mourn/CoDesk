@@ -1,0 +1,29 @@
+case_id: CONC-08
+title: Shared Annual Workbook Close and Parallel Finance/People Deliverables
+mode: independent_concurrent
+runtime_language: en-US
+actors:
+  - id: A
+    task: integration/task_conc08a.py
+    outputs: [/home/user/workspace/out_a/Rev_Ledger.pdf, /home/user/workspace/out_a/Finance_Close.pptx, /home/user/workspace/out_a/Finance_Close.pdf, /home/user/workspace/out_a/finance_close.json]
+  - id: B
+    task: integration/task_conc08b.py
+    outputs: [/home/user/workspace/out_b/HR_Cost.pdf, /home/user/workspace/out_b/HR_Close.pptx, /home/user/workspace/out_b/HR_Close.pdf, /home/user/workspace/out_b/hr_close.json]
+runtime:
+  apps: [Google Chrome, LibreOffice Calc, LibreOffice Impress, Python 3.10.12, GNOME X11, pdftoppm]
+  shared_browser_window: true
+  shared_spreadsheet: /home/user/workspace/shared/Corp_Annual_2026.xlsx
+  shared_office_process: soffice.bin
+  step_limit: null
+  wall_clock_limit_seconds_per_role: 7200
+  packages: no-network-install
+deterministic_oracle:
+  checkpoints: 46
+  implementation: private/grade.py
+  private_answer_key: task-assets/CONC-08/private/expected.json
+  score: passed_checkpoints / 46
+evidence:
+  events: [four-entry-submission, attachment-sha256, finalization-code, workbook-formula-integrity, sheet-survival, office-focus]
+  screenshots: full_run_screenshots_archived_by_runner; rendered_pdf_pages_saved_by_grader
+gates:
+  gate5_real_guest_timing: pending

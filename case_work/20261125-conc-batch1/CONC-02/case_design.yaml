@@ -1,0 +1,30 @@
+case_id: CONC-02
+case_title: Finance Review and Product Launch Slide Decks
+mode: independent_concurrent
+runtime_language: en
+primary_apps: [LibreOffice Impress, Google Chrome, terminal]
+desktop: Ubuntu 22.04, GNOME X11
+actor_model: gpt-6-sol
+guest_runs:
+  requested: 1
+  mode: shared
+  actors: [A, B]
+  isolated_baselines: false
+conc_role_timeout_s: 7200
+score:
+  type: deterministic
+  checkpoints: 24
+  llm_judge: false
+guest_workspace: /home/user/workspace
+outputs:
+  actor_a: /home/user/workspace/out_a/
+  actor_b: /home/user/workspace/out_b/
+contention_surfaces:
+  - A and B edit independent live presentations inside one shared LibreOffice Impress process.
+  - LibreOffice window focus and process-level file locks remain real shared desktop state.
+  - Both actors export final PDFs while their source presentations remain open in the same office profile.
+known_validation:
+  offline_tests: pending
+  static_audit: pending
+  deterministic_gates_1_to_4: pending
+  gate_5_real_guest_tool_timing: pending

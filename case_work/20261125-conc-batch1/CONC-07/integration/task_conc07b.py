@@ -1,0 +1,44 @@
+from __future__ import annotations
+import sys
+import importlib
+from pathlib import Path
+
+# Ensure this run's private task bridges/oracles take precedence even when
+# OSWorld has already imported its base evaluation_examples package.
+RUNNER_ROOT = Path(__file__).resolve().parents[4]
+if str(RUNNER_ROOT) not in sys.path:
+    sys.path.insert(0, str(RUNNER_ROOT))
+for _name, _path in (("evaluation_examples", RUNNER_ROOT / "evaluation_examples"),
+                     ("evaluation_examples.task_class", RUNNER_ROOT / "evaluation_examples/task_class")):
+    _module = sys.modules.get(_name)
+    if _module is not None and hasattr(_module, "__path__"):
+        _paths = list(_module.__path__)
+        if str(_path) not in _paths:
+            _module.__path__ = [str(_path), *_paths]
+# The OSWorld task_class package may already be loaded as a regular package;
+# extending evaluation_examples.__path__ alone cannot make Python discover
+# this run's bridge inside that already-imported subpackage.
+_task_class_package = importlib.import_module("evaluation_examples.task_class")
+_task_class_path = str(RUNNER_ROOT / "evaluation_examples/task_class")
+_task_class_locations = list(getattr(_task_class_package, "__path__", []))
+if _task_class_path not in _task_class_locations:
+    _task_class_package.__path__ = [_task_class_path, *_task_class_locations]
+from typing import TYPE_CHECKING
+from desktop_env.task_base import BaseTask
+from evaluation_examples.task_class import pg_conc07 as pair
+if TYPE_CHECKING:
+    from desktop_env.controllers.setup import SetupController
+    from desktop_env.desktop_env import DesktopEnv
+class TaskPgconc07b(BaseTask):
+    intermediate_eval_safe=False
+    id="pgconc07b";snapshot="paragui";source="paragui";trajectory="trajectories/";related_apps=["chrome","libreoffice"]
+    proxy=False;fixed_ip=False;possibility_of_env_change="low"
+    instruction="""Complete the Q4 campaign close in the already-open shared Ubuntu desktop. AdPulse is the second Chrome tab. The browser, Downloads directory, rollback-journal SQLite database, and LibreOffice process are shared with the other analyst. The Guest CLI tool is read-only and only for inspecting files; do not rely on it to write. Complete data entry in the browser GUI, presentation editing in Impress, and summary-file creation in LibreOffice Writer using the desktop GUI. The Guest physical desktop is 1920x1080; model screenshot previews may be scaled and do not indicate the physical resolution.
+
+1. In the AdPulse mobile-check tab, resize Chrome through the desktop GUI to an outer window near 375x812 (allow about 20 pixels), verify both LP-1 and LP-2, and save the two supplied mobile screenshot files to /home/user/workspace/out_b/mobile_lp_1.png and mobile_lp_2.png. Then maximize Chrome (at least 1600 pixels wide) before opening the full campaign dashboard. Read all six Peak ROI values from the dashboard graphics and the spend/budget values from /home/user/workspace/in_b/campaign_spend.csv. Download the three campaign exhibits; each downloads as figure.png, so choose them by matching their visual content rather than filename.
+2. Review the four allowance forms in /home/user/workspace/in_b/allowances. Enter all six campaign rows through the AdPulse form (the Guest CLI is read-only) with exact spend, revenue, ROI, and alert flag. Upload the two mobile evidence images, lock the report, and record the returned dynamic lock_code. Account for SQLite busy/retry responses; do not overwrite the other analyst's table.
+3. Read /home/user/workspace/in_b/postmortem_spec_b.txt and /home/user/workspace/in_b/brand_swatch_b.png. Complete the open /home/user/workspace/out_b/Promo_Postmortem.pptx: set brand blue, correct all six campaign KPIs, place two campaign exhibits on slide 3 and the third on slide 4, remove unused placeholders, add the two budget alerts and mobile-check summary, and include the full slide-7 note.
+4. Save the seven-slide PPTX and export /home/user/workspace/out_b/Promo_Postmortem.pdf with seven pages. Write /home/user/workspace/out_b/campaign_summary.json with the six verified rows, four allowances, and the dynamic lock_code. Verify the image order and both output formats before finishing."""
+    def setup(self,setup_controller:"SetupController",use_proxy:bool=False)->None:pair.setup(setup_controller)
+    def evaluate(self,env:"DesktopEnv"):return pair.evaluate_actor_b(env)
+TASK_CLASS=TaskPgconc07b

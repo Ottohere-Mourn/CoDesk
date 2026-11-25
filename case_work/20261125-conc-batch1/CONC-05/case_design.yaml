@@ -1,0 +1,22 @@
+case_id: CONC-05
+title: Single-Window Multi-Tab MDI and Shared Clipboard Cross-Talk
+mode: independent_concurrent
+runtime_language: en-US
+actors:
+  - id: A
+    task: integration/task_conc05a.py
+    outputs: [/home/user/workspace/out_a/crm_records.json]
+  - id: B
+    task: integration/task_conc05b.py
+    outputs: [/home/user/workspace/out_b/wiki_migrated.json]
+runtime:
+  apps: [Google Chrome, Python 3.10.12, GNOME X11]
+  shared_browser_window: true
+  step_limit: null
+  wall_clock_limit_seconds: 7200
+deterministic_oracle:
+  checkpoints: 22
+  private_answer_key: task-assets/CONC-05/private/expected.json
+  guest_input_source_for_a: raster_only
+  score: passed_checkpoints / 22
+gate5_status: pending_real_guest_evidence

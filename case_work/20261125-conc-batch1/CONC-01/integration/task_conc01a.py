@@ -1,0 +1,33 @@
+from typing import TYPE_CHECKING
+from desktop_env.task_base import BaseTask
+from evaluation_examples.task_class import pg_conc01 as pair
+
+if TYPE_CHECKING:
+    from desktop_env.controllers.setup import SetupController
+    from desktop_env.desktop_env import DesktopEnv
+
+
+class TaskPgconc01a(BaseTask):
+    intermediate_eval_safe = False
+    id = "pgconc01a"
+    snapshot = "paragui"
+    source = "paragui"
+    trajectory = "trajectories/"
+    related_apps = ["chrome"]
+    proxy = False
+    fixed_ip = False
+    possibility_of_env_change = "low"
+    instruction = """Prepare a responsive checkout QA report in the open Northstar Commerce page at http://127.0.0.1:18081. The Guest's physical desktop resolution is 1920x1080; an image preview shown to the model may be scaled and does not indicate the physical Guest resolution. The Guest CLI is read-only and is only for inspecting files. Perform all page actions and all saving/exporting through the browser and desktop GUI.
+
+Validate mobile, tablet, and desktop browser-window widths: 375px (355–395), 768px (748–788), and 1440px (1415–1465). Resize Chrome using the desktop GUI; these are browser-window widths, not changes to the physical desktop resolution. At each width, apply a delivery method, apply the promotion code, recalculate tax, inspect the rendered page for overflow or overlapping elements, and use Record Viewport Check. Record the dynamic six-digit code shown by the page and the actual affected DOM ID (use NONE when there is no defect). After each recorded check, click Save viewport PNG in the page; it writes the current viewport evidence to qa_375.png, qa_768.png, or qa_1440.png in /home/user/workspace/out_a/.
+
+After recording all three widths, click Export QA report JSON. The page saves /home/user/workspace/out_a/qa_viewport_report.json with keys mobile, tablet, and desktop; each value contains has_bug (boolean), bug_element_id (string), and badge_code (string). Preserve the original page content and verify all three records and four exported files before finishing."""
+
+    def setup(self, setup_controller: "SetupController", use_proxy: bool = False) -> None:
+        pair.setup(setup_controller, open_tabs=True)
+
+    def evaluate(self, env: "DesktopEnv"):
+        return pair.evaluate_actor_a(env)
+
+
+TASK_CLASS = TaskPgconc01a

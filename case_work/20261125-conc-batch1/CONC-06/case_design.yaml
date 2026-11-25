@@ -1,0 +1,28 @@
+case_id: CONC-06
+title: Shared Downloads Collision Across BI Export and Summit Presentation
+mode: independent_concurrent
+runtime_language: en-US
+actors:
+  - id: A
+    task: integration/task_conc06a.py
+    outputs: [/home/user/workspace/out_a/bi_audit.json, /home/user/workspace/out_a/bi_pack]
+  - id: B
+    task: integration/task_conc06b.py
+    outputs: [/home/user/workspace/out_b/Summit_Brochure.pptx, /home/user/workspace/out_b/Summit_Brochure.pdf]
+runtime:
+  apps: [Google Chrome, LibreOffice Impress, Python 3.10.12, GNOME X11, pdftoppm]
+  shared_browser_window: true
+  shared_downloads_directory: /home/user/Downloads
+  step_limit: null
+  wall_clock_limit_seconds: 7200
+  packages: no-network-install
+deterministic_oracle:
+  checkpoints: 26
+  implementation: private/grade.py
+  private_answer_key: task-assets/CONC-06/private/expected.json
+  score: passed_checkpoints / 26
+evidence:
+  events: filter, download, and selected artifact paths
+  screenshots: full_run_screenshots_archived_by_runner; rendered_pdf_pages_saved_by_grader
+gates:
+  gate5_real_guest_timing: pending
