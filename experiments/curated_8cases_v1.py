@@ -28,7 +28,8 @@ from typing import Any
 from experiments.deepseek_v41_eval import analyze_race_awareness
 from experiments.exam_contention_v1 import (
     ExamContentionDesktop,
-    run_exam_actor,
+    make_ec_handlers,
+    run_ec_actor,
 )
 from experiments.exam_contention_v2 import (
     DESKTOP_IMAGE as EC2_DESKTOP_IMAGE,
@@ -86,6 +87,34 @@ def build_curated_agent_prompt(ticket_md: str) -> str:
         f"- Use {b}guest_bash{b} to run shell commands, scripts, compilers, and local tools in {b}/workspace{b}.\n"
         "- Save any edits made inside open desktop applications before finishing.\n\n"
         f"{ticket_md}\n"
+    )
+
+
+def _invoke_ec1_actor(
+    role: str,
+    prompt_text: str,
+    desk: ExamContentionDesktop,
+    model_name: str,
+    effort: str,
+    api_cfg: dict[str, Any],
+    codex_bin: Path,
+    actor_dir: Path,
+    timeout_s: int,
+) -> dict[str, Any]:
+    actor_dir.mkdir(parents=True, exist_ok=True)
+    action_log = actor_dir / "actions.jsonl"
+    action_log.touch()
+    handlers = make_ec_handlers(desk, role, action_log, None)
+    cfg = dict(api_cfg, model=model_name, reasoning_effort=effort)
+    return run_ec_actor(
+        role=role,
+        handlers=handlers,
+        actor_dir=actor_dir,
+        ticket_dir=desk.tickets_root / role,
+        prompt_text=prompt_text,
+        api_cfg=cfg,
+        codex_bin=codex_bin,
+        timeout_s=timeout_s,
     )
 
 
@@ -420,7 +449,7 @@ def run_curated_episode(
                 desk.start()
                 t_md = (desk.tickets_root / r / "task.md").read_text(encoding="utf-8")
                 prompt = build_curated_agent_prompt(t_md)
-                role_runs[r] = run_exam_actor(r, prompt, desk, model_name, effort, api_cfg, codex_bin, r_dir / "actors" / r, timeout_s)
+                role_runs[r] = _invoke_ec1_actor(r, prompt, desk, model_name, effort, api_cfg, codex_bin, r_dir / "actors" / r, timeout_s)
                 subprocess.run(
                     [
                         "docker", "exec", "-e", "PYTHONPATH=/opt/ec_state/pkg",
@@ -458,7 +487,7 @@ def run_curated_episode(
         role_runs = {}
         if mode == "seq_ab":
             for r in (ra, rb):
-                role_runs[r] = run_exam_actor(r, prompts[r], desk, model_name, effort, api_cfg, codex_bin, cond_dir / "actors" / r, timeout_s)
+                role_runs[r] = _invoke_ec1_actor(r, prompts[r], desk, model_name, effort, api_cfg, codex_bin, cond_dir / "actors" / r, timeout_s)
         else:
             bar = threading.Barrier(2)
 
@@ -467,7 +496,7 @@ def run_curated_episode(
                     bar.wait(timeout=45)
                 except threading.BrokenBarrierError:
                     pass
-                return r, run_exam_actor(r, prompts[r], desk, model_name, effort, api_cfg, codex_bin, cond_dir / "actors" / r, timeout_s)
+                return r, _invoke_ec1_actor(r, prompts[r], desk, model_name, effort, api_cfg, codex_bin, cond_dir / "actors" / r, timeout_s)
 
             with ThreadPoolExecutor(max_workers=2) as pool:
                 for fut in as_completed([pool.submit(_go_ec, ra), pool.submit(_go_ec, rb)]):
@@ -559,7 +588,11 @@ def run_curated_episode(
         grade_sh = desk_sh.stop_and_grade(wall_override_s=round(time.monotonic() - t0, 2))
 
     tel = summarize_ec2_telemetry(tl_sh, (ra, rb))
-    aware = analyze_race_awareness(cond_dir, (ra, rb))
+    aware = {
+        r: analyze_race_awareness((cond_dir / "actors" / r / "codex_events.jsonl").read_text(encoding="utf-8", errors="replace"))
+        for r in (ra, rb)
+        if (cond_dir / "actors" / r / "codex_events.jsonl").is_file()
+    }
     res_out = {
         "task_id": task_id,
         "model": model_name,
