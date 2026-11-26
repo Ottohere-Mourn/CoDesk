@@ -148,6 +148,12 @@ def audit_python_file(path: Path) -> dict:
         fails.append(f"[NON_HIGH_DEFAULT_EFFORT] --effort defaults to '{m_eff.group(1)}'; standardize default reasoning effort to 'high'")
     if re.search(r"\bj_mult\s*=\s*\(\s*0\.75", src):
         fails.append("[ASYMMETRIC_SHARED_MULTIPLIER] Asymmetric shared-only j_mult=0.75 distorts isolated vs shared score comparison")
+    for mp in re.finditer(r"pass_threshold\s*(?::\s*float\s*)?=\s*(0\.\d+)", no_comment_src):
+        if float(mp.group(1)) < 0.999:
+            fails.append(
+                f"[LAX_PASS_THRESHOLD] pass_threshold={mp.group(1)} < 1.0 allows failed checkpoints to pass; "
+                "unify binary pass_a/pass_b/joint_pass to strict pass_threshold=1.0 (zero failed checks)"
+            )
     if "Xvfb :99" in src and " -ac " in src and "container:" in src:
         warns.append("[XVFB_NO_AUTH_BYPASS] Xvfb launched with -ac while sharing container network; use 'Xvfb :99 -auth /tmp/x99.auth' + separate CLI UID")
 

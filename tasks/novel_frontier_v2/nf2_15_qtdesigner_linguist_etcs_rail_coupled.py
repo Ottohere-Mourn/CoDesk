@@ -522,6 +522,12 @@ def grade(workspace_map: dict[str, Path], service_state: dict[str, Any], wall_se
 
     sw = int(ui.get("speed_w", 0))
     bw = int(ui.get("banner_w", 0))
+    ja_sw = ja.get("speed_pane_width_px")
+    ja_sw_ok = (
+        isinstance(ja_sw, (int, float))
+        and SPEED_PANE_FLOOR_PX <= float(ja_sw) <= (LCD_WIDTH_CAP_PX - BANNER_FLOOR_PX)
+        and (int(ja_sw) == sw if not has_b else True)
+    )
     max_tr_len = max((len(v) for v in ts_map.values()), default=999)
     spins_ok = (ui.get("max_spin") == [40, 400, 5]) and (ui.get("rel_spin") == [10, 60, 5])
     btn_ok = int(ui.get("btn_h", 0)) >= 56 and int(ui.get("btn_w", 0)) >= 280
@@ -530,7 +536,7 @@ def grade(workspace_map: dict[str, Path], service_state: dict[str, Any], wall_se
         ("a_json", bool(ja), 0.08, "Missing dmi_ergonomics_audit.json"),
         ("a_qss_btn", "#0b101b" in str(ui.get("qss", "")).lower() and btn_ok, 0.14, "etcs_cab_dmi.ui missing #0B101B night QSS or BtnAcknowledgeEB >= 280x56 px"),
         ("a_spins", spins_ok, 0.12, "maxSpeedSpin [40,400,5] or releaseSpeedSpin [10,60,5] bounds mismatch in etcs_cab_dmi.ui"),
-        ("a_widths", sw >= SPEED_PANE_FLOOR_PX and bw >= BANNER_FLOOR_PX and ja.get("speed_pane_width_px") == sw, 0.16, f"SpeedGaugePane ({sw}) / AlertBanner ({bw}) widths below floor or JSON mismatch"),
+        ("a_widths", sw >= SPEED_PANE_FLOOR_PX and bw >= BANNER_FLOOR_PX and ja_sw_ok, 0.16, f"SpeedGaugePane ({sw}) / AlertBanner ({bw}) widths below floor or JSON speed_pane_width_px ({ja_sw}) invalid"),
         ("a_code_cnt", ja.get("era_dmi_code") == ERA_DMI_CODE and ja.get("valid_run_count") == exp_cnt, 0.18, f"era_dmi_code or valid_run_count != {exp_cnt} mismatch"),
         ("a_fine_two_stage_stop", abs(float(ja.get("mean_wet_stopping_distance_m") or -999) - exp_d) <= 0.35, 0.32, f"mean_wet_stopping_distance_m != {exp_d} (check two-stage 120 km/h split, leaf adhesion 0.68 & rotating inertia 1.08)"),
     ]

@@ -160,8 +160,6 @@ cam_data = bpy.data.cameras.new("Endoscope_CamData")
 cam_data.lens = 30.0
 cam_data.clip_start = 1.0
 cam_data.clip_end = 500.0
-cam_data["iec_require_dof_focus_on_lesion"] = True
-cam_data["iec_required_fstop"] = 4.0
 cam_obj = bpy.data.objects.new("Endoscope_Camera", cam_data)
 sc.collection.objects.link(cam_obj)
 cam_obj.location = (0.0, -112.0, 130.0)
@@ -598,8 +596,6 @@ def grade(
         ("b_png_dim", rnd["valid_dim"], 0.07, "renders/endoscope_view.png missing or not 960x540"),
         ("b_png_colors", rnd["has_red"] and rnd["has_green"] and rnd["has_cyan"], 0.09, f"endoscope_view.png missing emissive Red/Green/Cyan fiducials ({rnd})"),
         ("b_spot_coaxial_aim", bool(bl.get("lt_is_spot")) and _f(bl.get("lt_aim_deg"), 999.0) <= 12.0, 0.07, f"Endoscope_Light not SPOT or aim error {_f(bl.get('lt_aim_deg'))} deg > 12.0 deg"),
-        ("b_fine_cam_dof", bool(bl.get("dof_ok")), 0.09, "Camera DOF not enabled or focus_distance != lesion standoff per Endoscope_CamData custom properties"),
-        ("b_fine_cam_fstop", bool(bl.get("fstop_ok")), 0.09, "Camera DOF aperture_fstop != 4.0 per Endoscope_CamData custom properties"),
         ("b_led_range", 4.60 <= led_w <= 6.40, 0.08, f"led_illuminator_w={led_w} outside [4.60, 6.40]W"),
         ("b_led_committed", bl.get("led_status") == "COMMITTED", 0.05, "Endoscope_Light['status'] != COMMITTED"),
         ("b_led_json", abs(_f(jb.get("led_illuminator_w")) - led_w) <= 0.05, 0.05, "JSON vs .blend led_illuminator_w mismatch"),
@@ -633,7 +629,7 @@ def grade(
         tickets_by_role=build_tickets_by_role(),
         service_state=service_state,
         wall_seconds=wall_seconds,
-        pass_threshold=0.85,
+        pass_threshold=1.0,
     )
 
 

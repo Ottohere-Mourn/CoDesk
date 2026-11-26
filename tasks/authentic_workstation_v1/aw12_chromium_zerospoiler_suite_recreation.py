@@ -519,6 +519,11 @@ def grade(
     ord_js = (cs / "modules" / "orders_module.js").read_text(encoding="utf-8", errors="replace") if (cs / "modules" / "orders_module.js").is_file() else ""
     cap_js = (cs / "modules" / "capacity_module.js").read_text(encoding="utf-8", errors="replace") if (cs / "modules" / "capacity_module.js").is_file() else ""
     idx_txt = (cs / "index.html").read_text(encoding="utf-8", errors="replace") if (cs / "index.html").is_file() else ""
+    suite_txt = "\n".join(
+        p.read_text(encoding="utf-8", errors="replace")
+        for p in sorted(cs.rglob("*"))
+        if p.is_file() and p.suffix.lower() in {".js", ".html"}
+    ) if cs.is_dir() else ""
 
     sim_ord = _eval_dom_click_sim(cs, "document.getElementById('nav-orders')?.click();", {"mod": "orders", "filter": "ALL"})
     sim_hld = _eval_dom_click_sim(cs, "document.getElementById('nav-orders')?.click(); setTimeout(()=>document.getElementById('filter-hold')?.click(), 60);", {"mod": "orders", "filter": "HOLD_CUSTOMS"})
@@ -530,7 +535,7 @@ def grade(
         ("a_hold_ids", _norm_str_list(ja.get("hold_order_ids")) == ["ORD-904", "ORD-911"], 1.4, "hold_order_ids mismatch"),
         ("a_sla_pen", ja.get("tier_a_penalty_usd_hr") == 450, 1.6, "tier_a_penalty_usd_hr hidden popover value mismatch (450)"),
         ("a_hotkey", str(ja.get("shortcut_export_hotkey", "")).strip() == "Alt+Shift+M", 1.6, "shortcut_export_hotkey modal value mismatch (Alt+Shift+M)"),
-        ("a_mod_orders_js", all(x in ord_js for x in ("ORD-901", "ORD-904", "ORD-911")) and ("450" in ord_js or "450" in idx_txt), 1.8, "modules/orders_module.js missing order rows or SLA metadata"),
+        ("a_mod_orders_js", all(x in ord_js for x in ("ORD-901", "ORD-904", "ORD-911")) and ("450" in suite_txt), 1.8, "modules/orders_module.js missing order rows or chronos_suite missing SLA $450 metadata"),
         ("a_vis_ord_86", sim_ord >= 0.86, 1.8, f"Orders default visual similarity < 0.86 ({sim_ord})"),
         ("a_vis_ord_95", sim_ord >= 0.95, 1.8, f"Orders fine pixel fidelity < 0.95 ({sim_ord})"),
         ("a_vis_hold_94", sim_hld >= 0.94, 1.8, f"Filtered HOLD_CUSTOMS click fidelity < 0.94 ({sim_hld})"),

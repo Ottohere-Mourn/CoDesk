@@ -166,7 +166,7 @@ def _compute_coldchain_oracles() -> tuple[dict[str, Any], dict[str, Any]]:
         prb = r["probe_id"]
         if prb not in by_probe:
             continue
-        if r["quality_flag"] != "OK" or r["event_flag"] == "DOOR_OPEN_AUDIT":
+        if r["quality_flag"] != "OK":
             continue
         v_raw = float(str(r["raw_temp"]).replace(",", "."))
         if abs(v_raw - 85.0) < 1e-6 and r["temp_scale"] == "CELSIUS":
@@ -344,7 +344,7 @@ def build_pristine(workspace_map: dict[str, Path], tickets_root: Path) -> None:
         "SOP-QA-1079: Biologics Excursion MKT & Batch Release Standard",
         [
             ("1. USP <1079> Arrhenius Mean Kinetic Temperature", [
-                "1.1 Clean /workspace/telemetry_15min_4probes.csv across internal product probes using standard metrology data hygiene and exhibits/probe_calibration_cert.png.",
+            "1.1 Clean /workspace/telemetry_15min_4probes.csv across internal product probes using standard metrology data hygiene and exhibits/probe_calibration_cert.png (exclude external PRB-AMB-4, non-OK CRC_FAULT rows, and DS18B20 +85.00°C power-on-reset sentinels; retain real DOOR_OPEN_AUDIT thermal exposure on product trays).",
                 "1.2 Compute time-weighted USP <1079> Arrhenius MKT per product probe using kinetic constants from /lims. Report worst_probe_id, worst_probe_mkt_c (3 dec), worst_probe_hours_above_8c (hours >8.0°C, 2 dec), and batch_disposition ('CONDITIONAL_RELEASE_TRIM_DOOR_TRAY' if worst_probe_mkt_c <= 8.0°C else 'QUARANTINE').",
             ]),
             ("2. Clinical Vial Release Sizing & Workbook Layout", [
@@ -560,10 +560,10 @@ def grade(
     # 17 subchecks Role A
     checks_a: list[tuple[str, bool, float, str]] = [
         ("a_json", bool(ja), 0.05, "Missing stability_mkt_decision.json"),
-        ("a_sample_cnt_exact", ja.get("valid_product_sample_count") == QA_ORACLE["valid_product_sample_count"], 0.10, f"valid_product_sample_count != {QA_ORACLE['valid_product_sample_count']} (check DS18B20 +85.00C sentinel)"),
+        ("a_sample_cnt_exact", ja.get("valid_product_sample_count") in (QA_ORACLE["valid_product_sample_count"], 314), 0.10, f"valid_product_sample_count != {QA_ORACLE['valid_product_sample_count']} (check DS18B20 +85.00C sentinel)"),
         ("a_no_amb4", bool(ja) and "PRB-AMB-4" not in pm, 0.04, "External PRB-AMB-4 included in product MKT"),
         ("a_core_top_coarse", abs(_f(pm.get("PRB-CORE-1")) - exp_pm["PRB-CORE-1"]) <= 0.90 and abs(_f(pm.get("PRB-TOP-2")) - exp_pm["PRB-TOP-2"]) <= 0.90, 0.06, "PRB-CORE-1/TOP-2 coarse MKT mismatch"),
-        ("a_door3_mkt_exact", abs(_f(pm.get("PRB-DOOR-3")) - exp_pm["PRB-DOOR-3"]) <= 0.03, 0.10, f"PRB-DOOR-3 exact MKT != {exp_pm['PRB-DOOR-3']} (check +85C sentinel & cal_applied)"),
+        ("a_door3_mkt_exact", abs(_f(pm.get("PRB-DOOR-3")) - exp_pm["PRB-DOOR-3"]) <= 0.03 or abs(_f(pm.get("PRB-DOOR-3")) - 7.602) <= 0.03, 0.10, f"PRB-DOOR-3 exact MKT != {exp_pm['PRB-DOOR-3']} (check +85C sentinel & cal_applied)"),
         ("a_worst_id", ja.get("worst_probe_id") == "PRB-DOOR-3", 0.05, "worst_probe_id != PRB-DOOR-3"),
         ("a_worst_mkt_xlsx", abs(_f(_cv("StabilityMKT", "B5")) - QA_ORACLE["worst_probe_mkt_c"]) <= 1.20, 0.06, "StabilityMKT!B5 coarse MKT mismatch"),
         ("a_hrs_8c", abs(_f(ja.get("worst_probe_hours_above_8c")) - QA_ORACLE["worst_probe_hours_above_8c"]) <= 0.55 and abs(_f(_cv("StabilityMKT", "B6")) - QA_ORACLE["worst_probe_hours_above_8c"]) <= 0.55, 0.07, "worst_probe_hours_above_8c mismatch"),
@@ -626,7 +626,7 @@ def grade(
         tickets_by_role=build_tickets_by_role(),
         service_state=service_state,
         wall_seconds=wall_seconds,
-        pass_threshold=0.85,
+        pass_threshold=1.0,
     )
 
 

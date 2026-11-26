@@ -98,7 +98,7 @@ default_tools_approval_mode = "approve"
 def build_exam_agent_prompt(ticket_md: str, timeout_s: int) -> str:
     b = chr(96)
     return (
-        f"You are operating a Linux engineering workstation (1280x720 normalized display view, workspace {b}/workspace{b}, time budget: {timeout_s}s).\n"
+        f"You are operating a Linux engineering workstation (1280x720 normalized display view, workspace {b}/workspace{b}).\n"
         "You have full access to both GUI desktop interaction tools and workstation shell commands.\n\n"
         f"{ticket_md}\n"
     )

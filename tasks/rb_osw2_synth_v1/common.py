@@ -258,6 +258,7 @@ def evaluate_recreated_gui_app(
         os.chmod(rt, 0o777)
         sock_p = rt / "cua.sock"
         shot_p = rt / "win.png"
+        shot_after_p = rt / "win_after.png"
         mcp_probe_py = rt / "mcp_probe.py"
         mcp_probe_py.write_text(
             "import json, subprocess, sys, time\n"
@@ -324,6 +325,9 @@ def evaluate_recreated_gui_app(
             "  wmctrl -i -a \"$wid\" 2>/dev/null || true; xdotool windowactivate \"$wid\" 2>/dev/null || true; sleep 0.25; "
             f"  import -window \"$wid\" {shlex.quote(str(shot_p))} 2>/dev/null || import -window root {shlex.quote(str(shot_p))} 2>/dev/null || true; "
             f"  python3 {shlex.quote(str(mcp_probe_py))} >/dev/null 2>&1 || true; "
+            f"  wmctrl -lG > {rt}/wm_after.txt 2>/dev/null || true; "
+            "  wid2=$(wmctrl -l 2>/dev/null | tail -n 1 | awk '{print $1}' || true); "
+            f"  if [ -n \"$wid2\" ]; then import -window \"$wid2\" {shlex.quote(str(shot_after_p))} 2>/dev/null || import -window root {shlex.quote(str(shot_after_p))} 2>/dev/null || true; fi; "
             "fi; "
             "kill $CUA_PID $APP_PID $OB_PID $ATSPI_PID $XVFB_PID >/dev/null 2>&1 || true"
         )
@@ -340,19 +344,25 @@ def evaluate_recreated_gui_app(
         )
 
         wm_lines = [ln.strip() for ln in (rt / "wm_init.txt").read_text(encoding="utf-8", errors="replace").splitlines() if ln.strip()] if (rt / "wm_init.txt").is_file() else []
-        if wm_lines:
+        wm_after = [ln.strip() for ln in (rt / "wm_after.txt").read_text(encoding="utf-8", errors="replace").splitlines() if ln.strip()] if (rt / "wm_after.txt").is_file() else []
+        all_wm_lines = wm_lines + wm_after
+        if all_wm_lines:
             out["window_mapped"] = True
-            picked = wm_lines[-1]
+            picked = all_wm_lines[-1]
             if expected_title_sub:
-                for ln in wm_lines:
+                for ln in all_wm_lines:
                     if expected_title_sub.lower() in ln.lower():
-                        picked = ln
-                        break
+                        parts_cand = ln.split(None, 7)
+                        if len(parts_cand) >= 7 and int(parts_cand[4]) >= out["win_w"]:
+                            picked = ln
+                            out["win_w"] = int(parts_cand[4])
+                            out["win_h"] = int(parts_cand[5])
             parts = picked.split(None, 7)
-            if len(parts) >= 7:
+            if len(parts) >= 7 and out["win_w"] == 0:
                 out["win_w"] = int(parts[4])
                 out["win_h"] = int(parts[5])
-                out["window_title"] = parts[7] if len(parts) >= 8 else ""
+            if len(parts) >= 8:
+                out["window_title"] = parts[7]
 
         if (rt / "state_init.json").is_file():
             out["state_json"] = read_json_safe(rt / "state_init.json")
@@ -362,19 +372,22 @@ def evaluate_recreated_gui_app(
             fp = rt / f"ax_{tag}.txt"
             out["after_keys_ax"][tag] = fp.read_text(encoding="utf-8", errors="replace") if fp.is_file() else ""
 
-        if shot_p.is_file() and shot_p.stat().st_size > 800:
-            try:
-                with Image.open(shot_p) as im:
-                    rgb = im.convert("RGB")
-                    w, h = rgb.size
-                    if out["win_w"] == 0:
-                        out["win_w"], out["win_h"] = w, h
-                    colors = set()
-                    for sx in range(0, w, max(1, w // 24)):
-                        for sy in range(0, h, max(1, h // 18)):
-                            colors.add(rgb.getpixel((sx, sy)))
-                    out["unique_colors_sampled"] = len(colors)
-                    out["visual_nonblank"] = (w >= 380 and h >= 260 and len(colors) >= 4)
-            except Exception:
-                pass
+        for cand_shot in (shot_p, shot_after_p):
+            if cand_shot.is_file() and cand_shot.stat().st_size > 800:
+                try:
+                    with Image.open(cand_shot) as im:
+                        rgb = im.convert("RGB")
+                        w, h = rgb.size
+                        if out["win_w"] < w and w <= 1580:
+                            out["win_w"], out["win_h"] = w, h
+                        colors = set()
+                        for sx in range(0, w, max(1, w // 24)):
+                            for sy in range(0, h, max(1, h // 18)):
+                                colors.add(rgb.getpixel((sx, sy)))
+                        if len(colors) > out["unique_colors_sampled"]:
+                            out["unique_colors_sampled"] = len(colors)
+                        if w >= 380 and h >= 260 and len(colors) >= 4:
+                            out["visual_nonblank"] = True
+                except Exception:
+                    pass
     return out

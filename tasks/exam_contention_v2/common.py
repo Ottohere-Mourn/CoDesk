@@ -74,7 +74,7 @@ def make_opaque_seal(domain_salt: str, state_key: str) -> str:
 
 def score_rubric(
     checks: list[tuple[str, bool, float, str]],
-    pass_threshold: float = 0.88,
+    pass_threshold: float = 1.0,
 ) -> tuple[float, bool, list[str], dict[str, bool]]:
     """Compute weighted continuous partial-credit score in [0.0, 1.0], pass flag, and error list."""
     tot_w = sum(max(0.0, float(w)) for _, _, w, _ in checks) or 1.0
@@ -102,10 +102,11 @@ def build_grade_payload(
     tickets_by_role: dict[str, str],
     service_state: dict[str, Any],
     wall_seconds: float,
-    pass_threshold: float = 0.90,
+    pass_threshold: float = 1.0,
+    active_mode: str = "shared",
 ) -> dict[str, Any]:
     """Assemble standardized partial-credit + binary grade dictionary."""
-    j_checks = checks_joint or []
+    j_checks = (checks_joint or []) if active_mode != "isolated" else []
     sc_a, ok_a_raw, errs_a, sub_a = score_rubric(checks_a + j_checks, pass_threshold=pass_threshold)
     sc_b, ok_b_raw, errs_b, sub_b = score_rubric(checks_b + j_checks, pass_threshold=pass_threshold)
     _, ok_j, errs_j, sub_j = score_rubric(j_checks, pass_threshold=0.999) if j_checks else (1.0, True, [], {})

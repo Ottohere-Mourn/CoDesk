@@ -81,6 +81,13 @@ def audit_python_file(path: Path) -> dict:
     if re.search(r"\bj_mult\s*=\s*\(\s*0\.75", src):
         fails.append("[ASYMMETRIC_SCORE_MULTIPLIER] Asymmetric shared-only j_mult=0.75 distorts dual_desktop vs shared_desktop comparison")
 
+    for mp in re.finditer(r"pass_threshold\s*(?::\s*float\s*)?=\s*(0\.\d+)", no_comment_src):
+        if float(mp.group(1)) < 0.999:
+            fails.append(
+                f"[LAX_PASS_THRESHOLD] pass_threshold={mp.group(1)} < 1.0 allows failed checkpoints to pass; "
+                "unify binary pass_a/pass_b/joint_pass to strict pass_threshold=1.0 (zero failed checks)"
+            )
+
     if 'pnm == "minimumWidth"' in src and "minimumSize" not in src and "loadUi" not in src:
         fails.append("[BRITTLE_UI_XML_PARSER] Parsing .ui 'minimumWidth' without 'minimumSize'/uic.loadUi breaks real Qt5 Designer saves")
 

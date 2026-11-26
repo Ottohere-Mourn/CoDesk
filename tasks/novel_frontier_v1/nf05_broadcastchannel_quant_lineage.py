@@ -337,16 +337,8 @@ def _compute_lineage_oracle() -> dict[str, Any]:
             seen.add(cur)
             stack.extend(children[cur])
 
-    # Stage-4 parallel slot pool contention: l2_orderbook_builder (32 slots) + venue_fee_joiner (12) + exec_fill_matcher (24) > 48-slot pool -> +7.5s slot wait on exec_fill_matcher!
-    eff_with_pool = dict(eff)
-    eff_with_pool["exec_fill_matcher"] = round(eff_with_pool["exec_fill_matcher"] + 7.5, 2)
-    dist_pool: dict[str, float] = {}
-    for _stg, nid, pars, *_ in DAG_NODES:
-        dist_pool[nid] = eff_with_pool[nid] + (max(dist_pool[p] for p in pars) if pars else 0.0)
-    crit_sec = round(max(dist_pool.values()), 2)
-
-    # Key-salting cuts `l2_orderbook_builder` skew 2.8 -> 1.25 AND adds +6.5s shuffle on direct children + keeps +7.5s Stage-4 slot wait!
-    eff_opt = dict(eff_with_pool)
+    # Key-salting cuts `l2_orderbook_builder` skew 2.8 -> 1.25 AND adds +6.5s hash-repartition shuffle on direct children!
+    eff_opt = dict(eff)
     eff_opt["l2_orderbook_builder"] = round(46 * 1.25, 2)
     for direct_ch in children["l2_orderbook_builder"]:
         eff_opt[direct_ch] = round(eff_opt[direct_ch] + 6.5, 2)
@@ -900,7 +892,7 @@ def grade(
         tickets_by_role=build_tickets_by_role(),
         service_state=service_state,
         wall_seconds=wall_seconds,
-        pass_threshold=0.85,
+        pass_threshold=1.0,
     )
 
 
