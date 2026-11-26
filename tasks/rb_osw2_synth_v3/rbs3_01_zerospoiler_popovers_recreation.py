@@ -26,6 +26,7 @@ from tasks.rb_osw2_synth_v3.common import (
 )
 
 TASK_ID = "RBS3-01"
+ALLOW_SYNTHETIC_TARGET_APP = True
 PORTAL_PORT = 19501
 
 META: dict[str, Any] = {
@@ -440,7 +441,7 @@ def grade(workspace_map: dict[str, Path], service_state: dict[str, Any], wall_se
         sh_a,
         disp_num=121,
         expected_title_sub="SpectrumPad",
-        key_sequences=[("mode2", "2"), ("prefs", "ctrl+p")],
+        key_sequences=[("accept_wizard", "Return"), ("mode2", "2"), ("prefs", "ctrl+p")],
     )
     ax_a_all = (ev_a["initial_ax_text"] + " " + " ".join(ev_a["after_keys_ax"].values())).lower()
     bars_a = sp_a.get("mode2_band_gains_db") if isinstance(sp_a.get("mode2_band_gains_db"), list) else []
@@ -483,7 +484,7 @@ def grade(workspace_map: dict[str, Path], service_state: dict[str, Any], wall_se
         sh_b,
         disp_num=122,
         expected_title_sub="PacketForge",
-        key_sequences=[("mode2", "2"), ("prefs", "ctrl+p")],
+        key_sequences=[("accept_wizard", "Return"), ("mode2", "2"), ("prefs", "ctrl+p")],
     )
     ax_b_all = (ev_b["initial_ax_text"] + " " + " ".join(ev_b["after_keys_ax"].values())).lower()
     bars_b = sp_b.get("mode2_latencies_ms") if isinstance(sp_b.get("mode2_latencies_ms"), list) else []
@@ -527,7 +528,7 @@ def grade(workspace_map: dict[str, Path], service_state: dict[str, Any], wall_se
         tickets_by_role=build_tickets_by_role(),
         service_state=service_state,
         wall_seconds=wall_seconds,
-        pass_threshold=0.88,
+        pass_threshold=1.0,
     )
 
 

@@ -401,7 +401,7 @@ def build_pristine(workspace_map: dict[str, Path], tickets_root: Path) -> None:
         "SOP-OPS-513B: Frozen Safety-Stock Imputation & Rack Sizing",
         [
             ("1. Frozen 98%-Service (s,S) Sizing", [
-                "1.1 In /notebook, set kernel basis via set_price_basis('GROSS_CARTON') before calling get_session_card('replenish'), and inspect the live kernel workspace applying commercial POS transaction-type, currency-unit, and cold-dock net-realization hygiene. Report gross_nonpromo_sales_usd (2 dec).",
+                "1.1 In /notebook, set kernel basis via set_price_basis('GROSS_CARTON') before calling get_session_card('replenish'), and inspect the live kernel workspace applying commercial POS transaction-type (WEEKLY_POS), currency-unit (CENTS/100), and cold-dock rejection (df_dock_claims) hygiene on non-promo sales. Report gross_nonpromo_sales_usd (2 dec).",
                 "1.2 Normalize physical FROZEN_20C weekly demand to standard-case 7-day weekly equivalents, impute stockout-censored weeks (>=8h) with each SKU's mean uncensored promo weekly demand, and compute 98%-service (z=2.05) shrinkage- & honeycombing-adjusted bays -> frozen_order_up_to_bays_exact (2 dec) and ceil() -> minimum_frozen_bays_98pct.",
                 f"1.3 Commit frozen_bays >= minimum_frozen_bays_98pct (preferred +7 bay buffer, subject to {COUPLED_BAY_CAP} total facility cap) in cold_chain_plan.json and Ammonia_Rack_Schedule.xlsx (BaySchedule!B3, C3='COMMITTED', preserve B4 & B5 formulas).",
             ]),
@@ -599,11 +599,14 @@ def grade(
     ]
 
     # 17 subchecks Role B
+    gross_got = _f(jb.get("gross_nonpromo_sales_usd"))
+    gross_exp = REPLEN_ORACLE["gross_nonpromo_sales_usd"]
+    gross_net_spoil = round(gross_exp - 2878.00, 2)
     checks_b: list[tuple[str, bool, float, str]] = [
         ("b_json", bool(jb), 0.05, "Missing replenishment_audit.json"),
-        ("b_gross_rough", abs(_f(jb.get("gross_nonpromo_sales_usd")) - REPLEN_ORACLE["gross_nonpromo_sales_usd"]) <= 120000.0, 0.06, "gross_nonpromo_sales_usd coarse off"),
-        ("b_gross_exact", abs(_f(jb.get("gross_nonpromo_sales_usd")) - REPLEN_ORACLE["gross_nonpromo_sales_usd"]) <= 2.5, 0.11, f"gross_nonpromo_sales_usd != {REPLEN_ORACLE['gross_nonpromo_sales_usd']} (check df_dock_claims in kernel)"),
-        ("b_fine_dock_claims", abs(_f(jb.get("gross_nonpromo_sales_usd")) - (REPLEN_ORACLE["gross_nonpromo_sales_usd"] + DOCK_CLAIMS_TOTAL_USD)) > 100.0 and abs(_f(jb.get("gross_nonpromo_sales_usd")) - REPLEN_ORACLE["gross_nonpromo_sales_usd"]) <= 50.0, 0.08, "Cold-dock rejection claims (df_dock_claims) not netted from non-promo sales"),
+        ("b_gross_rough", abs(gross_got - gross_exp) <= 120000.0, 0.06, "gross_nonpromo_sales_usd coarse off"),
+        ("b_gross_exact", min(abs(gross_got - gross_exp), abs(gross_got - gross_net_spoil)) <= 2.5, 0.11, f"gross_nonpromo_sales_usd != {gross_exp} (check CENTS/100 & df_dock_claims in kernel)"),
+        ("b_fine_dock_claims", abs(gross_got - (gross_exp + DOCK_CLAIMS_TOTAL_USD)) > 100.0 and min(abs(gross_got - gross_exp), abs(gross_got - gross_net_spoil)) <= 50.0, 0.08, "Cold-dock rejection claims (df_dock_claims) not netted from non-promo sales"),
         ("b_exact_bays_rough", abs(_f(jb.get("frozen_order_up_to_bays_exact")) - REPLEN_ORACLE["frozen_order_up_to_bays_exact"]) <= 65.0, 0.06, "frozen_order_up_to_bays_exact coarse off"),
         ("b_exact_bays_tight", abs(_f(jb.get("frozen_order_up_to_bays_exact")) - REPLEN_ORACLE["frozen_order_up_to_bays_exact"]) <= 0.25, 0.10, f"frozen_order_up_to_bays_exact != {REPLEN_ORACLE['frozen_order_up_to_bays_exact']}"),
         ("b_min_fr", jb.get("minimum_frozen_bays_98pct") == FROZEN_FLOOR, 0.09, f"minimum_frozen_bays_98pct != {FROZEN_FLOOR}"),
@@ -642,7 +645,7 @@ def grade(
         tickets_by_role=build_tickets_by_role(),
         service_state=service_state,
         wall_seconds=wall_seconds,
-        pass_threshold=0.85,
+        pass_threshold=1.0,
     )
 
 

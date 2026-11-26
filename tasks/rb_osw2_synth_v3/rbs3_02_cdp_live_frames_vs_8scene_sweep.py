@@ -496,7 +496,7 @@ def grade(workspace_map: dict[str, Path], service_state: dict[str, Any], wall_se
         tickets_by_role=build_tickets_by_role(),
         service_state=service_state,
         wall_seconds=wall_seconds,
-        pass_threshold=0.88,
+        pass_threshold=1.0,
     )
 
 

@@ -83,7 +83,7 @@ def verify_prompt_hygiene(tickets_by_role: dict[str, str]) -> dict[str, Any]:
 
 def score_weighted_checks(
     checks: list[tuple[str, bool, float, str]],
-    pass_threshold: float = 0.78,
+    pass_threshold: float = 1.0,
 ) -> tuple[float, bool, list[str], dict[str, bool]]:
     tot_w = sum(max(0.0, float(w)) for _, _, w, _ in checks) or 1.0
     got_w = 0.0
@@ -110,7 +110,7 @@ def build_grade_payload(
     tickets_by_role: dict[str, str],
     service_state: dict[str, Any],
     wall_seconds: float,
-    pass_threshold: float = 0.78,
+    pass_threshold: float = 1.0,
 ) -> dict[str, Any]:
     j_list = list(checks_joint or [])
     full_a = list(checks_a) + j_list

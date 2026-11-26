@@ -808,7 +808,7 @@ def grade(
         tickets_by_role=build_tickets_by_role(),
         service_state=service_state,
         wall_seconds=wall_seconds,
-        pass_threshold=0.85,
+        pass_threshold=1.0,
     )
 
 

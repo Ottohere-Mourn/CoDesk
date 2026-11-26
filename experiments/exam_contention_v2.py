@@ -152,13 +152,13 @@ def build_ec2_agent_prompt(ticket_md: str, role: str, timeout_s: int, gui_driver
     sess_id = f"s_{role[:10]}"
     if gui_driver == "qwen_cua":
         drv_line = (
-            f"- Desktop GUI MCP server: {b}qwen_cua_driver{b} (budget: {max_cua_calls} calls; pass {b}session={json.dumps(sess_id)}{b} where supported). "
+            f"- Desktop GUI MCP server: {b}qwen_cua_driver{b} ( pass {b}session={json.dumps(sess_id)}{b} where supported). "
             f"Use {b}get_state{b} to list running apps, {b}get_ax_state_and_screenshot{b} / {b}get_screenshot{b} to inspect windows, and act via {b}click{b}, {b}drag{b}, {b}type_text{b}, {b}press_key{b}, {b}hotkey{b}, etc.\n"
         )
     else:
         drv_line = f"- Desktop GUI MCP server: {b}desktop{b} (1280x720 normalized coordinates).\n"
     return (
-        f"Workstation runtime notes (Ubuntu/Debian X11 {b}DISPLAY=:99{b} 1920x1080, workspace {b}/workspace{b}, time budget: {timeout_s}s):\n"
+        f"Workstation runtime notes (Ubuntu/Debian X11 {b}DISPLAY=:99{b} 1920x1080, workspace {b}/workspace{b}):\n"
         f"{drv_line}"
         f"- Workstation shell MCP tool: {b}guest_bash{b} (runs in {b}/workspace{b} with {b}DISPLAY=:99{b}, AT-SPI2 bus, and standard Linux CLI tools enabled).\n\n"
         f"{ticket_md}\n"

@@ -79,7 +79,7 @@ def verify_prompt_hygiene(tickets_by_role: dict[str, str]) -> dict[str, Any]:
 
 def score_rubric(
     checks: list[tuple[str, bool, float, str]],
-    pass_threshold: float = 0.85,
+    pass_threshold: float = 1.0,
 ) -> tuple[float, bool, list[str], dict[str, bool]]:
     tot_w = sum(max(0.0, float(w)) for _, _, w, _ in checks) or 1.0
     earned = 0.0
@@ -107,7 +107,7 @@ def build_aw_grade_payload(
     service_state: dict[str, Any],
     wall_seconds: float,
     active_mode: str = "shared",
-    pass_threshold: float = 0.85,
+    pass_threshold: float = 1.0,
 ) -> dict[str, Any]:
     """Build continuous + binary grade with 100% identical un-multiplied per-role scores in `isolated` and `shared`."""
     sc_a_own, ok_a_raw, errs_a, sub_a = score_rubric(checks_a, pass_threshold=pass_threshold)
