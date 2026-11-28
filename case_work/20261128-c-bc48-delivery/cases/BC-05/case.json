@@ -1,0 +1,24 @@
+{
+  "case_id": "BC-05",
+  "title": "Layered Q4 Product Campaign and Compliance Proof",
+  "track": "blind_concurrency",
+  "mode": "shared",
+  "guest_apps": ["GIMP", "Google Chrome"],
+  "guest_services": [{"name": "Campaign proof desk", "url": "http://127.0.0.1:8091/proof.html"}],
+  "guest_workspace": "~/workspace",
+  "assets": "guest/",
+  "prompts": {"actor_a": "prompts/actor_a.md", "actor_b": "prompts/actor_b.md"},
+  "oracle": "oracle/oracle.py",
+  "oracle_inputs": {"proof": "Host-collected response from the Guest-local proof service; expected SKU and promotion values remain host-only."},
+  "outputs": ["~/workspace/campaign/poster_master.xcf", "~/workspace/out/product_clean.png", "~/workspace/out/campaign_final.png", "~/workspace/out/manifest_a.json", "~/workspace/out/manifest_b.json"],
+  "runner_profile": {"mode": "shared", "max_cua_calls": null, "outer_timeout_s": 7200, "countdown_injected": false, "xvfb_auth": true, "yolo": false, "gui_enabled": true, "guest_cli_read_write": true},
+  "guest_setup": {"args": ["--workspace", "/home/user/workspace", "--start-service", "--open-browser", "--open-gimp"]},
+  "host_snapshots": [
+    {"guest_path": "/home/user/workspace/campaign/poster_master.xcf", "archive_path": "guest-output/poster_master.xcf", "kind": "deliverable"},
+    {"guest_path": "/home/user/workspace/out/product_clean.png", "archive_path": "guest-output/product_clean.png", "kind": "deliverable"},
+    {"guest_path": "/home/user/workspace/out/campaign_final.png", "archive_path": "guest-output/campaign_final.png", "kind": "deliverable"},
+    {"guest_path": "/home/user/workspace/out/manifest_a.json", "archive_path": "guest-output/manifest_a.json", "kind": "deliverable"},
+    {"guest_path": "/home/user/workspace/out/manifest_b.json", "archive_path": "guest-output/manifest_b.json", "kind": "deliverable"}
+  ],
+  "host_http_snapshots": [{"id": "proof", "url": "http://127.0.0.1:8091/api/receipt", "archive_path": "host-snapshots/bc05-proof.json"}]
+}

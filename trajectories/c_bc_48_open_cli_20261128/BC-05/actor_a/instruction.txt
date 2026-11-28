@@ -1,0 +1,7 @@
+Prepare the Q4 clean product visual from `~/workspace/campaign/poster_master.ora`, which is the editable layered campaign source opened in GIMP.
+
+Read `~/workspace/campaign/brand_spec.pdf` and query `~/workspace/campaign/sku_catalog.db` to derive the three eligible Q4 hero SKUs. Filter for active items with an allowed region, at least 50 units in stock, and margin of at least 0.35. Rank by descending margin, breaking ties by SKU ID. Use the matching transparent product PNG files from `~/workspace/campaign/assets/`.
+
+Replace the three product slots while preserving the seven-layer composition and background. Save an editable GIMP XCF as `~/workspace/campaign/poster_master.xcf`. Hide the promotion badge, price grid, and legal footer only for the clean export; save a 1200×1600 `~/workspace/out/product_clean.png`, restore all layers, and save the editable XCF again. Inspect the result at `http://127.0.0.1:8091/proof.html`. Write `~/workspace/out/manifest_a.json` with the ranked SKU IDs, their margins, and a concise verification result.
+
+You may freely choose the desktop GUI, `guest_cli`, or a combination. `guest_cli` can read, create, edit, and execute files within the Guest workspace. It runs inside this OSWorld Guest, not on the HealthCare host. The host-side Oracle, ground truth, evaluation data, and queue control are not exposed to `guest_cli`; do not access or alter them. Verify your saved files before finishing.

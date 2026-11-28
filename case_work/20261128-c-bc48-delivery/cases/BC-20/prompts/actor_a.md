@@ -1,0 +1,7 @@
+Complete the first-half budget of `~/workspace/budget_lab/budget_master.ods` in LibreOffice Calc.
+
+Use `budget_requests.csv` and `budget_rules.pdf`. For each H1 department, select the latest ACTIVE request revision, ignore WITHDRAWN rows and duplicate identical request IDs, and calculate approved dollars using the protected/unprotected retention rule. Fill Requested USD, Protected, Approved USD, and Reduction USD in the Budget_H1 sheet; use formulas for the approved and reduction columns and repair the sheet total formula. Preserve Budget_H2 and Summary. Save the workbook, export Budget_H1 to `~/workspace/budget_lab/out/h1_budget.pdf`, and write `~/workspace/budget_lab/out/h1_summary.json` with department totals and the half-year totals. Verify the workbook and export.
+
+Summary JSON contract: `departments` is an object keyed by department name. Each value has numeric `requested`, numeric `approved`, numeric `reduction`, and `protected` equal to "YES" or "NO". Top-level `approved_total` is the sum of department approved amounts. Additional explanatory fields are allowed. All input names in this task are relative to `~/workspace/budget_lab/`; all deliverables must remain below its `out/` directory.
+
+You may freely choose the desktop GUI, `guest_cli`, or a combination. `guest_cli` can read, create, edit, and execute files within the Guest workspace. It runs inside this OSWorld Guest, not on the HealthCare host. Host-side Oracle, ground truth, evaluation data, and queue control are not exposed to `guest_cli`; do not access or alter them.

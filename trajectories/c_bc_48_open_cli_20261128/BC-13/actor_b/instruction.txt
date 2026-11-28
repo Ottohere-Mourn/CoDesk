@@ -1,0 +1,5 @@
+Complete the Polish maintenance-notes section of `~/workspace/writer_release/shared_release.odt` in LibreOffice Writer.
+
+Use the six approved lines in `briefs/polish_copy.csv` and the requirements in `formatting_rules.pdf`. Replace only the `[[POLISH_SECTION]]` placeholder with a numbered list in the existing Polish Maintenance Notes section. Preserve every accented Unicode character exactly as supplied; do not transliterate the copy into ASCII. Keep the other template section and the release-window paragraph intact. Save the updated ODT and export the complete document to `~/workspace/writer_release/out/shared_release.pdf`. Reopen or inspect the saved document and confirm your six entries remain present.
+
+You may freely choose the desktop GUI, `guest_cli`, or a combination. `guest_cli` can read, create, edit, and execute files within the Guest workspace. It runs inside this OSWorld Guest, not on the HealthCare host. Host-side Oracle, ground truth, evaluation data, and queue control are not exposed to `guest_cli`; do not access or alter them.

@@ -1,0 +1,5 @@
+Update the backend queue in the Operations Board at `http://127.0.0.1:18114/`.
+
+Use `~/workspace/status_board/work_items.csv` and `sla_policy.pdf`. Update BE-203 to IN_REVIEW / Platform On-Call, BE-207 to RESOLVED / Data Ops, and BE-211 to IN_PROGRESS / Runtime Team. Set priority from severity and SLA state from age using the policy; add a concise evidence-based validation note to each active card. Leave duplicate and cancelled cards unchanged. Save the complete `board_state.json` through the board's full-state save operation. Export the exact three updated backend cards to `~/workspace/status_board/out/backend_export.json`, then reload the board and verify your changes.
+
+You may freely choose the desktop GUI, `guest_cli`, or a combination. `guest_cli` can read, create, edit, and execute files within the Guest workspace. It runs inside this OSWorld Guest, not on the HealthCare host. Host-side Oracle, ground truth, evaluation data, and queue control are not exposed to `guest_cli`; do not access or alter them.

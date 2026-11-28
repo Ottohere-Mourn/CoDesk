@@ -1,0 +1,88 @@
+{
+  "case_id": "BC-03",
+  "title": "Local Gateway Rate Limits and Alert Rules",
+  "track": "blind_concurrency",
+  "mode": "shared",
+  "guest_apps": [
+    "Google Chrome",
+    "Guest CLI",
+    "SQLite"
+  ],
+  "guest_services": [
+    {
+      "name": "Local development gateway",
+      "url": "http://127.0.0.1:8080/"
+    }
+  ],
+  "guest_workspace": "~/workspace/gateway",
+  "assets": "guest/",
+  "prompts": {
+    "actor_a": "prompts/actor_a.md",
+    "actor_b": "prompts/actor_b.md"
+  },
+  "oracle": "oracle/oracle.py",
+  "oracle_inputs": {
+    "loaded_state_snapshot": "Host bridge captures GET /_runtime and HTTP status codes for /rate-limit and /alerts after the final gateway restart; endpoint_statuses is host-collected metadata, not a Guest-writable Oracle input."
+  },
+  "outputs": [
+    "~/workspace/gateway/rate_limit_verification.json",
+    "~/workspace/gateway/alert_verification.json"
+  ],
+  "runner_profile": {
+    "mode": "shared",
+    "max_cua_calls": null,
+    "outer_timeout_s": 7200,
+    "countdown_injected": false,
+    "xvfb_auth": true,
+    "yolo": false,
+    "gui_enabled": true,
+    "guest_cli_read_write": true
+  },
+  "guest_setup": {
+    "args": [
+      "--workspace",
+      "/home/user/workspace",
+      "--start-service",
+      "--open-browser"
+    ]
+  },
+  "host_snapshots": [
+    {
+      "guest_path": "/home/user/workspace/gateway/config.yaml",
+      "archive_path": "guest-output/gateway/config.yaml",
+      "kind": "deliverable"
+    },
+    {
+      "guest_path": "/home/user/workspace/gateway/metrics.db",
+      "archive_path": "guest-output/gateway/metrics.db",
+      "kind": "deliverable"
+    },
+    {
+      "guest_path": "/home/user/workspace/gateway/rate_limit_verification.json",
+      "archive_path": "guest-output/gateway/rate_limit_verification.json",
+      "kind": "deliverable"
+    },
+    {
+      "guest_path": "/home/user/workspace/gateway/alert_verification.json",
+      "archive_path": "guest-output/gateway/alert_verification.json",
+      "kind": "deliverable"
+    }
+  ],
+  "host_http_snapshots": [
+    {
+      "id": "runtime",
+      "url": "http://127.0.0.1:8080/_runtime",
+      "archive_path": "host-snapshots/gateway-runtime.json"
+    },
+    {
+      "id": "rate_limit",
+      "url": "http://127.0.0.1:8080/rate-limit",
+      "archive_path": "host-snapshots/rate-limit-page.html"
+    },
+    {
+      "id": "alerts",
+      "url": "http://127.0.0.1:8080/alerts",
+      "archive_path": "host-snapshots/alerts-page.html"
+    }
+  ]
+}

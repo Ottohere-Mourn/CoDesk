@@ -1,0 +1,22 @@
+{
+  "case_id": "BC-06",
+  "title": "Cross-Log Metrics and Contract Redline",
+  "track": "blind_concurrency",
+  "mode": "shared",
+  "guest_apps": ["LibreOffice Writer"],
+  "guest_workspace": "~/workspace",
+  "assets": "guest/",
+  "prompts": {"actor_a": "prompts/actor_a.md", "actor_b": "prompts/actor_b.md"},
+  "oracle": "oracle/oracle.py",
+  "oracle_inputs": {"odt": "Host-side checks validate redline text, comments, audit outputs, and PDF signatures after the episode."},
+  "outputs": ["~/workspace/legal/msa_contract.odt", "~/workspace/legal/redline_commercial.pdf", "~/workspace/legal/redline_sla.pdf", "~/workspace/legal/audit_a.json", "~/workspace/legal/audit_b.json"],
+  "runner_profile": {"mode": "shared", "max_cua_calls": null, "outer_timeout_s": 7200, "countdown_injected": false, "xvfb_auth": true, "yolo": false, "gui_enabled": true, "guest_cli_read_write": true},
+  "guest_setup": {"args": ["--workspace", "/home/user/workspace", "--open-writer"]},
+  "host_snapshots": [
+    {"guest_path": "/home/user/workspace/legal/msa_contract.odt", "archive_path": "guest-output/msa_contract.odt", "kind": "deliverable"},
+    {"guest_path": "/home/user/workspace/legal/redline_commercial.pdf", "archive_path": "guest-output/redline_commercial.pdf", "kind": "deliverable"},
+    {"guest_path": "/home/user/workspace/legal/redline_sla.pdf", "archive_path": "guest-output/redline_sla.pdf", "kind": "deliverable"},
+    {"guest_path": "/home/user/workspace/legal/audit_a.json", "archive_path": "guest-output/audit_a.json", "kind": "deliverable"},
+    {"guest_path": "/home/user/workspace/legal/audit_b.json", "archive_path": "guest-output/audit_b.json", "kind": "deliverable"}
+  ]
+}

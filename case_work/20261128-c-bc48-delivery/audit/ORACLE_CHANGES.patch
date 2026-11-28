@@ -1,0 +1,156 @@
+--- before/cases/BC-03/oracle/oracle.py
++++ after/cases/BC-03/oracle/oracle.py
+@@ -168,7 +168,7 @@
+     actor_b.append(_check("B06", 0.09, runtime_alerts_ok, {"runtime_webhook_ok": runtime_webhook_ok, "runtime_rules_ok": all(runtime_alert_hits), "active": bool(loaded_state_snapshot and loaded_state_snapshot.get("alerts_active")), "endpoint_status": endpoint_statuses.get("alerts")}))
+     b_rules = b_verification.get('rules', b_verification.get('rule_results',[]))
+     if isinstance(b_rules,dict):b_rules=[dict(v,rule_id=k) for k,v in b_rules.items() if isinstance(v,dict)]
+-    b_record_matches = record_ok(b_verification,b_rules,'rule_id',ALERTS,'http://127.0.0.1:8080/alerts') and b_verification.get('webhook_url', alerts_section.get('webhook_url'))==WEBHOOK
++    b_record_matches = record_ok(b_verification,b_rules,'rule_id',ALERTS,'http://127.0.0.1:8080/alerts') and b_verification.get('webhook_url')==WEBHOOK
+     actor_b.append(_check("B07", 0.10, b_record_matches, {"json_error": b_json_error, "all_green": b_verification.get("all_green"), "rule_count": len(b_rules) if isinstance(b_rules, list) else 0}))
+ 
+     joint_config = (
+--- before/cases/BC-05/oracle/oracle.py
++++ after/cases/BC-05/oracle/oracle.py
+@@ -28,6 +28,25 @@
+     except OSError: return None
+ 
+ 
++def _verification_evidence(report):
++    """Require evidence stated in the report; never infer it from file existence."""
++    for key in ('proof_verified', 'verified'):
++        if report.get(key) is True:
++            return True, {'field': key, 'value': True}
++    for key in ('verification', 'verification_result'):
++        value = report.get(key)
++        if value is True:
++            return True, {'field': key, 'value': True}
++        if isinstance(value, str):
++            statement = value.strip()
++            boilerplate = {'ok', 'done', 'true', 'yes', 'pass', 'passed', 'verified', 'n/a', 'none', '.', 'looks fine'}
++            if statement and statement.casefold() not in boilerplate:
++                return True, {'field': key, 'statement': statement}
++        elif isinstance(value, dict) and (value.get('verified') is True or value.get('passed') is True):
++            return True, {'field': key, 'value': value}
++    return False, {'report_verification_missing_or_empty': True}
++
++
+ def grade_case(root: str | Path, proof: dict[str, Any] | None, run_id="offline"):
+     root = Path(root)
+     a = _json(root / "manifest_a.json") or {}
+@@ -36,10 +55,8 @@
+         a={**a,'sku_ids':[x.get('sku_id') for x in a['ranked_skus']], 'margins':[x.get('margin') for x in a['ranked_skus']]}
+     b={**b,'promo_code':b.get('promo_code',b.get('selected_promotion_code')), 'price':b.get('price',b.get('derived_price'))}
+     if isinstance(b.get('price'),(int,float)):b['price']=format(b['price'],'.2f')
+-    proof_files = (proof or {}).get('files', {}) if isinstance(proof, dict) else {}
+-    # Public prompt requires proof-page verification, not an undisclosed JSON boolean.
+-    a_proved=proof_files.get('product_clean.png',{}).get('exists') is True
+-    b_proved=proof_files.get('campaign_final.png',{}).get('exists') is True
++    a_proved, a_verification = _verification_evidence(a)
++    b_proved, b_verification = _verification_evidence(b)
+     clean = _png(root / "product_clean.png")
+     full = _png(root / "campaign_final.png")
+     xcf = root / "poster_master.xcf"
+@@ -49,7 +66,7 @@
+         _check("A01", .25, sku_ok, {"sku_ids": a.get("sku_ids")}),
+         _check("A02", .15, margins_ok, {"margins": a.get("margins")}),
+         _check("A03", .20, clean == (1200, 1600), {"png_size": clean}),
+-        _check("A04", .20, a_proved, {"proof_verified": a.get("proof_verified")}),
++        _check("A04", .20, a_proved, a_verification),
+         _check("A05", .20, xcf.is_file() and xcf.stat().st_size > 1000, {"xcf_exists": xcf.is_file(), "xcf_bytes": xcf.stat().st_size if xcf.exists() else 0}),
+     ]
+     promo_ok = all(b.get(k) == v for k, v in TARGET_PROMO.items())
+@@ -58,7 +75,7 @@
+         _check("B02", .20, b.get("disclaimer_id") == TARGET_PROMO["disclaimer_id"], {"disclaimer_id": b.get("disclaimer_id")}),
+         _check("B03", .15, b.get("price") == TARGET_PROMO["price"], {"price": b.get("price")}),
+         _check("B04", .20, full == (1200, 1600), {"png_size": full}),
+-        _check("B05", .20, b_proved, {"proof_verified": b.get("proof_verified")}),
++        _check("B05", .20, b_proved, b_verification),
+     ]
+     proof_files = (proof or {}).get("files", {}) if isinstance(proof, dict) else {}
+     proof_ok = all(proof_files.get(name, {}).get("exists") is True for name in ("product_clean.png", "campaign_final.png"))
+--- before/cases/BC-06/oracle/oracle.py
++++ after/cases/BC-06/oracle/oracle.py
+@@ -38,6 +38,25 @@
+     except (OSError, zipfile.BadZipFile, KeyError, ET.ParseError): return "", 0, False, False
+ 
+ 
++def _verification_evidence(report):
++    """Require a report-owned verification statement or explicit success field."""
++    for key in ('proof_verified', 'verified'):
++        if report.get(key) is True:
++            return True, {'field': key, 'value': True}
++    for key in ('verification', 'verification_result'):
++        value = report.get(key)
++        if value is True:
++            return True, {'field': key, 'value': True}
++        if isinstance(value, str):
++            statement = value.strip()
++            boilerplate = {'ok', 'done', 'true', 'yes', 'pass', 'passed', 'verified', 'n/a', 'none', '.', 'looks fine'}
++            if statement and statement.casefold() not in boilerplate:
++                return True, {'field': key, 'statement': statement}
++        elif isinstance(value, dict) and (value.get('verified') is True or value.get('passed') is True):
++            return True, {'field': key, 'value': value}
++    return False, {'report_verification_missing_or_empty': True}
++
++
+ def grade_case(root: str | Path, run_id="offline"):
+     root = Path(root)
+     odt = root / "msa_contract.odt"
+@@ -57,19 +76,21 @@
+     b_calc = isinstance(audit_b.get("availability_pct"),(int,float)) and math.isclose(audit_b["availability_pct"],99.99,abs_tol=.005,rel_tol=0) and audit_b.get("p99_breach_count") == 6 and audit_b.get("tier") == "Gold"
+     a_terms = all(term in text for term in A_TERMS)
+     b_terms = all(term in text for term in B_TERMS)
++    a_verified, a_evidence = _verification_evidence(audit_a)
++    b_verified, b_evidence = _verification_evidence(audit_b)
+     a = [
+         _check("A01", .25, a_calc, {"overdue_rate": audit_a.get("overdue_rate"), "tier": audit_a.get("tier")}),
+         _check("A02", .25, ids_a, {"incident_ids": audit_a.get("incident_ids")}),
+         _check("A03", .20, a_terms, {"commercial_terms_found": [term for term in A_TERMS if term in text]}),
+         _check("A04", .15, pdf_a.startswith(b"%PDF-"), {"pdf_header": pdf_a.decode("ascii", "replace")}),
+-        _check("A05", .15, (valid_odt and a_calc and ids_a and a_terms and pdf_a.startswith(b"%PDF-")), {"verification": audit_a.get("verification")}),
++        _check("A05", .15, a_verified, a_evidence),
+     ]
+     b = [
+         _check("B01", .25, b_calc, {"availability_pct": audit_b.get("availability_pct"), "p99_breach_count": audit_b.get("p99_breach_count"), "tier": audit_b.get("tier")}),
+         _check("B02", .25, ids_b, {"outage_ids": audit_b.get("outage_ids")}),
+         _check("B03", .20, b_terms, {"technical_terms_found": [term for term in B_TERMS if term in text]}),
+         _check("B04", .15, pdf_b.startswith(b"%PDF-"), {"pdf_header": pdf_b.decode("ascii", "replace")}),
+-        _check("B05", .15, (valid_odt and b_calc and ids_b and b_terms and pdf_b.startswith(b"%PDF-")), {"verification": audit_b.get("verification")}),
++        _check("B05", .15, b_verified, b_evidence),
+     ]
+     joint = [
+         _check("J01", 1.0, valid_odt and tracked, {"valid_odt": valid_odt, "tracked_changes_present": tracked}),
+--- before/cases/BC-17/oracle/oracle.py
++++ after/cases/BC-17/oracle/oracle.py
+@@ -14,12 +14,16 @@
+  except sqlite3.Error:invoices={};payments={};stock={};adjust={};adjustment_count=0;tables=set()
+  # PAID and SETTLED denote fully settled invoices in this public contract;
+  # payment sums remain mandatory, so this does not excuse partial payment.
++ raw_invoice_statuses={key:row.get('status') for key,row in invoices.items()}
+  for row in invoices.values():
+   if row.get('status')=='PAID':row['status']='SETTLED'
+  ar_expected={"AR-501":("SETTLED",1000),"AR-502":("PARTIAL",400),"AR-503":("OPEN",0)};inv_expected={"SKU-A":-2,"SKU-B":6,"SKU-C":-9};aok=all(i in invoices and invoices[i]["status"]==v[0] and payments.get(i)==v[1] for i,v in ar_expected.items());bok=adjustment_count==3 and all(s in stock and stock[s]["adjustment"]==d and stock[s]["state"]=="RECONCILED" and adjust.get(s,{}).get("quantity_delta")==d and bool(adjust.get(s,{}).get("source_note")) for s,d in inv_expected.items());out=root.parent/"guest-output";ar=rows(out/"ar_reconciliation.csv");ir=rows(out/"inventory_reconciliation.csv");aexp={r.get("invoice_id"):dict(r,status="SETTLED" if r.get("status")=="PAID" else r.get("status")) for r in ar};bexp={r.get("sku"):r for r in ir}
+  try:aexport=set(aexp)==set(ar_expected) and all(float(aexp[k].get("posted_payment_total",-1))==v[1] and aexp[k].get("status")==v[0] for k,v in ar_expected.items())
+  except (TypeError,ValueError):aexport=False
++ raw_export_statuses={row.get('invoice_id'):row.get('status') for row in ar}
++ raw_states_consistent=all(key in raw_export_statuses and raw_export_statuses[key]==raw_invoice_statuses.get(key) for key in ar_expected)
++ aexport=aexport and raw_states_consistent
+  try:bexport=set(bexp)==set(inv_expected) and all(int(bexp[k].get("adjustment",999))==d for k,d in inv_expected.items())
+  except (TypeError,ValueError):bexport=False
+- ac=[{"id":"A01","weight":.7,"passed":aok,"required":True,"evidence":{"three_invoice_states_and_payment_totals_valid":aok}},{"id":"A02","weight":.3,"passed":aexport,"required":True,"evidence":{"ar_csv_exact":aexport}}];bc=[{"id":"B01","weight":.7,"passed":bok,"required":True,"evidence":{"three_inventory_adjustments_valid":bok}},{"id":"B02","weight":.3,"passed":bexport,"required":True,"evidence":{"inventory_csv_exact":bexport}}];health=receipt.get("http_endpoints",{}).get("erp_health",{}).get("status_code")==200;j=[{"id":"J01","weight":1,"passed":aok and bok,"required":True,"evidence":{"both_ledgers_reconciled":aok and bok}},{"id":"J02","weight":1,"passed":health and {"invoices","payments","inventory","stock_adjustments"}.issubset(tables),"required":True,"evidence":{"audit_service_and_all_tables_present":health and {"invoices","payments","inventory","stock_adjustments"}.issubset(tables)}}]
++ ac=[{"id":"A01","weight":.7,"passed":aok,"required":True,"evidence":{"three_invoice_states_and_payment_totals_valid":aok}},{"id":"A02","weight":.3,"passed":aexport,"required":True,"evidence":{"ar_csv_exact":aexport,"raw_db_csv_statuses_match":raw_states_consistent,"raw_db_statuses":raw_invoice_statuses,"raw_csv_statuses":raw_export_statuses}}];bc=[{"id":"B01","weight":.7,"passed":bok,"required":True,"evidence":{"three_inventory_adjustments_valid":bok}},{"id":"B02","weight":.3,"passed":bexport,"required":True,"evidence":{"inventory_csv_exact":bexport}}];health=receipt.get("http_endpoints",{}).get("erp_health",{}).get("status_code")==200;j=[{"id":"J01","weight":1,"passed":aok and bok and raw_states_consistent,"required":True,"evidence":{"both_ledgers_reconciled":aok and bok,"raw_db_csv_statuses_match":raw_states_consistent}},{"id":"J02","weight":1,"passed":health and {"invoices","payments","inventory","stock_adjustments"}.issubset(tables),"required":True,"evidence":{"audit_service_and_all_tables_present":health and {"invoices","payments","inventory","stock_adjustments"}.issubset(tables)}}]
+  return make_grade(case_id="BC-17",run_id=run_id,actor_a_checks=ac,actor_b_checks=bc,joint_checks=j,pass_threshold_a=.8,pass_threshold_b=.8,run_metadata={"oracle":"BC-17 host SQLite snapshot and CSV recomputation"})
+--- before/cases/BC-21/oracle/oracle.py
++++ after/cases/BC-21/oracle/oracle.py
+@@ -17,9 +17,8 @@
+  reported_saved=o.get('saved_document_sha256',o.get('document_sha256'))
+  reported_index=o.get('indexed_document_sha256',o.get('index_sha256'))
+  hashes_match=reported_saved==digest and reported_index==digest
+- # A later rebuild can increment a global counter without changing this document.
+- # An older receipt is accepted only when both recorded content hashes still match.
+- version_ok=revision>0 and revision<=current and (revision==current or hashes_match)
++ # Verification must refer to the final active index, even if content is unchanged.
++ version_ok=revision>0 and revision==current
+  text_complete=all(x in text.lower() for x in required)
+  search_ok=bool(queries) and all(isinstance(x,str) and x.lower() in text.lower() and int(hits.get(x,0))>0 for x in queries)
+  index_ok=d.get('sha256')==digest and d.get('text')==text

@@ -1,0 +1,27 @@
+{
+  "case_id": "BC-09",
+  "title": "Cross-Source Q4 KPI Analysis and Shared Board Presentation",
+  "track": "blind_concurrency",
+  "mode": "shared",
+  "guest_apps": ["LibreOffice Impress"],
+  "guest_workspace": "~/workspace",
+  "assets": "guest/",
+  "prompts": {"actor_a": "prompts/actor_a.md", "actor_b": "prompts/actor_b.md"},
+  "oracle": "oracle/oracle.py",
+  "oracle_inputs": {"truth": "Host-only fixed fixture semantics; the Guest receives noisy source inputs, not expected aggregate outputs."},
+  "outputs": ["~/workspace/boardroom/finance_summary.json", "~/workspace/boardroom/product_summary.json", "~/workspace/boardroom/finance_summary.pdf", "~/workspace/boardroom/product_summary.pdf", "~/workspace/boardroom/q4_board_deck.odp"],
+  "expected_steps_per_actor": [50, 100],
+  "runner_profile": {"mode": "shared", "max_cua_calls": null, "outer_timeout_s": 7200, "countdown_injected": false, "xvfb_auth": true, "yolo": false, "gui_enabled": true, "guest_cli_read_write": true},
+  "guest_setup": {"args": ["--workspace", "/home/user/workspace", "--open-impress"]},
+  "host_snapshots": [
+    {"guest_path": "/home/user/workspace/boardroom/transactions.db", "archive_path": "host-snapshots/transactions.db", "kind": "database"},
+    {"guest_path": "/home/user/workspace/boardroom/telemetry.csv", "archive_path": "host-snapshots/telemetry.csv", "kind": "state_snapshot"},
+    {"guest_path": "/home/user/workspace/boardroom/finance_summary.json", "archive_path": "guest-output/finance_summary.json", "kind": "deliverable"},
+    {"guest_path": "/home/user/workspace/boardroom/product_summary.json", "archive_path": "guest-output/product_summary.json", "kind": "deliverable"},
+    {"guest_path": "/home/user/workspace/boardroom/finance_summary.pdf", "archive_path": "guest-output/finance_summary.pdf", "kind": "deliverable"},
+    {"guest_path": "/home/user/workspace/boardroom/product_summary.pdf", "archive_path": "guest-output/product_summary.pdf", "kind": "deliverable"},
+    {"guest_path": "/home/user/workspace/boardroom/finance_chart.png", "archive_path": "guest-output/finance_chart.png", "kind": "deliverable"},
+    {"guest_path": "/home/user/workspace/boardroom/product_chart.png", "archive_path": "guest-output/product_chart.png", "kind": "deliverable"},
+    {"guest_path": "/home/user/workspace/boardroom/q4_board_deck.odp", "archive_path": "guest-output/q4_board_deck.odp", "kind": "deliverable"}
+  ]
+}

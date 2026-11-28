@@ -1,0 +1,84 @@
+{
+  "case_id": "BC-04",
+  "title": "Launch Board Shared SVG and GIMP Visual QA",
+  "track": "blind_concurrency",
+  "mode": "shared",
+  "guest_apps": [
+    "GIMP",
+    "Google Chrome",
+    "Guest CLI"
+  ],
+  "guest_services": [
+    {
+      "name": "SVG live preview",
+      "url": "http://127.0.0.1:8094/preview.html"
+    }
+  ],
+  "guest_workspace": "~/workspace/bc04",
+  "assets": "guest/",
+  "prompts": {
+    "actor_a": "prompts/actor_a.md",
+    "actor_b": "prompts/actor_b.md"
+  },
+  "oracle": "oracle/oracle.py",
+  "oracle_inputs": {
+    "preview_receipt": "Host-side HTTP status and final SVG SHA-256 captured after the episode; never mounted in Guest."
+  },
+  "outputs": [
+    "~/workspace/bc04/brand/launch_board.svg",
+    "~/workspace/bc04/out/hero_banner.png",
+    "~/workspace/bc04/out/pricing_card.png"
+  ],
+  "runner_profile": {
+    "mode": "shared",
+    "max_cua_calls": null,
+    "outer_timeout_s": 7200,
+    "countdown_injected": false,
+    "xvfb_auth": true,
+    "yolo": false,
+    "gui_enabled": true,
+    "guest_cli_read_write": true
+  },
+  "guest_setup": {
+    "args": [
+      "--workspace",
+      "/home/user/workspace/bc04",
+      "--start-service",
+      "--open-browser"
+    ]
+  },
+  "host_snapshots": [
+    {
+      "guest_path": "/home/user/workspace/bc04/brand/launch_board.svg",
+      "archive_path": "guest-output/brand/launch_board.svg",
+      "kind": "deliverable"
+    },
+    {
+      "guest_path": "/home/user/workspace/bc04/out/hero_banner.png",
+      "archive_path": "guest-output/out/hero_banner.png",
+      "kind": "deliverable"
+    },
+    {
+      "guest_path": "/home/user/workspace/bc04/out/pricing_card.png",
+      "archive_path": "guest-output/out/pricing_card.png",
+      "kind": "deliverable"
+    }
+  ],
+  "host_http_snapshots": [
+    {
+      "id": "preview",
+      "url": "http://127.0.0.1:8094/preview.html",
+      "archive_path": "host-snapshots/preview.html"
+    },
+    {
+      "id": "hero_crop",
+      "url": "http://127.0.0.1:8094/hero.svg",
+      "archive_path": "host-snapshots/hero.svg"
+    },
+    {
+      "id": "pricing_crop",
+      "url": "http://127.0.0.1:8094/pricing.svg",
+      "archive_path": "host-snapshots/pricing.svg"
+    }
+  ]
+}

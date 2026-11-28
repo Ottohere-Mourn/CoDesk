@@ -1,0 +1,7 @@
+Schedule the three Q4 customer review meetings in the local Maildesk Calendar at `http://127.0.0.1:18110/mail?team=customer`.
+
+Use the customer-review messages in `~/workspace/calendar/mail_threads.csv`. For each thread, use the latest non-cancelled, non-draft message. Convert its local time to UTC using its explicit signed offset, preserve the requested duration and attendee, and select a room meeting the capacity and equipment requirements. Do not restore cancelled items or use superseded proposals. The active calendar and room requirements are available through the Calendar page and local service.
+
+Submit all three events to Preview first. Review any conflict or room alternatives returned by the service, adjust the room choices, and Confirm against the current preview token. Verify the final events in Calendar. Save `~/workspace/calendar/out/calendar_audit.json` with the source thread IDs, UTC intervals, selected rooms and confirmation IDs; also save the three confirmed events as `~/workspace/calendar/out/calendar_export_a.ics`.
+
+You may freely choose the desktop GUI, `guest_cli`, or a combination. `guest_cli` can read, create, edit, and execute files within the Guest workspace. It runs inside this OSWorld Guest, not on the HealthCare host. Host-side Oracle, ground truth, evaluation data, and queue control are not exposed to `guest_cli`; do not access or alter them. Verify the final calendar and both deliverables.

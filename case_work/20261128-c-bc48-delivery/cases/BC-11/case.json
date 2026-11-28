@@ -1,0 +1,89 @@
+{
+  "case_id": "BC-11",
+  "title": "Shared Stateful Q4 Notebook Kernel",
+  "track": "blind_concurrency",
+  "mode": "shared",
+  "guest_apps": [
+    "Google Chrome",
+    "Python 3.10"
+  ],
+  "guest_services": [
+    {
+      "name": "Q4 Pipeline Notebook",
+      "url": "http://127.0.0.1:18111/health"
+    }
+  ],
+  "guest_workspace": "~/workspace",
+  "assets": "guest/",
+  "prompts": {
+    "actor_a": "prompts/actor_a.md",
+    "actor_b": "prompts/actor_b.md"
+  },
+  "oracle": "oracle/oracle.py",
+  "oracle_inputs": {
+    "truth": "Host recomputation over recovered CSV snapshots."
+  },
+  "outputs": [
+    "~/workspace/kernel_lab/out/revenue_analysis.json",
+    "~/workspace/kernel_lab/out/retention_analysis.json",
+    "~/workspace/kernel_lab/q4_pipeline.json"
+  ],
+  "expected_steps_per_actor": [
+    50,
+    85
+  ],
+  "runner_profile": {
+    "mode": "shared",
+    "max_cua_calls": null,
+    "outer_timeout_s": 7200,
+    "countdown_injected": false,
+    "xvfb_auth": true,
+    "yolo": false,
+    "gui_enabled": true,
+    "guest_cli_read_write": true
+  },
+  "guest_setup": {
+    "args": [
+      "--workspace",
+      "/home/user/workspace",
+      "--start-service",
+      "--open-browser"
+    ]
+  },
+  "host_snapshots": [
+    {
+      "guest_path": "/home/user/workspace/kernel_lab/q4_pipeline.json",
+      "archive_path": "host-snapshots/q4_pipeline.json",
+      "kind": "state_snapshot"
+    },
+    {
+      "guest_path": "/home/user/workspace/kernel_lab/kernel_events.jsonl",
+      "archive_path": "host-snapshots/kernel_events.jsonl",
+      "kind": "service_receipt"
+    },
+    {
+      "guest_path": "/home/user/workspace/kernel_lab/revenue_source.csv",
+      "archive_path": "guest-inputs/revenue_source.csv",
+      "kind": "fixture"
+    },
+    {
+      "guest_path": "/home/user/workspace/kernel_lab/product_events.csv",
+      "archive_path": "guest-inputs/product_events.csv",
+      "kind": "fixture"
+    }
+  ],
+  "host_http_snapshots": [
+    {
+      "id": "kernel_health",
+      "url": "http://127.0.0.1:18111/health",
+      "archive_path": "host-snapshots/kernel-health.json"
+    }
+  ],
+  "host_snapshot_directories": [
+    {
+      "guest_path": "/home/user/workspace/kernel_lab/out",
+      "archive_path": "guest-output",
+      "kind": "deliverable"
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "case_id": "BC-10",
+  "title": "Mail Thread Reconciliation and Two-Phase Calendar Scheduling",
+  "track": "blind_concurrency",
+  "mode": "shared",
+  "guest_apps": ["Google Chrome"],
+  "guest_services": [{"name": "Maildesk Calendar", "url": "http://127.0.0.1:18110/health"}],
+  "guest_workspace": "~/workspace",
+  "assets": "guest/",
+  "prompts": {"actor_a": "prompts/actor_a.md", "actor_b": "prompts/actor_b.md"},
+  "oracle": "oracle/oracle.py",
+  "oracle_inputs": {"truth": "Fixed host-side meeting targets and room policy; the Guest contains the source threads and live reservation ledger."},
+  "outputs": ["~/workspace/calendar/out/calendar_audit.json", "~/workspace/calendar/out/calendar_b_audit.json", "~/workspace/calendar/out/calendar_export_a.ics", "~/workspace/calendar/out/calendar_export_b.ics"],
+  "expected_steps_per_actor": [55, 85],
+  "adaptation_notes": ["To avoid requiring an unsupported per-actor bind mount, the case contains no credentials or confidential per-role inputs. The seeded mailbox has public business fixtures; each prompt targets its own named thread group and does not reveal that another task exists."],
+  "runner_profile": {"mode": "shared", "max_cua_calls": null, "outer_timeout_s": 7200, "countdown_injected": false, "xvfb_auth": true, "yolo": false, "gui_enabled": true, "guest_cli_read_write": true},
+  "guest_setup": {"args": ["--workspace", "/home/user/workspace", "--start-service", "--open-browser"]},
+  "host_snapshots": [
+    {"guest_path": "/home/user/workspace/calendar/rooms.db", "archive_path": "host-snapshots/rooms.db", "kind": "database"},
+    {"guest_path": "/home/user/workspace/calendar/team_schedule.ics", "archive_path": "host-snapshots/team_schedule.ics", "kind": "state_snapshot"},
+    {"guest_path": "/home/user/workspace/calendar/calendar_service.log", "archive_path": "host-snapshots/calendar_service.log", "kind": "service_receipt"},
+    {"guest_path": "/home/user/workspace/calendar/out/calendar_audit.json", "archive_path": "guest-output/calendar_audit.json", "kind": "deliverable"},
+    {"guest_path": "/home/user/workspace/calendar/out/calendar_b_audit.json", "archive_path": "guest-output/calendar_b_audit.json", "kind": "deliverable"},
+    {"guest_path": "/home/user/workspace/calendar/out/calendar_export_a.ics", "archive_path": "guest-output/calendar_export_a.ics", "kind": "deliverable"},
+    {"guest_path": "/home/user/workspace/calendar/out/calendar_export_b.ics", "archive_path": "guest-output/calendar_export_b.ics", "kind": "deliverable"}
+  ],
+  "host_http_snapshots": [{"id": "calendar_health", "url": "http://127.0.0.1:18110/health", "archive_path": "host-snapshots/calendar-health.json"}]
+}

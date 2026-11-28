@@ -1,5 +1,7 @@
 # CoDesk：本工作流创建的案例索引
 
+> **2026-11-28 C + BC 48 Shared GUI/CLI delivery:** [guide](../C_BC_48_GUI_CLI_DELIVERY_20261128_ZH.md) | [static dashboard files](../dashboards/c_bc_48_open_cli_20261128/). 48 indexed cases,47 graded episodes,C08 deferred after network failure.
+
 更新日期：2026-11-19。聚合分支已有 handoff 记录 211 个任务/配对条目。本次新增并提交 9 个 MECH 任务后，分支总数为 **220 项**。按原任务卡、批次提交和来源分支核对，本工作流明确负责的既有案例为 **84 项**；计入本轮 9 个 MECH 后合计 **93 项**。其余 127 项不应笼统标作 ZYK 原创：其中既有其他工作线，也有外部基准适配和参考任务库。本索引只把来源能对上的算入，不用 Git author 名字单独推断归属。
 
 ## 分类

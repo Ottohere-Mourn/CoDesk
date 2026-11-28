@@ -1,0 +1,5 @@
+Analyze October 2026 signup-cohort retention from `~/workspace/kernel_lab/product_events.csv` using the rules in `analysis_rules.pdf`.
+
+Use the `Section B` of the local Q4 Pipeline Notebook at `http://127.0.0.1:18111/` to build and execute a clear sequence of calculation cells. Select each user's first VALID October signup, exclude TEST rows, and count each user no more than once in the day-14-to-30 M1 window and day-31-to-60 M2 window. Save `~/workspace/kernel_lab/out/retention_analysis.json` with `cohort_size`, `month_1_active`, `month_1_retention_pct`, `month_2_active`, and `month_2_retention_pct`. Save the completed notebook state and verify your cell outputs and JSON values.
+
+You may freely choose the desktop GUI, `guest_cli`, or a combination. `guest_cli` can read, create, edit, and execute files within the Guest workspace. It runs inside this OSWorld Guest, not on the HealthCare host. Host-side Oracle, ground truth, evaluation data, and queue control are not exposed to `guest_cli`; do not access or alter them.

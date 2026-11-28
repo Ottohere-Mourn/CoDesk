@@ -1,0 +1,5 @@
+Update the operations documentation in `~/workspace/docs_hub/docs/operations_guide.md`.
+
+Read `~/workspace/docs_hub/index_rules.txt`. Expand the Recovery section with a practical sequence covering detection, health verification, bounded failover, rollback checkpoint verification, and a concise UTC incident record. Preserve the existing content and headings. Save the document, rebuild the local search index at `http://127.0.0.1:18221/rebuild`, search for the required concepts, preview the updated page, and write `~/workspace/docs_hub/out/operations_verification.json` with the document path, index revision, query terms, and hit counts. Confirm the rebuilt index hashes the saved document.
+
+You may freely choose the desktop GUI, `guest_cli`, or a combination. `guest_cli` can read, create, edit, and execute files within the Guest workspace. It runs inside this OSWorld Guest, not on the HealthCare host. Host-side Oracle, ground truth, evaluation data, and queue control are not exposed to `guest_cli`; do not access or alter them.

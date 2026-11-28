@@ -1,0 +1,35 @@
+{
+  "case_id": "BC-08",
+  "title": "Main-Branch Full-Stack Portal Feature Integration",
+  "track": "blind_concurrency",
+  "mode": "shared",
+  "guest_apps": ["Google Chrome", "VS Code", "Git"],
+  "guest_services": [{"name": "Operations Portal", "url": "http://127.0.0.1:8096/"}],
+  "guest_workspace": "~/workspace",
+  "assets": "guest/",
+  "prompts": {"actor_a": "prompts/actor_a.md", "actor_b": "prompts/actor_b.md"},
+  "oracle": "oracle/oracle.py",
+  "oracle_inputs": {"truth": "Host-only deterministic computations from the seeded case definition; Guest snapshots and HTTP receipts are evidence, not truth."},
+  "outputs": ["~/workspace/verify_metrics.json", "~/workspace/verify_triage.json"],
+  "runner_profile": {"mode": "shared", "max_cua_calls": null, "outer_timeout_s": 7200, "countdown_injected": false, "xvfb_auth": true, "yolo": false, "gui_enabled": true, "guest_cli_read_write": true},
+  "guest_setup": {"args": ["--workspace", "/home/user/workspace", "--start-service", "--open-browser"]},
+  "host_snapshots": [
+    {"guest_path": "/home/user/workspace/ops-portal/portal.db", "archive_path": "host-snapshots/portal.db", "kind": "database"},
+    {"guest_path": "/home/user/workspace/ops-portal/app.py", "archive_path": "host-snapshots/app.py", "kind": "state_snapshot"},
+    {"guest_path": "/home/user/workspace/ops-portal/templates/layout.html", "archive_path": "host-snapshots/layout.html", "kind": "state_snapshot"},
+    {"guest_path": "/home/user/workspace/ops-portal/static/app.js", "archive_path": "host-snapshots/app.js", "kind": "state_snapshot"},
+    {"guest_path": "/home/user/workspace/verify_metrics.json", "archive_path": "guest-output/verify_metrics.json", "kind": "deliverable"},
+    {"guest_path": "/home/user/workspace/verify_triage.json", "archive_path": "guest-output/verify_triage.json", "kind": "deliverable"},
+    {"guest_path": "/home/user/workspace/ops-portal/.git/HEAD", "archive_path": "host-snapshots/git-HEAD", "kind": "state_snapshot"},
+    {"guest_path": "/home/user/workspace/ops-portal/.git/logs/HEAD", "archive_path": "host-snapshots/git-log-HEAD", "kind": "state_snapshot"}
+  ],
+  "host_http_snapshots": [
+    {"id": "portal_root", "url": "http://127.0.0.1:8096/", "archive_path": "host-snapshots/portal-root.html"},
+    {"id": "portal_health", "url": "http://127.0.0.1:8096/api/health", "archive_path": "host-snapshots/portal-health.json"},
+    {"id": "metrics_r1", "url": "http://127.0.0.1:8096/api/metrics/summary?start=2026-10-01&end=2026-10-10", "archive_path": "host-snapshots/metrics-r1.json"},
+    {"id": "metrics_r2", "url": "http://127.0.0.1:8096/api/metrics/summary?start=2026-10-11&end=2026-10-20", "archive_path": "host-snapshots/metrics-r2.json"},
+    {"id": "metrics_r3", "url": "http://127.0.0.1:8096/api/metrics/summary?start=2026-10-21&end=2026-10-31", "archive_path": "host-snapshots/metrics-r3.json"},
+    {"id": "triage_critical", "url": "http://127.0.0.1:8096/api/incidents/export?severity=CRITICAL", "archive_path": "host-snapshots/incidents-critical.csv"},
+    {"id": "triage_high", "url": "http://127.0.0.1:8096/api/incidents/export?severity=HIGH", "archive_path": "host-snapshots/incidents-high.csv"}
+  ]
+}

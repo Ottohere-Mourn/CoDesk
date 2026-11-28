@@ -1,0 +1,55 @@
+{
+  "case_id": "BC-02",
+  "title": "Q4 Workbook Memory and Disk State",
+  "track": "blind_concurrency",
+  "mode": "shared",
+  "guest_apps": [
+    "LibreOffice Calc"
+  ],
+  "guest_workspace": "~/workspace",
+  "assets": "guest/",
+  "prompts": {
+    "actor_a": "prompts/actor_a.md",
+    "actor_b": "prompts/actor_b.md"
+  },
+  "oracle": "oracle/oracle.py",
+  "outputs": [
+    "~/workspace/q4_ops.xlsx",
+    "~/workspace/revenue_summary.pdf",
+    "~/workspace/expense_summary.pdf"
+  ],
+  "runner_profile": {
+    "mode": "shared",
+    "max_cua_calls": null,
+    "outer_timeout_s": 7200,
+    "countdown_injected": false,
+    "xvfb_auth": true,
+    "yolo": false,
+    "gui_enabled": true,
+    "guest_cli_read_write": true
+  },
+  "guest_setup": {
+    "args": [
+      "--workspace",
+      "/home/user/workspace",
+      "--open-calc"
+    ]
+  },
+  "host_snapshots": [
+    {
+      "guest_path": "/home/user/workspace/q4_ops.xlsx",
+      "archive_path": "guest-output/q4_ops.xlsx",
+      "kind": "deliverable"
+    },
+    {
+      "guest_path": "/home/user/workspace/revenue_summary.pdf",
+      "archive_path": "guest-output/revenue_summary.pdf",
+      "kind": "deliverable"
+    },
+    {
+      "guest_path": "/home/user/workspace/expense_summary.pdf",
+      "archive_path": "guest-output/expense_summary.pdf",
+      "kind": "deliverable"
+    }
+  ]
+}

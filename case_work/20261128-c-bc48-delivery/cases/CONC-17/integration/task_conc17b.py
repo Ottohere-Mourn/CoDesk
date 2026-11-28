@@ -1,0 +1,18 @@
+from typing import TYPE_CHECKING
+from desktop_env.task_base import BaseTask
+from evaluation_examples.task_class import pg_cases as pair
+if TYPE_CHECKING:
+    from desktop_env.controllers.setup import SetupController
+    from desktop_env.desktop_env import DesktopEnv
+
+class TaskPgconc17b(BaseTask):
+    intermediate_eval_safe = False
+    id = "pgconc17b"; snapshot = "paragui"; source = "paragui"
+    trajectory = "trajectories/"; related_apps = ['libreoffice']
+    proxy = False; fixed_ip = False; possibility_of_env_change = "low"
+    instruction = "This is one shared Ubuntu 1920x1080 desktop with one mouse, keyboard, and application session. There is no direct chat between the two operators. Focus changes, blocked actions, dialogs being interrupted, and input landing in the wrong place are normal shared-desktop conditions: re-check the visible state and continue rather than assuming the task is impossible. Screenshots may be scaled previews.  Do not alter evaluator state. This office/software task has no reset limit or reset penalty.\n\nEdit `/home/user/workspace/c17/sprint_review.pptx` in LibreOffice Impress. Update only slides 3 and 4. On slide 3, use slide 2's completed metrics to replace the three placeholders with: `Recommended Deployment: Model-E achieves peak throughput.`; `Target Met: Fleet average reaches 88.0 QPS, exceeding the 80 QPS baseline.`; `Next Milestone: Freeze inference config and launch stress testing.` Do not invent values if slide 2 still shows TBD; work on slide 4 meanwhile and check again later. On slide 4 insert `/home/user/workspace/c17/assets/throughput_curve.png` and set the caption to `Figure 1: Throughput Scaling Across Batch Sizes (16-64)`. Do not edit slides 1–2. Save the deck.\n\nYou may freely choose either the GUI or the Guest CLI, including reading and writing task files and running Python or shell commands, to complete your assigned work. Guest CLI commands execute inside this OSWorld Guest, not on the HealthCare host. The host-side Oracle, ground truth and control plane are not exposed through Guest CLI; do not alter evaluation state. The two Actors share one desktop session and have no direct chat unless your task explicitly says otherwise."
+    def setup(self, setup_controller: "SetupController", use_proxy: bool = False) -> None:
+        pair.setup_case(setup_controller, 17, "B")
+    def evaluate(self, env: "DesktopEnv"):
+        return pair.evaluate(env, 17, "B")
+TASK_CLASS = TaskPgconc17b

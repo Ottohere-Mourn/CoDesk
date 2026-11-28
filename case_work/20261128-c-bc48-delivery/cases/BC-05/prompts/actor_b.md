@@ -1,0 +1,7 @@
+Finalize the Q4 promotion and compliance copy on `~/workspace/campaign/poster_master.ora`, the editable layered campaign source opened in GIMP.
+
+Read `~/workspace/campaign/brand_spec.pdf` and query `~/workspace/campaign/sku_catalog.db` to derive the highest-priority eligible Q4 retail promotion, its discount, and the matching disclaimer. Apply the required highlight color and derived headline to the promotion badge, put the derived promotion and price tier in the price grid, and add the exact required disclaimer and expiry to the legal footer.
+
+Preserve the seven-layer composition and canvas size. Save an editable GIMP XCF as `~/workspace/campaign/poster_master.xcf`, ensure all seven layers are visible for the complete export, and save the complete 1200×1600 poster as `~/workspace/out/campaign_final.png`. Inspect the result at `http://127.0.0.1:8091/proof.html`. Write `~/workspace/out/manifest_b.json` with the selected promotion code, disclaimer ID, derived price and a concise verification result.
+
+You may freely choose the desktop GUI, `guest_cli`, or a combination. `guest_cli` can read, create, edit, and execute files within the Guest workspace. It runs inside this OSWorld Guest, not on the HealthCare host. The host-side Oracle, ground truth, evaluation data, and queue control are not exposed to `guest_cli`; do not access or alter them. Verify your saved files before finishing.

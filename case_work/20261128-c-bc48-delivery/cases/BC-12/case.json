@@ -1,0 +1,90 @@
+{
+  "case_id": "BC-12",
+  "title": "Batch Image Pipeline and Two-Phase QA Release Desk",
+  "track": "blind_concurrency",
+  "mode": "shared",
+  "guest_apps": [
+    "GIMP",
+    "Google Chrome",
+    "Python 3.10"
+  ],
+  "guest_services": [
+    {
+      "name": "Asset QA Desk",
+      "url": "http://127.0.0.1:18112/health"
+    }
+  ],
+  "guest_workspace": "~/workspace",
+  "assets": "guest/",
+  "prompts": {
+    "actor_a": "prompts/actor_a.md",
+    "actor_b": "prompts/actor_b.md"
+  },
+  "oracle": "oracle/oracle.py",
+  "oracle_inputs": {
+    "truth": "Host-only fixed accepted source IDs, dimensions, exclusions and QA receipt consistency."
+  },
+  "outputs": [
+    "~/workspace/asset_qa/out/a/",
+    "~/workspace/asset_qa/out/b/",
+    "~/workspace/asset_qa/asset_manifest.yaml"
+  ],
+  "expected_steps_per_actor": [
+    55,
+    90
+  ],
+  "runner_profile": {
+    "mode": "shared",
+    "max_cua_calls": null,
+    "outer_timeout_s": 7200,
+    "countdown_injected": false,
+    "xvfb_auth": true,
+    "yolo": false,
+    "gui_enabled": true,
+    "guest_cli_read_write": true
+  },
+  "guest_setup": {
+    "args": [
+      "--workspace",
+      "/home/user/workspace",
+      "--start-service",
+      "--open-browser"
+    ]
+  },
+  "host_snapshots": [
+    {
+      "guest_path": "/home/user/workspace/asset_qa/asset_manifest.yaml",
+      "archive_path": "host-snapshots/asset_manifest.yaml",
+      "kind": "state_snapshot"
+    },
+    {
+      "guest_path": "/home/user/workspace/asset_qa/qa_receipts.json",
+      "archive_path": "host-snapshots/qa_receipts.json",
+      "kind": "service_receipt"
+    },
+    {
+      "guest_path": "/home/user/workspace/asset_qa/qa_events.jsonl",
+      "archive_path": "host-snapshots/qa_events.jsonl",
+      "kind": "service_receipt"
+    },
+    {
+      "guest_path": "/home/user/workspace/asset_qa/qa_service.log",
+      "archive_path": "host-snapshots/qa_service.log",
+      "kind": "service_receipt"
+    }
+  ],
+  "host_http_snapshots": [
+    {
+      "id": "asset_qa_health",
+      "url": "http://127.0.0.1:18112/health",
+      "archive_path": "host-snapshots/asset-qa-health.json"
+    }
+  ],
+  "host_snapshot_directories": [
+    {
+      "guest_path": "/home/user/workspace/asset_qa/out",
+      "archive_path": "guest-output/out",
+      "kind": "deliverable"
+    }
+  ]
+}

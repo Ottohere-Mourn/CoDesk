@@ -1,0 +1,7 @@
+Conduct the commercial redline review of `~/workspace/legal/msa_contract.odt`, open in LibreOffice Writer with change recording enabled.
+
+Read `policy_handbook.pdf` and analyze all rows in `billing_incidents.csv`. Include only Q3 invoice records; exclude TEST and VOID records. Compute the overdue rate using the handbook's ten-day rule, determine the resulting tier and its four commercial terms, and identify the three highest-value overdue incident IDs using the required tie-break.
+
+With change recording active, revise only the four commercial clauses in Section 2 (Payment Terms) and Section 5 (Credit and Cap). Add three Writer comments anchored to the revised clauses, each citing the relevant overdue evidence and the tier rationale. Do not accept or clear recorded changes. Preserve unrelated sections. Save the ODT, export a PDF showing the redline and comments to `~/workspace/legal/redline_commercial.pdf`, and write `~/workspace/legal/audit_a.json` with the computed rate, tier, terms, and cited incident IDs.
+
+You may freely choose the desktop GUI, `guest_cli`, or a combination. `guest_cli` can read, create, edit, and execute files within the Guest workspace. It runs inside this OSWorld Guest, not on the HealthCare host. The host-side Oracle, ground truth, evaluation data, and queue control are not exposed to `guest_cli`; do not access or alter them. Verify the saved ODT, PDF, and JSON before finishing.

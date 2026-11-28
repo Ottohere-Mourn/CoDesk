@@ -1,0 +1,5 @@
+Configure the Frontline API service in `~/workspace/service_lab/repo`.
+
+Use `service_requirements.pdf`. Set the Frontline configuration to route `/v1/customers`, limit `45`, and auth mode `bearer`. In `.env`, set `SERVICE_A_LIMIT=45` while preserving the release environment and any unrelated values. Restart the local service snapshot using `POST http://127.0.0.1:18115/api/restart`, then verify `http://127.0.0.1:18115/health/frontline` returns HTTP 200. Record the response and your commit SHA in `~/workspace/service_lab/out/frontline_check.json`. Commit your change on the existing `main` branch with message `BC15-A: configure frontline interface`; confirm the worktree is clean after your commit.
+
+You may freely choose the desktop GUI, `guest_cli`, or a combination. `guest_cli` can read, create, edit, and execute files within the Guest workspace. It runs inside this OSWorld Guest, not on the HealthCare host. Host-side Oracle, ground truth, evaluation data, and queue control are not exposed to `guest_cli`; do not access or alter them.

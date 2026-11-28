@@ -1,0 +1,7 @@
+Conduct the technical SLA redline review of `~/workspace/legal/msa_contract.odt`, open in LibreOffice Writer with change recording enabled.
+
+Read `policy_handbook.pdf` and analyze `uptime_telemetry.csv`. Exclude planned maintenance. Compute rolling 90-day effective availability from the handbook's fixed window, count P99 breaches using its threshold, determine the SLA tier and its four technical terms, and identify the three highest-severity outage IDs using the stated tie-break.
+
+With change recording active, revise only the four technical clauses in Section 4 (Service Level Agreement) and Section 7 (Remedies and Termination). Add three Writer comments anchored to the revised clauses, citing outage evidence and the derived tier. Do not accept or clear recorded changes. Preserve unrelated sections. Save the ODT, export a PDF showing the redline and comments to `~/workspace/legal/redline_sla.pdf`, and write `~/workspace/legal/audit_b.json` with the computed availability, breach count, tier, terms, and cited outage IDs.
+
+You may freely choose the desktop GUI, `guest_cli`, or a combination. `guest_cli` can read, create, edit, and execute files within the Guest workspace. It runs inside this OSWorld Guest, not on the HealthCare host. The host-side Oracle, ground truth, evaluation data, and queue control are not exposed to `guest_cli`; do not access or alter them. Verify the saved ODT, PDF, and JSON before finishing.

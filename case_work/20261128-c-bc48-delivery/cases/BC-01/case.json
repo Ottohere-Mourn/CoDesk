@@ -1,0 +1,69 @@
+{
+  "case_id": "BC-01",
+  "title": "Q4 Finance and Supplier Portal Exports",
+  "track": "blind_concurrency",
+  "mode": "shared",
+  "guest_apps": [
+    "Google Chrome"
+  ],
+  "guest_services": [
+    {
+      "name": "Local enterprise portal",
+      "url": "http://127.0.0.1:8090/"
+    }
+  ],
+  "guest_workspace": "~/workspace",
+  "assets": "guest/",
+  "prompts": {
+    "actor_a": "prompts/actor_a.md",
+    "actor_b": "prompts/actor_b.md"
+  },
+  "oracle": "oracle/oracle.py",
+  "oracle_inputs": {
+    "portal_snapshot": "Collected by the host bridge from bc01/.portal_state.json after the episode; no HTTP snapshot endpoint is exposed in the Guest service."
+  },
+  "outputs": [
+    "~/workspace/fin_audit_q4.csv",
+    "~/workspace/vendor_status.csv"
+  ],
+  "runner_profile": {
+    "mode": "shared",
+    "max_cua_calls": null,
+    "outer_timeout_s": 7200,
+    "countdown_injected": false,
+    "xvfb_auth": true,
+    "yolo": false,
+    "gui_enabled": true,
+    "guest_cli_read_write": true
+  },
+  "guest_setup": {
+    "args": [
+      "--workspace",
+      "/home/user/workspace",
+      "--start-service",
+      "--open-browser"
+    ]
+  },
+  "host_snapshots": [
+    {
+      "guest_path": "/home/user/workspace/bc01/.portal_state.json",
+      "archive_path": "host-snapshots/portal-state.json",
+      "kind": "state_snapshot"
+    },
+    {
+      "guest_path": "/home/user/workspace/bc01/portal.log",
+      "archive_path": "host-snapshots/portal.log",
+      "kind": "service_receipt"
+    },
+    {
+      "guest_path": "/home/user/workspace/fin_audit_q4.csv",
+      "archive_path": "guest-output/fin_audit_q4.csv",
+      "kind": "deliverable"
+    },
+    {
+      "guest_path": "/home/user/workspace/vendor_status.csv",
+      "archive_path": "guest-output/vendor_status.csv",
+      "kind": "deliverable"
+    }
+  ]
+}
